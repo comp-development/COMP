@@ -1,10 +1,11 @@
 <script>
 	import Header from './Header.svelte';
 	import '../app.css';
+	import Account from '$lib/components/Account.svelte';
 </script>
 
 <div class="app">
-	<Header />
+	<Account />
 
 	<main>
 		<slot />
