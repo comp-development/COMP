@@ -1,16 +1,15 @@
 <script lang="ts">
 	import "carbon-components-svelte/css/white.css";
-	import scheme from "$lib/scheme.json";
 </script>
 
 <div class="header">
 	<img
-		src="/mustang_logo.png"
-		alt={scheme.abbreviation + "_logo"}
+		src="/favicon.png"
+		alt={"MMT_logo"}
 		width="50"
 		height="50"
 	/>
-	<h4 style="">{scheme.title}</h4>
+	<h4 style="">Mustang Math</h4>
 </div>
 
 <style>

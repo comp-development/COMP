@@ -4,7 +4,7 @@
 	import { Form, TextInput, PasswordInput } from "carbon-components-svelte";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
-	import { createAccount, signIntoAccount} from "$lib/supabase/users";
+	import { createAccount, signIntoAccount } from "$lib/supabase";
 
 	export let logIn: boolean;
 	let loading = false;
