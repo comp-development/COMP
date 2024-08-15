@@ -1,10 +1,10 @@
-<script>
+<script lang="ts">
 	import { Button } from "carbon-components-svelte";
 	export let title;
 	export let action = null;
 	export let classs = "button";
 	export let icon = null;
-	export let href = null;
+	export let href: string | null = null;
 	export let fontSize = "1em";
 	export let buttonColor = null;
 	export let bwidth = "30em";
