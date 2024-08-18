@@ -21,7 +21,6 @@
 			await signOut();
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		} finally {
 			loading = false;
 		}

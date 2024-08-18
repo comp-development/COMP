@@ -10,13 +10,13 @@
     onPageLoad();
 </script>
 
-<!--{#if adminUser}-->
+{#if adminUser}
     <div class="exterior">
         <slot />
     </div>
-<!--{:else}
+{:else}
     <h2 style="text-align: center;">You do not have permission to access this page.</h2>
-{/if}-->
+{/if}
 
 <style>
     .exterior {

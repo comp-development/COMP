@@ -24,6 +24,10 @@
 	"dependencies": {
 		"carbon-components-svelte": "^0.85.2",
 		"svelte-drawer-component": "^1.2.2",
-		"svelte-french-toast": "^1.2.0"
+		"svelte-french-toast": "^1.2.0",
+		"@carbon/react": "1.33.0",
+		"@carbon/web-components": "^2.11.1",
+		"papaparse": "^5.4.1",
+		"sass": "1.63.6"
 	}
 }
