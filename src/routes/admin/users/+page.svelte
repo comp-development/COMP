@@ -7,9 +7,9 @@
 		ToolbarSearch,
 		Pagination,
 	} from "carbon-components-svelte";
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
-	import { getAdminUsers } from "$lib/supabase";
+	import { getAdminUsers, getStudentUsers } from "$lib/supabase";
+    import Button from "$lib/components/Button.svelte";
 
 	let pageSize = 25;
 	let page = 1;
@@ -18,23 +18,35 @@
 
 	async function roleManager() {
 		try {
-			let users = await getAdminUsers();
 			let roles2 = [];
+
+			let users = await getAdminUsers();
 			for (let user of users) {
 				roles2.push({
 					id: user.admin_id,
 					first_name: user.first_name,
 					last_name: user.last_name,
+					role: "Admin"
 				});
 			}
+
+			users = await getStudentUsers();
+			for (let user of users) {
+				roles2.push({
+					id: user.student_id,
+					first_name: user.first_name,
+					last_name: user.last_name,
+					role: "Student"
+				});
+			}
+
 			roles2.sort((a, b) => {
-				return a.name.toLowerCase().localeCompare(b.name.toUpperCase());
+				return a.first_name.toLowerCase().localeCompare(b.first_name.toUpperCase());
 			});
 			roles = roles2;
 			loading = false;
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		}
 	}
 
@@ -47,14 +59,18 @@
 {#if loading}
 	<p>Loading...</p>
 {:else}
+	<br />
+	<Button title="Change User Role" href="/admin/users/change" />
+	<br />
+	<br />
 	<div style="padding: 10px;">
 		<DataTable
 			sortable
 			size="compact"
 			headers={[
-				{ key: "edit", value: "", width: "50px" },
-				{ key: "name", value: "Name" },
-				{ key: "initials", value: "Initials", width: "100px" },
+				{key: "edit", value: "", width: "20px"},
+				{ key: "first_name", value: "First Name" },
+				{ key: "last_name", value: "Last Name" },
 				{ key: "role", value: "Role" },
 				{ key: "id", value: "ID" },
 			]}

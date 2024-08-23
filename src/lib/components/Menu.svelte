@@ -3,9 +3,8 @@
 	import Banner from "./Banner.svelte";
 	import { Link } from "carbon-components-svelte";
 	import { page } from "$app/stores";
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
-	import { signOut } from "$lib/supabase";
+	import { isAdmin, signOut } from "$lib/supabase";
 
 	$: path = $page.route.id;
 
@@ -13,6 +12,7 @@
 	let fullname = "";
 	let loading = false;
 	let width = 0;
+	let isUserAdmin = false;
 
 	const handleSignout = async (e) => {
 		e.preventDefault();
@@ -21,11 +21,18 @@
 			await signOut();
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		} finally {
 			loading = false;
 		}
 	};
+
+	async function onLoad() {
+		loading = true;
+		isUserAdmin = await isAdmin();
+		loading = false;
+	}
+
+	onLoad();
 </script>
 
 <svelte:window bind:outerWidth={width} />
@@ -47,6 +54,12 @@
 			<Link href="/" class={path == "" ? "active link" : "link"}>
 				<p class="linkPara">Home</p>
 			</Link>
+			<div class="fixedHr" />
+			{#if isUserAdmin}
+				<Link href="/admin/users" class={path == "/admin/users" ? "active link" : "link"}>
+					<p class="linkPara">Admin: Users</p>
+				</Link>
+			{/if}
 			<div class="fixedHr" />
 			<Link on:click={handleSignout} class="link">
 				<p class="linkPara">Sign Out</p>

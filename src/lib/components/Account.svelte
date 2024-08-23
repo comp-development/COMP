@@ -19,7 +19,6 @@
 			await signIntoAccount(email, password);
 		} catch (error) {
 			handleError(error);
-			toast.error(error.error_description || error.message);
 		} finally {
 			loading = false;
 		}
@@ -42,7 +41,6 @@
 			}
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		}
 	};
 </script>

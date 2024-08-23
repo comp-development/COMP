@@ -49,18 +49,54 @@ export async function getThisUser() {
 }
 
 /**
+ * Get user information
+ * 
+ * @param user_id
+ * @returns dictionary of user information
+ */
+
+export async function getUser(user_id: string) {
+	let admin = await isAdmin(user_id);
+
+	if (admin) {
+		let { data, error } = await supabase
+			.from('admins')
+			.select('*')
+			.eq('admin_id', user_id)
+			.single();
+		if (error) throw error;
+		data.isAdmin = true;
+		return data;
+	} else {
+		let { data, error } = await supabase
+			.from('students')
+			.select('*')
+			.eq('student_id', user_id)
+			.single();
+		if (error) throw error;
+		data.isAdmin = false;
+		return data;
+	}	
+}
+
+/**
  * Check if user is an admin
  * 
+ * @param user_id: string
  * @returns boolean if user is admin or not
  */
-export async function isAdmin() {
-	const user = await getThisUser();
+export async function isAdmin(user_id: string | null = null) {
+	if (!user_id) {
+		const user = await getThisUser();
+		user_id = user?.id;
+	}
+
 	const { data, error } = await supabase
-		.from('admin')
+		.from('admins')
 		.select('admin_id')
-		.eq('admin_id', user.id)
+		.eq('admin_id', user_id)
 		.single();
-	if (error) throw error;
+	if (error) return false;
 	return data !== null;
 }
 
@@ -72,8 +108,54 @@ export async function isAdmin() {
  */
 export async function getAdminUsers(select:string="*") {
 	const { data, error } = await supabase
-		.from('admin')
+		.from('admins')
 		.select(select);
 	if (error) throw error;
 	return data;
+}
+
+/**
+ * Get all student users
+ * 
+ * @param select string
+ * @returns list of student users
+ */
+export async function getStudentUsers(select:string="*") {
+	const { data, error } = await supabase
+		.from('students')
+		.select(select);
+	if (error) throw error;
+	return data;
+}
+
+/**
+ * Transfer user from student to admin or vise versa
+ * 
+ * @param user_id string
+ * @param to_admin boolean
+ */
+export async function transferUser(user_id: string, to_admin: boolean) {
+	//delete user from previous table
+	const { data, error } = await supabase
+		.from(to_admin ? "students" : "admins")
+		.select('*')
+  		.eq(to_admin ? "student_id" : "admin_id", user_id)
+		.single();
+	if (error) throw error;
+
+	const { error2 } = await supabase
+		.from(to_admin ? "students" : "admins")
+		.delete()
+  		.eq(to_admin ? "student_id" : "admin_id", user_id);
+	if (error2) throw error2;
+
+	//add user to new table
+	const original_data = to_admin ? {"admin_id" : user_id} : {"student_id" : user_id};
+	original_data.first_name = data.first_name; 
+	original_data.last_name = data.last_name;
+
+	const { data2, error3 } = await supabase
+		.from(to_admin ? "admins" : "students")
+		.insert(original_data);
+	if (error3) throw error3;
 }
