@@ -49,18 +49,54 @@ export async function getThisUser() {
 }
 
 /**
+ * Get user information
+ * 
+ * @param user_id
+ * @returns dictionary of user information
+ */
+
+export async function getUser(user_id: string) {
+	let admin = await isAdmin(user_id);
+
+	if (admin) {
+		let { data, error } = await supabase
+			.from('admins')
+			.select('*')
+			.eq('admin_id', user_id)
+			.single();
+		if (error) throw error;
+		data.isAdmin = true;
+		return data;
+	} else {
+		let { data, error } = await supabase
+			.from('students')
+			.select('*')
+			.eq('student_id', user_id)
+			.single();
+		if (error) throw error;
+		data.isAdmin = false;
+		return data;
+	}	
+}
+
+/**
  * Check if user is an admin
  * 
+ * @param user_id: string
  * @returns boolean if user is admin or not
  */
-export async function isAdmin() {
-	const user = await getThisUser();
+export async function isAdmin(user_id: string | null = null) {
+	if (!user_id) {
+		const user = await getThisUser();
+		user_id = user?.id;
+	}
+
 	const { data, error } = await supabase
 		.from('admins')
 		.select('admin_id')
-		.eq('admin_id', user.id)
+		.eq('admin_id', user_id)
 		.single();
-	if (error) throw error;
+	if (error) return false;
 	return data !== null;
 }
 
@@ -99,21 +135,16 @@ export async function getStudentUsers(select:string="*") {
  * @param to_admin boolean
  */
 export async function transferUser(user_id: string, to_admin: boolean) {
-	console.log(user_id);
-	console.log(to_admin);
-
 	//delete user from previous table
 	const { data, error } = await supabase
-		.from(to_admin ? "students" : "admin")
+		.from(to_admin ? "students" : "admins")
 		.select('*')
   		.eq(to_admin ? "student_id" : "admin_id", user_id)
 		.single();
 	if (error) throw error;
 
-	console.log(data);
-
 	const { error2 } = await supabase
-		.from(to_admin ? "students" : "admin")
+		.from(to_admin ? "students" : "admins")
 		.delete()
   		.eq(to_admin ? "student_id" : "admin_id", user_id);
 	if (error2) throw error2;
@@ -124,9 +155,7 @@ export async function transferUser(user_id: string, to_admin: boolean) {
 	original_data.last_name = data.last_name;
 
 	const { data2, error3 } = await supabase
-		.from(to_admin ? "admin" : "students")
+		.from(to_admin ? "admins" : "students")
 		.insert(original_data);
 	if (error3) throw error3;
-	
-	console.log(data2);
 }

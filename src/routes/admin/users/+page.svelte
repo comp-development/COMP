@@ -7,9 +7,8 @@
 		ToolbarSearch,
 		Pagination,
 	} from "carbon-components-svelte";
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
-	import { getAdminUsers } from "$lib/supabase";
+	import { getAdminUsers, getStudentUsers } from "$lib/supabase";
     import Button from "$lib/components/Button.svelte";
 
 	let pageSize = 25;
@@ -31,10 +30,10 @@
 				});
 			}
 
-			let users = await getStudentUsers();
+			users = await getStudentUsers();
 			for (let user of users) {
 				roles2.push({
-					id: user.admin_id,
+					id: user.student_id,
 					first_name: user.first_name,
 					last_name: user.last_name,
 					role: "Student"
@@ -42,7 +41,7 @@
 			}
 
 			roles2.sort((a, b) => {
-				return a.name.toLowerCase().localeCompare(b.name.toUpperCase());
+				return a.first_name.toLowerCase().localeCompare(b.first_name.toUpperCase());
 			});
 			roles = roles2;
 			loading = false;
@@ -69,6 +68,7 @@
 			sortable
 			size="compact"
 			headers={[
+				{key: "edit", value: "", width: "20px"},
 				{ key: "first_name", value: "First Name" },
 				{ key: "last_name", value: "Last Name" },
 				{ key: "role", value: "Role" },

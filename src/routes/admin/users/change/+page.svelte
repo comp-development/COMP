@@ -7,6 +7,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import Loading from "$lib/components/Loading.svelte";
 	import { handleError } from "$lib/handleError";
+    import toast from "svelte-french-toast";
 
 	let loading = true;
 	let users = [];
@@ -17,8 +18,10 @@
 		try {
             if (toAdmin == "true") {
 			    users = await getStudentUsers();
+				curUser = users[0] ? users[0].student_id : "";
             } else {
                 users = await getAdminUsers();
+				curUser = users[0] ? users[0].admin_id : "";
             }
 
 			loading = false;
@@ -28,7 +31,12 @@
 	}
 
     async function onSubmitTransferUser() {
-		await transferUser(curUser, toAdmin == "true");
+		try {
+			await transferUser(curUser, toAdmin == "true");
+			toast.success("User successfully transferred.");
+		} catch (error) {
+			handleError(error);
+		}
     }
 
 	$: toAdmin, getData();
@@ -50,7 +58,7 @@
 
 		<Select labelText="User" bind:selected={curUser}>
 			{#each users as user, i}
-				<SelectItem value={toAdmin ? user.student_id : user.admin_id} text={user.first_name + " " + user.last_name} />
+				<SelectItem value={toAdmin == "true" ? user.student_id : user.admin_id} text={user.first_name + " " + user.last_name} />
 			{/each}
 		</Select>
 		<br />
