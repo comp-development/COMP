@@ -1,4 +1,8 @@
 <script>
+  import { upsertTestAnswer } from "$lib/supabase/tests";
+
+</script>
+<script>
   import { getTestAnswers } from "$lib/supabase/tests";
 
 </script>
@@ -21,7 +25,8 @@
 	import { handleError } from "$lib/handleError";
 	import {
 		getTestProblems,
-        getTestAnswers
+        getTestAnswers,
+        upsertTestAnswer,
 	} from "$lib/supabase";
 
 	const dispatch = createEventDispatcher();
@@ -32,7 +37,7 @@
 	let answersMap = {};
     let loading = true;
 	let startTime = test_taker.start_time ? new Date(test_taker.start_time) : null;
-	let lastTime = startTime;
+	let lastTime = test_taker.end_time ? new Date(test_taker.end_time) : null;
 	let timeElapsed;
 	let timerInterval;
 
@@ -149,109 +154,7 @@
 	}
 
 	function changeAnswer(e, id) {
-		(async () => {
-			updateTestsolve(testsolve.id, { time_elapsed: timeElapsed });
-		})();
-		const nowTime = new Date().getTime();
-		const problemTime =
-			nowTime - lastTime + problemFeedbackMap[id].time_elapsed;
-		lastTime = nowTime;
-		const feedback = [
-			{
-				problem_id: id,
-				testsolve_id: testsolve.id,
-				solver_id: testsolve.solver_id,
-				answer: problemFeedbackMap[id].answer,
-				time_elapsed: problemTime,
-			},
-		];
-		upsertProblemFeedback(feedback);
-	}
-
-	function changeFeedbackAnswer(e, id) {
-		console.log(id);
-		const feedback = [
-			{
-				testsolve_id: testsolve.id,
-				feedback_question: id,
-				answer: testFeedbackMap[id].answer,
-			},
-		];
-		upsertTestsolveFeedbackAnswers(feedback);
-	}
-
-	function changeChecked(id) {
-		const feedback = [
-			{
-				problem_id: id,
-				testsolve_id: testsolve.id,
-				solver_id: testsolve.solver_id,
-				correct: problemFeedbackMap[id].correct,
-			},
-		];
-		upsertProblemFeedback(feedback);
-	}
-
-	function changeFeedback(id) {
-		const feedback = [
-			{
-				problem_id: id,
-				testsolve_id: testsolve.id,
-				solver_id: testsolve.solver_id,
-				feedback: problemFeedbackMap[id].feedback,
-			},
-		];
-		upsertProblemFeedback(feedback);
-	}
-
-	let diffWarn = null;
-	function changeDifficulty(id) {
-		console.log(problemFeedbackMap[id]);
-		const num = parseInt(problemFeedbackMap[id].difficulty);
-		console.log(num, "NUM");
-		if (
-			problemFeedbackMap[id].difficulty == "" ||
-			(!isNaN(num) && num >= 1 && num <= 10)
-		) {
-			const feedback = [
-				{
-					problem_id: id,
-					testsolve_id: testsolve.id,
-					solver_id: testsolve.solver_id,
-					difficulty: num,
-				},
-			];
-			upsertProblemFeedback(feedback);
-		} else {
-			toast.error("You must enter an integer from 1-10, or leave it blank");
-			problemFeedbackMap[id].difficulty = "";
-		}
-		// Check if the value is within the range of 1 to 10 (inclusive)
-	}
-
-	let qualWarn = null;
-	function changeQuality(id) {
-		console.log(problemFeedbackMap[id]);
-		const num = parseInt(problemFeedbackMap[id].quality);
-		console.log(num, "NUM");
-		if (
-			problemFeedbackMap[id].quality == "" ||
-			(!isNaN(num) && num >= 1 && num <= 10)
-		) {
-			const feedback = [
-				{
-					problem_id: id,
-					testsolve_id: testsolve.id,
-					solver_id: testsolve.solver_id,
-					quality: num,
-				},
-			];
-			upsertProblemFeedback(feedback);
-		} else {
-			toast.error("You must enter an integer from 1-10, or leave it blank");
-			problemFeedbackMap[id].quality = "";
-		}
-		// Check if the value is within the range of 1 to 10 (inclusive)
+		upsertTestAnswer(test_taker.id, id, answersMap[id]);
 	}
 
 	async function completeTest() {
@@ -286,20 +189,20 @@
 					<div class="problem-div">
 						<p>
 							<span style="font-size: 30px;">
-								{problem.problem_number + 1}.
+								{problem.problem_number}.
 							</span>
 						</p>
 						<Latex
 							style="font-size: 16px"
-							value={problem.full_problems.problem_latex}
+							value={problem.problems.problem_latex}
 						/>
 					</div>
 					<div class="answer-div">
 						<div style="margin-top: 10px;">
 							<TextInput
 								labelText="Answer"
-								bind:value={problemFeedbackMap[problem.problem_id].answer}
-								on:blur={(e) => changeAnswer(e, problem.problem_id)}
+								bind:value={answersMap[problem.test_problem_id]}
+								on:blur={(e) => changeAnswer(e, problem.test_problem_id)}
 							/>
 						</div>
 					</div>
@@ -312,7 +215,7 @@
 </div>
     <div class="panel">
 		<p>Time elapsed: {formatTime(timeElapsed, { hideHours: false })}</p>+
-	</div>{/if}
+	</div>
 
 <style>
 	.problem-container {

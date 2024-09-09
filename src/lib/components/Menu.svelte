@@ -24,8 +24,8 @@
 
 	(async () => {
 		user = await getThisUser();
-		userRole = await getThisUserRole();
-		isAdmin = userRole >= 40;
+		//userRole = await getThisUserRole();
+		//isAdmin = userRole >= 40;
 		fullname = await getAuthorName(user.id);
 	})();
 
