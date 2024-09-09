@@ -159,3 +159,14 @@ export async function transferUser(user_id: string, to_admin: boolean) {
 		.insert(original_data);
 	if (error3) throw error3;
 }
+
+export async function editUser(user_id: string, isUserAdmin: boolean, user: any) {
+	let database = isUserAdmin ? "admin" : "student";
+
+	const { error } = await supabase
+		.from(database + "s")
+		.update(user)
+		.eq(database + "_id", user_id);
+
+	if (error) throw error;
+}
