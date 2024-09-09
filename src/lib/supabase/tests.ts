@@ -41,6 +41,7 @@ export async function getTestAnswers(
 }
 
 
+
 export async function upsertTestAnswer(test_taker_id, test_problem_id, answer) {
 	console.log("adding", answer);
     console.log("TAKERID", test_taker_id)
@@ -58,8 +59,8 @@ export async function upsertTestAnswer(test_taker_id, test_problem_id, answer) {
     }
 }
 
-export async function getTestTaker(test_id, user_id, customSelect = '*') {
-    console.log(test_id, user_id, customSelect);
+export async function getTestTaker(test_id, student_id, customSelect = '*') {
+    console.log(test_id, student_id, customSelect);
     try {
         // First, check if the test is a team-based test
         const { data: testData, error: testError } = await supabase
@@ -75,11 +76,11 @@ export async function getTestTaker(test_id, user_id, customSelect = '*') {
     
         if (isTeamTest) {
             // If it's a team-based test, retrieve the team_id from student_teams
-            console.log("USER",user_id)
+            console.log("USER",student_id)
             const { data: teamData, error: teamError } = await supabase
             .from('student_teams')
             .select('team_id')
-            .eq('student_id', user_id)
+            .eq('student_id', student_id)
             .single();
             console.log(teamError)
             if (teamError) throw teamError;
@@ -99,12 +100,12 @@ export async function getTestTaker(test_id, user_id, customSelect = '*') {
             console.log(testTakerData)
             return testTakerData;
         } else {
-            // If it's an individual test, retrieve the test_takers row using user_id
+            // If it's an individual test, retrieve the test_takers row using student_id
             const { data: testTakerData, error: testTakerError } = await supabase
             .from('test_takers')
             .select(customSelect)
             .eq('test_id', test_id)
-            .eq('user_id', user_id)
+            .eq('student_id', student_id)
             .single();
     
             if (testTakerError) throw testTakerError;

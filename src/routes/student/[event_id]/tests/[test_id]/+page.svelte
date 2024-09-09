@@ -47,7 +47,7 @@
 
 		if (!test_taker) {
 			throw new Error(
-				"Testsolve with id " + $page.params.test_id + " doesn't exist!"
+				"Test with id " + $page.params.test_id + " doesn't exist!"
 			);
 		}
 		console.log("TEST_TAKER", test_taker);
