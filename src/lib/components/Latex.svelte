@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { displayLatex } from "$lib/latexStuff";
-	import { ImageBucket } from "$lib/ImageBucket";
 	import { unifiedLatexToHast } from "@unified-latex/unified-latex-to-hast";
 	import { processLatexViaUnified } from "@unified-latex/unified-latex";
 	import rehypeStringify from "rehype-stringify";
@@ -15,9 +14,7 @@
 
 	async function loadLatex() {
 		try {
-			const imageDownloadResult = await ImageBucket.downloadLatexImages(value);
-
-			rendered = await displayLatex(value, imageDownloadResult.images);
+			rendered = await displayLatex(value);
 
 			let unifiedStr = processLatexViaUnified()
 				.use(unifiedLatexToHast)
