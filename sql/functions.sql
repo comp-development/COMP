@@ -31,5 +31,16 @@ create or replace function change_test_answer (
 ) returns void language plpgsql security definer as $$
     declare
         tt_id bigint;
-        
+    begin
+        select test_taker_id
+        into tt_id
+        from test_answers
+        where relation_id = rel_id;
+
+        if verify_auth(tt_id, auth.uid()) then
+            update test_answers
+            set answer_latex = new_ans
+            where relation_id = rel_id;
+        end if;
+    end;
 $$;
