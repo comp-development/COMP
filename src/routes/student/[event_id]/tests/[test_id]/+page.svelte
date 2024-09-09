@@ -10,17 +10,18 @@
 		getThisUser,
 		getTestTaker
 	} from "$lib/supabase";
-	import scheme from "$lib/scheme.json";
 
 	console.log("SUP")
 	let loading = true;
-	let disallowed = true;
+	let disallowed = false;
 
 	let user;
+	let test_taker;
 	(async () => {
 		user = await getThisUser();
 		console.log("USER_ID", user.id);
 		await getTest();
+		loading = false;
 	})();
 
 	async function deleteThisTestsolve() {
@@ -37,17 +38,19 @@
 	}
 
 	async function getTest() {
+		console.log("NUMBER", Number($page.params.test_id))
 		test_taker = await getTestTaker(
-			Number($page.params.id), 
-			user
+			Number($page.params.test_id), 
+			user.id
 		);
+		console.log("TEST_TAKER", test_taker);
 
-		if (test_taker.length === 0) {
+		if (!test_taker) {
 			throw new Error(
-				"Testsolve with id " + $page.params.id + " doesn't exist!"
+				"Testsolve with id " + $page.params.test_id + " doesn't exist!"
 			);
 		}
-		test_taker = test_taker[0];
+		console.log("TEST_TAKER", test_taker);
 	}
 
 	async function permissionCheck() {

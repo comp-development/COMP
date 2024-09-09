@@ -1,11 +1,3 @@
-<script>
-  import { upsertTestAnswer } from "$lib/supabase/tests";
-
-</script>
-<script>
-  import { getTestAnswers } from "$lib/supabase/tests";
-
-</script>
 <script lang="js">
 	import Latex from "$lib/components/Latex.svelte";
 	import {
@@ -15,7 +7,6 @@
 		Dropdown,
 	} from "carbon-components-svelte";
 	import { page } from "$app/stores";
-	import { TestsolveAnswer } from "$lib/TestsolveAnswer";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
 	import { formatTime } from "$lib/formatDate";
@@ -32,6 +23,7 @@
 	const dispatch = createEventDispatcher();
 
 	export let test_taker;
+    console.log("TESTAKER",test_taker)
     let answers = [];
     let problems = [];
 	let answersMap = {};
@@ -42,9 +34,8 @@
 	let timerInterval;
 
 	(async () => {
-		answers = await getTestAnswers(test_taker.test_id);
+		answers = await getTestAnswers(test_taker.test_taker_id);
 		await fetchProblems();
-		console.log("FEEDBACK", problemFeedback);
 		loading = false;
 	})()
 
@@ -56,14 +47,14 @@
 
 	// Listen to inserts
 	supabase
-		.channel("test-takers-" + test_taker.id)
+		.channel("test-takers-" + test_taker.test_taker_id)
 		.on(
 			"postgres_changes",
 			{
 				event: "UPDATE",
 				schema: "public",
 				table: "test_answers",
-				filter: "test_taker_id=eq." + test_taker.id,
+				filter: "test_taker_id=eq." + test_taker.test_taker_id,
 			},
 			handleAnswersUpsert
 		)
@@ -73,14 +64,14 @@
 				event: "INSERT",
 				schema: "public",
 				table: "test_answers",
-				filter: "test_taker_id=eq." + test_taker.id,
+				filter: "test_taker_id=eq." + test_taker.test_taker_id,
 			},
 			handleAnswersUpsert
 		)
 		.subscribe();
 
 	
-    //TBD
+    /**
 	if (!reviewing) {
 		timeElapsed = 0;
 		if (!testsolve.startTime) {
@@ -104,7 +95,9 @@
 	} else {
 		timeElapsed = testsolve.time_elapsed;
 	}
+    */
 
+    /**
 	onMount(() => {
 		// Handle beforeunload event
 		window.addEventListener("beforeunload", async () => {
@@ -117,23 +110,21 @@
 			await upsertProblemFeedback(final);
 		});
 	});
+    
 
 	onDestroy(async () => {
 		console.log("Destroying");
 		supabase.removeChannel("test-takers-" + test_taker.id);
 		timerInterval ?? clearInterval(timerInterval);
 	});
-
+    
+*/
 	async function fetchProblems() {
 		try {
-			problems = await getTestProblems(test_taker.test_id);
+			problems = await getTestProblems(test_taker.test_id, "*,problems(*)");
+            console.log("PROBS",problems)
+            console.log("ANS", answers)
 			answers.forEach((obj) => {
-				const filteredObj = Object.keys(obj)
-					.filter((key) => key in problemFeedbackObject)
-					.reduce((acc, key) => {
-						acc[key] = obj[key];
-						return acc;
-					}, {});
 				answersMap[obj.test_problem_id] = obj.answer_latex;
 			});
 			for (const problem of problems) {
@@ -142,6 +133,7 @@
 					answersMap[problem.test_problem_id] = "";
 				}
 			}
+            console.log(problems, answers, answersMap)
 			loading = false;
 		} catch (error) {
 			handleError(error);
@@ -153,8 +145,10 @@
 		return input.trim();
 	}
 
+    
+
 	function changeAnswer(e, id) {
-		upsertTestAnswer(test_taker.id, id, answersMap[id]);
+		upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
 	}
 
 	async function completeTest() {
