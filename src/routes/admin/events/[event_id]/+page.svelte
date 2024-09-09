@@ -8,27 +8,31 @@
 		Pagination,
 	} from "carbon-components-svelte";
     import { page } from "$app/stores";
-    import { getEventInformation, getEventTests } from "$lib/supabase";
+    import { getEventInformation, getEventTeams, getEventTests } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
     import Button from "$lib/components/Button.svelte";
 
     let eventId = $page.params.event_id;
     let pageSize = 25;
 	let pages = 1;
+	let pageSize2 = 25;
+	let pages2 = 1;
     let tests = [];
+	let teams = [];
     let event_information = {};
 
-    async function getTests() {
+    async function loadInformation() {
 		try {
 			tests = await getEventTests(Number(eventId));
+			teams = await getEventTeams(Number(eventId));
+			console.log(teams);
             event_information = await getEventInformation(Number(eventId));
-			console.log(tests);
 		} catch (error) {
 			handleError(error);
 		}
 	}
 
-	getTests();
+	loadInformation();
 </script>
 
 <br />
@@ -89,6 +93,59 @@
 			bind:pageSize
 			bind:page={pages}
 			totalItems={tests.length}
+			pageSizeInputDisabled
+		/>
+	{/if}
+</div>
+
+<br />
+<br />
+
+<p style="font-weight: bold;">Teams</p>
+<div style="margin-left: 10px; margin-right: 10px;">
+	{#if teams.length === 0}
+		<p>No teams</p>
+	{:else}
+		<DataTable
+			sortable
+			size="compact"
+			headers={[
+				{ key: "edit", value: "", width: "20px"},
+				{ key: "team_id", value: "ID" },
+				{ key: "team_name", value: "Name" },
+				{ key: "division", value: "Division" }
+			]}
+			rows={teams}
+			{pageSize2}
+			{pages2}
+		>
+			<Toolbar size="sm">
+				<ToolbarContent>
+					<ToolbarSearch persistent shouldFilterRows />
+				</ToolbarContent>
+			</Toolbar>
+
+			<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
+				<div>
+					{#if cell.key === "edit"}
+						<div class="pencil">
+							<Link class="link" href={"/admin/teams/" + row.student_id}
+								><i class="ri-pencil-fill" /></Link
+							>
+						</div>
+					{:else}
+						<div style="overflow: hidden;">
+							{cell.value == null || cell.value == "" ? "None" : cell.value}
+						</div>
+					{/if}
+				</div>
+			</svelte:fragment>
+		</DataTable>
+
+		<Pagination
+			bind:pageSize2
+			bind:page={pages2}
+			totalItems={teams.length}
 			pageSizeInputDisabled
 		/>
 	{/if}
