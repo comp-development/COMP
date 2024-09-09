@@ -59,6 +59,10 @@
 				<Link href="/admin/users" class={path == "/admin/users" ? "active link" : "link"}>
 					<p class="linkPara">Admin: Users</p>
 				</Link>
+				<br />
+				<Link href="/admin/events" class={path == "/admin/events" ? "active link" : "link"}>
+					<p class="linkPara">Admin: Events</p>
+				</Link>
 			{/if}
 			<div class="fixedHr" />
 			<Link on:click={handleSignout} class="link">
