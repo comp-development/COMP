@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Button from "$lib/components/Button.svelte";
+	import { Modal } from "carbon-components-svelte";
 	import { formatTime, formatDuration, addTime, subtractTime, isBefore, isAfter, diffBetweenDates } from "$lib/dateUtils";
 	import Loading from "$lib/components/Loading.svelte";
 	import toast from "svelte-french-toast";
@@ -16,6 +17,10 @@
 	} from "$lib/supabase";
 
 	let loading = true;
+
+	let open = false;
+	let instructions = ""
+	let name = ""
 
 	let availableTests = [];
 	let tests = [];
@@ -102,6 +107,13 @@
 								title={testStatusMap[test.test_id].status}
 								disabled={testStatusMap[test.test_id].disabled}
 							/>
+							<Button action={(e) => {
+									open = true;
+									instructions = test.instructions
+									name = test.test_name
+								}}
+								title={"Instructions"}
+							/>
 							
 						</div>
 						{testStatusMap[test.test_id].countdown}
@@ -115,6 +127,9 @@
 			/>
 		</div>
 		<br />
+		<Modal passiveModal bind:open modalHeading={name} on:open on:close>
+			{instructions}
+		</Modal>
 	{/if}
 </div>
 
