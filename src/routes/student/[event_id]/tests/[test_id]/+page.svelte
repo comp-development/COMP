@@ -1,26 +1,32 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import toast from "svelte-french-toast";
-	import { formatTime } from "$lib/formatDate";
+	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
 
 	import TestView from "$lib/components/TestView.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
 	import {
 		getThisUser,
-		getTestTaker
+		getTestTaker,
+		getTest,
+		getTeamId,
+		getTestAnswers
 	} from "$lib/supabase";
 
 	console.log("SUP")
 	let loading = true;
 	let disallowed = false;
 
+	let test_id = Number(($page.params.test_id))
+	let is_team = ($page.params.test_id).charAt(0) == "t" ? true : false
+
 	let user;
 	let test_taker;
 	(async () => {
 		user = await getThisUser();
 		console.log("USER_ID", user.id);
-		await getTest();
+		await getThisTestTaker();
 		loading = false;
 	})();
 
@@ -37,12 +43,19 @@
 		}
 	}
 
-	async function getTest() {
-		console.log("NUMBER", Number($page.params.test_id))
+	async function getThisTestTaker() {
+		const is_team = (await getTest(test_id)).is_team
+		let taker_id = user.id
+		if (is_team) {
+			taker_id = (await getTeamId(taker_id))
+		}
+		console.log("NUMBER", test_id)
 		test_taker = await getTestTaker(
-			Number($page.params.test_id), 
-			user.id
+			test_id, 
+			taker_id,
+			is_team
 		);
+		console.log("TAKER_ID", taker_id)
 		console.log("TEST_TAKER", test_taker);
 
 		if (!test_taker) {

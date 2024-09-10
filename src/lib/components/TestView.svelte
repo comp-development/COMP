@@ -9,7 +9,7 @@
 	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
-	import { formatTime } from "$lib/formatDate";
+	import { formatTime } from "$lib/dateUtils";
 	import { onDestroy, onMount } from "svelte";
 	import Button from "$lib/components/Button.svelte";
 	import toast from "svelte-french-toast";
@@ -222,7 +222,6 @@
 				</div>
 			{/each}
 		{/if}
-        <Button action={submitTest} title="Submit" />
 		<br />
 	</div>
 </div>
