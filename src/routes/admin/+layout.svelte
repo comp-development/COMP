@@ -1,16 +1,21 @@
 <script lang="ts">
     import { isAdmin } from "$lib/supabase";
+    import Loading from "$lib/components/Loading.svelte";
 
     let adminUser: boolean;
+    let loading = true;
 
     async function onPageLoad() {
         adminUser = await isAdmin();
+        loading = false;
     }
 
     onPageLoad();
 </script>
 
-{#if adminUser}
+{#if loading}
+    <Loading />
+{:else if adminUser}
     <div class="exterior">
         <slot />
     </div>

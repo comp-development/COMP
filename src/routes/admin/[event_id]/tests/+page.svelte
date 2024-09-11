@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Button from "$lib/components/Button.svelte";
-	import { Modal } from "carbon-components-svelte";
+	import { Modal, DatePicker, DatePickerInput, TimePicker, TimePickerSelect, SelectItem } from "carbon-components-svelte";
 	import { formatTime, formatDuration, addTime, subtractTime, isBefore, isAfter, diffBetweenDates } from "$lib/dateUtils";
 	import Loading from "$lib/components/Loading.svelte";
 	import toast from "svelte-french-toast";
@@ -28,6 +28,29 @@
 	let user = null;
 	let teamId = null;
 
+    let date = '';
+    let time = '';
+    let amPm = 'pm';
+    let timestampz = '';
+
+    let now = new Date();
+    console.log(now)
+    let year = now.getFullYear();
+    console.log(year)
+    let month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+    console.log(month)
+    let day = String(now.getDate()).padStart(2, '0');
+    console.log(day)
+    let hours = String((now.getHours() % 12) || 12 ).padStart(2, '0');
+    let minutes = String(now.getMinutes()).padStart(2, '0');
+    let currentAmPm = now.getHours() >= 12 ? 'pm' : 'am';
+
+    // Set default date and time
+    date = `${month}-${day}-${year}`;
+    console.log(date)
+    time = `${hours}:${minutes}`;
+    amPm = currentAmPm;
+
 	(async () => {
 		user = await getThisUser();
 		teamId = await getTeamId(user.id);
@@ -36,28 +59,29 @@
 		loading = false;
 	})();
 
+    function getUserTimeZone() {
+        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        console.log(userTimeZone)
+        const ret = timeZones.find(zone => zone.tzName === userTimeZone) || timeZones[0]; // Default to UTC if not found
+        console.log(ret)
+        return ret
+    }
+
 	const updateStatus = (test) => {
 		const currentTime = new Date();
 		const newStatus = {
 			status: 'Closed',
 			countdown: "",
-			disabled: true
 		}
 		if (!test.opening_time || currentTime < new Date(test.opening_time)) {
 			newStatus.status = 'Not Open'
 			if (test.opening_time) {
-				newStatus.countdown = "Time till test: " + formatDuration(diffBetweenDates(test.opening_time, currentTime, "seconds"))
+				newStatus.countdown = "Time till open: " + formatDuration(diffBetweenDates(test.opening_time, currentTime, "seconds"))
 			}
-			
 		}
-		else if (!test.start_time && isAfter(addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), currentTime)) {
-			newStatus.status = 'Start'
-			newStatus.countdown = "Time remaining: " + formatDuration(Math.min(test.length, Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds"))))
-			newStatus.disabled = false
-		}
-		else if (test.end_time && currentTime < new Date(test.end_time)) {
-			newStatus.status = 'Continue'
-			newStatus.disabled = false
+		else if (isAfter(addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), currentTime)) {
+			newStatus.status = 'Open'
+			newStatus.countdown = "Time remaining: " + formatDuration(Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds")))
 		}
 		testStatusMap[test.test_id] = {...testStatusMap[test.test_id], ...newStatus}
 	};
@@ -70,11 +94,8 @@
 	async function getTests() {
 		try {
 			tests = await getEventTests($page.params.event_id)
+			console.log(tests)
 			for (const test of tests) {
-				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team)
-				test.start_time = testTaker.start_time
-				test.end_time = testTaker.end_time
-				testStatusMap[test.test_id] = test
 				updateStatus(test)
 			}
 		} catch (error) {
@@ -104,19 +125,27 @@
 						</h4>
 						<div style="margin-top: 10px">
 							<Button
-								href="./tests/{test.test_id}"
-								title={testStatusMap[test.test_id].status}
-								disabled={testStatusMap[test.test_id].disabled}
+								href="./tests/{test.test_id}/edit"
+								title="Problems"
+							/>
+							<Button
+								href="./tests/{test.test_id}/grade"
+								title="Grade Test"
+							/>
+							<Button
+								href="./tests/{test.test_id}/results"
+								title="Results"
 							/>
 							<Button action={(e) => {
 									open = true;
 									instructions = test.instructions
 									name = test.test_name
 								}}
-								title={"Instructions"}
+								title={"Settings"}
 							/>
 							
 						</div>
+                        {testStatusMap[test.test_id].status}
 						{testStatusMap[test.test_id].countdown}
 					</div>
 					
@@ -128,7 +157,19 @@
 			/>
 		</div>
 		<br />
-		<Modal passiveModal bind:open modalHeading={name} on:open on:close>
+		<Modal bind:open modalHeading={name} on:open on:close>
+            Set open time:
+            <DatePicker bind:value={date} datePickerType="single" on:change>
+                <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
+            </DatePicker>
+            
+            <TimePicker labelText="Time" placeholder="hh:mm" bind:value={time}>
+                <TimePickerSelect bind:value={amPm}>
+                    <SelectItem value="am" text="AM" />
+                    <SelectItem value="pm" text="PM" />
+                </TimePickerSelect>
+            </TimePicker>
+
 			{instructions}
 		</Modal>
 	{/if}
