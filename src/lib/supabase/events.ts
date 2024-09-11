@@ -18,13 +18,13 @@ export async function getEventInformation(event_id:number, select:string="*") {
 	return data;
 }
 
-export async function getEventTests(event_id:number) {
-    const { data, error } = await supabase
-		.from('tests')
-		.select("*")
-        .eq('event_id', event_id);
-	if (error) throw error;
-	return data;
+export async function getEventTests(event_id:number, customSelect = "*") {
+    let { data, error } = await supabase
+        .from("tests")
+        .select(customSelect)
+        .eq("event_id", event_id);
+    if (error) throw error;
+    return data;
 }
 
 export async function getEventTeams(event_id:number) {

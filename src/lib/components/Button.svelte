@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Button } from "carbon-components-svelte";
 	export let title;
+	export let disabled = false;
 	export let action = null;
 	export let classs = "button";
 	export let icon = null;
@@ -8,12 +9,14 @@
 	export let fontSize = "1em";
 	export let buttonColor = null;
 	export let bwidth = "30em";
+	console.log("DISABLED",disabled)
 </script>
 
 {#if href}
 	<Button
 		kind="primary"
 		class={classs}
+		disabled={disabled}
 		size="small"
 		{href}
 		type="submit"
@@ -33,6 +36,7 @@
 	<Button
 		kind="primary"
 		class={classs}
+		disabled={disabled}
 		size="small"
 		on:click={action}
 		type="submit"

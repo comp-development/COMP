@@ -9,7 +9,7 @@
 	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
-	import { formatTime } from "$lib/formatDate";
+	import { formatTime } from "$lib/dateUtils";
 	import { onDestroy, onMount } from "svelte";
 	import Button from "$lib/components/Button.svelte";
 	import toast from "svelte-french-toast";
@@ -28,9 +28,9 @@
     let problems = [];
 	let answersMap = {};
     let loading = true;
-	let startTime = test_taker.start_time ? new Date(test_taker.start_time) : null;
-	let lastTime = test_taker.end_time ? new Date(test_taker.end_time) : null;
-	let timeElapsed;
+	let startTime = test_taker.start_time
+	let endTime = test_taker.end_time
+	let formattedTime = "0:00:00";
 	let timerInterval;
 
 	(async () => {
@@ -70,7 +70,26 @@
 		)
 		.subscribe();
 
-	
+	function updateTimer() {
+		if (!endTime) return;
+
+		const now = new Date().getTime(); // Current time in milliseconds
+		const endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
+
+		let timeRemaining = endTimeMs - now; // Calculate the time difference
+
+		// If time has passed, stop the timer
+		if (timeRemaining <= 0) {
+			timeRemaining = 0
+			clearInterval(timerInterval);
+			return;
+		}
+
+		// Format the time remaining using the provided formatTime function
+		formattedTime = formatTime(timeRemaining, { showMilliseconds: false, hideHours: false });
+	}
+	timerInterval = setInterval(updateTimer, 1000)
+
     /**
 	if (!reviewing) {
 		timeElapsed = 0;
@@ -203,12 +222,11 @@
 				</div>
 			{/each}
 		{/if}
-        <Button action={submitTest} title="Submit" />
 		<br />
 	</div>
 </div>
     <div class="panel">
-		<p>Time elapsed: {formatTime(timeElapsed, { hideHours: false })}</p>+
+		<p>Time remaining: {formattedTime}</p>
 	</div>
 
 <style>
