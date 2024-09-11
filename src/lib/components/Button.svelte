@@ -9,7 +9,6 @@
 	export let fontSize = "1em";
 	export let buttonColor = null;
 	export let bwidth = "30em";
-	console.log("DISABLED",disabled)
 </script>
 
 {#if href}
