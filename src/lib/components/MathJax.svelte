@@ -6,7 +6,9 @@
     let container;
 
     function renderMath() {
+        console.log("RENDERING", latex)
         if (window.MathJax && window.MathJax.typesetPromise) {
+            console.log(latex)
             container.innerHTML = latex;
             window.MathJax.typesetPromise([container])
                 .catch(err => console.error("MathJax typesetting error: ", err));
