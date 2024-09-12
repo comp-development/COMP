@@ -4,43 +4,51 @@
     export let latex = '';
 
     let container;
+    let mathJaxScriptLoaded = false;
 
+    // Function to render LaTeX content
     function renderMath() {
-        console.log("RENDERING", latex)
-        if (window.MathJax && window.MathJax.typesetPromise) {
-            console.log(latex)
-            container.innerHTML = latex;
-            window.MathJax.typesetPromise([container])
-                .catch(err => console.error("MathJax typesetting error: ", err));
-        }
-    }
-
-    function initMathJax() {
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                processEscapes: true,
-            },
-            startup: {
-                typeset: false,
-                pageReady: () => {
-                    renderMath();
-                }
+        if (window.MathJax && window.MathJax.Hub) {
+            if (container) {
+                container.innerHTML = latex;
+                window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, container]);
             }
-        };
+        }
     }
 
-    onMount(() => {
-        if (!window.MathJax) {
-            initMathJax();
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
-            script.async = true;
-            document.head.appendChild(script);
-        } else {
-            renderMath();
+    // Function to initialize MathJax
+    function initMathJax() {
+        if (window.MathJax) {
+            return Promise.resolve();
         }
+
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML';
+            script.async = true;
+            script.onload = () => {
+                window.MathJax.Hub.Config({
+                    tex2jax: {inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true},
+                    TeX: {extensions: ["AMSmath.js", "AMSsymbols.js"]},
+                    menuSettings: {context: "browser"}
+                });
+                resolve();
+            };
+            script.onerror = (err) => reject(err);
+            document.head.appendChild(script);
+        });
+    }
+
+    onMount(async () => {
+        if (!mathJaxScriptLoaded) {
+            try {
+                await initMathJax();
+                mathJaxScriptLoaded = true;
+            } catch (err) {
+                console.error("MathJax script loading error: ", err);
+            }
+        }
+        renderMath();
     });
 
     afterUpdate(() => {
@@ -48,5 +56,4 @@
     });
 </script>
 
-<!-- Only binding container without using {@html} to prevent full re-render -->
 <div bind:this={container}></div>
