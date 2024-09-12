@@ -5,47 +5,40 @@
 
     let container;
 
-    // Function to load MathJax script
-    function loadMathJax() {
-        return new Promise((resolve, reject) => {
-            if (window.MathJax) {
-                resolve(window.MathJax);
-                return;
-            }
-
-            window.MathJax = {
-                tex: {
-                    inlineMath: [['$', '$'], ['\\(', '\\)']],
-                    displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                    processEscapes: true,
-                },
-                startup: {
-                    typeset: false
-                }
-            };
-
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
-            script.async = true;
-            script.onload = () => resolve(window.MathJax);
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    }
-
-    // Function to render MathJax
-    async function renderMath() {
-        try {
-            const MathJax = await loadMathJax();
+    function renderMath() {
+        if (window.MathJax && window.MathJax.typesetPromise) {
             container.innerHTML = latex;
-            await MathJax.typesetPromise([container]);
-        } catch (err) {
-            console.error("MathJax loading or typesetting error: ", err);
+            window.MathJax.typesetPromise([container])
+                .catch(err => console.error("MathJax typesetting error: ", err));
         }
     }
 
+    function initMathJax() {
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+            },
+            startup: {
+                typeset: false,
+                pageReady: () => {
+                    renderMath();
+                }
+            }
+        };
+    }
+
     onMount(() => {
-        renderMath();
+        if (!window.MathJax) {
+            initMathJax();
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+            script.async = true;
+            document.head.appendChild(script);
+        } else {
+            renderMath();
+        }
     });
 
     afterUpdate(() => {
@@ -53,4 +46,5 @@
     });
 </script>
 
+<!-- Only binding container without using {@html} to prevent full re-render -->
 <div bind:this={container}></div>
