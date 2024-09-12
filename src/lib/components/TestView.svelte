@@ -1,5 +1,6 @@
 <script lang="js">
 	import Latex from "$lib/components/Latex.svelte";
+	import MathJax from "$lib/components/MathJax.svelte"
 	import {
 		Checkbox,
 		TextArea,
@@ -205,9 +206,8 @@
 								{problem.problem_number}.
 							</span>
 						</p>
-						<Latex
-							style="font-size: 16px"
-							value={problem.problems.problem_latex}
+						<MathJax
+							latex={problem.problems.problem_latex}
 						/>
 					</div>
 					<div class="answer-div">
@@ -217,6 +217,10 @@
 								bind:value={answersMap[problem.test_problem_id]}
 								on:blur={(e) => changeAnswer(e, problem.test_problem_id)}
 							/>
+							<MathJax
+								latex={answersMap[problem.test_problem_id]}
+							/>
+							{answersMap[problem.test_problem_id]}
 						</div>
 					</div>
 				</div>
