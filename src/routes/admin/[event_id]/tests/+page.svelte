@@ -11,8 +11,7 @@
 		getThisUser,
         getEventTests,
 		getTeamId,
-
-    getTestTaker
+		updateOpeningTime
 
 	} from "$lib/supabase";
 
@@ -28,67 +27,90 @@
 	let user = null;
 	let teamId = null;
 
-    let date = '';
-    let time = '';
-    let amPm = 'pm';
-    let timestampz = '';
+	let curTest = {};
 
-    let now = new Date();
-    console.log(now)
-    let year = now.getFullYear();
-    console.log(year)
-    let month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
-    console.log(month)
-    let day = String(now.getDate()).padStart(2, '0');
-    console.log(day)
-    let hours = String((now.getHours() % 12) || 12 ).padStart(2, '0');
-    let minutes = String(now.getMinutes()).padStart(2, '0');
-    let currentAmPm = now.getHours() >= 12 ? 'pm' : 'am';
+	function setupTime() {
+		let month, day, year, hours, minutes, currentAmPm
+		if (curTest.opening_time) {
+			const date = new Date(curTest.opening_time);
+			year = date.getFullYear();
+			month = String(date.getMonth() + 1).padStart(2,'0'); // months are zero-indexed
+			day = String(date.getDate()).padStart(2,'0');
+			hours = date.getHours();
+			currentAmPm = hours >= 12 ? 'pm' : 'am';
+			hours = String((hours % 12) || 12 ).padStart(2, '0');
+			minutes = String(date.getMinutes()).padStart(2, '0');
+		} else {
+			let now = new Date();
+			console.log(now)
+			year = now.getFullYear();
+			console.log(year)
+			month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+			console.log(month)
+			day = String(now.getDate()).padStart(2, '0');
+			console.log(day)
+			hours = now.getHours();
+			currentAmPm = hours >= 12 ? 'pm' : 'am';
+			hours = String((hours % 12) || 12 ).padStart(2, '0');
+			minutes = String(now.getMinutes()).padStart(2, '0');
+		}
 
-    // Set default date and time
-    date = `${month}-${day}-${year}`;
-    console.log(date)
-    time = `${hours}:${minutes}`;
-    amPm = currentAmPm;
+		// Set default date and time
+		curTest.date = `${month}/${day}/${year}`;
+		curTest.time = `${hours}:${minutes}`;
+		curTest.amPm = currentAmPm;
+	}
 
 	(async () => {
 		user = await getThisUser();
 		teamId = await getTeamId(user.id);
 		console.log("USER", user)
 		await getTests();
+		console.log(testStatusMap)
 		loading = false;
 	})();
 
-    function getUserTimeZone() {
-        const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        console.log(userTimeZone)
-        const ret = timeZones.find(zone => zone.tzName === userTimeZone) || timeZones[0]; // Default to UTC if not found
-        console.log(ret)
-        return ret
-    }
-
 	const updateStatus = (test) => {
 		const currentTime = new Date();
-		const newStatus = {
-			status: 'Closed',
-			countdown: "",
-		}
+		test.status = 'Closed'
+		test.countdown = ''
 		if (!test.opening_time || currentTime < new Date(test.opening_time)) {
-			newStatus.status = 'Not Open'
+			test.status = 'Not Open'
 			if (test.opening_time) {
-				newStatus.countdown = "Time till open: " + formatDuration(diffBetweenDates(test.opening_time, currentTime, "seconds"))
+				test.countdown = "Time till open: " + formatDuration(diffBetweenDates(test.opening_time, currentTime, "seconds"))
 			}
 		}
 		else if (isAfter(addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), currentTime)) {
-			newStatus.status = 'Open'
-			newStatus.countdown = "Time remaining: " + formatDuration(Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds")))
+			test.status = 'Open'
+			test.countdown = "Time remaining: " + formatDuration(Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds")))
 		}
-		testStatusMap[test.test_id] = {...testStatusMap[test.test_id], ...newStatus}
+		testStatusMap[test.test_id] = test
 	};
 
 	const interval = setInterval(() => {
       tests.forEach(updateStatus);
     }, 1000);
+
+	async function handleSubmit() {
+		let [hours, minutes] = curTest.time.split(':');
+		if (curTest.amPm === 'pm' && hours !== '12') {
+			hours = parseInt(hours) + 12;
+		} else if (curTest.amPm === 'am' && hours === '12') {
+		hours = '00'; // Handle midnight
+		}
+
+		const splitDate = curTest.date.split("/")
+		console.log(splitDate)
+		const year2 = splitDate[2];
+		const month2 = splitDate[0]
+		const day2 = splitDate[1]
+
+		const dateTimeString = `${year2}-${month2}-${day2}T${hours}:${minutes}:00`;
+		console.log(dateTimeString)
+		const timestampz = new Date(dateTimeString).toISOString(); // Supabase expects ISO format for timestamptz
+		console.log(timestampz)
+		await updateOpeningTime(curTest.test_id, timestampz)
+	}
 
 
 	async function getTests() {
@@ -137,9 +159,9 @@
 								title="Results"
 							/>
 							<Button action={(e) => {
+									curTest = test
+									setupTime()
 									open = true;
-									instructions = test.instructions
-									name = test.test_name
 								}}
 								title={"Settings"}
 							/>
@@ -157,20 +179,31 @@
 			/>
 		</div>
 		<br />
-		<Modal bind:open modalHeading={name} on:open on:close>
+		<Modal 
+			bind:open 
+			modalHeading={name} 
+			on:open 
+			on:close 
+			primaryButtonText="Save"
+			secondaryButtonText="Cancel" 
+			on:click:button--secondary={() => (open = false)}
+			hasScrollingContent
+			on:submit = {async () => {
+				open = false;
+				await handleSubmit();
+			}}
+		>
             Set open time:
-            <DatePicker bind:value={date} datePickerType="single" on:change>
+            <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
                 <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
             </DatePicker>
             
-            <TimePicker labelText="Time" placeholder="hh:mm" bind:value={time}>
-                <TimePickerSelect bind:value={amPm}>
+            <TimePicker labelText="Time" placeholder="hh:mm" bind:value={curTest.time}>
+                <TimePickerSelect bind:value={curTest.amPm}>
                     <SelectItem value="am" text="AM" />
                     <SelectItem value="pm" text="PM" />
                 </TimePickerSelect>
             </TimePicker>
-
-			{instructions}
 		</Modal>
 	{/if}
 </div>
