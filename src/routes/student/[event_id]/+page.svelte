@@ -33,8 +33,8 @@
     <p style="text-align: center;">
         Welcome to this tournament! Below is the information for the team you
         are registered in. If there is an issue, update the team information on
-        ContestDojo or email <a href="mailto:director@mustangmath.com"
-            >director@mustangmath.com</a
+        ContestDojo or email <a href="mailto:tournament@mustangmath.com"
+            >tournament@mustangmath.com</a
         >
     </p>
 

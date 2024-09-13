@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Button from "$lib/components/Button.svelte";
-	import { Modal } from "carbon-components-svelte";
+	import { Modal} from "carbon-components-svelte";
 	import { formatTime, formatDuration, addTime, subtractTime, isBefore, isAfter, diffBetweenDates } from "$lib/dateUtils";
 	import Loading from "$lib/components/Loading.svelte";
 	import toast from "svelte-french-toast";
@@ -11,8 +11,8 @@
 		getThisUser,
         getEventTests,
 		getTeamId,
-
-    getTestTaker
+		addTestTaker,
+    	getTestTaker
 
 	} from "$lib/supabase";
 
@@ -66,14 +66,22 @@
       tests.forEach(updateStatus);
     }, 1000);
 
+	async function handleTestStart(test) {
+		console.log(test)
+		if (!test.start_time || !test.end_time) {
+			await addTestTaker(test.test_id)
+		}
+	}
+
 
 	async function getTests() {
 		try {
 			tests = await getEventTests($page.params.event_id)
 			for (const test of tests) {
 				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team)
-				test.start_time = testTaker.start_time
-				test.end_time = testTaker.end_time
+				console.log("TAKER",testTaker)
+				test.start_time = testTaker ? testTaker.start_time : null
+				test.end_time = testTaker ? testTaker.end_time : null
 				testStatusMap[test.test_id] = test
 				updateStatus(test)
 			}
@@ -104,9 +112,13 @@
 						</h4>
 						<div style="margin-top: 10px">
 							<Button
-								href="./tests/{test.test_id}"
 								title={testStatusMap[test.test_id].status}
 								disabled={testStatusMap[test.test_id].disabled}
+								action={async (e) => {
+									e.preventDefault();
+									await handleTestStart(test);
+									window.location.href = `./tests/${test.test_id}`;
+								}}
 							/>
 							<Button action={(e) => {
 									open = true;
