@@ -1,20 +1,16 @@
 <script lang="js">
-	import Latex from "$lib/components/Latex.svelte";
-	import MathJax from "$lib/components/MathJax.svelte"
-	import { Tooltip, TextInput, Dropdown } from "carbon-components-svelte";
-	import { page } from "$app/stores";
+	import MathJax from "$lib/components/MathJax.svelte";
+	import { TextInput } from "carbon-components-svelte";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
 	import { formatTime } from "$lib/dateUtils";
-	import { onDestroy, onMount } from "svelte";
-	import Button from "$lib/components/Button.svelte";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import {
 		getTestProblems,
 		getTestAnswers,
 		upsertTestAnswer,
-        getProblemClarification,
+		getProblemClarification
 	} from "$lib/supabase";
 
 	const dispatch = createEventDispatcher();
@@ -25,6 +21,7 @@
 	let problems = [];
 	let answersMap = {};
 	let clarifications = {};
+	let saved = {};
 	let loading = true;
 	let startTime = test_taker.start_time;
 	let endTime = test_taker.end_time;
@@ -45,8 +42,9 @@
 
 	const changeProblemClarification = (payload) => {
 		console.log(payload);
-		clarifications[payload.new.test_problem_id] = payload.new.clarification_latex;
-	}
+		clarifications[payload.new.test_problem_id] =
+			payload.new.clarification_latex;
+	};
 
 	// Listen to inserts
 	supabase
@@ -72,7 +70,7 @@
 			handleAnswersUpsert,
 		)
 		.subscribe();
-	
+
 	supabase
 		.channel("problem-clarification-" + test_taker.test_taker_id)
 		.on(
@@ -80,7 +78,7 @@
 			{
 				event: "UPDATE",
 				schema: "public",
-				table: "problem_clarifications"
+				table: "problem_clarifications",
 			},
 			changeProblemClarification,
 		)
@@ -89,7 +87,7 @@
 			{
 				event: "INSERT",
 				schema: "public",
-				table: "problem_clarifications"
+				table: "problem_clarifications",
 			},
 			changeProblemClarification,
 		)
@@ -177,6 +175,7 @@
 			console.log("ANS", answers);
 			answers.forEach((obj) => {
 				answersMap[obj.test_problem_id] = obj.answer_latex;
+				saved[obj.test_problem_id] = obj.answer_latex;
 			});
 			for (const problem of problems) {
 				console.log("PROB", problem);
@@ -184,11 +183,15 @@
 					answersMap[problem.test_problem_id] = "";
 				}
 
-				const clarification = await getProblemClarification(problem.test_problem_id);
+				const clarification = await getProblemClarification(
+					problem.test_problem_id,
+				);
 				if (clarification && clarification.length > 0) {
-					clarifications[problem.test_problem_id] = clarification[0].clarification_latex;
+					clarifications[problem.test_problem_id] =
+						clarification[0].clarification_latex;
 				}
 			}
+
 			console.log(problems, answers, answersMap);
 			loading = false;
 		} catch (error) {
@@ -201,9 +204,14 @@
 		return input.trim();
 	}
 
-	function changeAnswer(e, id) {
-		upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
-		toast.success("Saved answer to problem " + id);
+	async function changeAnswer(e, id) {
+		try {
+			const data = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
+			if (!data) throw Error ("No answer inserted");
+			saved[id] = answersMap[id];
+		} catch (e) {
+			handleError(e);
+		}
 	}
 
 	async function completeTest() {
@@ -236,27 +244,19 @@
 			{#each problems as problem}
 				<div class="problem-container">
 					<div class="problem-div">
-						<div
-							style="display: flex; align-items: center;"
-						>
-							<p style="margin-bottom: 5px;">
-								<span
-									style="font-size: 20px; font-weight: bold;"
-								>
-									Problem {problem.problem_number}
-								</span>
-							</p>
-							<div>
-								{#if clarifications[problem.test_problem_id]}
-									<Tooltip>
-										<p>{clarifications[problem.test_problem_id]}</p>
-									</Tooltip>
-								{/if}
+						<p style="margin-bottom: 5px;">
+							<span style="font-size: 20px; font-weight: bold;">
+								Problem {problem.problem_number}
+							</span>
+						</p>
+						<br />
+						<MathJax latex={problem.problems.problem_latex} />
+						{#if clarifications[problem.test_problem_id]}
+							<br />
+							<div class="clarification">
+								<p><span style="font-weight: bold; color: red; padding: 10px;">!</span>{clarifications[problem.test_problem_id]}</p>
 							</div>
-						</div>
-						<MathJax
-							latex={problem.problems.problem_latex}
-						/>
+						{/if}
 						<div style="margin-top: 30px; width: 300px;">
 							<TextInput
 								labelText="Answer"
@@ -268,6 +268,14 @@
 							<MathJax
 								latex={answersMap[problem.test_problem_id]}
 							/>
+							{#if saved[problem.test_problem_id]}
+								<br />
+								<p
+									style="color: green; margin-bottom: 0; font-size: 12px;"
+								>
+									Saved {saved[problem.test_problem_id]}
+								</p>
+							{/if}
 						</div>
 						<br />
 					</div>
@@ -303,6 +311,12 @@
 
 	.inner-div {
 		width: 100%;
+	}
+
+	.clarification {
+		border: 2px solid var(--primary-light);
+		background-color: var(--primary-tint);
+		padding: 10px;
 	}
 
 	.questionsDiv {
