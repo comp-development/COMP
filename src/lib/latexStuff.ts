@@ -1,5 +1,4 @@
 import katex from "katex";
-import type { ProblemImage } from "./getProblemImages";
 import { processLatexViaUnified } from "@unified-latex/unified-latex";
 import { unifiedLatexToHast } from "@unified-latex/unified-latex-to-hast";
 import rehypeStringify from "rehype-stringify";
@@ -89,19 +88,19 @@ const placeholderEnd = "ENDPLACEHOLDER671384256";
 const placeholderRegex =
 	/PARSETHISIMAGELATER6358272(.*?)ENDPLACEHOLDER671384256/g;
 
-export async function displayLatex(str: string, images: ProblemImage[]) {
+export async function displayLatex(str: string, images: ProblemImage[]=[]) {
 	let errorList = [];
 
-	str = str.replaceAll(imageRegex, (_m, _settings, imageName) => {
-		return placeholderText + imageName + placeholderEnd;
-	});
+	// str = str.replaceAll(imageRegex, (_m, _settings, imageName) => {
+	// 	return placeholderText + imageName + placeholderEnd;
+	// });
 
 	let unifiedStr = str;
 	try {
 		unifiedStr = processor.processSync(str).value as string;
 	} catch (e) {
 		errorList.push({
-			error: e.toString(),
+			error: "1." + e.toString(),
 			sev: "err",
 		});
 	}
@@ -122,7 +121,7 @@ export async function displayLatex(str: string, images: ProblemImage[]) {
 		});
 	} catch (e) {
 		errorList.push({
-			error: e.toString(),
+			error: "2." + e.toString(),
 			sev: "warn",
 		});
 	}
@@ -137,7 +136,7 @@ export async function displayLatex(str: string, images: ProblemImage[]) {
 			});
 		} catch (e) {
 			errorList.push({
-				error: e.toString(),
+				error: "3." + e.toString(),
 				sev: "warn",
 			});
 		}
@@ -151,7 +150,7 @@ export async function displayLatex(str: string, images: ProblemImage[]) {
 			});
 		} catch (e) {
 			errorList.push({
-				error: e.toString(),
+				error: "4." + e.toString(),
 				sev: "warn",
 			});
 		}
@@ -160,26 +159,26 @@ export async function displayLatex(str: string, images: ProblemImage[]) {
 	let outHtml = fakeElem.innerHTML;
 
 	// insert images
-	outHtml = outHtml.replaceAll(placeholderRegex, (_m, imageName) => {
-		let image = images.find((img) => img.name === imageName);
-		let out = "";
-		if (!image) {
-			errorList.push({
-				error: "No image named " + imageName,
-				sev: "warn",
-			});
-		} else {
-			let scaleSetting = image.settings?.match(settingsRegex.scale) ?? [
-				"",
-				"1",
-			];
-			let percentage = Math.floor(parseFloat(scaleSetting[1]) * 100);
-			let dims = image.getDimensions();
-			dims.width *= percentage / 100;
-			out = `<img src='${image.url}' alt='${imageName}' style="width: ${dims.width}px; height: auto;" />`;
-		}
-		return out;
-	});
+	// outHtml = outHtml.replaceAll(placeholderRegex, (_m, imageName) => {
+	// 	let image = images.find((img) => img.name === imageName);
+	// 	let out = "";
+	// 	if (!image) {
+	// 		errorList.push({
+	// 			error: "No image named " + imageName,
+	// 			sev: "warn",
+	// 		});
+	// 	} else {
+	// 		let scaleSetting = image.settings?.match(settingsRegex.scale) ?? [
+	// 			"",
+	// 			"1",
+	// 		];
+	// 		let percentage = Math.floor(parseFloat(scaleSetting[1]) * 100);
+	// 		let dims = image.getDimensions();
+	// 		dims.width *= percentage / 100;
+	// 		out = `<img src='${image.url}' alt='${imageName}' style="width: ${dims.width}px; height: auto;" />`;
+	// 	}
+	// 	return out;
+	// });
 
 	return {
 		out: outHtml,

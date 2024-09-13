@@ -49,30 +49,34 @@
 				class="inputField"
 				labelText="First Name"
 				placeholder="Type here..."
+				disabled
 				bind:value={user.first_name}
 			/>
 			<TextInput
 				class="inputField"
 				labelText="Last Name"
 				placeholder="Type here..."
+				disabled
 				bind:value={user.last_name}
 			/>
 		</div>
 	</div>
 
-	{#if user.isAdmin}
+	{#if !user.isAdmin}
 		<div class="flex">
 			<div class="row">
 				<TextInput
 					class="inputField"
 					labelText="Grade"
 					placeholder="Type here..."
+					disabled
 					bind:value={user.grade}
 				/>
 				<TextInput
 					class="inputField"
 					labelText="ContestDojo ID"
 					placeholder="Type here..."
+					disabled
 					bind:value={user.contest_dojo_id}
 				/>
 			</div>
@@ -83,12 +87,14 @@
 					class="inputField"
 					labelText="Email"
 					placeholder="Type here..."
+					disabled
 					bind:value={user.email}
 				/>
 				<TextInput
 					class="inputField"
 					labelText="Division"
 					placeholder="Type here..."
+					disabled
 					bind:value={user.division}
 				/>
 			</div>
@@ -96,9 +102,9 @@
 	{/if}
 
 	<br />
-	<div class="flex">
+	<!--<div class="flex">
 		<Button title="Submit" action={onSubmit} />
-	</div>
+	</div>-->
 {/if}
 
 <style>
