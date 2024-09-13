@@ -5,7 +5,7 @@
 	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
-	import { formatTime } from "$lib/dateUtils";
+	import { formatDuration } from "$lib/dateUtils";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import {
@@ -103,7 +103,7 @@
 		const endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
 
 		let timeRemaining = endTimeMs - now; // Calculate the time difference
-
+		console.log("REMAIN", timeRemaining)
 		// If time has passed, stop the timer
 		if (timeRemaining <= 0) {
 			timeRemaining = 0;
@@ -112,10 +112,7 @@
 		}
 
 		// Format the time remaining using the provided formatTime function
-		formattedTime = formatTime(timeRemaining, {
-			showMilliseconds: false,
-			hideHours: false,
-		});
+		formattedTime = formatDuration(timeRemaining/1000)
 	}
 	timerInterval = setInterval(updateTimer, 1000);
 
@@ -257,7 +254,12 @@
 						{#if clarifications[problem.test_problem_id]}
 							<br />
 							<div class="clarification">
-								<p><span style="font-weight: bold; color: red; padding: 10px;">!</span>{clarifications[problem.test_problem_id]}</p>
+								<p>
+									<span style="font-weight: bold; color: var(--error-dark); padding: 10px;">!</span>
+									<span style="display: inline-block; vertical-align: middle;">
+										<MathJax math={clarifications[problem.test_problem_id]}/>
+									</span>
+								</p>
 							</div>
 						{/if}
 						<div style="margin-top: 30px; width: 300px;">

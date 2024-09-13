@@ -135,6 +135,7 @@
 		--primary-tint: #d9f5e2;
 		--error-tint: #ffe0e0;
 		--error-light:#ff8a8a;
+		--error-dark: #ff3636;
 		--secondary: #213d44;
 		--secondary-light: #1b9aaa;
 		--secondary-dark: #061333;

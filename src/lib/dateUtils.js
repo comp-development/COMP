@@ -17,8 +17,8 @@ function padZeros(str, len) {
  * @returns {String} - The formatted time
  */
 export function formatTime(date, format = 'HH:mm:ss') {
-	return moment(date).format(format);
-  }
+	  return moment(date).format(format);
+}
   
 
 
