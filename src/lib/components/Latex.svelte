@@ -15,6 +15,8 @@
 	async function loadLatex() {
 		try {
 			rendered = await displayLatex(value);
+			console.log("RENDEREDDDDDDDDDDDDDDDDDDDDD");
+			console.log(rendered);
 
 			let unifiedStr = processLatexViaUnified()
 				.use(unifiedLatexToHast)
