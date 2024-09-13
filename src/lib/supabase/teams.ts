@@ -7,11 +7,10 @@ export async function getTeam(student_id, customSelect = "*") {
             .from('student_teams')
             .select('team_id')
             .eq('student_id', student_id)
-            .single();
 
         if (studentTeamError) throw studentTeamError;
 
-        if (!studentTeamData) {
+        if (!studentTeamData || studentTeamData.length <= 0) {
             // If no team is found for the student
             return null;
         }
@@ -20,10 +19,19 @@ export async function getTeam(student_id, customSelect = "*") {
         const { data: teamData, error: teamError } = await supabase
             .from('teams')
             .select(customSelect)
-            .eq('team_id', studentTeamData.team_id)
+            .eq('team_id', studentTeamData[0].team_id)
             .single();
 
         if (teamError) throw teamError;
+
+        const { data, error } = await supabase
+            .from('student_teams')
+            .select('*, students(first_name, last_name)')
+            .eq('team_id', studentTeamData[0].team_id);
+        
+        if (error) throw error;
+
+        teamData["teamMembers"] = data;
 
         return teamData;
     } catch (error) {

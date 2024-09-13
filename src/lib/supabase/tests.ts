@@ -30,6 +30,7 @@ export async function getTestAnswers(
 	test_taker_id: number,
 	customSelect: string = "*"
 ) {
+    console.log("GET TEST ANSWERS");
 	console.log(test_taker_id);
 	console.log(customSelect);
 	let { data, error } = await supabase
@@ -51,7 +52,7 @@ export async function getTest(test_id, customSelect = "*") {
     return data;
 }
 
-export async function upsertTestAnswer(test_taker_id, test_problem_id, answer) {
+export async function upsertTestAnswer(test_taker_id: number, test_problem_id: number, answer: string) {
 	console.log("adding", answer);
     console.log("TAKERID", test_taker_id)
 	const { data, error } = await supabase
@@ -61,11 +62,10 @@ export async function upsertTestAnswer(test_taker_id, test_problem_id, answer) {
             p_test_problem_id: test_problem_id
         });
 
-    if (error) {
-        console.error('Error calling function:', error);
-    } else {
-        console.log('Function result:', data);
-    }
+    if (error) { throw error; }
+    
+    console.log('Function result:', data);
+    return data;
 }
 
 export async function getTestTaker(test_id, taker_id, is_team = false, customSelect = '*') {
@@ -100,4 +100,17 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
         console.error('Error retrieving test taker:', error);
         return null;
     }
+}
+
+export async function updateOpeningTime(test_id, openingTime) {
+    const { data, error } = await supabase
+        .from('tests')
+        .update({ opening_time: openingTime })
+        .eq('test_id', test_id);
+
+    if (error) {
+        throw error;
+    }
+
+    return true;
 }
