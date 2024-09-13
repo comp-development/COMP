@@ -101,3 +101,16 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
         return null;
     }
 }
+
+export async function updateOpeningTime(test_id, openingTime) {
+    const { data, error } = await supabase
+        .from('tests')
+        .update({ opening_time: openingTime })
+        .eq('test_id', test_id);
+
+    if (error) {
+        throw error;
+    }
+
+    return true;
+}
