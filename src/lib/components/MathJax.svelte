@@ -1,22 +1,20 @@
 <script>
     import { onMount, afterUpdate } from 'svelte';
 
-    export let latex = '';
+    export let math = '';
 
     let container;
     let mathJaxScriptLoaded = false;
 
-    // Function to render LaTeX content
     function renderMath() {
         if (window.MathJax && window.MathJax.Hub) {
             if (container) {
-                container.innerHTML = latex;
+                container.innerHTML = math;
                 window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, container]);
             }
         }
     }
 
-    // Function to initialize MathJax
     function initMathJax() {
         if (window.MathJax) {
             return Promise.resolve();
