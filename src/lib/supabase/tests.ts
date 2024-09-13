@@ -30,6 +30,7 @@ export async function getTestAnswers(
 	test_taker_id: number,
 	customSelect: string = "*"
 ) {
+    console.log("GET TEST ANSWERS");
 	console.log(test_taker_id);
 	console.log(customSelect);
 	let { data, error } = await supabase
@@ -51,9 +52,23 @@ export async function getTest(test_id, customSelect = "*") {
     return data;
 }
 
-export async function upsertTestAnswer(test_taker_id, test_problem_id, answer) {
+export async function addTestTaker(test_id) {
+    console.log("TESTID",test_id)
+    const { data, error } = await supabase
+        .rpc('add_test_taker', {
+            p_test_id: test_id,
+        });
+
+    if (error) { throw error; }
+    
+    console.log('Function result:', data);
+    return data;
+}
+
+export async function upsertTestAnswer(test_taker_id: number, test_problem_id: number, answer: string) {
 	console.log("adding", answer);
     console.log("TAKERID", test_taker_id)
+    console.log("ANSWSER", answer)
 	const { data, error } = await supabase
         .rpc('upsert_test_answer', {
             p_answer: answer,
@@ -61,11 +76,10 @@ export async function upsertTestAnswer(test_taker_id, test_problem_id, answer) {
             p_test_problem_id: test_problem_id
         });
 
-    if (error) {
-        console.error('Error calling function:', error);
-    } else {
-        console.log('Function result:', data);
-    }
+    if (error) { throw error; }
+    
+    console.log('Function result:', data);
+    return data;
 }
 
 export async function getTestTaker(test_id, taker_id, is_team = false, customSelect = '*') {
