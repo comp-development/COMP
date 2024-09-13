@@ -5,6 +5,7 @@
 	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
 
 	import TestView from "$lib/components/TestView.svelte";
+	import MathJax from "$lib/components/MathJax.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
 	import {
@@ -112,7 +113,7 @@
 	<div style="padding: 20px;">
 		<ExpandableTile light expanded tileExpandedLabel="View less" tileCollapsedLabel="View more">
 			<div slot="above"><p style="font-weight: bold">Test Instructions</p></div>
-			<div slot="below">{test.instructions}</div>
+			<div slot="below"><MathJax math={test.instructions} /></div>
 		</ExpandableTile>
 		<br />
 		<TestView {test_taker} />

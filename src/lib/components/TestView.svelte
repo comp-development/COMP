@@ -103,7 +103,6 @@
 		const endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
 
 		let timeRemaining = endTimeMs - now; // Calculate the time difference
-		console.log("REMAIN", timeRemaining)
 		// If time has passed, stop the timer
 		if (timeRemaining <= 0) {
 			timeRemaining = 0;
@@ -207,7 +206,6 @@
 	async function changeAnswer(e, id) {
 		try {
 			const data = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
-			if (!data) throw Error ("No answer inserted");
 			saved[id] = answersMap[id];
 		} catch (e) {
 			handleError(e);
