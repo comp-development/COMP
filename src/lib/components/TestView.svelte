@@ -1,6 +1,8 @@
 <script lang="js">
-	import MathJax from "$lib/components/MathJax.svelte";
-	import { TextInput } from "carbon-components-svelte";
+	import Katex from "$lib/components/Katex.svelte";
+	import MathJax from "$lib/components/MathJax.svelte"
+	import { Tooltip, TextInput, Dropdown } from "carbon-components-svelte";
+	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
 	import { formatTime } from "$lib/dateUtils";
@@ -12,6 +14,7 @@
 		upsertTestAnswer,
 		getProblemClarification
 	} from "$lib/supabase";
+  import { mathlifier } from "mathlifier";
 
 	const dispatch = createEventDispatcher();
 
@@ -155,7 +158,7 @@
 			await upsertProblemFeedback(final);
 		});
 	});
-    
+     
 
 	onDestroy(async () => {
 		console.log("Destroying");
@@ -250,7 +253,7 @@
 							</span>
 						</p>
 						<br />
-						<MathJax latex={problem.problems.problem_latex} />
+						<MathJax math={problem.problems.problem_latex} />
 						{#if clarifications[problem.test_problem_id]}
 							<br />
 							<div class="clarification">
@@ -265,8 +268,8 @@
 									changeAnswer(e, problem.test_problem_id)}
 							/>
 							<br />
-							<MathJax
-								latex={answersMap[problem.test_problem_id]}
+							<Katex
+								value={answersMap[problem.test_problem_id]}
 							/>
 							{#if saved[problem.test_problem_id]}
 								<br />
@@ -314,8 +317,8 @@
 	}
 
 	.clarification {
-		border: 2px solid var(--primary-light);
-		background-color: var(--primary-tint);
+		border: 2px solid var(--error-light);
+		background-color: var(--error-tint);
 		padding: 10px;
 	}
 
