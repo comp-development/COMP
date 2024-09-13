@@ -29,33 +29,15 @@
 
 	let curTest = {};
 
-	function setupTime() {
+	function setupTime(date) {
 		let month, day, year, hours, minutes, currentAmPm
-		if (curTest.opening_time) {
-			const date = new Date(curTest.opening_time);
-			year = date.getFullYear();
-			month = String(date.getMonth() + 1).padStart(2,'0'); // months are zero-indexed
-			day = String(date.getDate()).padStart(2,'0');
-			hours = date.getHours();
-			currentAmPm = hours >= 12 ? 'pm' : 'am';
-			hours = String((hours % 12) || 12 ).padStart(2, '0');
-			minutes = String(date.getMinutes()).padStart(2, '0');
-		} else {
-			let now = new Date();
-			console.log(now)
-			year = now.getFullYear();
-			console.log(year)
-			month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
-			console.log(month)
-			day = String(now.getDate()).padStart(2, '0');
-			console.log(day)
-			hours = now.getHours();
-			currentAmPm = hours >= 12 ? 'pm' : 'am';
-			hours = String((hours % 12) || 12 ).padStart(2, '0');
-			minutes = String(now.getMinutes()).padStart(2, '0');
-		}
-
-		// Set default date and time
+		year = date.getFullYear();
+		month = String(date.getMonth() + 1).padStart(2,'0'); // months are zero-indexed
+		day = String(date.getDate()).padStart(2,'0');
+		hours = date.getHours();
+		currentAmPm = hours >= 12 ? 'pm' : 'am';
+		hours = String((hours % 12) || 12 ).padStart(2, '0');
+		minutes = String(date.getMinutes()).padStart(2, '0');
 		curTest.date = `${month}/${day}/${year}`;
 		curTest.time = `${hours}:${minutes}`;
 		curTest.amPm = currentAmPm;
@@ -110,6 +92,7 @@
 		const timestampz = new Date(dateTimeString).toISOString(); // Supabase expects ISO format for timestamptz
 		console.log(timestampz)
 		await updateOpeningTime(curTest.test_id, timestampz)
+		curTest.opening_time = timestampz
 	}
 
 
@@ -160,10 +143,10 @@
 							/>
 							<Button action={(e) => {
 									curTest = test
-									setupTime()
+									setupTime(curTest.openingTime ? new Date(curTest.openingTime) : new Date())
 									open = true;
 								}}
-								title={"Settings"}
+								title={"Open Test"}
 							/>
 							
 						</div>
@@ -186,12 +169,13 @@
 			on:close 
 			primaryButtonText="Save"
 			secondaryButtonText="Cancel" 
+			size="lg"
 			on:click:button--secondary={() => (open = false)}
-			hasScrollingContent
 			on:submit = {async () => {
 				open = false;
 				await handleSubmit();
 			}}
+			
 		>
             Set open time:
             <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
@@ -204,6 +188,14 @@
                     <SelectItem value="pm" text="PM" />
                 </TimePickerSelect>
             </TimePicker>
+
+			<Button 
+				action={() => {
+					setupTime(new Date())
+				}}
+				title={"Now"}
+			/>
+			<br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 		</Modal>
 	{/if}
 </div>
