@@ -133,6 +133,8 @@
 		--primary-light: #65c083;
 		--primary-dark: #5b8064;
 		--primary-tint: #d9f5e2;
+		--error-tint: #ffe0e0;
+		--error-light:#ff8a8a;
 		--secondary: #213d44;
 		--secondary-light: #1b9aaa;
 		--secondary-dark: #061333;

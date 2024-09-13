@@ -158,7 +158,7 @@
 			await upsertProblemFeedback(final);
 		});
 	});
-    
+     
 
 	onDestroy(async () => {
 		console.log("Destroying");
@@ -252,24 +252,14 @@
 								Problem {problem.problem_number}
 							</span>
 						</p>
-						<div>
-							{#if clarifications[problem.test_problem_id]}
-								<Tooltip>
-									<p>{clarifications[problem.test_problem_id]}</p>
-								</Tooltip>
-							{/if}
-						</div>
 						<br />
-						<MathJax latex={problem.problems.problem_latex} />
+						<MathJax math={problem.problems.problem_latex} />
 						{#if clarifications[problem.test_problem_id]}
 							<br />
 							<div class="clarification">
 								<p><span style="font-weight: bold; color: red; padding: 10px;">!</span>{clarifications[problem.test_problem_id]}</p>
 							</div>
-						</div>
-						<Katex
-							value={problem.problems.problem_latex}
-						/>
+						{/if}
 						<div style="margin-top: 30px; width: 300px;">
 							<TextInput
 								labelText="Answer"
@@ -327,8 +317,8 @@
 	}
 
 	.clarification {
-		border: 2px solid var(--primary-light);
-		background-color: var(--primary-tint);
+		border: 2px solid var(--error-light);
+		background-color: var(--error-tint);
 		padding: 10px;
 	}
 
