@@ -37,73 +37,7 @@
 		loading = false;
 	})();
 
-	async function deleteThisTestsolve() {
-		try {
-			if (isAdmin) {
-				await deleteTestsolve(Number($page.params.id));
-				toast.success("Successfully deleted testsolve!");
-				window.location.href = "/admin/testsolves";
-			}
-		} catch (error) {
-			handleError(error);
-			toast.error(error.message);
-		}
-	}
 
-	async function getThisTestTaker() {
-		const is_team = (await getTest(test_id)).is_team;
-		let taker_id = user.id;
-		if (is_team) {
-			taker_id = await getTeamId(taker_id);
-		}
-		console.log("NUMBER", test_id);
-		test_taker = await getTestTaker(test_id, taker_id, is_team);
-		console.log("TAKER_ID", taker_id);
-		console.log("TEST_TAKER", test_taker);
-
-		if (!test_taker) {
-			throw new Error(
-				"Test with id " + $page.params.test_id + " doesn't exist!",
-			);
-		}
-		console.log("TEST_TAKER", test_taker);
-	}
-
-	async function permissionCheck() {
-		try {
-			if ((await getThisUserRole()) === 40) {
-				console.log("Here");
-				disallowed = false;
-				isAdmin = true;
-			}
-			console.log("THERE");
-			console.log("TESTSOLVE2", testsolve);
-			console.log("TEST_ID", testsolve.test_id);
-
-			if (await checkIfTestCoordinator(testsolve.test_id, user.id)) {
-				disallowed = false;
-				isAdmin = true;
-			}
-			console.log("solverIds2", solverIds);
-			if (solverIds.has(user.id)) {
-				disallowed = false;
-				isAdmin = false;
-				if (testsolve.status == "Not Started") {
-					await updateTestsolve(testsolve.id, {
-						status: "Testsolving",
-					});
-					await getTestsolve();
-				}
-			}
-
-			console.log("testsolve", testsolve);
-
-			loading = false;
-		} catch (error) {
-			handleError(error);
-			toast.error(error.message);
-		}
-	}
 </script>
 
 <div class="problem-container">
