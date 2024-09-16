@@ -34,9 +34,13 @@
 	let formattedTime = "0:00:00";
 	let timerInterval;
 
+	let currentField;
+	let prevAnswer;
+
 	let open = false;
 
 	(async () => {
+		updateTimer()
 		answers = await getTestAnswers(test_taker.test_taker_id);
 		answers.forEach((obj) => {
 			answersMap[obj.test_problem_id] = obj.answer_latex;
@@ -44,6 +48,12 @@
 		});
 		await fetchProblems();
 	})();
+
+	function handleFocus(event) {
+		console.log("EVENT", event)
+		prevAnswer = event.target.value
+        currentField = event.target;
+    }
 
 	// Create a function to handle inserts
 	const handleAnswersUpsert = (payload) => {
@@ -125,12 +135,15 @@
 
 		const now = new Date().getTime(); // Current time in milliseconds
 		const endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
+		const startTimeDate = new Date(startTime)
 
 		let timeRemaining = endTimeMs - now; // Calculate the time difference
 		// If time has passed, stop the timer
-		if (timeRemaining <= 0) {
+		if (timeRemaining <= 0 || now < startTimeDate) {
 			timeRemaining = 0;
+			saveFinalAnswer();
 			clearInterval(timerInterval);
+			//window.location.href = './'
 			return;
 		}
 
@@ -154,7 +167,28 @@
 	});
      */
 
+	function saveFinalAnswer() {
+		console.log("Saving")
+        if (currentField) {
+            const event = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+            });
+
+            currentField.dispatchEvent(event);
+        }
+    }
+
+	function waitForFiveSeconds() {
+		return new Promise(resolve => setTimeout(resolve, 5000)); // 5000 milliseconds = 5 seconds
+	}
+
 	onDestroy(async () => {
+		saveFinalAnswer();
 		console.log("Destroying");
 		if (test_answers_channel) {
 			test_answers_channel.unsubscribe()
@@ -163,6 +197,7 @@
 			problem_clarifications_channel.unsubscribe()
 		}
 		timerInterval ?? clearInterval(timerInterval);
+
 	});
 
 
@@ -209,9 +244,13 @@
 
 	async function changeAnswer(e, id) {
 		try {
-			console.log("HELLO", id, answersMap[id])
-			const data = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
-			saved[id] = answersMap[id];
+			const upsertSuccess = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
+			console.log("SUCCESSFUL UPSERT", upsertSuccess)
+			if (upsertSuccess == 'Upsert succeeded') {
+				saved[id] = answersMap[id]
+			} else {
+				answersMap[id]=prevAnswer
+			}
 		} catch (e) {
 			handleError(e);
 		}
@@ -259,6 +298,7 @@
 							<TextInput
 								labelText="Answer"
 								bind:value={answersMap[problem.test_problem_id]}
+								on:focus={handleFocus}
 								on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
 								on:blur={(e) =>
 									changeAnswer(e, problem.test_problem_id)}
