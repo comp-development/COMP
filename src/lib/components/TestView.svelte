@@ -14,7 +14,8 @@
 		getTestProblems,
 		getTestAnswers,
 		upsertTestAnswer,
-		getProblemClarification
+		getProblemClarification,
+		updateTest
 	} from "$lib/supabase";
   import { mathlifier } from "mathlifier";
 
@@ -48,6 +49,7 @@
 	const handleAnswersUpsert = (payload) => {
 		console.log("UPSERT", payload);
 		answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
+		saved[payload.new.test_problem_id] = payload.new.answer_latex;
 	};
 
 	const changeProblemClarification = (payload) => {
@@ -207,6 +209,7 @@
 
 	async function changeAnswer(e, id) {
 		try {
+			console.log("HELLO", id, answersMap[id])
 			const data = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
 			saved[id] = answersMap[id];
 		} catch (e) {
@@ -256,6 +259,7 @@
 							<TextInput
 								labelText="Answer"
 								bind:value={answersMap[problem.test_problem_id]}
+								on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
 								on:blur={(e) =>
 									changeAnswer(e, problem.test_problem_id)}
 							/>

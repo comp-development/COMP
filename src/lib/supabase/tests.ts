@@ -89,8 +89,6 @@ export async function upsertTestAnswer(test_taker_id: number, test_problem_id: n
         });
 
     if (error) { throw error; }
-    
-    console.log('Function result:', data);
     return data;
 }
 
@@ -128,10 +126,10 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
     }
 }
 
-export async function updateOpeningTime(test_id, openingTime) {
+export async function updateTest(test_id, testData) {
     const { data, error } = await supabase
         .from('tests')
-        .update({ opening_time: openingTime })
+        .update(testData)
         .eq('test_id', test_id);
 
     if (error) {
