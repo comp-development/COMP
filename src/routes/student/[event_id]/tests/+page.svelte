@@ -55,7 +55,7 @@
 			newStatus.countdown = "Time remaining: " + formatDuration(Math.min(test.length, Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds"))))
 			newStatus.disabled = false
 		}
-		else if (test.end_time && currentTime < new Date(test.end_time)) {
+		else if (test.end_time && currentTime < new Date(test.end_time) && currentTime > new Date(test.start_time)) {
 			newStatus.status = 'Continue'
 			newStatus.disabled = false
 		}
