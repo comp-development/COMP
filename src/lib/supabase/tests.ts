@@ -77,8 +77,6 @@ export async function upsertTestAnswer(test_taker_id: number, test_problem_id: n
         });
 
     if (error) { throw error; }
-    
-    console.log('Function result:', data);
     return data;
 }
 
