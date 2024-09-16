@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import toast from "svelte-french-toast";
-	import { ExpandableTile } from "carbon-components-svelte";
+	import { ExpandableTile, TextArea } from "carbon-components-svelte";
 	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
-
 	import TestView from "$lib/components/TestView.svelte";
 	import MathJax from "$lib/components/MathJax.svelte";
 	import Button from "$lib/components/Button.svelte";
@@ -14,15 +13,16 @@
 		getTest,
 		getTeamId,
 		getTestAnswers,
-		updateTest
+		updateTest,
 	} from "$lib/supabase";
 
 	console.log("SUP");
 	let loading = true;
 
-    let titleEditable = false;
+	let titleEditable = false;
 	let lengthEditable = false;
 	let bufferEditable = false;
+	let instructionsEditable = false;
 
 	let test_id = Number($page.params.test_id);
 	let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
@@ -39,22 +39,26 @@
 
 	async function updateTitle(event) {
 		titleEditable = false;
-		console.log("TARGET",event.target.innerText)
-		
+		console.log("TARGET", event.target.innerText);
+
 		test.test_name = event.target.innerText;
-		await updateTest(test.test_id, test)
+		await updateTest(test.test_id, test);
 	}
 
-	async function updateLength(event)  {
+	async function updateLength(event) {
 		lengthEditable = false;
 		test.length = parseInt(event.target.innerText);
-		await updateTest(test.test_id, test)
+		await updateTest(test.test_id, test);
 	}
 
-	async function updateBuffer(event)  {
+	async function updateBuffer(event) {
 		bufferEditable = false;
 		test.buffer_time = parseInt(event.target.innerText);
-		await updateTest(test.test_id, test)
+		await updateTest(test.test_id, test);
+	}
+
+	async function updateInstructions(event) {
+		test.instructions = event.target.value;
 	}
 </script>
 
@@ -66,70 +70,106 @@
 		contenteditable={titleEditable}
 		class:editable={titleEditable}
 		on:click={() => {
-			titleEditable = true
+			titleEditable = true;
 		}}
 		on:blur={async (e) => {
-			await updateTitle(e)
+			await updateTitle(e);
 		}}
 		on:keypress={async (e) => {
-			e.key == "Enter" && await updateTitle(e)
+			e.key == "Enter" && (await updateTitle(e));
 		}}
 	>
-	{test.test_name}</h1>
+		{test.test_name}
+	</h1>
 	<div>
-		Test Length (seconds):<br>
+		Test Length (seconds):<br />
 		<p
 			contenteditable={lengthEditable}
 			class:editable={lengthEditable}
 			on:click={() => {
-				lengthEditable = true
+				lengthEditable = true;
 			}}
 			on:blur={async (e) => {
-				await updateLength(e)
+				await updateLength(e);
 			}}
 			on:keypress={async (e) => {
-				e.key == "Enter" && await updateLength(e)
+				e.key == "Enter" && (await updateLength(e));
 			}}
 		>
 			{test.length}
 		</p>
 	</div>
 	<div>
-		Test Buffer (seconds):<br>
+		Test Buffer (seconds):<br />
 		<p
 			contenteditable={bufferEditable}
 			class:editable={bufferEditable}
 			on:click={() => {
-				bufferEditable = true
+				bufferEditable = true;
 			}}
 			on:blur={async (e) => {
-				await updateBuffer(e)
+				await updateBuffer(e);
 			}}
 			on:keypress={async (e) => {
-				e.key == "Enter" && await updateBuffer(e)
+				e.key == "Enter" && (await updateBuffer(e));
 			}}
 		>
 			{test.buffer_time}
 		</p>
 	</div>
-	<div style="padding: 20px;">
-		<ExpandableTile light expanded tileExpandedLabel="View less" tileCollapsedLabel="View more">
-			<div slot="above"><p style="font-weight: bold">Test Instructions</p></div>
-			<div slot="below"><MathJax math={test.instructions} /></div>
-		</ExpandableTile>
+	<br />
+	<Button
+		title="Save Changes"
+		action={async () => {
+			try {
+				await updateTest(test.test_id, test);
+				toast.success("Successfully saved");
+			} catch (e) {
+				await handleError(e);
+			}
+		}}
+	/>
+	<br />
+	<div class="box box-basic">
+		<p style="font-weight: bold; font-size: 24px;">Test Instructions</p>
+		<div class="row">
+			<div>
+				<TextArea
+					class="textArea"
+					bind:value={test.instructions}
+					on:input={(e) => updateInstructions(e)}
+					required={true}
+				/>
+			</div>
+			<div>
+				<MathJax math={test.instructions} />
+			</div>
+		</div>
 		<br />
 	</div>
-	<br />
+	<div class="box-basic">
+		<p style="font-weight: bold; font-size: 24px;">Problem Rearrangement</p>
+	</div>
 {/if}
 
 <style>
 	h1 {
 		text-align: center;
-        cursor: pointer;
+		cursor: pointer;
 	}
 
-    h1.editable {
-        border: 1px dashed #000000;
-        outline: none;
-    }
+	h1.editable {
+		border: 1px dashed #000000;
+		outline: none;
+	}
+
+	.box {
+		border: 1px dashed #000000;
+		padding: 10px;
+	}
+
+	.box-basic {
+		margin: 20px;
+		text-align: left;
+	}
 </style>

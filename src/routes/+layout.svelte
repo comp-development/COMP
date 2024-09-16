@@ -32,7 +32,11 @@
 
 <svelte:head>
 	<link rel="icon" type="image/png" href="https://mustangmath.com/logo.png" />
-	<link rel="og:image" type="image/png" href="https://mustangmath.com/logo.png" />
+	<link
+		rel="og:image"
+		type="image/png"
+		href="https://mustangmath.com/logo.png"
+	/>
 	<title>Mustang Math Tournament Platform</title>
 	<meta
 		name="description"
@@ -108,9 +112,12 @@
 			</div>
 		</div>
 	{:else}
-		<Menu />
-		<br />
-		<slot />
+		<div class="menu-split">
+			<Menu />
+			<div>
+				<slot />
+			</div>
+		</div>
 	{/if}
 </main>
 
@@ -125,7 +132,7 @@
 		--medium-gap: 20px;
 		--small-gap: 10px;
 
-        --text-color-light: #fff;
+		--text-color-light: #fff;
 		--text-color-dark: #000;
 		--background: #f5fffb;
 		--background-dark: #dcfff1;
@@ -134,7 +141,7 @@
 		--primary-dark: #5b8064;
 		--primary-tint: #d9f5e2;
 		--error-tint: #ffe0e0;
-		--error-light:#ff8a8a;
+		--error-light: #ff8a8a;
 		--error-dark: #ff3636;
 		--secondary: #213d44;
 		--secondary-light: #1b9aaa;
@@ -149,8 +156,8 @@
 	}
 
 	:global(::placeholder),
-    :global(body),
-    :global(input) {
+	:global(body),
+	:global(input) {
 		font-family: var(--font-family);
 	}
 
@@ -458,6 +465,11 @@
 		margin: 0;
 		padding: 0;
 		background-color: var(--background);
+	}
+
+	.menu-split {
+		display: grid;
+		grid-template-columns: 10% 90%;
 	}
 
 	.loadingPage {
