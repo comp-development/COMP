@@ -12,7 +12,8 @@
 		getTestProblems,
 		getTestAnswers,
 		upsertTestAnswer,
-		getProblemClarification
+		getProblemClarification,
+		updateTest
 	} from "$lib/supabase";
   import { mathlifier } from "mathlifier";
 
