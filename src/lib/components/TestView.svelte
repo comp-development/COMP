@@ -1,7 +1,9 @@
 <script lang="js">
+	import {onDestroy} from 'svelte';
+	import Button from "$lib/components/Button.svelte";
 	import Katex from "$lib/components/Katex.svelte";
 	import MathJax from "$lib/components/MathJax.svelte"
-	import { Tooltip, TextInput, Dropdown } from "carbon-components-svelte";
+	import { Tooltip, TextInput, Dropdown, Modal } from "carbon-components-svelte";
 	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
@@ -16,9 +18,9 @@
 	} from "$lib/supabase";
   import { mathlifier } from "mathlifier";
 
-	const dispatch = createEventDispatcher();
-
 	export let test_taker;
+	export let num_pages = 1;
+	export let is_team = false;
 	console.log("TESTAKER", test_taker);
 	let answers = [];
 	let problems = [];
@@ -31,10 +33,15 @@
 	let formattedTime = "0:00:00";
 	let timerInterval;
 
+	let open = false;
+
 	(async () => {
 		answers = await getTestAnswers(test_taker.test_taker_id);
+		answers.forEach((obj) => {
+			answersMap[obj.test_problem_id] = obj.answer_latex;
+			saved[obj.test_problem_id] = obj.answer_latex;
+		});
 		await fetchProblems();
-		loading = false;
 	})();
 
 	// Create a function to handle inserts
@@ -49,8 +56,12 @@
 			payload.new.clarification_latex;
 	};
 
-	// Listen to inserts
-	supabase
+	let test_answers_channel;
+	let problem_clarifications_channel;
+
+	// Listen to inserts if team test
+	if (is_team) {
+		test_answers_channel = supabase
 		.channel("test-takers-" + test_taker.test_taker_id)
 		.on(
 			"postgres_changes",
@@ -73,10 +84,15 @@
 			handleAnswersUpsert,
 		)
 		.subscribe();
+	}
+	
 
 	function subscribeToChannels() {
-		supabase
-			.channel("problem-clarification-for-test-" + test_taker.test_id)
+		if (problem_clarifications_channel) {
+			problem_clarifications_channel.unsubscribe()
+		}
+		problem_clarifications_channel = supabase
+			.channel("problem-clarification-for-test-" + test_taker.test_id + "-page-" + test_taker.page_number)
 			.on(
 				"postgres_changes",
 				{
@@ -134,28 +150,31 @@
 			await upsertProblemFeedback(final);
 		});
 	});
-     
+     */
 
 	onDestroy(async () => {
 		console.log("Destroying");
-		supabase.removeChannel("test-takers-" + test_taker.id);
+		if (test_answers_channel) {
+			test_answers_channel.unsubscribe()
+		}
+		if (problem_clarifications_channel) {
+			problem_clarifications_channel.unsubscribe()
+		}
 		timerInterval ?? clearInterval(timerInterval);
 	});
-    
-*/
+
+
 	async function fetchProblems() {
 		try {
+			loading = true
 			problems = await getTestProblems(
 				test_taker.test_id,
+				test_taker.page_number,
 				"*,problems(*)",
 			);
 			subscribeToChannels();
 			console.log("PROBS", problems);
 			console.log("ANS", answers);
-			answers.forEach((obj) => {
-				answersMap[obj.test_problem_id] = obj.answer_latex;
-				saved[obj.test_problem_id] = obj.answer_latex;
-			});
 			for (const problem of problems) {
 				console.log("PROB", problem);
 				if (!(problem.test_problem_id in answersMap)) {
@@ -170,13 +189,16 @@
 						clarification[0].clarification_latex;
 				}
 			}
-
-			console.log(problems, answers, answersMap);
 			loading = false;
 		} catch (error) {
 			handleError(error);
 			toast.error(error.message);
 		}
+	}
+
+	async function handleContinue() {
+		test_taker.page_number += 1
+		await fetchProblems();
 	}
 
 	function sanitizeInput(input) {
@@ -189,16 +211,6 @@
 			saved[id] = answersMap[id];
 		} catch (e) {
 			handleError(e);
-		}
-	}
-
-	async function completeTest() {
-		try {
-			await updateTestsolve(testsolve.id, { time_elapsed: timeElapsed });
-			dispatch("complete");
-		} catch (error) {
-			handleError(error);
-			toast.error(error.message);
 		}
 	}
 
@@ -268,14 +280,42 @@
 	</div>
 </div>
 <div class="panel">
-	<p>Time remaining: {formattedTime}</p>
+	<p>Time remaining: {formattedTime}</p> <!--Make tooltip in line with time remaining-->
+	<Tooltip>
+		<p>Answers are automatically submitted when time runs out.</p>
+	</Tooltip>
+	{#if test_taker.page_number < num_pages}
+		<Button action={(e) => {
+			open = true;
+		}}
+			title={"Continue"}
+		/>
+	{:else}
+		
+	{/if}
 </div>
+
+<Modal 
+	bind:open 
+	modalHeading={"Submit Current Set?"} 
+	on:open 
+	on:close 
+	primaryButtonText="Submit"
+	secondaryButtonText="Cancel" 
+	size="sm"
+	on:click:button--secondary={() => (open = false)}
+	on:submit = {async () => {
+		open = false;
+		await handleContinue();
+	}}
+>
+	<p>Are you sure you want to submit the current set{#if is_team} for your team{/if}? This action cannot be undone.</p>
+</Modal>
 
 <style>
 	.problem-container {
 		display: flex;
 	}
-
 	.problem-div,
 	.feedback-div {
 		background-color: var(--text-color-light);
