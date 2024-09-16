@@ -116,7 +116,7 @@
 			<div slot="below"><MathJax math={test.instructions} /></div>
 		</ExpandableTile>
 		<br />
-		<TestView {test_taker} />
+		<TestView {test_taker} is_team={test.is_team} num_pages={test.settings.num_pages} />
 	</div>
 	<br />
 {/if}

@@ -8,15 +8,27 @@ import { supabase } from "../supabaseClient";
  */
 export async function getTestProblems(
 	test_id: number,
+    page_num: number,
 	customSelect: string = "*",
 ) {
-	let { data, error } = await supabase
-		.from("test_problems")
-		.select(customSelect)
-		.eq("test_id", test_id)
-		.order("problem_number");
-	if (error) throw error;
-	return data;
+    if (page_num) {
+        let { data, error } = await supabase
+            .from("test_problems")
+            .select(customSelect)
+            .eq("test_id", test_id)
+            .eq("page_number", page_num)
+            .order("problem_number");
+        if (error) throw error;
+        return data;
+    } else {
+        let { data, error } = await supabase
+            .from("test_problems")
+            .select(customSelect)
+            .eq("test_id", test_id)
+            .order("problem_number");
+        if (error) throw error;
+        return data;
+    }
 }
 
 /**
