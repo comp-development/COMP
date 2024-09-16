@@ -44,7 +44,7 @@
 	};
 
 	const changeProblemClarification = (payload) => {
-		console.log(payload);
+		console.log("CLARIFY", payload);
 		clarifications[payload.new.test_problem_id] =
 			payload.new.clarification_latex;
 	};
@@ -74,27 +74,33 @@
 		)
 		.subscribe();
 
-	supabase
-		.channel("problem-clarification-" + test_taker.test_taker_id)
-		.on(
-			"postgres_changes",
-			{
-				event: "UPDATE",
-				schema: "public",
-				table: "problem_clarifications",
-			},
-			changeProblemClarification,
-		)
-		.on(
-			"postgres_changes",
-			{
-				event: "INSERT",
-				schema: "public",
-				table: "problem_clarifications",
-			},
-			changeProblemClarification,
-		)
-		.subscribe();
+	function subscribeToChannels() {
+		supabase
+			.channel("problem-clarification-for-test-" + test_taker.test_id)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "problem_clarifications",
+					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+				},
+				changeProblemClarification,
+			)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "problem_clarifications",
+					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+				},
+				changeProblemClarification,
+			)
+			.subscribe();
+	}
+
+	
 
 	function updateTimer() {
 		if (!endTime) return;
@@ -114,32 +120,6 @@
 		formattedTime = formatDuration(timeRemaining/1000)
 	}
 	timerInterval = setInterval(updateTimer, 1000);
-
-	/**
-	if (!reviewing) {
-		timeElapsed = 0;
-		if (!testsolve.startTime) {
-			(async () => {
-				updateTestsolve(testsolve.id, {
-					start_time: startTime,
-					time_elapsed: 0,
-				});
-			})();
-		}
-		console.log(testsolve);
-		function updateTimer() {
-			if (!startTime) return;
-			timeElapsed =
-				new Date().getTime() -
-				startTime.getTime() +
-				(testsolve.time_elapsed ? testsolve.time_elapsed : 0);
-		}
-
-		timerInterval = setInterval(updateTimer, 1000);
-	} else {
-		timeElapsed = testsolve.time_elapsed;
-	}
-    */
 
 	/**
 	onMount(() => {
@@ -169,7 +149,7 @@
 				test_taker.test_id,
 				"*,problems(*)",
 			);
-
+			subscribeToChannels();
 			console.log("PROBS", problems);
 			console.log("ANS", answers);
 			answers.forEach((obj) => {
