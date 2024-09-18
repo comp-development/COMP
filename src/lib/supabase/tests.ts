@@ -96,7 +96,7 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
     console.log(test_id, taker_id, is_team, customSelect);
     try {
         if (is_team) {
-            // If it's a team-based test, retrieve the team_id from student_teams
+            // If it's a team-based test, retrieve the team_id from student_events
             const { data: testTakerData, error: testTakerError } = await supabase
             .from('test_takers')
             .select(customSelect)
