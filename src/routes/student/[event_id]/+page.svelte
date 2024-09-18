@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from "$app/stores";
+    import Button from "$lib/components/Button.svelte";
     import {
         getEventInformation,
         getTeam,
@@ -37,6 +38,11 @@
             >tournament@mustangmath.com</a
         >
     </p>
+    <br />
+    <div class="flex">
+        <Button title="Take Tests" href={"/student/" + event_id + "/tests"} />
+    </div>
+    <br />
 
     <div class="team_info">
         {#if team}
@@ -46,8 +52,9 @@
             {#each team.teamMembers as teamMember}
                 {#if teamMember.students}
                     <div style="display: flex; align-items: center;">
-                        <Tag type="green">{teamMember.front_id}</Tag>
-                        <p>
+                        <Tag type={teamMember.student_id == user.student_id ? "outline" : "warm-gray"}>{teamMember.front_id}</Tag>
+                        <p> 
+                            {teamMember.student_id == user.student_id ? "(Me!) " : ""}
                             {teamMember.students.first_name}
                             {teamMember.students.last_name}
                         </p>

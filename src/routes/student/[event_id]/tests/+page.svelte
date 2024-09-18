@@ -1,59 +1,146 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from "$app/stores";
 	import Button from "$lib/components/Button.svelte";
-	import { Modal} from "carbon-components-svelte";
-	import { formatTime, formatDuration, addTime, subtractTime, isBefore, isAfter, diffBetweenDates } from "$lib/dateUtils";
-	import Loading from "$lib/components/Loading.svelte";
+	import { Button as SvelteButton } from "carbon-components-svelte";
+	import Document from "carbon-icons-svelte/lib/Document.svelte";
+	import { Modal, Tag } from "carbon-components-svelte";
+	import { writable } from "svelte/store";
+	import {
+		formatDuration,
+		addTime,
+		isAfter,
+		diffBetweenDates,
+	} from "$lib/dateUtils";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
-	import { onDestroy, onMount } from "svelte";
 	import {
 		getThisUser,
-        getEventTests,
+		getEventTests,
 		getTeamId,
 		addTestTaker,
-    	getTestTaker
-
+		getTestTaker,
 	} from "$lib/supabase";
+	import MathJax from "$lib/components/MathJax.svelte";
+	import { supabase } from "$lib/supabaseClient";
 
 	let loading = true;
 
 	let open = false;
-	let instructions = ""
-	let name = ""
+	let instructions = "";
+	let name = "";
 
 	let availableTests = [];
 	let tests = [];
-	let testStatusMap = {};
+	const testStatusMap = writable({});
 	let user = null;
 	let teamId = null;
+
+	const handleTestTimeUpdate = (payload) => {
+		console.log("PAYLOAD", payload);
+		testStatusMap.update((map) => {
+			const updatedMap = { ...map };
+			updatedMap[payload.new.test_id].opening_time =
+				payload.new.opening_time;
+			return updatedMap;
+		});
+	};
+
+	const handleTestTakerUpdate = (payload) => {
+		console.log("PAYLOAD", payload);
+		testStatusMap.update((map) => {
+			const updatedMap = { ...map };
+			updatedMap[payload.new.test_id].start_time = payload.new.start_time;
+			updatedMap[payload.new.test_id].end_time = payload.new.end_time;
+			return updatedMap;
+		});
+	};
 
 	(async () => {
 		user = await getThisUser();
 		teamId = await getTeamId(user.id);
-		console.log("USER", user)
+		console.log("USER", user);
 		await getTests();
 		loading = false;
+
+		// Listen to inserts
+		supabase
+			.channel("test-takers-" + (user ? user.id : ""))
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "test_takers",
+					filter: "student_id=eq." + (user ? user.id : ""),
+				},
+				handleTestTakerUpdate,
+			)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "tests",
+				},
+				handleTestTimeUpdate,
+			)
+			.subscribe();
 	})();
 
 	const updateStatus = (test) => {
 		const currentTime = new Date();
 		const newStatus = {
-			status: 'Closed',
+			status: "Closed",
 			countdown: "",
-			disabled: true
-		}
+			disabled: true,
+		};
 		if (!test.opening_time || currentTime < new Date(test.opening_time)) {
-			newStatus.status = 'Not Open'
+			newStatus.status = "Not Open";
 			if (test.opening_time) {
-				newStatus.countdown = "Time till test: " + formatDuration(diffBetweenDates(test.opening_time, currentTime, "seconds"))
+				newStatus.countdown =
+					"Time till test: " +
+					formatDuration(
+						diffBetweenDates(
+							test.opening_time,
+							currentTime,
+							"seconds",
+						),
+					);
 			}
-			
-		}
-		else if (!test.start_time && isAfter(addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), currentTime)) {
-			newStatus.status = 'Start'
-			newStatus.countdown = "Time remaining: " + formatDuration(Math.min(test.length, Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds"))))
-			newStatus.disabled = false
+		} else if (
+			!test.start_time &&
+			isAfter(
+				addTime(
+					new Date(test.opening_time),
+					test.length + test.buffer_time,
+					"seconds",
+				),
+				currentTime,
+			)
+		) {
+			newStatus.status = "Start";
+			newStatus.countdown =
+				"Time remaining: " +
+				formatDuration(
+					Math.min(
+						test.length,
+						Math.abs(
+							diffBetweenDates(
+								currentTime,
+								addTime(
+									new Date(test.opening_time),
+									test.length + test.buffer_time,
+									"seconds",
+								),
+								"seconds",
+							),
+						),
+					),
+				);
+			newStatus.disabled = false;
+		} else if (test.end_time && currentTime < new Date(test.end_time)) {
+			newStatus.status = "Continue";
+			newStatus.disabled = false;
 		}
 		else if (test.end_time && currentTime < new Date(test.end_time) && currentTime > new Date(test.start_time)) {
 			newStatus.status = 'Continue'
@@ -63,20 +150,19 @@
 	};
 
 	const interval = setInterval(() => {
-      tests.forEach(updateStatus);
-    }, 1000);
+		tests.forEach(updateStatus);
+	}, 1000);
 
 	async function handleTestStart(test) {
-		console.log(test)
+		console.log(test);
 		if (!test.start_time || !test.end_time) {
-			await addTestTaker(test.test_id)
+			await addTestTaker(test.test_id);
 		}
 	}
 
-
 	async function getTests() {
 		try {
-			tests = await getEventTests($page.params.event_id)
+			tests = await getEventTests($page.params.event_id);
 			for (const test of tests) {
 				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team)
 				console.log("TAKER",testTaker, test)
@@ -93,55 +179,77 @@
 </script>
 
 <br />
-<h1>Tests</h1>
+<h1 style="text-align: center;">Tests</h1>
+<br />
+<div class="flex">
+	<Button href="." title={"Back"} />
+</div>
 <br />
 <div>
 	{#if loading}
-		<Loading />
+		<p>Loading...</p>
 	{:else if tests.length === 0}
 		<p>No available tests!</p>
 	{:else}
 		<div class="buttonContainer">
 			{#each tests as test}
 				<div>
-					<div
-						class="problemContainer"
-					>
-						<h4>
-							{test.test_name}
-						</h4>
-						<div style="margin-top: 10px">
-							<Button
-								title={testStatusMap[test.test_id].status}
-								disabled={testStatusMap[test.test_id].disabled}
-								action={async (e) => {
+					<div class="problemContainer">
+						<div>
+							<div class="flex" style="align-items: center;">
+								<h4>
+									{test.test_name}
+								</h4>
+								<Tag type="green"
+									>{test.is_team ? "Team" : "Individual"}</Tag
+								>
+								<Tag type="green">{test.division}</Tag>
+							</div>
+							<p>
+								Start Time: {new Date(
+									test.opening_time,
+								).toLocaleString([], {
+									year: "numeric",
+									month: "numeric",
+									day: "numeric",
+									hour: "2-digit",
+									minute: "2-digit",
+								})}
+							</p>
+							<p>Duration: {test.length / 60} mins</p>
+						</div>
+						<div class="flex">
+							<p style="margin-right: 10px;">
+								{$testStatusMap[test.test_id].countdown}
+							</p>
+							<button
+								disabled={$testStatusMap[test.test_id].disabled}
+								on:click={async (e) => {
 									e.preventDefault();
 									await handleTestStart(test);
 									window.location.href = `./tests/${test.test_id}`;
 								}}
-							/>
-							<Button action={(e) => {
+							>
+								{$testStatusMap[test.test_id].status}
+							</button>
+							<SvelteButton
+								kind="ghost"
+								iconDescription="Instructions"
+								icon={Document}
+								on:click={() => {
 									open = true;
-									instructions = test.instructions
-									name = test.test_name
+									instructions = test.instructions;
+									name = test.test_name;
 								}}
-								title={"Instructions"}
 							/>
-							
 						</div>
-						{testStatusMap[test.test_id].countdown}
 					</div>
-					
 				</div>
 			{/each}
-			<Button
-				href="."
-				title={"Back"}
-			/>
 		</div>
 		<br />
 		<Modal passiveModal bind:open modalHeading={name} on:open on:close>
-			{instructions}
+			<MathJax math={instructions} />
 		</Modal>
 	{/if}
 </div>
@@ -150,15 +258,34 @@
 	.problemContainer {
 		background-color: white;
 		border: 3px solid var(--primary-tint);
-		padding: 10px;
+		padding: 20px;
 		margin: 10px;
 		border-radius: 20px;
-		text-align: center;
 		font-weight: bold;
 		text-decoration: none;
-		display: block;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		color: var(--text-color-dark);
 		transition: all 0.3s ease; /* Add transition for smooth hover effect */
+	}
+
+	.problemContainer h4 {
+		font-weight: bold;
+		margin-right: 5px;
+	}
+
+	.problemContainer button {
+		outline: none;
+		border: none;
+		padding: 10px 30px;
+		border-radius: 10px;
+		background-color: #a7f0ba;
+	}
+
+	button:disabled,
+	button[disabled] {
+		cursor: not-allowed;
 	}
 
 	.problemContainer:hover {
