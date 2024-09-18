@@ -30,29 +30,20 @@
 	let name = "";
 
 	let availableTests = [];
-	let tests = [];
-	const testStatusMap = writable({});
+	let testStatusMap = {};
+	$: tests = Object.values(testStatusMap);
 	let user = null;
 	let teamId = null;
 
 	const handleTestTimeUpdate = (payload) => {
-		console.log("PAYLOAD", payload);
-		testStatusMap.update((map) => {
-			const updatedMap = { ...map };
-			updatedMap[payload.new.test_id].opening_time =
-				payload.new.opening_time;
-			return updatedMap;
-		});
+		console.log("TIME PAYLOAD", payload.new);
+		testStatusMap[payload.new.test_id] = {...testStatusMap[payload.new.test_id], ...payload.new}
+		return
 	};
 
 	const handleTestTakerUpdate = (payload) => {
-		console.log("PAYLOAD", payload);
-		testStatusMap.update((map) => {
-			const updatedMap = { ...map };
-			updatedMap[payload.new.test_id].start_time = payload.new.start_time;
-			updatedMap[payload.new.test_id].end_time = payload.new.end_time;
-			return updatedMap;
-		});
+		console.log("TAKER PAYLOAD", payload.new);
+		testStatusMap[payload.new.test_id] = {...testStatusMap[payload.new.test_id], ...payload.new}
 	};
 
 	(async () => {
@@ -78,7 +69,26 @@
 			.on(
 				"postgres_changes",
 				{
+					event: "INSERT",
+					schema: "public",
+					table: "test_takers",
+					filter: "student_id=eq." + (user ? user.id : ""),
+				},
+				handleTestTakerUpdate,
+			)
+			.on(
+				"postgres_changes",
+				{
 					event: "UPDATE",
+					schema: "public",
+					table: "tests",
+				},
+				handleTestTimeUpdate,
+			)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
 					schema: "public",
 					table: "tests",
 				},
@@ -94,7 +104,12 @@
 			countdown: "",
 			disabled: true,
 		};
-		if (!test.opening_time || currentTime < new Date(test.opening_time)) {
+
+		if (test.start_time && test.end_time && currentTime < new Date(test.end_time) && currentTime > new Date(test.start_time)) {
+			newStatus.status = 'Continue'
+			newStatus.disabled = false
+		}
+		else if (!test.opening_time || currentTime < new Date(test.opening_time)) {
 			newStatus.status = "Not Open";
 			if (test.opening_time) {
 				newStatus.countdown =
@@ -108,7 +123,6 @@
 					);
 			}
 		} else if (
-			!test.start_time &&
 			isAfter(
 				addTime(
 					new Date(test.opening_time),
@@ -138,37 +152,29 @@
 					),
 				);
 			newStatus.disabled = false;
-		} else if (test.end_time && currentTime < new Date(test.end_time)) {
-			newStatus.status = "Continue";
-			newStatus.disabled = false;
-		}
-		else if (test.end_time && currentTime < new Date(test.end_time) && currentTime > new Date(test.start_time)) {
-			newStatus.status = 'Continue'
-			newStatus.disabled = false
-		}
+		} 
 		testStatusMap[test.test_id] = {...testStatusMap[test.test_id], ...newStatus}
 	};
 
 	const interval = setInterval(() => {
-		tests.forEach(updateStatus);
+		Object.values(testStatusMap).forEach(updateStatus);
 	}, 1000);
 
 	async function handleTestStart(test) {
-		console.log(test);
-		if (!test.start_time || !test.end_time) {
-			await addTestTaker(test.test_id);
-		}
+		console.log("START TEST", test);
+		console.log("")
+		await addTestTaker(test.test_id)
 	}
 
 	async function getTests() {
 		try {
-			tests = await getEventTests($page.params.event_id);
-			for (const test of tests) {
-				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team)
+			const testList = await getEventTests($page.params.event_id);
+			for (const test of testList) {
+				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team) ?? {};
 				console.log("TAKER",testTaker, test)
-				test.start_time = testTaker ? testTaker.start_time : null
-				test.end_time = testTaker ? testTaker.end_time : null
-				testStatusMap[test.test_id] = test
+				//test.start_time = testTaker ? testTaker.start_time : null
+				//test.end_time = testTaker ? testTaker.end_time : null
+				testStatusMap[test.test_id] = {...test, ...testTaker}
 				updateStatus(test)
 			}
 		} catch (error) {
@@ -203,34 +209,38 @@
 								<Tag type="green"
 									>{test.is_team ? "Team" : "Individual"}</Tag
 								>
-								<Tag type="green">{test.division}</Tag>
+								{#if test.division}
+									<Tag type="green">{test.division}</Tag>
+								{/if}
 							</div>
-							<p>
-								Start Time: {new Date(
-									test.opening_time,
-								).toLocaleString([], {
-									year: "numeric",
-									month: "numeric",
-									day: "numeric",
-									hour: "2-digit",
-									minute: "2-digit",
-								})}
-							</p>
+							{#if (test.status == "Not Open" && test.opening_time)}
+								<p>
+									Start Time: {new Date(
+										test.opening_time,
+									).toLocaleString([], {
+										year: "numeric",
+										month: "numeric",
+										day: "numeric",
+										hour: "2-digit",
+										minute: "2-digit",
+									})}
+								</p>
+							{/if}
 							<p>Duration: {test.length / 60} mins</p>
 						</div>
 						<div class="flex">
 							<p style="margin-right: 10px;">
-								{$testStatusMap[test.test_id].countdown}
+								{testStatusMap[test.test_id].countdown}
 							</p>
 							<button
-								disabled={$testStatusMap[test.test_id].disabled}
+								disabled={testStatusMap[test.test_id].disabled}
 								on:click={async (e) => {
 									e.preventDefault();
 									await handleTestStart(test);
 									window.location.href = `./tests/${test.test_id}`;
 								}}
 							>
-								{$testStatusMap[test.test_id].status}
+								{testStatusMap[test.test_id].status}
 							</button>
 							<SvelteButton
 								kind="ghost"
@@ -238,7 +248,7 @@
 								icon={Document}
 								on:click={() => {
 									open = true;
-									instructions = test.instructions;
+									instructions = test.instructions ?? "No Instructions Added";
 									name = test.test_name;
 								}}
 							/>
@@ -288,10 +298,14 @@
 		cursor: not-allowed;
 	}
 
-	.problemContainer:hover {
-		transform: scale(1.05); /* Scale up on hover */
-		border-width: 5px; /* Increase border width on hover */
+	.problemContainer button:not([disabled]):hover {
+		transform: scale(1.05);
+		border: 2px solid #3f9656;
+		background-color: #a7f0ba;
+		cursor: pointer;
 	}
+
+	
 
 	.buttonContainer {
 		flex-direction: column; /* Align children vertically */
