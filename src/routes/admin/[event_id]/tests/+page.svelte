@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Button from "$lib/components/Button.svelte";
-	import { Modal, DatePicker, DatePickerInput, TimePicker, TimePickerSelect, SelectItem } from "carbon-components-svelte";
+	import { Modal, DatePicker, DatePickerInput, TimePicker, TimePickerSelect, SelectItem, TextInput } from "carbon-components-svelte";
 	import { formatTime, formatDuration, addTime, subtractTime, isBefore, isAfter, diffBetweenDates } from "$lib/dateUtils";
 	import Loading from "$lib/components/Loading.svelte";
 	import toast from "svelte-french-toast";
@@ -11,7 +11,7 @@
 		getThisUser,
         getEventTests,
 		getTeamId,
-		updateOpeningTime
+		updateTest
 
 	} from "$lib/supabase";
 
@@ -29,6 +29,8 @@
 
 	let curTest = {};
 
+	let isInvalid = false
+
 	function setupTime(date) {
 		let month, day, year, hours, minutes, currentAmPm
 		year = date.getFullYear();
@@ -45,7 +47,6 @@
 
 	(async () => {
 		user = await getThisUser();
-		teamId = await getTeamId(user.id);
 		console.log("USER", user)
 		await getTests();
 		console.log(testStatusMap)
@@ -74,6 +75,7 @@
     }, 1000);
 
 	async function handleSubmit() {
+		curTest.buffer_time = parseInt(curTest.buffer_time)
 		let [hours, minutes] = curTest.time.split(':');
 		if (curTest.amPm === 'pm' && hours !== '12') {
 			hours = parseInt(hours) + 12;
@@ -91,8 +93,23 @@
 		console.log(dateTimeString)
 		const timestampz = new Date(dateTimeString).toISOString(); // Supabase expects ISO format for timestamptz
 		console.log(timestampz)
-		await updateOpeningTime(curTest.test_id, timestampz)
+		const data = {
+			opening_time: timestampz,
+			buffer_time: curTest.buffer_time
+		}
+		
+		await updateTest(curTest.test_id, data)
 		curTest.opening_time = timestampz
+		console.log("CUR", curTest)
+		console.log("TEST", testStatusMap[curTest.test_id])
+		console.log(new Date(curTest.opening_time), curTest.length, curTest.buffer_time)
+		console.log(addTime(new Date(curTest.opening_time), curTest.length + curTest.buffer_time, "seconds"))
+		console.log(formatDuration(Math.abs(diffBetweenDates(new Date(), addTime(new Date(curTest.opening_time), curTest.length + curTest.buffer_time, "seconds"), "seconds"))))
+	}
+
+	function validateInput() {
+		// Check if the value is a nonnegative integer using regex
+		isInvalid = !/^\d+$/.test(curTest.buffer_time);
 	}
 
 
@@ -130,8 +147,8 @@
 						</h4>
 						<div style="margin-top: 10px">
 							<Button
-								href="./tests/{test.test_id}/edit"
-								title="Problems"
+								href="./tests/{test.test_id}"
+								title="Edit Test & Problems"
 							/>
 							<Button
 								href="./tests/{test.test_id}/grade"
@@ -195,6 +212,16 @@
 				}}
 				title={"Now"}
 			/>
+
+			<TextInput
+				labelText="Buffer Time (seconds)"
+				bind:value={curTest.buffer_time}
+				invalid={isInvalid}
+				invalidText="Input must be a nonnegative integer"
+				on:input={validateInput}
+			/>
+
+
 			<br><br><br><br><br><br><br><br><br><br><br><br><br><br>
 		</Modal>
 	{/if}
