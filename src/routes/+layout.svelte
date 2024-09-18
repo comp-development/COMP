@@ -212,6 +212,12 @@
 		}
 	}
 
+	:global(h4) {
+		font-size: 14px;
+		color: gray;
+		font-weight: bold;
+	}
+
 	/*Generally applicable styling*/
 	:global(.flex) {
 		display: flex;

@@ -1,20 +1,26 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import toast from "svelte-french-toast";
-	import { ExpandableTile, TextArea } from "carbon-components-svelte";
-	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
-	import TestView from "$lib/components/TestView.svelte";
+	import {
+		TextArea,
+		TextInput,
+		Modal,
+		Accordion,
+		AccordionItem,
+	} from "carbon-components-svelte";
 	import MathJax from "$lib/components/MathJax.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
 	import {
 		getThisUser,
-		getTestTaker,
 		getTest,
-		getTeamId,
-		getTestAnswers,
 		updateTest,
+		getTestProblems,
+		updateTestProblems,
+		getAllProblems,
 	} from "$lib/supabase";
+	import Problem from "$lib/components/Problem.svelte";
+	import Katex from "$lib/components/Katex.svelte";
 
 	console.log("SUP");
 	let loading = true;
@@ -24,18 +30,89 @@
 	let bufferEditable = false;
 	let instructionsEditable = false;
 
+	let modalProblem = null;
+
 	let test_id = Number($page.params.test_id);
 	let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
 
 	let user;
 	let test;
+	let problems;
 	let test_taker;
+	let allProblems;
+
 	(async () => {
 		user = await getThisUser();
 		test = await getTest(test_id);
+		problems = await getTestProblems(test_id, "*, problems(*)");
+		allProblems = await getAllProblems();
 		console.log("USER_ID", user.id);
 		loading = false;
 	})();
+
+	// Function to move the problem up (and across pages if necessary)
+	function moveUp(index) {
+		if (index > 0) {
+			const currentProblem = problems[index];
+			const previousProblem = problems[index - 1];
+
+			// Swap problem_order and page_number if on different pages
+			if (currentProblem.page_number !== previousProblem.page_number) {
+				const tempPageNumber = currentProblem.page_number;
+				currentProblem.page_number = previousProblem.page_number;
+				previousProblem.page_number = tempPageNumber;
+			}
+
+			// Swap problem_order
+			[currentProblem.problem_order, previousProblem.problem_order] = [
+				previousProblem.problem_order,
+				currentProblem.problem_order,
+			];
+
+			// Swap positions in the array
+			problems[index - 1] = currentProblem;
+			problems[index] = previousProblem;
+
+			// Resort problems after the swap
+			problems.sort(
+				(a, b) =>
+					a.page_number - b.page_number ||
+					a.problem_order - b.problem_order,
+			);
+		}
+	}
+
+	// Function to move the problem down (and across pages if necessary)
+	function moveDown(index) {
+		if (index < problems.length - 1) {
+			const currentProblem = problems[index];
+			const nextProblem = problems[index + 1];
+
+			// Swap problem_order and page_number if on different pages
+			if (currentProblem.page_number !== nextProblem.page_number) {
+				const tempPageNumber = currentProblem.page_number;
+				currentProblem.page_number = nextProblem.page_number;
+				nextProblem.page_number = tempPageNumber;
+			}
+
+			// Swap problem_order
+			[currentProblem.problem_order, nextProblem.problem_order] = [
+				nextProblem.problem_order,
+				currentProblem.problem_order,
+			];
+
+			// Swap positions in the array
+			problems[index + 1] = currentProblem;
+			problems[index] = nextProblem;
+
+			// Resort problems after the swap
+			problems.sort(
+				(a, b) =>
+					a.page_number - b.page_number ||
+					a.problem_order - b.problem_order,
+			);
+		}
+	}
 
 	async function updateTitle(event) {
 		titleEditable = false;
@@ -57,9 +134,25 @@
 		await updateTest(test.test_id, test);
 	}
 
-	async function updateInstructions(event) {
-		test.instructions = event.target.value;
+	async function updateTestWithKey(event, key) {
+		test[key] = event.target.value;
 	}
+
+	async function updateProblemWithKey(event, key, problem_idx) {
+		problems[problem_idx][key] = event.target.value;
+	}
+
+	// Group problems by page_number
+	const groupByPageNumber = (problems) => {
+		return problems.reduce((acc, problem) => {
+			const pageNumber = problem.page_number;
+			if (!acc[pageNumber]) {
+				acc[pageNumber] = [];
+			}
+			acc[pageNumber].push(problem);
+			return acc;
+		}, {});
+	};
 </script>
 
 {#if loading}
@@ -123,6 +216,7 @@
 		action={async () => {
 			try {
 				await updateTest(test.test_id, test);
+				await updateTestProblems(test.test_id, problems);
 				toast.success("Successfully saved");
 			} catch (e) {
 				await handleError(e);
@@ -134,14 +228,16 @@
 		<p style="font-weight: bold; font-size: 24px;">Test Instructions</p>
 		<div class="row">
 			<div>
+				<h4>Editable</h4>
 				<TextArea
 					class="textArea"
 					bind:value={test.instructions}
-					on:input={(e) => updateInstructions(e)}
+					on:input={(e) => updateTestWithKey(e, "instructions")}
 					required={true}
 				/>
 			</div>
 			<div>
+				<h4>Display</h4>
 				<MathJax math={test.instructions} />
 			</div>
 		</div>
@@ -149,7 +245,162 @@
 	</div>
 	<div class="box-basic">
 		<p style="font-weight: bold; font-size: 24px;">Problem Rearrangement</p>
+		<div>
+			{#each Object.entries(groupByPageNumber(problems)) as [pageNumber, pageProblems]}
+				<div class="page-container">
+					<h4>Page {pageNumber}</h4>
+					<br />
+					{#each pageProblems as problem, index}
+						<div class="container">
+							<div class="row">
+								<div>
+									<h4>Editable</h4>
+									<div class="arrows">
+										<p style="margin: 0; padding: 0">
+											ID: {problem.test_problem_id}
+										</p>
+										<button
+											class="arrow-button"
+											on:click={() => {
+												modalProblem = index;
+											}}>🔁</button
+										>
+										<button
+											class="arrow-button"
+											on:click={() =>
+												moveUp(
+													problems.indexOf(problem),
+												)}
+											disabled={problems.indexOf(
+												problem,
+											) === 0}>⬆️</button
+										>
+										<button
+											class="arrow-button"
+											on:click={() =>
+												moveDown(
+													problems.indexOf(problem),
+												)}
+											disabled={problems.indexOf(
+												problem,
+											) ===
+												problems.length - 1}>⬇️</button
+										>
+									</div>
+									<br />
+									<TextInput
+										labelText="Name"
+										bind:value={problem.name}
+										on:blur={(e) =>
+											updateProblemWithKey(
+												e,
+												"name",
+												index,
+											)}
+									/>
+									<br />
+									<div class="row">
+										<TextInput
+											labelText="Page Number"
+											bind:value={problem.page_number}
+											on:blur={(e) =>
+												updateProblemWithKey(
+													e,
+													"page_number",
+													index,
+												)}
+										/>
+										<TextInput
+											labelText="Points"
+											bind:value={problem.points}
+											on:blur={(e) =>
+												updateProblemWithKey(
+													e,
+													"points",
+													index,
+												)}
+										/>
+									</div>
+									<br />
+									<TextArea
+										labelText="Problem Latex"
+										bind:value={problem.problems
+											.problem_latex}
+										on:input={(e) =>
+											updateProblemWithKey(
+												e,
+												"problems.problem_latex",
+												index,
+											)}
+									/>
+									<br />
+									<TextInput
+										labelText="Answer Latex"
+										bind:value={problem.problems
+											.answer_latex}
+										on:blur={(e) =>
+											updateProblemWithKey(
+												e,
+												"problems.answer_latex",
+												index,
+											)}
+									/>
+								</div>
+								<div>
+									<h4>Display</h4>
+									<Problem {problem} />
+									<br /><br />
+									<Katex
+										value={"ANSWER: " +
+											problem.problems.answer_latex}
+									/>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/each}
+		</div>
 	</div>
+
+	<Modal
+		open={modalProblem != null}
+		modalHeading="Select Problem"
+		primaryButtonText="Confirm"
+		secondaryButtonText="Cancel"
+		on:click:button--secondary={() => (modalProblem = null)}
+		on:open
+		on:close
+		on:submit
+	>
+		<Button
+			title="Add New Problem"
+			action={() => {
+				//FIX THIS
+				problems.add(problems[0]);
+				modalProblem = null;
+			}}
+		/>
+		<br /><br />
+		<Accordion>
+			{#each allProblems as problem}
+				<AccordionItem title="Problem ID: {problem.problem_id}">
+					<div class="problem-details">
+						<p>Problem:</p>
+						<MathJax math={problem.problem_latex} />
+						<br />
+						<Button
+							title="Select"
+							action={() => {
+								//EXECUTE SMTH
+								modalProblem = null;
+							}}
+						/>
+					</div>
+				</AccordionItem>
+			{/each}
+		</Accordion>
+	</Modal>
 {/if}
 
 <style>
@@ -164,12 +415,48 @@
 	}
 
 	.box {
-		border: 1px dashed #000000;
+		border: 1px solid black;
 		padding: 10px;
 	}
 
 	.box-basic {
 		margin: 20px;
 		text-align: left;
+	}
+
+	.container {
+		border: 1px dashed #000000;
+		align-items: center;
+		padding: 10px;
+		margin-bottom: 10px;
+	}
+
+	.arrows {
+		display: flex;
+		align-items: center;
+		margin-top: 7px;
+	}
+
+	.arrow-button {
+		padding: 5px;
+		cursor: pointer;
+		width: 40px;
+		margin-left: 10px;
+	}
+
+	button {
+		border: none;
+		outline: none;
+		background-color: none;
+	}
+
+	.page-container {
+		border: 1px solid #000;
+		padding: 10px;
+		margin-bottom: 20px;
+	}
+
+	.problem-details {
+		width: 100%;
 	}
 </style>

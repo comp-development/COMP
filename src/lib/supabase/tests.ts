@@ -14,7 +14,8 @@ export async function getTestProblems(
 		.from("test_problems")
 		.select(customSelect)
 		.eq("test_id", test_id)
-		.order("problem_number");
+        .order("page_number")
+		.order("problem_order");
 	if (error) throw error;
 	return data;
 }

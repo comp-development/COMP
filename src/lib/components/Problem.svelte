@@ -1,13 +1,13 @@
 <script lang="ts">
     import MathJax from "$lib/components/MathJax.svelte";
 
-    export let clarification: string;
+    export let clarification: string | null = null;
     export let problem;
 </script>
 
 <p style="margin-bottom: 5px;">
     <span style="font-size: 20px; font-weight: bold;">
-        Problem {problem.problem_number}
+        Problem {problem.name ?? problem.problem_order}
     </span>
 </p>
 <br />
