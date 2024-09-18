@@ -87,10 +87,39 @@ export async function upsertTestAnswer(test_taker_id: number, test_problem_id: n
             p_test_taker_id: test_taker_id,
             p_test_problem_id: test_problem_id
         });
-
     if (error) { throw error; }
     return data;
 }
+
+export async function changePage(test_taker_id: number, page_number: string) {
+	console.log("PAGE CHANGE", test_taker_id, page_number);
+	const { data, error } = await supabase
+        .rpc('change_page', {
+            p_test_taker_id: test_taker_id,
+            p_page_number: page_number
+        });
+    if (error) { throw error; }
+    return data;
+}
+
+export async function getAllTestTakers(customSelect = '*') {
+    try {
+        const { data: testTakerData, error: testTakerError } = await supabase
+            .from('test_takers')
+            .select(customSelect);
+
+        if (testTakerError) {
+            console.error('Error fetching test takers:', testTakerError.message);
+            throw testTakerError;
+        }
+
+        return testTakerData;
+    } catch (error) {
+        console.error('Error in getAllTestTakers function:', error.message);
+        throw error;
+    }
+}
+
 
 export async function getTestTaker(test_id, taker_id, is_team = false, customSelect = '*') {
     console.log(test_id, taker_id, is_team, customSelect);

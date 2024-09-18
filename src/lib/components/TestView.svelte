@@ -15,12 +15,12 @@
 		getTestAnswers,
 		upsertTestAnswer,
 		getProblemClarification,
-		updateTest
+		changePage
 	} from "$lib/supabase";
   import { mathlifier } from "mathlifier";
 
 	export let test_taker;
-	export let num_pages = 1;
+	export let pages;
 	export let is_team = false;
 	console.log("TESTAKER", test_taker);
 	let answers = [];
@@ -62,6 +62,13 @@
 		saved[payload.new.test_problem_id] = payload.new.answer_latex;
 	};
 
+	const handleTestTakerUpsert = (payload) => {
+		console.log("TEST TAKER UPSERT", payload);
+		open = false;
+		test_taker.page_number = payload.new.page_number;
+		fetchProblems();
+	};
+
 	const changeProblemClarification = (payload) => {
 		console.log("CLARIFY", payload);
 		clarifications[payload.new.test_problem_id] =
@@ -70,11 +77,12 @@
 
 	let test_answers_channel;
 	let problem_clarifications_channel;
+	let test_taker_channel;
 
 	// Listen to inserts if team test
 	if (is_team) {
 		test_answers_channel = supabase
-		.channel("test-takers-" + test_taker.test_taker_id)
+		.channel("test-answers-for-taker-" + test_taker.test_taker_id)
 		.on(
 			"postgres_changes",
 			{
@@ -94,6 +102,20 @@
 				filter: "test_taker_id=eq." + test_taker.test_taker_id,
 			},
 			handleAnswersUpsert,
+		)
+		.subscribe();
+
+		test_taker_channel = supabase
+		.channel("test-takers-" + test_taker.test_taker_id)
+		.on(
+			"postgres_changes",
+			{
+				event: "UPDATE",
+				schema: "public",
+				table: "test_takers",
+				filter: "test_taker_id=eq." + test_taker.test_taker_id,
+			},
+			handleTestTakerUpsert,
 		)
 		.subscribe();
 	}
@@ -143,7 +165,7 @@
 			timeRemaining = 0;
 			saveFinalAnswer();
 			clearInterval(timerInterval);
-			//window.location.href = './'
+			window.location.href = './'
 			return;
 		}
 
@@ -234,7 +256,10 @@
 	}
 
 	async function handleContinue() {
-		test_taker.page_number += 1
+		const newPage = test_taker.page_number + 1;
+		console.log("PAGE CHANGE")
+		await changePage(test_taker.test_taker_id, newPage);
+		test_taker.page_number = newPage;
 		await fetchProblems();
 	}
 
@@ -244,6 +269,7 @@
 
 	async function changeAnswer(e, id) {
 		try {
+			console.log("ANSWER CHANGE")
 			const upsertSuccess = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
 			console.log("SUCCESSFUL UPSERT", upsertSuccess)
 			if (upsertSuccess == 'Upsert succeeded') {
@@ -273,6 +299,7 @@
 			<p>Loading...</p>
 		{:else}
 			<br />
+			<h2>{pages[test_taker.page_number - 1]}</h2>
 			{#each problems as problem}
 				<div class="problem-container">
 					<div class="problem-div">
@@ -328,7 +355,7 @@
 	<Tooltip>
 		<p>Answers are automatically submitted when time runs out.</p>
 	</Tooltip>
-	{#if test_taker.page_number < num_pages}
+	{#if test_taker.page_number < pages.length}
 		<Button action={(e) => {
 			open = true;
 		}}

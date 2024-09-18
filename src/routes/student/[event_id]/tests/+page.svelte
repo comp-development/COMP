@@ -79,7 +79,7 @@
 			tests = await getEventTests($page.params.event_id)
 			for (const test of tests) {
 				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team)
-				console.log("TAKER",testTaker)
+				console.log("TAKER",testTaker, test)
 				test.start_time = testTaker ? testTaker.start_time : null
 				test.end_time = testTaker ? testTaker.end_time : null
 				testStatusMap[test.test_id] = test
