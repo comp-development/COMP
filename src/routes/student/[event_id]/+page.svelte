@@ -52,7 +52,9 @@
             {#each team.teamMembers as teamMember}
                 {#if teamMember.students}
                     <div style="display: flex; align-items: center;">
-                        <Tag type={teamMember.student_id == user.student_id ? "outline" : "warm-gray"}>{teamMember.front_id}</Tag>
+                        {#if teamMember.front_id}
+                            <Tag type={teamMember.student_id == user.student_id ? "outline" : "warm-gray"}>{teamMember.front_id}</Tag>
+                        {/if}
                         <p> 
                             {teamMember.students.first_name}
                             {teamMember.students.last_name}
