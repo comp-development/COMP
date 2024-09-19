@@ -18,6 +18,8 @@
 		getTestProblems,
 		updateTestProblems,
 		getAllProblems,
+        addNewTestProblem,
+        deleteTestProblem,
 	} from "$lib/supabase";
 	import Problem from "$lib/components/Problem.svelte";
 	import Katex from "$lib/components/Katex.svelte";
@@ -142,6 +144,12 @@
 		problems[problem_idx][key] = event.target.value;
 	}
 
+	async function saveTest() {
+		await updateTest(test.test_id, test);
+		await updateTestProblems(test.test_id, problems);
+		toast.success("Successfully saved");
+	}
+
 	// Group problems by page_number
 	const groupByPageNumber = (problems) => {
 		return problems.reduce((acc, problem) => {
@@ -215,9 +223,7 @@
 		title="Save Changes"
 		action={async () => {
 			try {
-				await updateTest(test.test_id, test);
-				await updateTestProblems(test.test_id, problems);
-				toast.success("Successfully saved");
+				await saveTest();
 			} catch (e) {
 				await handleError(e);
 			}
@@ -275,6 +281,7 @@
 												problem,
 											) === 0}>⬆️</button
 										>
+										
 										<button
 											class="arrow-button"
 											on:click={() =>
@@ -285,6 +292,22 @@
 												problem,
 											) ===
 												problems.length - 1}>⬇️</button
+										>
+
+										<button
+											class="arrow-button"
+											on:click={async () => {
+												await deleteTestProblem(problem.test_problem_id);
+
+												problems.splice(index+1, 1);
+    											problems = [...problems];
+
+												for (let i = index + 1; i < problems.length; i++) {
+													problems[index].problem_order -= 1;
+												}
+
+												await saveTest();
+											}}>🗑️</button
 										>
 									</div>
 									<br />
@@ -375,15 +398,27 @@
 	>
 		<Button
 			title="Add New Problem"
-			action={() => {
-				//FIX THIS
-				problems.add(problems[0]);
+			action={async () => {
+				loading = true;
+
+				const newProblem = { ...problems[problems.length - 1] };
+
+				delete newProblem.test_problem_id;
+				delete newProblem.problems;
+				newProblem.problem_order += 1;
+
+				const insertedProblem = await addNewTestProblem(newProblem, "*, problems(*)");
+				problems.push(insertedProblem);
+
+				await saveTest();
+				
 				modalProblem = null;
+				loading = false;
 			}}
 		/>
 		<br /><br />
 		<Accordion>
-			{#each allProblems as problem}
+			{#each allProblems as problem, index}
 				<AccordionItem title="Problem ID: {problem.problem_id}">
 					<div class="problem-details">
 						<p>Problem:</p>
@@ -393,6 +428,7 @@
 							title="Select"
 							action={() => {
 								//EXECUTE SMTH
+								console.log(allProblems);
 								modalProblem = null;
 							}}
 						/>
