@@ -80,45 +80,43 @@
 	let test_taker_channel;
 
 	// Listen to inserts if team test
-	if (is_team) {
-		test_answers_channel = supabase
-		.channel("test-answers-for-taker-" + test_taker.test_taker_id)
-		.on(
-			"postgres_changes",
-			{
-				event: "UPDATE",
-				schema: "public",
-				table: "test_answers",
-				filter: "test_taker_id=eq." + test_taker.test_taker_id,
-			},
-			handleAnswersUpsert,
-		)
-		.on(
-			"postgres_changes",
-			{
-				event: "INSERT",
-				schema: "public",
-				table: "test_answers",
-				filter: "test_taker_id=eq." + test_taker.test_taker_id,
-			},
-			handleAnswersUpsert,
-		)
-		.subscribe();
+	test_answers_channel = supabase
+	.channel("test-answers-for-taker-" + test_taker.test_taker_id)
+	.on(
+		"postgres_changes",
+		{
+			event: "UPDATE",
+			schema: "public",
+			table: "test_answers",
+			filter: "test_taker_id=eq." + test_taker.test_taker_id,
+		},
+		handleAnswersUpsert,
+	)
+	.on(
+		"postgres_changes",
+		{
+			event: "INSERT",
+			schema: "public",
+			table: "test_answers",
+			filter: "test_taker_id=eq." + test_taker.test_taker_id,
+		},
+		handleAnswersUpsert,
+	)
+	.subscribe();
 
-		test_taker_channel = supabase
-		.channel("test-takers-" + test_taker.test_taker_id)
-		.on(
-			"postgres_changes",
-			{
-				event: "UPDATE",
-				schema: "public",
-				table: "test_takers",
-				filter: "test_taker_id=eq." + test_taker.test_taker_id,
-			},
-			handleTestTakerUpsert,
-		)
-		.subscribe();
-	}
+	test_taker_channel = supabase
+	.channel("test-takers-" + test_taker.test_taker_id)
+	.on(
+		"postgres_changes",
+		{
+			event: "UPDATE",
+			schema: "public",
+			table: "test_takers",
+			filter: "test_taker_id=eq." + test_taker.test_taker_id,
+		},
+		handleTestTakerUpsert,
+	)
+	.subscribe();
 	
 
 	function subscribeToChannels() {
