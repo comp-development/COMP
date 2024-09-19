@@ -70,7 +70,7 @@ export async function addTestTaker(test_id) {
         .rpc('add_test_taker', {
             p_test_id: test_id,
         });
-
+    console.log("ERROR", error)
     if (error) { throw error; }
     
     console.log('Function result:', data);

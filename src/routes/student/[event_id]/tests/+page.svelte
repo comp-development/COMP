@@ -108,6 +108,17 @@
 		if (test.start_time && test.end_time && currentTime < new Date(test.end_time) && currentTime > new Date(test.start_time)) {
 			newStatus.status = 'Continue'
 			newStatus.disabled = false
+			newStatus.countdown =
+				"Time remaining: " +
+				formatDuration(
+						Math.abs(
+							diffBetweenDates(
+								currentTime,
+								new Date(test.end_time),
+								"seconds",
+							),
+						),
+				);
 		}
 		else if (!test.opening_time || currentTime < new Date(test.opening_time)) {
 			newStatus.status = "Not Open";
@@ -163,7 +174,9 @@
 	async function handleTestStart(test) {
 		console.log("START TEST", test);
 		console.log("")
-		await addTestTaker(test.test_id)
+		if (!test.start_time || !test.end_time) {
+			await addTestTaker(test.test_id)
+		}
 	}
 
 	async function getTests() {
