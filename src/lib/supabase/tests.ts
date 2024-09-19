@@ -70,7 +70,7 @@ export async function addTestTaker(test_id) {
         .rpc('add_test_taker', {
             p_test_id: test_id,
         });
-
+    console.log("ERROR", error)
     if (error) { throw error; }
     
     console.log('Function result:', data);
@@ -132,8 +132,8 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
             .eq('test_id', test_id)
             .eq('team_id', taker_id)
             .single();
-    
-            if (testTakerError) throw testTakerError;
+            
+            if (testTakerError && testTakerError.code != 'PGRST116') throw testTakerError;
     
             return testTakerData;
         } else {
@@ -145,7 +145,7 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
             .eq('student_id', taker_id)
             .single();
     
-            if (testTakerError) throw testTakerError;
+            if (testTakerError && testTakerError.code != 'PGRST116') throw testTakerError;
     
             return testTakerData;
         }
