@@ -71,8 +71,8 @@
 	{:else}
 		<div class="linkExterior">
 			<a
-				href="/students"
-				class={path == "/students" ? "active link" : "link"}
+				href="/student"
+				class={path == "/student" ? "active link" : "link"}
 			>
 				Events
 			</a>
