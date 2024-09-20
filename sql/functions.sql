@@ -15,7 +15,7 @@ create or replace function verify_auth (
         if stud_res is null then
             select count(*)
             into num_res
-            from student_teams
+            from student_events
             where student_id = stud_id and team_id = team_res;
 
             return (num_res = 1);

@@ -8,16 +8,27 @@ import { supabase } from "../supabaseClient";
  */
 export async function getTestProblems(
 	test_id: number,
+    page_num: number,
 	customSelect: string = "*",
 ) {
-	let { data, error } = await supabase
-		.from("test_problems")
-		.select(customSelect)
-		.eq("test_id", test_id)
-        .order("page_number")
-		.order("problem_order");
-	if (error) throw error;
-	return data;
+    if (page_num) {
+        let { data, error } = await supabase
+            .from("test_problems")
+            .select(customSelect)
+            .eq("test_id", test_id)
+            .eq("page_number", page_num)
+            .order("problem_order");
+        if (error) throw error;
+        return data;
+    } else {
+        let { data, error } = await supabase
+            .from("test_problems")
+            .select(customSelect)
+            .eq("test_id", test_id)
+            .order("problem_order");
+        if (error) throw error;
+        return data;
+    }
 }
 
 /**
@@ -59,7 +70,7 @@ export async function addTestTaker(test_id) {
         .rpc('add_test_taker', {
             p_test_id: test_id,
         });
-
+    console.log("ERROR", error)
     if (error) { throw error; }
     
     console.log('Function result:', data);
@@ -76,26 +87,53 @@ export async function upsertTestAnswer(test_taker_id: number, test_problem_id: n
             p_test_taker_id: test_taker_id,
             p_test_problem_id: test_problem_id
         });
-
     if (error) { throw error; }
-    
-    console.log('Function result:', data);
     return data;
 }
+
+export async function changePage(test_taker_id: number, page_number: string) {
+	console.log("PAGE CHANGE", test_taker_id, page_number);
+	const { data, error } = await supabase
+        .rpc('change_page', {
+            p_test_taker_id: test_taker_id,
+            p_page_number: page_number
+        });
+    if (error) { throw error; }
+    return data;
+}
+
+export async function getAllTestTakers(customSelect = '*') {
+    try {
+        const { data: testTakerData, error: testTakerError } = await supabase
+            .from('test_takers')
+            .select(customSelect);
+
+        if (testTakerError) {
+            console.error('Error fetching test takers:', testTakerError.message);
+            throw testTakerError;
+        }
+
+        return testTakerData;
+    } catch (error) {
+        console.error('Error in getAllTestTakers function:', error.message);
+        throw error;
+    }
+}
+
 
 export async function getTestTaker(test_id, taker_id, is_team = false, customSelect = '*') {
     console.log(test_id, taker_id, is_team, customSelect);
     try {
         if (is_team) {
-            // If it's a team-based test, retrieve the team_id from student_teams
+            // If it's a team-based test, retrieve the team_id from student_events
             const { data: testTakerData, error: testTakerError } = await supabase
             .from('test_takers')
             .select(customSelect)
             .eq('test_id', test_id)
             .eq('team_id', taker_id)
             .single();
-    
-            if (testTakerError) throw testTakerError;
+            
+            if (testTakerError && testTakerError.code != 'PGRST116') throw testTakerError;
     
             return testTakerData;
         } else {
@@ -107,7 +145,7 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
             .eq('student_id', taker_id)
             .single();
     
-            if (testTakerError) throw testTakerError;
+            if (testTakerError && testTakerError.code != 'PGRST116') throw testTakerError;
     
             return testTakerData;
         }

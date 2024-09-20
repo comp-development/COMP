@@ -4,7 +4,7 @@ export async function getTeam(student_id, customSelect = "*") {
     try {
         // First, get the team_id for the given student_id
         const { data: studentTeamData, error: studentTeamError } = await supabase
-            .from('student_teams')
+            .from('student_events')
             .select('team_id')
             .eq('student_id', student_id)
 
@@ -25,7 +25,7 @@ export async function getTeam(student_id, customSelect = "*") {
         if (teamError) throw teamError;
 
         const { data, error } = await supabase
-            .from('student_teams')
+            .from('student_events')
             .select('*, students(first_name, last_name)')
             .eq('team_id', studentTeamData[0].team_id);
         
@@ -44,7 +44,7 @@ export async function getTeamId(student_id, customSelect = "*") {
     try {
         // First, get the team_id for the given student_id
         const { data: studentTeamData, error: studentTeamError } = await supabase
-            .from('student_teams')
+            .from('student_events')
             .select('team_id')
             .eq('student_id', student_id)
             .single();

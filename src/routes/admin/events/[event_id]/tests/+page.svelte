@@ -47,7 +47,6 @@
 
 	(async () => {
 		user = await getThisUser();
-		teamId = await getTeamId(user.id);
 		console.log("USER", user)
 		await getTests();
 		console.log(testStatusMap)

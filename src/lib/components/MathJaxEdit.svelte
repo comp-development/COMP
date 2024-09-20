@@ -3,7 +3,7 @@
 	import toast from "svelte-french-toast";
 	import { ExpandableTile } from "carbon-components-svelte";
 	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
-
+    //comment
 	import TestView from "$lib/components/TestView.svelte";
 	import MathJax from "$lib/components/MathJax.svelte";
 	import Button from "$lib/components/Button.svelte";
@@ -44,7 +44,7 @@
     <div class="problem-div">
         <p style="margin-bottom: 5px;">
             <span style="font-size: 20px; font-weight: bold;">
-                Problem {problem.problem_number}
+                Problem {problem.problem_order}
             </span>
         </p>
         <br />
