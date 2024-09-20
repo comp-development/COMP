@@ -20,11 +20,11 @@
 		getAllProblems,
         addNewTestProblem,
         deleteTestProblem,
+        replaceTestProblem,
 	} from "$lib/supabase";
 	import Problem from "$lib/components/Problem.svelte";
 	import Katex from "$lib/components/Katex.svelte";
 
-	console.log("SUP");
 	let loading = true;
 
 	let titleEditable = false;
@@ -48,7 +48,6 @@
 		test = await getTest(test_id);
 		problems = await getTestProblems(test_id, "*, problems(*)");
 		allProblems = await getAllProblems();
-		console.log("USER_ID", user.id);
 		loading = false;
 	})();
 
@@ -118,8 +117,6 @@
 
 	async function updateTitle(event) {
 		titleEditable = false;
-		console.log("TARGET", event.target.innerText);
-
 		test.test_name = event.target.innerText;
 		await updateTest(test.test_id, test);
 	}
@@ -268,7 +265,7 @@
 										<button
 											class="arrow-button"
 											on:click={() => {
-												modalProblem = index;
+												modalProblem = index + 1;
 											}}>🔁</button
 										>
 										<button
@@ -394,7 +391,7 @@
 		on:click:button--secondary={() => (modalProblem = null)}
 		on:open
 		on:close
-		on:submit
+		on:submit={() => (modalProblem = null)}
 	>
 		<Button
 			title="Add New Problem"
@@ -426,9 +423,11 @@
 						<br />
 						<Button
 							title="Select"
-							action={() => {
-								//EXECUTE SMTH
-								console.log(allProblems);
+							action={async () => {
+								const newProblem = await replaceTestProblem(problems[modalProblem].test_problem_id, problem.problem_id, "*, problems(*)");
+								problems[modalProblem] = newProblem;
+								problems = [...problems];
+
 								modalProblem = null;
 							}}
 						/>

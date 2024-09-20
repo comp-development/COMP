@@ -61,6 +61,14 @@ export async function deleteTestProblem(test_problem_id: number) {
     if (error) throw error;
 }
 
-export async function replaceTestProblem() {
+export async function replaceTestProblem(test_problem_id: number, new_problem_id: number, customSelect: string="*") {
+    const { data, error } = await supabase
+        .from('test_problems')
+        .update({ "problem_id": new_problem_id })
+        .eq('test_problem_id', test_problem_id)
+        .select(customSelect)
+        .single();
+    if (error) throw error;
 
+    return data;
 }
