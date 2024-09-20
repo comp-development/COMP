@@ -18,6 +18,7 @@
 		changePage
 	} from "$lib/supabase";
   import { mathlifier } from "mathlifier";
+    import Problem from './Problem.svelte';
 
 	export let test_taker;
 	export let pages;
@@ -301,24 +302,7 @@
 			{#each problems as problem}
 				<div class="problem-container">
 					<div class="problem-div">
-						<p style="margin-bottom: 5px;">
-							<span style="font-size: 20px; font-weight: bold;">
-								Problem {problem.problem_order}
-							</span>
-						</p>
-						<br />
-						<MathJax math={problem.problems.problem_latex} />
-						{#if clarifications[problem.test_problem_id]}
-							<br />
-							<div class="clarification">
-								<p>
-									<span style="font-weight: bold; color: var(--error-dark); padding: 10px;">!</span>
-									<span style="display: inline-block; vertical-align: middle;">
-										<MathJax math={clarifications[problem.test_problem_id]}/>
-									</span>
-								</p>
-							</div>
-						{/if}
+						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
 						<div style="margin-top: 30px; width: 300px;">
 							<TextInput
 								labelText="Answer"
@@ -403,20 +387,6 @@
 
 	.inner-div {
 		width: 100%;
-	}
-
-	.clarification {
-		border: 2px solid var(--error-light);
-		background-color: var(--error-tint);
-		padding: 10px;
-	}
-
-	.questionsDiv {
-		background-color: var(--text-color-light);
-		border: 2px solid black;
-		padding: 20px;
-		text-align: left;
-		width: 70%;
 	}
 
 	.panel {

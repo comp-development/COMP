@@ -1,1 +1,1 @@
-// Landing Page
+// List of events enrolled in
