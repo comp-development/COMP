@@ -77,11 +77,12 @@
 </script>
 
 <div>
-	<h1>{test.test_name}</h1>
-	<p>{round || ""}</p>
+	<h1 style="text-align: center">{test.test_name}</h1>
+	<p style="text-align: center">{round || ""}</p>
 
 	<br />
-	<p style="font-style: italic;">Please note that all scores from Set {num_rounds} will not be shown.</p>
+	<p style="font-style: italic; text-align: center;">Please note that all scores from Set {num_rounds} will not be shown.</p>
+	<br />
 	<div id = "leftwrapper">
 		<table class="gutsDisplay" id="leftTable">
 			<thead>
@@ -162,9 +163,7 @@
 		border-collapse: collapse;
 		padding: 10px;
 		white-space: nowrap;
-		height: var(--screen_height);
         float: left;
-		background-color: var(--secondary-light);
 		border-right: 3px dotted var(--secondary);
     }
 
@@ -174,21 +173,19 @@
 		border-collapse: collapse;
 		padding: 10px;
 		white-space: nowrap;
-		height: var(--screen_height);
         float: right;
-		background-color: var(--secondary-light);
     }
 
 	#leftTable {
 		float: left;
-		background-color: var(--secondary-light);
 		margin: 10px;
+		border: 2px solid var(--primary);
     }
 
     #rightTable {
 		float: right;
-        background-color: var(--secondary-light);
 		margin: 10px;
+		border: 2px solid var(--primary);
     }
 
     .gutsDisplay {
@@ -214,22 +211,19 @@
 
     .gutsInfo {
 		color: white;
-		background-color: var(--secondary);
+		background-color: var(--primary);
 		padding: 10px;
-        border: none;
+        border: 1px solid var(--primary);
         text-align: left;
 		font-family: var(--font-family);
 		font-size: 20px;
-		font-weight: bold; /* Makes the text bold */
-    	text-shadow: -1px -1px 0 #000, 
-			1px -1px 0 #000; ; 
+		font-weight: bold;
     }
 
 	.gutsResult {
-		background-color: var(--secondary-light);
-
+		background-color: var(--primary-tint);
 		padding: 10px;
-        border: none;
+		border: 1px solid var(--primary);
         text-align: left;
 		font-family: var(--font-family);
 		font-size: 20px;
