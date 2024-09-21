@@ -35,3 +35,12 @@ export async function getEventTeams(event_id:number) {
 	if (error) throw error;
 	return data;
 }
+
+export async function getStudentEvents(student_id: string, customSelect: string = "*") {
+	const { data, error } = await supabase
+		.from('student_events')
+		.select(customSelect)
+		.eq('student_id', student_id);
+	if (error) throw error;
+	return data;
+}
