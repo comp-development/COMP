@@ -15,7 +15,10 @@
 		getTestAnswers,
 		upsertTestAnswer,
 		getProblemClarification,
-		changePage
+		changePage,
+
+    fetchTestProblems
+
 	} from "$lib/supabase";
   import { mathlifier } from "mathlifier";
     import Problem from './Problem.svelte';
@@ -224,12 +227,9 @@
 
 	async function fetchProblems() {
 		try {
-			loading = true
-			problems = await getTestProblems(
-				test_taker.test_id,
-				test_taker.page_number,
-				"*,problems(*)",
-			);
+			loading = true;
+			problems = await fetchTestProblems(test_taker.test_taker_id)
+			console.log("PROBLEMS",problems)
 			subscribeToChannels();
 			console.log("PROBS", problems);
 			console.log("ANS", answers);
@@ -329,6 +329,13 @@
 					</div>
 				</div>
 			{/each}
+			{#if test_taker.page_number < pages.length}
+				<Button action={(e) => {
+					open = true;
+				}}
+					title={"Continue"}
+				/>
+			{/if}
 		{/if}
 	</div>
 </div>
@@ -343,8 +350,6 @@
 		}}
 			title={"Continue"}
 		/>
-	{:else}
-		
 	{/if}
 </div>
 

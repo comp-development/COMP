@@ -30,10 +30,12 @@
 		test = await getTest(test_id);
 		console.log("USER_ID", user.id);
 		await getThisTestTaker();
+		console.log("GOT TAKER")
 		loading = false;
 	})();
 
 	async function getThisTestTaker() {
+		console.log("GET TAKER")
 		const is_team = (await getTest(test_id)).is_team;
 		let taker_id = user.id;
 		if (is_team) {
@@ -42,7 +44,7 @@
 		console.log("NUMBER", test_id);
 		test_taker = await getTestTaker(test_id, taker_id, is_team);
 		console.log("TEST_TAKER", test_taker);
-
+		
 		if (!test_taker) {
 			throw new Error(
 				"Test with id " + $page.params.test_id + " doesn't exist!",

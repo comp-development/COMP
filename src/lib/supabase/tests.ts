@@ -31,6 +31,17 @@ export async function getTestProblems(
     }
 }
 
+export async function fetchTestProblems(
+	test_taker_id: number,
+) {
+    const { data, error } = await supabase
+        .rpc('fetch_test_problems', {
+            p_test_taker_id: test_taker_id,
+        });
+    if (error) { throw error; }
+    return data;
+}
+
 /**
  * Gets the feedback for the problems in a particular testsolve
  *

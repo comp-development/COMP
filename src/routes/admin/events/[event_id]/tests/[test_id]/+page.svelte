@@ -46,7 +46,7 @@
 	(async () => {
 		user = await getThisUser();
 		test = await getTest(test_id);
-		problems = await getTestProblems(test_id, "*, problems(*)");
+		problems = await getTestProblems(test_id, null, "*, problems(*)");
 		allProblems = await getAllProblems();
 		loading = false;
 	})();
