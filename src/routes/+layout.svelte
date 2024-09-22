@@ -64,14 +64,14 @@
 					<br />
 					<div class="flex">
 						<div class="bottomSection" style="color: white;">
-							<button
+							<!--<button
 								size="lg"
 								class="link"
 								id="switchScreen"
 								on:click={() => {
 									hasAccount = false;
 								}}>Sign-Up</button
-							>
+							>-->
 							<button size="lg" class="link" id="forgotPassword"
 								><a href="/password-reset" style="color: black;"
 									>Forgot Password</a
