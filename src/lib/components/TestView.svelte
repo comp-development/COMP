@@ -3,11 +3,13 @@
 	import Button from "$lib/components/Button.svelte";
 	import Katex from "$lib/components/Katex.svelte";
 	import MathJax from "$lib/components/MathJax.svelte"
+	import FormattedTimeLeft from "$lib/components/FormattedTimeLeft.svelte"
 	import { Tooltip, TextInput, Dropdown, Modal } from "carbon-components-svelte";
 	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
 	import { formatDuration } from "$lib/dateUtils";
+	
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import {
@@ -41,6 +43,8 @@
 	let timeRemaining;
 	let timeElapsed;
 	let timerInterval;
+	let endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
+	let startTimeMs = new Date(startTime).getTime();
 
 	let currentField;
 	let prevAnswer;
@@ -162,8 +166,6 @@
 		if (!endTime) return;
 
 		const now = new Date().getTime(); // Current time in milliseconds
-		const endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
-		const startTimeMs = new Date(startTime).getTime();
 
 		timeRemaining = endTimeMs - now; // Calculate the time difference
 		timeElapsed = now - startTimeMs;
@@ -309,11 +311,14 @@
 					<div class="problem-div">
 						<h5>
 							{#if meltTime}
-								{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
-									Melted!
-								{:else}
-									Melts in {formatDuration(Math.max(problem.problem_number*parseInt(meltTime) - timeElapsed/1000,0))}
-								{/if}
+								<FormattedTimeLeft timeLeft={problem.problem_number*parseInt(meltTime) - timeElapsed/1000} totalTime={problem.problem_number*parseInt(meltTime)}>
+									{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
+										Melted!
+									{:else}
+										Melts in {formattedTime}
+									{/if}
+								</FormattedTimeLeft>
+								
 							{/if}
 						</h5>
 						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
@@ -355,7 +360,11 @@
 	</div>
 </div>
 <div class="panel">
-	<p>Time remaining: {formattedTime}</p> <!--Make tooltip in line with time remaining-->
+	<p>
+		<FormattedTimeLeft timeLeft={timeRemaining/1000} totalTime={(endTimeMs - startTimeMs)/1000}>
+			Time left: {formattedTime}
+		</FormattedTimeLeft>
+	</p> <!--Make tooltip in line with time remaining-->
 	<Tooltip>
 		<p>Answers are automatically submitted when time runs out.</p>
 	</Tooltip>
