@@ -1,6 +1,14 @@
 import { error } from "@sveltejs/kit";
 import { supabase } from "../supabaseClient";
 
+export async function addProblem(problem) {
+    const { error } = await supabase
+        .from("problems")
+        .insert(problem);
+
+    if (error) throw error;
+}
+
 export async function getAllProblems(customSelect: string = "*") {
     const { data, error } = await supabase
         .from("problems")
@@ -61,7 +69,7 @@ export async function deleteTestProblem(test_problem_id: number) {
     if (error) throw error;
 }
 
-export async function replaceTestProblem(test_problem_id: number, new_problem_id: number, customSelect: string="*") {
+export async function replaceTestProblem(test_problem_id: number, new_problem_id: number, customSelect: string = "*") {
     const { data, error } = await supabase
         .from('test_problems')
         .update({ "problem_id": new_problem_id })

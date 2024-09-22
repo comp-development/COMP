@@ -88,7 +88,7 @@
 							<div class="pencil">
 								<Link
 									class="link"
-									href={"/admin/events/" + eventId + "/tests/" + row.id}
+									href={"/admin/" + eventId + "/tests/" + row.id}
 									><i class="ri-pencil-fill" /></Link
 								>
 							</div>
@@ -145,7 +145,7 @@
 							<div class="pencil">
 								<Link
 									class="link"
-									href={"/admin/events/" + eventId + "/teams/" + row.id}
+									href={"/admin/" + eventId + "/teams/" + row.id}
 									><i class="ri-pencil-fill" /></Link
 								>
 							</div>
