@@ -51,65 +51,71 @@
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
-	{:else if !$user && hasAccount && $page.route.id != "/password-reset"}
-		<Banner />
-		<br />
-		<div class="flex">
-			<div
-				style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
-			>
-				<Account logIn={true} />
-				<br />
-				<br />
-				<div class="flex">
-					<div class="bottomSection" style="color: white;">
-						<button
-							size="lg"
-							class="link"
-							id="switchScreen"
-							on:click={() => {
-								hasAccount = false;
-							}}>Sign-Up</button
-						>
-						<button size="lg" class="link" id="forgotPassword"
-							><a href="/password-reset" style="color: black;"
-								>Forgot Password</a
-							></button
-						>
+	{:else if !$user && !$page.route.id.endsWith('/scores') && $page.route.id != "/password-reset"}
+		{#if hasAccount}
+			<Banner />
+			<br />
+			<div class="flex">
+				<div
+					style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
+				>
+					<Account logIn={true} />
+					<br />
+					<br />
+					<div class="flex">
+						<div class="bottomSection" style="color: white;">
+							<button
+								size="lg"
+								class="link"
+								id="switchScreen"
+								on:click={() => {
+									hasAccount = false;
+								}}>Sign-Up</button
+							>
+							<button size="lg" class="link" id="forgotPassword"
+								><a href="/password-reset" style="color: black;"
+									>Forgot Password</a
+								></button
+							>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	{:else if !$user && !hasAccount && $page.route.id != "/password-reset"}
-		<Banner />
-		<br />
-		<div class="flex">
-			<div
-				style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
-			>
-				<Account logIn={false} />
-				<br />
-				<br />
-				<div class="flex">
-					<div class="bottomSection" style="color: white;">
-						<button
-							size="lg"
-							class="link"
-							id="switchScreen"
-							on:click={() => {
-								hasAccount = true;
-							}}
-						>
-							Log-In
-						</button>
-						<button size="lg" class="link" id="forgotPassword"
-							><a href="/password-reset" style="color: black;"
-								>Forgot Password</a
-							></button
-						>
+		{:else}
+			<Banner />
+			<br />
+			<div class="flex">
+				<div
+					style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
+				>
+					<Account logIn={false} />
+					<br />
+					<br />
+					<div class="flex">
+						<div class="bottomSection" style="color: white;">
+							<button
+								size="lg"
+								class="link"
+								id="switchScreen"
+								on:click={() => {
+									hasAccount = true;
+								}}
+							>
+								Log-In
+							</button>
+							<button size="lg" class="link" id="forgotPassword"
+								><a href="/password-reset" style="color: black;"
+									>Forgot Password</a
+								></button
+							>
+						</div>
 					</div>
 				</div>
 			</div>
+		{/if}
+	{:else if $page.route.id.endsWith('/scores')}
+		<div>
+			<slot />
 		</div>
 	{:else}
 		<div class="menu-split">
