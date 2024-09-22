@@ -10,7 +10,7 @@
 	let curr_screen = 0
 	let num_screens = 0
 	let num_teams = 0
-    let num_copies = 10
+    let num_copies = 1	
 	let scores = []
 	let seconds = 0
 	let minutes = 60
@@ -100,8 +100,8 @@
 						<td class="gutsResult teamName">{scores[i].name}</td>
 						<td class="gutsResult">
 							<div class ="round">
-								{#each Array(num_rounds) as __, round}
-                                    <div class="color-box ${round < scores[i].page_number ? "complete" : "not-complete"}"></div>
+								{#each Array.from({ length: 9 }, (_, i) => i + 1) as round}
+                                    <div class="color-box {round < scores[i].page_number ? "complete" : "not-complete"}"></div>
 								{/each}
 						</td>
 						<td class="gutsResult">{scores[i].score}</td>
@@ -150,7 +150,7 @@
   	}
 
     .complete {
-        background-color: var(--secondary);
+        background-color: var(--primary-light);
     }
 
     .not-complete {
