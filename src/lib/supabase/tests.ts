@@ -17,7 +17,7 @@ export async function getTestProblems(
             .select(customSelect)
             .eq("test_id", test_id)
             .eq("page_number", page_num)
-            .order("problem_order");
+            .order("problem_number");
         if (error) throw error;
         return data;
     } else {
@@ -25,7 +25,7 @@ export async function getTestProblems(
             .from("test_problems")
             .select(customSelect)
             .eq("test_id", test_id)
-            .order("problem_order");
+            .order("problem_number");
         if (error) throw error;
         return data;
     }

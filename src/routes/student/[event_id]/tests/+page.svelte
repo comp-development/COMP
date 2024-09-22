@@ -141,7 +141,7 @@
 					"seconds",
 				),
 				currentTime,
-			)
+			) && !test.start_time
 		) {
 			newStatus.status = "Start";
 			newStatus.countdown =

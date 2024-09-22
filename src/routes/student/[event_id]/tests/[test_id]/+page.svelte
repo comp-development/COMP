@@ -44,7 +44,7 @@
 		console.log("NUMBER", test_id);
 		test_taker = await getTestTaker(test_id, taker_id, is_team);
 		console.log("TEST_TAKER", test_taker);
-		
+
 		if (!test_taker) {
 			throw new Error(
 				"Test with id " + $page.params.test_id + " doesn't exist!",
@@ -67,7 +67,7 @@
 			<div slot="below"><MathJax math={test.instructions} /></div>
 		</ExpandableTile>
 		<br />
-		<TestView {test_taker} is_team={test.is_team} pages={test.settings.pages} />
+		<TestView {test_taker} is_team={test.is_team} settings={test.settings} />
 	</div>
 	<br />
 {/if}

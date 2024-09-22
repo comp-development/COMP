@@ -57,17 +57,17 @@
 			const currentProblem = problems[index];
 			const previousProblem = problems[index - 1];
 
-			// Swap problem_order and page_number if on different pages
+			// Swap problem_number and page_number if on different pages
 			if (currentProblem.page_number !== previousProblem.page_number) {
 				const tempPageNumber = currentProblem.page_number;
 				currentProblem.page_number = previousProblem.page_number;
 				previousProblem.page_number = tempPageNumber;
 			}
 
-			// Swap problem_order
-			[currentProblem.problem_order, previousProblem.problem_order] = [
-				previousProblem.problem_order,
-				currentProblem.problem_order,
+			// Swap problem_number
+			[currentProblem.problem_number, previousProblem.problem_number] = [
+				previousProblem.problem_number,
+				currentProblem.problem_number,
 			];
 
 			// Swap positions in the array
@@ -78,7 +78,7 @@
 			problems.sort(
 				(a, b) =>
 					a.page_number - b.page_number ||
-					a.problem_order - b.problem_order,
+					a.problem_number - b.problem_number,
 			);
 		}
 	}
@@ -89,17 +89,17 @@
 			const currentProblem = problems[index];
 			const nextProblem = problems[index + 1];
 
-			// Swap problem_order and page_number if on different pages
+			// Swap problem_number and page_number if on different pages
 			if (currentProblem.page_number !== nextProblem.page_number) {
 				const tempPageNumber = currentProblem.page_number;
 				currentProblem.page_number = nextProblem.page_number;
 				nextProblem.page_number = tempPageNumber;
 			}
 
-			// Swap problem_order
-			[currentProblem.problem_order, nextProblem.problem_order] = [
-				nextProblem.problem_order,
-				currentProblem.problem_order,
+			// Swap problem_number
+			[currentProblem.problem_number, nextProblem.problem_number] = [
+				nextProblem.problem_number,
+				currentProblem.problem_number,
 			];
 
 			// Swap positions in the array
@@ -110,7 +110,7 @@
 			problems.sort(
 				(a, b) =>
 					a.page_number - b.page_number ||
-					a.problem_order - b.problem_order,
+					a.problem_number - b.problem_number,
 			);
 		}
 	}
@@ -260,7 +260,7 @@
 									<h4>Editable</h4>
 									<div class="arrows">
 										<p style="margin: 0; padding: 0">
-											ID: {problem.test_problem_id}
+											ID: {problem.problems.problem_id}
 										</p>
 										<button
 											class="arrow-button"
@@ -300,7 +300,7 @@
     											problems = [...problems];
 
 												for (let i = index + 1; i < problems.length; i++) {
-													problems[index].problem_order -= 1;
+													problems[index].problem_number -= 1;
 												}
 
 												await saveTest();
@@ -370,9 +370,8 @@
 									<h4>Display</h4>
 									<Problem {problem} />
 									<br /><br />
-									<Katex
-										value={"ANSWER: " +
-											problem.problems.answer_latex}
+									<MathJax
+										math={"Answer: " + problem.problems.answer_latex}
 									/>
 								</div>
 							</div>
@@ -402,7 +401,7 @@
 
 				delete newProblem.test_problem_id;
 				delete newProblem.problems;
-				newProblem.problem_order += 1;
+				newProblem.problem_number += 1;
 
 				const insertedProblem = await addNewTestProblem(newProblem, "*, problems(*)");
 				problems.push(insertedProblem);

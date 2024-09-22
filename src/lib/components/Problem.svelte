@@ -7,7 +7,7 @@
 
 <p style="margin-bottom: 5px;">
     <span style="font-size: 20px; font-weight: bold;">
-        Problem {problem.name ?? problem.problem_order}
+        Problem {problem.name ?? problem.problem_number}
     </span>
 </p>
 <br />

@@ -24,7 +24,9 @@
     import Problem from './Problem.svelte';
 
 	export let test_taker;
-	export let pages;
+	export let settings;
+	let pages = settings.pages
+	let meltTime = settings.meltTime
 	export let is_team = false;
 	console.log("TESTAKER", test_taker);
 	let answers = [];
@@ -36,6 +38,8 @@
 	let startTime = test_taker.start_time;
 	let endTime = test_taker.end_time;
 	let formattedTime = "0:00:00";
+	let timeRemaining;
+	let timeElapsed;
 	let timerInterval;
 
 	let currentField;
@@ -159,11 +163,12 @@
 
 		const now = new Date().getTime(); // Current time in milliseconds
 		const endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
-		const startTimeDate = new Date(startTime)
+		const startTimeMs = new Date(startTime).getTime();
 
-		let timeRemaining = endTimeMs - now; // Calculate the time difference
+		timeRemaining = endTimeMs - now; // Calculate the time difference
+		timeElapsed = now - startTimeMs;
 		// If time has passed, stop the timer
-		if (timeRemaining <= 0 || now < startTimeDate) {
+		if (timeRemaining <= 0 || now < startTimeMs) {
 			timeRemaining = 0;
 			saveFinalAnswer();
 			clearInterval(timerInterval);
@@ -302,11 +307,21 @@
 			{#each problems as problem}
 				<div class="problem-container">
 					<div class="problem-div">
+						<h5>
+							{#if meltTime}
+								{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
+									Melted!
+								{:else}
+									Melts in {formatDuration(Math.max(problem.problem_number*parseInt(meltTime) - timeElapsed/1000,0))}
+								{/if}
+							{/if}
+						</h5>
 						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
 						<div style="margin-top: 30px; width: 300px;">
 							<TextInput
 								labelText="Answer"
 								bind:value={answersMap[problem.test_problem_id]}
+								disabled={problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
 								on:focus={handleFocus}
 								on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
 								on:blur={(e) =>
@@ -403,4 +418,6 @@
 		background-color: var(--text-color-light);
 		border: 1px solid black;
 	}
+
+	
 </style>
