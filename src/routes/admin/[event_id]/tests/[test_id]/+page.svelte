@@ -18,9 +18,9 @@
 		getTestProblems,
 		updateTestProblems,
 		getAllProblems,
-        addNewTestProblem,
-        deleteTestProblem,
-        replaceTestProblem,
+		addNewTestProblem,
+		deleteTestProblem,
+		replaceTestProblem,
 	} from "$lib/supabase";
 	import Problem from "$lib/components/Problem.svelte";
 	import Katex from "$lib/components/Katex.svelte";
@@ -147,6 +147,39 @@
 		toast.success("Successfully saved");
 	}
 
+	async function addNewProblemPage(pageNumber: number) {
+		var groupedProblems = groupByPageNumber(problems);
+		const page = groupedProblems[pageNumber] ? pageNumber : pageNumber - 1;
+		const prevProblem = groupedProblems[page][groupedProblems[page].length - 1];
+		const newProblem = { ...prevProblem, };
+
+		delete newProblem.problems;
+		newProblem.page_number = Number(pageNumber);
+		newProblem.problem_number += 1;
+
+		let index = 0;
+		let change = false;
+
+		for (var i = 0; i < problems.length; i++) {
+			if (change) { problems[i].problem_number += 1; }
+			if (problems[i].test_problem_id == newProblem.test_problem_id) {
+				change = true;
+				index = i;
+			}
+		}
+
+		delete newProblem.test_problem_id;
+
+		const insertedProblem = await addNewTestProblem(
+			newProblem,
+			"*, problems(*)",
+		);
+
+		problems.splice(index+1, 0, insertedProblem);
+
+		await saveTest();
+	}
+
 	// Group problems by page_number
 	const groupByPageNumber = (problems) => {
 		return problems.reduce((acc, problem) => {
@@ -216,17 +249,6 @@
 		</p>
 	</div>
 	<br />
-	<Button
-		title="Save Changes"
-		action={async () => {
-			try {
-				await saveTest();
-			} catch (e) {
-				await handleError(e);
-			}
-		}}
-	/>
-	<br />
 	<div class="box box-basic">
 		<p style="font-weight: bold; font-size: 24px;">Test Instructions</p>
 		<div class="row">
@@ -278,7 +300,7 @@
 												problem,
 											) === 0}>⬆️</button
 										>
-										
+
 										<button
 											class="arrow-button"
 											on:click={() =>
@@ -294,13 +316,21 @@
 										<button
 											class="arrow-button"
 											on:click={async () => {
-												await deleteTestProblem(problem.test_problem_id);
+												await deleteTestProblem(
+													problem.test_problem_id,
+												);
 
-												problems.splice(index+1, 1);
-    											problems = [...problems];
+												problems.splice(index, 1);
+												problems = [...problems];
 
-												for (let i = index + 1; i < problems.length; i++) {
-													problems[index].problem_number -= 1;
+												for (
+													let i = index;
+													i < problems.length;
+													i++
+												) {
+													problems[
+														index
+													].problem_number -= 1;
 												}
 
 												await saveTest();
@@ -365,20 +395,55 @@
 												index,
 											)}
 									/>
+									<br />
+									<Button
+										title="Save Changes"
+										action={async () => {
+											try {
+												await saveTest();
+											} catch (e) {
+												await handleError(e);
+											}
+										}}
+									/>
+									<br />
 								</div>
 								<div>
 									<h4>Display</h4>
 									<Problem {problem} />
 									<br /><br />
 									<MathJax
-										math={"Answer: " + problem.problems.answer_latex}
+										math={"Answer: " +
+											problem.problems.answer_latex}
 									/>
 								</div>
 							</div>
 						</div>
 					{/each}
+
+					<br />
+					<Button
+						title="Add New Problem"
+						action={async () => {
+							loading = true;
+							await addNewProblemPage(pageNumber);
+							loading = false;
+						}}
+					/>
+					<br /><br />
 				</div>
 			{/each}
+			<Button
+				title="Add New Page"
+				action={async () => {
+					loading = true;
+					await addNewProblemPage(
+						problems[problems.length - 1].page_number + 1,
+					);
+					loading = false;
+				}}
+			/>
+			<br />
 		</div>
 	</div>
 
@@ -392,26 +457,7 @@
 		on:close
 		on:submit={() => (modalProblem = null)}
 	>
-		<Button
-			title="Add New Problem"
-			action={async () => {
-				loading = true;
-
-				const newProblem = { ...problems[problems.length - 1] };
-
-				delete newProblem.test_problem_id;
-				delete newProblem.problems;
-				newProblem.problem_number += 1;
-
-				const insertedProblem = await addNewTestProblem(newProblem, "*, problems(*)");
-				problems.push(insertedProblem);
-
-				await saveTest();
-				
-				modalProblem = null;
-				loading = false;
-			}}
-		/>
+		<Button title="Add New Problem" href="/admin/problems/new" />
 		<br /><br />
 		<Accordion>
 			{#each allProblems as problem, index}
@@ -423,7 +469,11 @@
 						<Button
 							title="Select"
 							action={async () => {
-								const newProblem = await replaceTestProblem(problems[modalProblem].test_problem_id, problem.problem_id, "*, problems(*)");
+								const newProblem = await replaceTestProblem(
+									problems[modalProblem].test_problem_id,
+									problem.problem_id,
+									"*, problems(*)",
+								);
 								problems[modalProblem] = newProblem;
 								problems = [...problems];
 

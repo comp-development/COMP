@@ -63,7 +63,7 @@
 				<div>
 					{#if cell.key === "edit"}
 						<div class="pencil">
-							<Link class="link" href={"/admin/events/" + row.event_id}
+							<Link class="link" href={"/admin/" + row.event_id}
 								><i class="ri-pencil-fill" /></Link
 							>
 						</div>
