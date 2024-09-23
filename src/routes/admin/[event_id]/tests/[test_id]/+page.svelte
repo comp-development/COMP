@@ -287,7 +287,7 @@
 										<button
 											class="arrow-button"
 											on:click={() => {
-												modalProblem = index + 1;
+												modalProblem = index;
 											}}>🔁</button
 										>
 										<button
