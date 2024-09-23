@@ -71,12 +71,12 @@
 								on:click={() => {
 									hasAccount = false;
 								}}>Sign-Up</button
-							>-->
+							>
 							<button size="lg" class="link" id="forgotPassword"
 								><a href="/password-reset" style="color: black;"
 									>Forgot Password</a
 								></button
-							>
+							>-->
 						</div>
 					</div>
 				</div>
