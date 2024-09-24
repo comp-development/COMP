@@ -46,6 +46,8 @@
 		console.log("TEST_TAKER", test_taker);
 
 		if (!test_taker) {
+			disallowed = true;
+			loading = false;
 			throw new Error(
 				"Test with id " + $page.params.test_id + " doesn't exist!",
 			);

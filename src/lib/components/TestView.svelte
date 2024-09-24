@@ -46,20 +46,96 @@
 	let endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
 	let startTimeMs = new Date(startTime).getTime();
 
+	let test_answers_channel;
+	let problem_clarifications_channel;
+	let test_taker_channel;
+
 	let currentField;
 	let prevAnswer;
 
 	let open = false;
 
+	const changeProblemClarification = (payload) => {
+		console.log("CLARIFY", payload);
+		clarifications[payload.new.test_problem_id] =
+			payload.new.clarification_latex;
+	};
+
 	(async () => {
 		updateTimer()
+		await loadData()
+	})();
+
+	async function loadData() {
+		loading = true;
+		const startTime = performance.now()
+		await Promise.all([
+			fetchAnswers(),
+			fetchProblems(),
+			subscribeToChannels(),
+		]);
+		loading=false;
+		const endTime = performance.now();
+		console.log(`loadData took ${endTime - startTime} milliseconds`);
+	}
+
+	async function fetchAnswers() {
 		answers = await getTestAnswers(test_taker.test_taker_id);
 		answers.forEach((obj) => {
 			answersMap[obj.test_problem_id] = obj.answer_latex;
 			saved[obj.test_problem_id] = obj.answer_latex;
 		});
-		await fetchProblems();
-	})();
+	}
+
+
+	async function fetchProblems() {
+		try {
+			problems = await fetchTestProblems(test_taker.test_taker_id);
+			await Promise.all(problems.map(async (problem) => {
+				if (!(problem.test_problem_id in answersMap)) {
+					answersMap[problem.test_problem_id] = "";
+				}
+				const clarification = await getProblemClarification(problem.test_problem_id);
+				if (clarification && clarification.length > 0) {
+					clarifications[problem.test_problem_id] = clarification[0].clarification_latex;
+				}
+			}));
+		} catch (error) {
+			handleError(error);
+			toast.error(error.message);
+		}
+	}
+
+	
+
+	async function subscribeToChannels() {
+		if (problem_clarifications_channel) {
+			problem_clarifications_channel.unsubscribe()
+		}
+		problem_clarifications_channel = supabase
+			.channel("problem-clarification-for-test-" + test_taker.test_id + "-page-" + test_taker.page_number)
+			.on(
+				"postgres_changes",
+				{
+					event: "UPDATE",
+					schema: "public",
+					table: "problem_clarifications",
+					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+				},
+				changeProblemClarification,
+			)
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "problem_clarifications",
+					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+				},
+				changeProblemClarification,
+			)
+			.subscribe();
+	}
 
 	function handleFocus(event) {
 		console.log("EVENT", event)
@@ -81,17 +157,9 @@
 		fetchProblems();
 	};
 
-	const changeProblemClarification = (payload) => {
-		console.log("CLARIFY", payload);
-		clarifications[payload.new.test_problem_id] =
-			payload.new.clarification_latex;
-	};
+	
 
-	let test_answers_channel;
-	let problem_clarifications_channel;
-	let test_taker_channel;
-
-	// Listen to inserts if team test
+	// Listen to inserts
 	test_answers_channel = supabase
 	.channel("test-answers-for-taker-" + test_taker.test_taker_id)
 	.on(
@@ -131,34 +199,7 @@
 	.subscribe();
 	
 
-	function subscribeToChannels() {
-		if (problem_clarifications_channel) {
-			problem_clarifications_channel.unsubscribe()
-		}
-		problem_clarifications_channel = supabase
-			.channel("problem-clarification-for-test-" + test_taker.test_id + "-page-" + test_taker.page_number)
-			.on(
-				"postgres_changes",
-				{
-					event: "UPDATE",
-					schema: "public",
-					table: "problem_clarifications",
-					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
-				},
-				changeProblemClarification,
-			)
-			.on(
-				"postgres_changes",
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "problem_clarifications",
-					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
-				},
-				changeProblemClarification,
-			)
-			.subscribe();
-	}
+	
 
 	
 
@@ -214,10 +255,6 @@
         }
     }
 
-	function waitForFiveSeconds() {
-		return new Promise(resolve => setTimeout(resolve, 5000)); // 5000 milliseconds = 5 seconds
-	}
-
 	onDestroy(async () => {
 		saveFinalAnswer();
 		console.log("Destroying");
@@ -227,46 +264,21 @@
 		if (problem_clarifications_channel) {
 			problem_clarifications_channel.unsubscribe()
 		}
+		if (test_taker_channel) {
+			test_taker_channel.unsubscribe();
+		}
 		timerInterval ?? clearInterval(timerInterval);
 
 	});
 
-
-	async function fetchProblems() {
-		try {
-			loading = true;
-			problems = await fetchTestProblems(test_taker.test_taker_id)
-			console.log("PROBLEMS",problems)
-			subscribeToChannels();
-			console.log("PROBS", problems);
-			console.log("ANS", answers);
-			for (const problem of problems) {
-				console.log("PROB", problem);
-				if (!(problem.test_problem_id in answersMap)) {
-					answersMap[problem.test_problem_id] = "";
-				}
-
-				const clarification = await getProblemClarification(
-					problem.test_problem_id,
-				);
-				if (clarification && clarification.length > 0) {
-					clarifications[problem.test_problem_id] =
-						clarification[0].clarification_latex;
-				}
-			}
-			loading = false;
-		} catch (error) {
-			handleError(error);
-			toast.error(error.message);
-		}
-	}
+	
 
 	async function handleContinue() {
 		const newPage = test_taker.page_number + 1;
 		console.log("PAGE CHANGE")
 		await changePage(test_taker.test_taker_id, newPage);
 		test_taker.page_number = newPage;
-		await fetchProblems();
+		await loadData();
 	}
 
 	function sanitizeInput(input) {
@@ -287,16 +299,6 @@
 			handleError(e);
 		}
 	}
-
-	async function submitTest() {
-		try {
-			console.log("DISPATCHING");
-			dispatch("submit");
-		} catch (error) {
-			handleError(error);
-			toast.error(error.message);
-		}
-	}
 </script>
 
 <div class="test-div">
@@ -311,14 +313,13 @@
 					<div class="problem-div">
 						<h5>
 							{#if meltTime}
-								<FormattedTimeLeft timeLeft={problem.problem_number*parseInt(meltTime) - timeElapsed/1000} totalTime={problem.problem_number*parseInt(meltTime)}>
+								<FormattedTimeLeft timeLeft={problem.problem_number*parseInt(meltTime) - timeElapsed/1000} totalTime={problem.problem_number*parseInt(meltTime)} let:prop={time}>
 									{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
 										Melted!
 									{:else}
-										Melts in {formattedTime}
+										Melts in {time}
 									{/if}
 								</FormattedTimeLeft>
-								
 							{/if}
 						</h5>
 						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
