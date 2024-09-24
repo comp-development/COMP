@@ -2,6 +2,7 @@
     import { formatDuration } from "$lib/dateUtils";
     export let timeLeft; // in seconds
     export let totalTime; // in seconds
+    let time;
   
     // Calculate color based on the proportion of timeLeft to totalTime
     $: timeLeft = Math.max(timeLeft, 0)
@@ -13,6 +14,6 @@
   </script>
   
   <div class="formatted-duration" style="color: {color};">
-    <slot timeLeft={formattedTime}>{formattedTime}</slot>
-  </div>
+    <slot prop={time}>{time}</slot> <!-- Pass formattedTime directly to the slot -->
+</div>
   

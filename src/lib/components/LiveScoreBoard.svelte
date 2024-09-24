@@ -100,7 +100,7 @@
 						<td class="gutsResult teamName">{scores[i].name}</td>
 						<td class="gutsResult">
 							<div class ="round">
-								{#each Array.from({ length: 9 }, (_, i) => i + 1) as round}
+								{#each Array.from({ length: num_rounds }, (_, i) => i + 1) as round}
                                     <div class="color-box {round < scores[i].page_number ? "complete" : "not-complete"}"></div>
 								{/each}
 						</td>
@@ -127,9 +127,9 @@
                         <td class="gutsResult teamName">{scores[i].name}</td>
                         <td class="gutsResult">
                             <div class ="round">
-                                {#each Array(num_rounds) as __, round}
-                                    <div class="color-box ${round < scores[i].page_number ? "complete" : "not-complete"}"></div>
-                                {/each}
+                                {#each Array.from({ length: num_rounds }, (_, i) => i + 1) as round}
+                                    <div class="color-box {round < scores[i].page_number ? "complete" : "not-complete"}"></div>
+								{/each}
                         </td>
                         <td class="gutsResult">{scores[i].score}</td>
                     </tr>
