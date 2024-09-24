@@ -8,7 +8,7 @@ import { supabase } from "../supabaseClient";
  */
 export async function getTestProblems(
 	test_id: number,
-    page_num: number,
+    page_num: number | null = null,
 	customSelect: string = "*",
 ) {
     if (page_num) {

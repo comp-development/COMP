@@ -80,3 +80,25 @@ export async function replaceTestProblem(test_problem_id: number, new_problem_id
 
     return data;
 }
+
+export async function getGradedAnswers(problem_id: number) {
+    const { data, error } = await supabase
+        .from("graded_answers")
+        .select("*")
+        .eq("problem_id", problem_id);
+
+    if (error) throw error;
+
+    return data;
+}
+
+export async function updateGradedAnswers(gradedAnswers) {
+    gradedAnswers.forEach(async (gradedAnswer) => {
+        const { error } = await supabase
+            .from('graded_answers')
+            .update(gradedAnswer)
+            .eq('graded_answer_id', gradedAnswer.graded_answer_id);
+
+        if (error) throw error;
+    });
+}
