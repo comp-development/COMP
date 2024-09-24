@@ -9,6 +9,9 @@
     <span style="font-size: 20px; font-weight: bold;">
         Problem {problem.name && problem.name != "" ? problem.name : problem.problem_number}
     </span>
+    {#if problem.points}
+        ({problem.points} {problem.points == 1 ? "pt" : "pts"})
+    {/if}
 </p>
 <br />
 <MathJax math={problem.problems.problem_latex} />

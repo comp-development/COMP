@@ -4,7 +4,8 @@
 	import Katex from "$lib/components/Katex.svelte";
 	import MathJax from "$lib/components/MathJax.svelte"
 	import FormattedTimeLeft from "$lib/components/FormattedTimeLeft.svelte"
-	import { Tooltip, TextInput, Dropdown, Modal } from "carbon-components-svelte";
+	import { Tooltip, TooltipIcon, TextInput, Dropdown, Modal } from "carbon-components-svelte";
+	import Information from "carbon-icons-svelte/lib/Information.svelte";
 	import { page } from "$app/stores";
 	import { supabase } from "$lib/supabaseClient";
 	import { createEventDispatcher } from "svelte";
@@ -324,15 +325,26 @@
 						</h5>
 						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
 						<div style="margin-top: 30px; width: 300px;">
-							<TextInput
-								labelText="Answer"
-								bind:value={answersMap[problem.test_problem_id]}
-								disabled={problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
-								on:focus={handleFocus}
-								on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
-								on:blur={(e) =>
-									changeAnswer(e, problem.test_problem_id)}
-							/>
+							<div style="display:flex; align-items: center;">
+								<TextInput
+									labelText="Answer"
+									bind:value={answersMap[problem.test_problem_id]}
+									disabled={problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
+									on:focus={handleFocus}
+									on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
+									on:blur={(e) =>
+										changeAnswer(e, problem.test_problem_id)}
+								/>
+								<TooltipIcon
+									icon={Information}
+									direction="top"
+									style="margin-left: 8px; align-items: center; margin-top: 24px"
+								>
+									<p slot="tooltipText">
+										Utilize <a href="https://asciimath.org/#syntax" style="color: #abdbe3"  target="_blank">AsciiMath</a> for math typesetting!
+									</p>
+								</TooltipIcon>
+							</div>
 							<br />
 							<Katex
 								value={answersMap[problem.test_problem_id]}
@@ -361,14 +373,15 @@
 	</div>
 </div>
 <div class="panel">
-	<p>
-		<FormattedTimeLeft timeLeft={timeRemaining/1000} totalTime={(endTimeMs - startTimeMs)/1000}>
-			Time left: {formattedTime}
-		</FormattedTimeLeft>
-	</p> <!--Make tooltip in line with time remaining-->
-	<Tooltip>
-		<p>Answers are automatically submitted when time runs out.</p>
-	</Tooltip>
+	<div style="display:flex">
+		<TooltipIcon tooltipText="Answers are automatically submitted when time runs out." icon={Information} direction="left" style="margin-right: 4px"/>
+		<p>
+			<FormattedTimeLeft timeLeft={timeRemaining/1000} totalTime={(endTimeMs - startTimeMs)/1000}>
+				Time left: {formattedTime}
+			</FormattedTimeLeft>
+		</p> <!--Make tooltip in line with time remaining-->
+		
+	</div>
 	{#if test_taker.page_number < pages.length}
 		<Button action={(e) => {
 			open = true;
