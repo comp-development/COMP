@@ -59,8 +59,6 @@ async function processStudent(student) {
         email_confirm: true,  // Turn off email confirmation
       });
 
-      console.log(newUser)
-
       if (createUserError) {
         console.error(`Error creating user for ${student.email}:`, createUserError);
         return;
@@ -104,6 +102,8 @@ async function processTeam(team) {
       console.error(`Error fetching team with contestdojo_id ${team.contestdojo_id}:`, fetchError);
       return;
     }
+
+    console.log(existingTeam, team.team_name)
 
     if (existingTeam) {
       // If the team already exists, update their information
@@ -206,6 +206,7 @@ function processTeamsCSV() {
   teamsReadStream
     .pipe(csv())
     .on('data', (team) => {
+      console.log("PROCESS", team)
       processTeam(team);
     })
     .on('end', () => {
