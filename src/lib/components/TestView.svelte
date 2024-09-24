@@ -334,6 +334,7 @@
 									on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
 									on:blur={(e) =>
 										changeAnswer(e, problem.test_problem_id)}
+									maxLength={127}
 								/>
 								<TooltipIcon
 									icon={Information}
