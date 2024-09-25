@@ -46,19 +46,22 @@
 
     <div class="team_info">
         {#if team}
-            <p style="font-weight: bold; font-size: 20px;">{team.team_name}</p>
-            <p>{team.division} Division</p>
+            <p style="font-weight: bold; font-size: 20px; align-items: left">{team.team_name}</p>
+            {#if team.division}<p>{team.division} Division</p>{/if}
 
             {#each team.teamMembers as teamMember}
                 {#if teamMember.students}
                     <div style="display: flex; align-items: center;">
                         {#if teamMember.front_id}
-                            <Tag type={teamMember.student_id == user.student_id ? "outline" : "warm-gray"}>{teamMember.front_id}</Tag>
+                            <Tag type={teamMember.student_id == user.student_id ? "green" : ""}>{teamMember.front_id}</Tag>
                         {/if}
-                        <p> 
-                            {teamMember.students.first_name}
-                            {teamMember.students.last_name}
-                        </p>
+                        <div style="display:flex">
+                            <p> 
+                                {teamMember.students.first_name}
+                                {teamMember.students.last_name}
+                            </p>
+                            <p style="margin-left: 10px"><em>{teamMember.students.email}</em></p>
+                        </div>
                     </div>
                 {/if}
             {/each}
