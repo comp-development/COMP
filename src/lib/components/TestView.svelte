@@ -1,4 +1,5 @@
 <script lang="js">
+	import { onMount } from 'svelte';
 	import {onDestroy} from 'svelte';
 	import Button from "$lib/components/Button.svelte";
 	import Katex from "$lib/components/Katex.svelte";
