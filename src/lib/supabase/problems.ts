@@ -81,24 +81,83 @@ export async function replaceTestProblem(test_problem_id: number, new_problem_id
     return data;
 }
 
-export async function getGradedAnswers(problem_id: number) {
+export async function getGradedAnswers(test_problem_id: number, problem_id: number) {
     const { data, error } = await supabase
-        .from("graded_answers")
+        .from("graded_answer_count")
         .select("*")
-        .eq("problem_id", problem_id);
+        .eq("test_problem_id", test_problem_id);
 
     if (error) throw error;
+
+    console.log(data);
+
+    data.forEach(async (value) => {
+        const { data2, error2 } = await supabase
+            .from("graded_answers")
+            .select("*")
+            //.eq("problem_id", problem_id)
+            //.eq("answer_latex", value.answer_latex);
+        
+        if (error2) throw error2;
+
+        console.log(data2);
+        console.log(problem_id);
+        console.log(value.answer_latex);
+        
+        if (data2 == null) {
+            value.graded_answer_id = null;
+        } else {
+            value.problem_id = problem_id;
+            value.graded_answer_id = data2.graded_answer_id;
+        }
+
+        console.log(value);
+    })
 
     return data;
 }
 
 export async function updateGradedAnswers(gradedAnswers) {
     gradedAnswers.forEach(async (gradedAnswer) => {
-        const { error } = await supabase
-            .from('graded_answers')
-            .update(gradedAnswer)
-            .eq('graded_answer_id', gradedAnswer.graded_answer_id);
+        if (gradedAnswer.count == 0) {
+            const { error } = await supabase
+                .from('graded_answers')
+                .delete()
+                .eq("graded_answer_id", gradedAnswer.graded_answer_id);
 
-        if (error) throw error;
+            if (error) throw error;
+        } else {
+            const { error } = await supabase
+                .from('graded_answers')
+                .update({
+                    "correct": gradedAnswer.correct,
+                })
+                .eq("graded_answer_id", gradedAnswer.graded_answer_id);
+
+            if (error) throw error;
+        }
     });
+}
+
+export async function insertGradedAnswers(gradedAnswer) {
+    const { fetched, error2 } = await supabase
+        .from("graded_answers")
+        .select("*")
+        .eq("problem_id", gradedAnswer.problem_id)
+        .eq("answer_latex", gradedAnswer.answer_latex);
+    
+    if (error2 || fetched == null) {
+        const { data, error } = await supabase
+            .from('graded_answers')
+            .insert(insertData)
+            .select();
+        
+        if (error) throw error;
+        
+        gradedAnswer.graded_answer_id = data.graded_answer_id;
+    } else {
+        gradedAnswer.graded_answer_id = fetched.graded_answer_id;
+    }
+
+    return gradedAnswer;
 }
