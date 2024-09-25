@@ -37,7 +37,7 @@ export async function fetchTestProblems(
     const { data, error } = await supabase
         .rpc('fetch_test_problems', {
             p_test_taker_id: test_taker_id,
-        });
+        })
     if (error) { throw error; }
     return data;
 }
