@@ -63,10 +63,7 @@
 			payload.new.clarification_latex;
 	};
 
-	(async () => {
-		updateTimer()
-		await loadData()
-	})();
+	
 
 	async function loadData() {
 		loading = true;
@@ -74,7 +71,6 @@
 		await Promise.all([
 			fetchAnswers(),
 			fetchProblems(),
-			subscribeToChannels(),
 		]);
 		loading=false;
 		const endTime = performance.now();
@@ -93,6 +89,7 @@
 	async function fetchProblems() {
 		try {
 			problems = await fetchTestProblems(test_taker.test_taker_id);
+			subscribeToChannels(),
 			await Promise.all(problems.map(async (problem) => {
 				if (!(problem.test_problem_id in answersMap)) {
 					answersMap[problem.test_problem_id] = "";
@@ -108,15 +105,22 @@
 		}
 	}
 
+	const handleAnswersUpsert = (payload) => {
+		console.log("UPSERT", payload);
+		open = false;
+		answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
+		saved[payload.new.test_problem_id] = payload.new.answer_latex;
+	};
+
 	
 
 	async function subscribeToChannels() {
 		if (problem_clarifications_channel) {
 			problem_clarifications_channel.unsubscribe()
 		}
-		if (test_answers_channel) {
-			test_answers_channel.unsubscribe()
-		}
+		console.log("PROBS", problems)
+		const problemIds = problems.map(problem => problem.test_problem_id).join(",")
+		console.log("IDS",problemIds)
 		problem_clarifications_channel = supabase
 			.channel("problem-clarification-for-test-" + test_taker.test_id + "-page-" + test_taker.page_number)
 			.on(
@@ -125,7 +129,7 @@
 					event: "UPDATE",
 					schema: "public",
 					table: "problem_clarifications",
-					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+					filter: `test_problem_id=in.(${problemIds})`
 				},
 				changeProblemClarification,
 			)
@@ -135,34 +139,9 @@
 					event: "INSERT",
 					schema: "public",
 					table: "problem_clarifications",
-					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+					filter: ``
 				},
 				changeProblemClarification,
-			)
-			.subscribe();
-
-			// Listen to inserts
-		test_answers_channel = supabase
-			.channel("test-answers-for-taker-" + test_taker.test_taker_id + "-page-" + test_taker.page_number)
-			.on(
-				"postgres_changes",
-				{
-					event: "UPDATE",
-					schema: "public",
-					table: "test_answers",
-					filter: `test_taker_id=eq.${test_taker.test_taker_id} AND test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`,
-				},
-				handleAnswersUpsert,
-			)
-			.on(
-				"postgres_changes",
-				{
-					event: "INSERT",
-					schema: "public",
-					table: "test_answers",
-					filter: `test_taker_id=eq.${test_taker.test_taker_id} AND test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`,
-				},
-				handleAnswersUpsert,
 			)
 			.subscribe();
 	}
@@ -174,12 +153,6 @@
     }
 
 	// Create a function to handle inserts
-	const handleAnswersUpsert = (payload) => {
-		console.log("UPSERT", payload);
-		open = false;
-		answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
-		saved[payload.new.test_problem_id] = payload.new.answer_latex;
-	};
 
 	const handleTestTakerUpsert = async (payload) => {
 		console.log("TEST TAKER UPSERT", payload);
@@ -201,6 +174,30 @@
 		handleTestTakerUpsert,
 	)
 	.subscribe();
+
+	test_answers_channel = supabase
+		.channel("test-answers-for-taker-" + test_taker.test_taker_id + "-page-" + test_taker.page_number)
+		.on(
+			"postgres_changes",
+			{
+				event: "UPDATE",
+				schema: "public",
+				table: "test_answers",
+				filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+			},
+			handleAnswersUpsert,
+		)
+		.on(
+			"postgres_changes",
+			{
+				event: "INSERT",
+				schema: "public",
+				table: "test_answers",
+				filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+			},
+			handleAnswersUpsert,
+		)
+		.subscribe();
 
 	function updateTimer() {
 		if (!endTime) return;
@@ -296,6 +293,11 @@
 			handleError(e);
 		}
 	}
+
+	(async () => {
+		updateTimer()
+		await loadData()
+	})();
 </script>
 
 <div class="test-div">
