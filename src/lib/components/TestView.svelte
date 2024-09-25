@@ -31,7 +31,7 @@
 	let pages = settings.pages
 	let meltTime = settings.meltTime
 	export let is_team = false;
-	console.log("TESTAKER", test_taker);
+	//console.log("TESTAKER", test_taker);
 	let answers = [];
 	let problems = [];
 	let answersMap = {};
@@ -58,7 +58,7 @@
 	let open = false;
 
 	const changeProblemClarification = (payload) => {
-		console.log("CLARIFY", payload);
+		//console.log("CLARIFY", payload);
 		clarifications[payload.new.test_problem_id] =
 			payload.new.clarification_latex;
 	};
@@ -106,7 +106,7 @@
 	}
 
 	const handleAnswersUpsert = (payload) => {
-		console.log("UPSERT", payload);
+		//console.log("UPSERT", payload);
 		open = false;
 		answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
 		saved[payload.new.test_problem_id] = payload.new.answer_latex;
@@ -118,7 +118,7 @@
 		if (problem_clarifications_channel) {
 			problem_clarifications_channel.unsubscribe()
 		}
-		console.log("PROBS", problems)
+		//console.log("PROBS", problems)
 		const problemIds = problems.map(problem => problem.test_problem_id).join(",")
 		console.log("IDS",problemIds)
 		problem_clarifications_channel = supabase
@@ -147,7 +147,7 @@
 	}
 
 	function handleFocus(event) {
-		console.log("EVENT", event)
+		//console.log("EVENT", event)
 		prevAnswer = event.target.value
         currentField = event.target;
     }
@@ -155,7 +155,7 @@
 	// Create a function to handle inserts
 
 	const handleTestTakerUpsert = async (payload) => {
-		console.log("TEST TAKER UPSERT", payload);
+		//console.log("TEST TAKER UPSERT", payload);
 		open = false;
 		test_taker.page_number = payload.new.page_number;
 		await loadData();
@@ -281,9 +281,9 @@
 
 	async function changeAnswer(e, id) {
 		try {
-			console.log("ANSWER CHANGE")
+			//console.log("ANSWER CHANGE")
 			const upsertSuccess = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
-			console.log("SUCCESSFUL UPSERT", upsertSuccess)
+			//console.log("SUCCESSFUL UPSERT", upsertSuccess)
 			if (upsertSuccess == 'Upsert succeeded') {
 				saved[id] = answersMap[id]
 			} else {
@@ -373,15 +373,16 @@
 	</div>
 </div>
 <div class="panel">
-	<div style="display:flex">
+	<div style="display:flex align-items:center">
+		
 		<TooltipIcon tooltipText="Answers are automatically submitted when time runs out." icon={Information} direction="left" style="margin-right: 4px"/>
 		<p>
 			<FormattedTimeLeft timeLeft={timeRemaining/1000} totalTime={(endTimeMs - startTimeMs)/1000}>
 				Time left: {formattedTime}
 			</FormattedTimeLeft>
 		</p> <!--Make tooltip in line with time remaining-->
-		
 	</div>
+	
 	{#if test_taker.page_number < pages.length}
 		<Button action={(e) => {
 			open = true;
