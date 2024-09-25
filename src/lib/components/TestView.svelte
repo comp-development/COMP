@@ -118,9 +118,8 @@
 		if (problem_clarifications_channel) {
 			problem_clarifications_channel.unsubscribe()
 		}
-		//console.log("PROBS", problems)
+		console.log("PROBS", problems)
 		const problemIds = problems.map(problem => problem.test_problem_id).join(",")
-		console.log("IDS",problemIds)
 		problem_clarifications_channel = supabase
 			.channel("problem-clarification-for-test-" + test_taker.test_id + "-page-" + test_taker.page_number)
 			.on(
@@ -139,7 +138,7 @@
 					event: "INSERT",
 					schema: "public",
 					table: "problem_clarifications",
-					filter: ``
+					filter: `test_problem_id=in.(${problemIds})`
 				},
 				changeProblemClarification,
 			)
