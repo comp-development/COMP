@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import LiveScoreBoard from "$lib/components/LiveScoreBoard.svelte";
-	import { getTest } from "$lib/supabase";
+	import { getGutsTest } from "$lib/supabase";
 
 	console.log("SUP");
 	let loading = true;
@@ -9,7 +9,7 @@
 	let test_id = Number($page.params.test_id);
 	let test;
 	(async () => {
-		test = await getTest(test_id);
+		test = await getGutsTest(test_id);
 		loading = false;
 	})();
 </script>

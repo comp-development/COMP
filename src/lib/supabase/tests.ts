@@ -75,6 +75,17 @@ export async function getTest(test_id, customSelect = "*") {
     return data;
 }
 
+export async function getGutsTest(test_id, customSelect = "*") {
+    const { data, error } = await supabase
+        .from("guts_tests")
+        .select(customSelect)
+        .eq("test_id", test_id)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
 export async function addTestTaker(test_id) {
     console.log("TESTID",test_id)
     const { data, error } = await supabase
