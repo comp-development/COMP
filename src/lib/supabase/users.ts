@@ -57,26 +57,33 @@ export async function getThisUser() {
 
 export async function getUser(user_id: string) {
 	let admin = await isAdmin(user_id);
-
 	if (admin) {
-		let { data, error } = await supabase
-			.from('admins')
-			.select('*')
-			.eq('admin_id', user_id)
-			.single();
-		if (error) throw error;
-		data.isAdmin = true;
-		return data;
+		return (await getAdmin(user_id))
 	} else {
-		let { data, error } = await supabase
-			.from('students')
-			.select('*')
-			.eq('student_id', user_id)
-			.single();
-		if (error) throw error;
-		data.isAdmin = false;
-		return data;
+		return (await getStudent(user_id))
 	}	
+}
+
+export async function getAdmin(user_id: string) {
+	let { data, error } = await supabase
+		.from('admins')
+		.select('*')
+		.eq('admin_id', user_id)
+		.single();
+	if (error) throw error;
+	data.isAdmin = true;
+	return data;
+}
+
+export async function getStudent(user_id: string) {
+	let { data, error } = await supabase
+		.from('students')
+		.select('*')
+		.eq('student_id', user_id)
+		.single();
+	if (error) throw error;
+	data.isAdmin = false;
+	return data;
 }
 
 /**
