@@ -90,15 +90,14 @@ export async function getGradedAnswers(test_problem_id: number, problem_id: numb
     if (error) throw error;
 
     data.forEach(async (value) => {
-        /*THIS CALL DOESN'T WORK*/
-        const { data2, error2 } = await supabase
+        const { data: data2, error: error2 } = await supabase
             .from("graded_answers")
             .select("*")
             .eq("problem_id", problem_id)
             .eq("answer_latex", value.answer_latex);
         
         if (error2) throw error2;
-        
+
         if (data2 == null) {
             value.graded_answer_id = null;
         } else {

@@ -237,13 +237,11 @@
             <div>
                 <h3>Answers</h3>
                 <br />
-                <Button title="Save Grades" action={submitUpdatedGrades} />
-                <br /><br />
                 <Button
                     title="Mark Rest Incorrect"
                     action={markRestIncorrect}
                 />
-                <br /><br />
+                <br /><br /><br />
                 <div class="grid">
                     {#each gradedAnswers as answer, index}
                         <div
