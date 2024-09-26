@@ -71,10 +71,10 @@
 	{:else}
 		<div class="linkExterior">
 			<a
-				href="/student"
+				href="./"
 				class={path == "/student" ? "active link" : "link"}
 			>
-				Events
+				Back
 			</a>
 		</div>
 	{/if}
