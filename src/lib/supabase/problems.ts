@@ -89,20 +89,15 @@ export async function getGradedAnswers(test_problem_id: number, problem_id: numb
 
     if (error) throw error;
 
-    console.log(data);
-
     data.forEach(async (value) => {
+        /*THIS CALL DOESN'T WORK*/
         const { data2, error2 } = await supabase
             .from("graded_answers")
             .select("*")
-            //.eq("problem_id", problem_id)
-            //.eq("answer_latex", value.answer_latex);
+            .eq("problem_id", problem_id)
+            .eq("answer_latex", value.answer_latex);
         
         if (error2) throw error2;
-
-        console.log(data2);
-        console.log(problem_id);
-        console.log(value.answer_latex);
         
         if (data2 == null) {
             value.graded_answer_id = null;
@@ -110,8 +105,6 @@ export async function getGradedAnswers(test_problem_id: number, problem_id: numb
             value.problem_id = problem_id;
             value.graded_answer_id = data2.graded_answer_id;
         }
-
-        console.log(value);
     })
 
     return data;
@@ -149,11 +142,16 @@ export async function insertGradedAnswers(gradedAnswer) {
     if (error2 || fetched == null) {
         const { data, error } = await supabase
             .from('graded_answers')
-            .insert(insertData)
-            .select();
+            .insert({
+                "problem_id": gradedAnswer.problem_id,
+                "answer_latex": gradedAnswer.answer_latex,
+                "correct": null
+            })
+            .select()
+            .single();
         
         if (error) throw error;
-        
+
         gradedAnswer.graded_answer_id = data.graded_answer_id;
     } else {
         gradedAnswer.graded_answer_id = fetched.graded_answer_id;

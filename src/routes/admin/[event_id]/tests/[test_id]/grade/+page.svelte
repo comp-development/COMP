@@ -70,13 +70,14 @@
         }
     }
 
-    function markRestIncorrect() {
+    async function markRestIncorrect() {
         gradedAnswers.forEach((gradedAnswer) => {
             if (gradedAnswer.correct != true) {
                 gradedAnswer.correct = false;
             }
         });
 
+        gradedAnswers = await updateGradedAnswers(gradedAnswers);
         gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
     }
 
@@ -104,46 +105,36 @@
             (answer) => answer.answer_latex === updatedAnswer.answer_latex,
         );
 
+        console.log(payload);
+
         if (existingIndex !== -1) {
             // Update existing answer
-            gradedAnswers[existingIndex] = {
-                problem_id: gradedAnswers[existingIndex].problem_id,
-                graded_answer_id: gradedAnswers[existingIndex].graded_answer_id,
-                correct: gradedAnswers[existingIndex].correct,
-                test_problem_id: gradedAnswers[existingIndex].test_problem_id,
-                count: gradedAnswers[existingIndex].count + 1
-            };
-        } else {
-            const newGradedAnswer = await insertGradedAnswers(updatedAnswer);
+            // gradedAnswers[existingIndex] = {
+            //     problem_id: gradedAnswers[existingIndex].problem_id,
+            //     graded_answer_id: gradedAnswers[existingIndex].graded_answer_id,
+            //     correct: gradedAnswers[existingIndex].correct,
+            //     test_problem_id: gradedAnswers[existingIndex].test_problem_id,
+            //     count: gradedAnswers[existingIndex].count + 1
+            // };
 
-            gradedAnswers.push({
-                count: 1,
-                problem_id: updatedAnswer.problem_id,
-                graded_answer_id: newGradedAnswer.graded_answer_id,
-                correct: null,
-                test_problem_id: updatedAnswer.test_problem_id
-            });
+            //IMPLEMENT DELETE OLD ROW FROM GRADED_ANSWERS
+        } else {
+            const parameter = {"problem_id": problems[selectedProblem]["problem_id"], ...updatedAnswer};
+            const newGradedAnswer = await insertGradedAnswers(parameter);
+
+            // gradedAnswers.push({
+            //     count: 1,
+            //     problem_id: updatedAnswer.problem_id,
+            //     graded_answer_id: newGradedAnswer.graded_answer_id,
+            //     correct: null,
+            //     test_problem_id: updatedAnswer.test_problem_id
+            // });
         }
 
-        gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
-    }
-
-    function handleTestAnswerUpdate(payload) {
-        console.log(payload);
-        const updatedAnswer = payload.new;
-        const oldAnswer = payload.old;
-
-        console.log(updatedAnswer);
-        console.log(oldAnswer);
-
-        const existingIndex = gradedAnswers.findIndex(
-            (answer) => answer.answer_latex === updatedAnswer.answer_latex,
+        gradedAnswers = await getGradedAnswers(
+            problems[selectedProblem].test_problem_id,
+            problems[selectedProblem].problem_id,
         );
-        const oldIndex = gradedAnswers.findIndex(
-            (answer) => answer.answer_latex === oldAnswer.answer_latex,
-        );
-        gradedAnswers[existingIndex].count += 1;
-        gradedAnswers[oldIndex].count -= 1;
         gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
     }
 
@@ -176,7 +167,7 @@
                     table: "test_answers",
                     filter: `test_problem_id=eq.${problems[selectedProblem].test_problem_id}`,
                 },
-                handleTestAnswerUpdate,
+                handleTestAnswerNew,
             )
             .subscribe();
 
@@ -269,7 +260,7 @@
                             <div style="display: flex;">
                                 <button
                                     class="arrow-button"
-                                    on:click={() => {
+                                    on:click={async () => {
                                         if (
                                             gradedAnswers[index].correct == true
                                         ) {
@@ -277,6 +268,7 @@
                                         } else {
                                             gradedAnswers[index].correct = true;
                                         }
+                                        await updateGradedAnswers(gradedAnswers);
                                         gradedAnswers = sortedGradedAnswers([
                                             ...gradedAnswers,
                                         ]);
@@ -284,7 +276,7 @@
                                 >
                                 <button
                                     class="arrow-button"
-                                    on:click={() => {
+                                    on:click={async () => {
                                         if (
                                             gradedAnswers[index].correct ==
                                             false
@@ -294,6 +286,7 @@
                                             gradedAnswers[index].correct =
                                                 false;
                                         }
+                                        await updateGradedAnswers(gradedAnswers);
                                         gradedAnswers = sortedGradedAnswers([
                                             ...gradedAnswers,
                                         ]);
