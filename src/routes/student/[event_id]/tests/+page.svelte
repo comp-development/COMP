@@ -215,7 +215,7 @@
 				<div>
 					<div class="problemContainer">
 						<div>
-							<div class="flex" style="align-items: center;">
+							<div class="flex" style="align-items: center; justify-content: left;">
 								<h4>
 									{test.test_name}
 								</h4>
@@ -239,7 +239,7 @@
 									})}
 								</p>
 							{/if}
-							<p>Duration: {test.length / 60} mins</p>
+							<p style="text-align: left;">Duration: {test.length / 60} mins</p>
 						</div>
 						<div class="flex">
 							<p style="margin-right: 10px;">
