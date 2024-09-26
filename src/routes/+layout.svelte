@@ -498,6 +498,33 @@
 		cursor: pointer;
 	}
 
+	:global(.tooltip-container) {
+		position: relative; /* Positioning context for the tooltip */
+		display: inline-block; /* Allow the tooltip to be positioned relative to the button */
+	}
+
+	:global(.tooltip) {
+		visibility: hidden; /* Hidden by default */
+		width: 120px; /* Set width */
+		background-color: black; /* Background color */
+		color: #fff; /* Text color */
+		text-align: center; /* Center text */
+		border-radius: 5px; /* Rounded corners */
+		padding: 5px; /* Padding */
+		position: absolute; /* Positioning */
+		z-index: 1; /* Ensure it appears above other elements */
+		bottom: 125%; /* Position above the button */
+		left: 50%; /* Center horizontally */
+		transform: translateX(-50%); /* Center adjustment */
+		opacity: 0; /* Hidden by default */
+		transition: opacity 0.3s; /* Fade effect */
+	}
+
+	:global(.tooltip-container:hover .tooltip) {
+		visibility: visible; /* Show tooltip on hover */
+		opacity: 1; /* Fade in */
+	}
+
 	#switchScreen {
 		float: left;
 	}

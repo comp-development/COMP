@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from "$app/stores";
+	import { onDestroy } from "svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { Button as SvelteButton } from "carbon-components-svelte";
 	import Document from "carbon-icons-svelte/lib/Document.svelte";
+	
 	import { Modal, Tag } from "carbon-components-svelte";
 	import { writable } from "svelte/store";
 	import {
@@ -29,13 +31,17 @@
 	let instructions = "";
 	let name = "";
 
+	let currentTime;
+
 	let availableTests = [];
 	let testStatusMap = {};
 	$: tests = Object.values(testStatusMap);
 	let user = null;
 	let teamId = null;
 
-	const handleTestTimeUpdate = (payload) => {
+	let subscription;
+
+	const handleTestUpdate = (payload) => {
 		console.log("TIME PAYLOAD", payload.new);
 		testStatusMap[payload.new.test_id] = {...testStatusMap[payload.new.test_id], ...payload.new}
 		return
@@ -54,7 +60,7 @@
 		loading = false;
 
 		// Listen to inserts
-		supabase
+		subscription = supabase
 			.channel("test-takers-" + (user ? user.id : ""))
 			.on(
 				"postgres_changes",
@@ -83,7 +89,7 @@
 					schema: "public",
 					table: "tests",
 				},
-				handleTestTimeUpdate,
+				handleTestUpdate,
 			)
 			.on(
 				"postgres_changes",
@@ -92,13 +98,18 @@
 					schema: "public",
 					table: "tests",
 				},
-				handleTestTimeUpdate,
+				handleTestUpdate,
 			)
 			.subscribe();
 	})();
 
+	onDestroy(async () => {
+		subscription ??	subscription.unsubscribe();
+		interval ?? clearInterval(interval);
+	})
+
 	const updateStatus = (test) => {
-		const currentTime = new Date();
+		currentTime = new Date();
 		const newStatus = {
 			status: "Closed",
 			countdown: "",
@@ -122,16 +133,10 @@
 		}
 		else if (!test.end_time && (!test.opening_time || currentTime < new Date(test.opening_time))) {
 			newStatus.status = "Not Open";
-			if (test.opening_time) {
-				newStatus.countdown =
-					"Time till test: " +
-					formatDuration(
-						diffBetweenDates(
-							test.opening_time,
-							currentTime,
-							"seconds",
-						),
-					);
+			const timeTillTest = diffBetweenDates(test.opening_time, currentTime, "seconds") 
+			
+			if (test.opening_time && timeTillTest < 86400) {
+				newStatus.countdown = "Time till test: " + formatDuration(timeTillTest)
 			}
 		} else if (
 			isAfter(
@@ -165,6 +170,7 @@
 			newStatus.disabled = false;
 		} 
 		testStatusMap[test.test_id] = {...testStatusMap[test.test_id], ...newStatus}
+		
 	};
 
 	const interval = setInterval(() => {
@@ -211,7 +217,15 @@
 		<p>No available tests!</p>
 	{:else}
 		<div class="buttonContainer">
-			{#each tests as test}
+			{#each Object.values(testStatusMap).sort((a, b) => {
+				// Sort by status priority first
+				const statusOrder = { "Continue": 1, "Start": 2, "Not Open": 3, "Closed": 4 };
+				const statusComparison = statusOrder[a.status] - statusOrder[b.status];
+				if (statusComparison !== 0) return statusComparison;
+
+				// Then sort by opening_time
+				return (new Date(a.opening_time) - new Date(b.opening_time));
+			}) as test}
 				<div>
 					<div class="problemContainer">
 						<div>
@@ -243,31 +257,33 @@
 						</div>
 						<div class="flex" style="gap: 5px">
 							<p style="margin-right: 5px;">
-								{testStatusMap[test.test_id].countdown}
+								{test.countdown}
 							</p>
 							<button
 								class="test-button full"
-								disabled={testStatusMap[test.test_id].disabled}
+								disabled={test.disabled}
 								on:click={async (e) => {
 									e.preventDefault();
 									await handleTestStart(test);
 									window.location.href = `./tests/${test.test_id}`;
 								}}
 							>
-								{testStatusMap[test.test_id].status}
+								{test.status}
 							</button>
-							<button
-								class="test-button empty"
-								iconDescription="Instructions"
-								icon={Document}
-								on:click={() => {
-									open = true;
-									instructions = test.instructions ?? "No Instructions Added";
-									name = test.test_name;
-								}}
-							>
-								<Document/>
-							</button>
+							<div class="tooltip-container">
+								<button
+									class="test-button empty"
+									on:click={() => {
+										open = true;
+										instructions = test.instructions;
+										name = test.test_name;
+									}} 
+									disabled={!test.instructions}
+								>
+									<Document/>
+								</button>
+								<span class="tooltip">{#if test.instructions}View Instructions{:else}No Instructions{/if}</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -281,6 +297,7 @@
 </div>
 
 <style>
+
 	.problemContainer {
 		background-color: white;
 		border: 3px solid var(--primary-tint);
@@ -306,15 +323,13 @@
 	}
 
 	.test-button {
-		padding: 10px 30px; /* Shared styles */
 		border-radius: 10px;
 		border: 1px solid #a7f0ba;
-		 /* Shared background */
 	}
 
 	.full {
 		background-color: #a7f0ba;
-		padding: 10px 30px;
+		padding: 10px 20px;
 	}
 
 	.empty {

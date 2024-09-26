@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Button from "$lib/components/Button.svelte";
-	import { Modal, DatePicker, DatePickerInput, TimePicker, TimePickerSelect, SelectItem, TextInput } from "carbon-components-svelte";
+	import { Toggle, Tag, Modal, DatePicker, DatePickerInput, TimePicker, TimePickerSelect, SelectItem, TextInput } from "carbon-components-svelte";
 	import { formatTime, formatDuration, addTime, subtractTime, isBefore, isAfter, diffBetweenDates } from "$lib/dateUtils";
 	import Loading from "$lib/components/Loading.svelte";
+	import Document from "carbon-icons-svelte/lib/Document.svelte";
+	import Edit from "carbon-icons-svelte/lib/Edit.svelte";
+	import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import { onDestroy, onMount } from "svelte";
@@ -22,8 +25,8 @@
 	let name = ""
 
 	let availableTests = [];
-	let tests = [];
 	let testStatusMap = {};
+	$: tests = Object.values(testStatusMap);
 	let user = null;
 	let teamId = null;
 
@@ -55,23 +58,26 @@
 
 	const updateStatus = (test) => {
 		const currentTime = new Date();
-		test.status = 'Closed'
-		test.countdown = ''
+		const newStatus = {
+			status: "Closed",
+			countdown: "",
+		};
 		if (!test.opening_time || currentTime < new Date(test.opening_time)) {
-			test.status = 'Not Open'
-			if (test.opening_time) {
-				test.countdown = "Time till open: " + formatDuration(diffBetweenDates(test.opening_time, currentTime, "seconds"))
+			newStatus.status = 'Not Open'
+			const timeTillTest = diffBetweenDates(test.opening_time, currentTime, "seconds") 
+			if (test.opening_time && timeTillTest < 86400) {
+				newStatus.countdown = "Time till open: " + formatDuration(timeTillTest)
 			}
 		}
 		else if (isAfter(addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), currentTime)) {
-			test.status = 'Open'
-			test.countdown = "Time remaining: " + formatDuration(Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds")))
+			newStatus.status = 'Open'
+			newStatus.countdown = "Time remaining: " + formatDuration(Math.abs(diffBetweenDates(currentTime, addTime(new Date(test.opening_time), test.length + test.buffer_time, "seconds"), "seconds")))
 		}
-		testStatusMap[test.test_id] = test
+		testStatusMap[test.test_id] = {...testStatusMap[test.test_id], ...newStatus}
 	};
 
 	const interval = setInterval(() => {
-      tests.forEach(updateStatus);
+		Object.values(testStatusMap).forEach(updateStatus);
     }, 1000);
 
 	async function handleSubmit() {
@@ -118,6 +124,7 @@
 			tests = await getEventTests($page.params.event_id)
 			console.log(tests)
 			for (const test of tests) {
+				testStatusMap[test.test_id] = {...test}
 				updateStatus(test)
 			}
 		} catch (error) {
@@ -137,46 +144,94 @@
 		<p>No available tests!</p>
 	{:else}
 		<div class="buttonContainer">
-			{#each tests as test}
+			{#each Object.values(testStatusMap).sort((a, b) => {
+				// Sort by opening_time first
+				const openingTimeComparison = new Date(a.opening_time) - new Date(b.opening_time);
+				if (openingTimeComparison !== 0) return openingTimeComparison;
+
+				// Then sort by test_name
+				const nameComparison = a.test_name.localeCompare(b.test_name);
+				if (nameComparison !== 0) return nameComparison;
+
+				// Finally sort by test_division
+				return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
+			}) as test}
 				<div>
-					<div
-						class="problemContainer"
-					>
-						<h4>
-							{test.test_name}
-						</h4>
-						<div style="margin-top: 10px">
-							<Button
-								href="./tests/{test.test_id}"
-								title="Edit Test & Problems"
-							/>
-							<Button
-								href="./tests/{test.test_id}/grade"
-								title="Grade Test"
-							/>
-							<Button
-								href="./tests/{test.test_id}/results"
-								title="Results"
-							/>
-							<Button action={(e) => {
+					<div class="problemContainer">
+						<div>
+							<div class="flex" style="align-items: center; justify-content: left;">
+								<h4>
+									{test.test_name}
+								</h4>
+								<Tag type="green"
+									>{test.is_team ? "Team" : "Individual"}</Tag
+								>
+								{#if test.division}
+									<Tag type="green">{test.division}</Tag>
+								{/if}
+							</div>
+							{#if (test.status == "Not Open" && test.opening_time)}
+								<p>
+									Start Time: {new Date(
+										test.opening_time,
+									).toLocaleString([], {
+										year: "numeric",
+										month: "numeric",
+										day: "numeric",
+										hour: "2-digit",
+										minute: "2-digit",
+									})}
+								</p>
+							{/if}
+							<p style="text-align: left;">Duration: {test.length / 60} mins</p>
+							<p style="text-align: left;">Buffer: {test.buffer_time / 60} mins</p>
+						</div>
+						<div class="flex" style="gap: 5px">
+							<p style="margin-right: 5px;">
+								{test.countdown}
+							</p>
+							<!--
+								<Toggle
+									labelText="Visible"
+									on:toggle={(e) => console.log(e.detail)}
+								/>
+							-->
+							
+							<div class="tooltip-container">
+								<a href="./tests/{test.test_id}">
+									<button
+										class="test-button empty"
+									>
+										<Edit/>
+									</button>
+									<span class="tooltip">Edit Test</span>
+								</a>
+							</div>
+							<div class="tooltip-container">
+								<a href="./tests/{test.test_id}/grade">
+									<button
+										class="test-button empty"
+									>
+										<ListCheckedMirror/>
+									</button>
+									<span class="tooltip">Grade Test</span>
+								</a>
+							</div>
+							<button
+								class="test-button full"
+								on:click={(e) => {
 									curTest = test
 									setupTime(curTest.openingTime ? new Date(curTest.openingTime) : new Date())
 									open = true;
 								}}
-								title={"Open Test"}
-							/>
+							>
+								Open
+							</button>
 							
 						</div>
-                        {testStatusMap[test.test_id].status}
-						{testStatusMap[test.test_id].countdown}
 					</div>
-					
 				</div>
 			{/each}
-			<Button
-				href="."
-				title={"Back"}
-			/>
 		</div>
 		<br />
 		<Modal 
@@ -231,21 +286,61 @@
 	.problemContainer {
 		background-color: white;
 		border: 3px solid var(--primary-tint);
-		padding: 10px;
+		padding: 20px;
 		margin: 10px;
 		border-radius: 20px;
-		text-align: center;
 		font-weight: bold;
 		text-decoration: none;
-		display: block;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		color: var(--text-color-dark);
 		transition: all 0.3s ease; /* Add transition for smooth hover effect */
 	}
 
-	.problemContainer:hover {
-		transform: scale(1.05); /* Scale up on hover */
-		border-width: 5px; /* Increase border width on hover */
+	.problemContainer h4 {
+		font-weight: bold;
+		margin-right: 5px;
 	}
+
+	.problemContainer button {
+		border: none;
+	}
+
+	.test-button {
+		border-radius: 10px;
+		border: 1px solid #a7f0ba;
+	}
+
+	.full {
+		background-color: #a7f0ba;
+		padding: 10px 20px;
+	}
+
+	.empty {
+		padding: 10px 10px;
+	}
+
+
+	button:disabled,
+	button[disabled] {
+		cursor: not-allowed;
+	}
+
+	.test-button:not([disabled]):hover {
+		transform: scale(1.05);
+		cursor: pointer;
+	}
+
+	.full:not([disabled]):hover {
+		border: 2px solid #3f9656;
+	}
+
+	.empty:not([disabled]):hover {
+		border: 2px solid #494949;
+	}
+
+	
 
 	.buttonContainer {
 		flex-direction: column; /* Align children vertically */

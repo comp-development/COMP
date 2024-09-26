@@ -22,7 +22,8 @@ export async function getEventTests(event_id:number, customSelect = "*") {
     let { data, error } = await supabase
         .from("tests")
         .select(customSelect)
-        .eq("event_id", event_id);
+        .eq("event_id", event_id)
+		.order("test_name");
     if (error) throw error;
     return data;
 }
