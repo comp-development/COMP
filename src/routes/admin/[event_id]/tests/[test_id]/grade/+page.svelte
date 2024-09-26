@@ -16,15 +16,14 @@
     let problems: [];
     let problem_list: [];
     let loading = true;
-    let selectedProblem = 0;
+    let selectedProblem;
     let gradedAnswers: any[] = [];
     let gradedAnswersChannel;
     let gradedAnswerCountChannel;
 
-    $: selectedProblem,
-        async () => {
-            await recieveGradedAnswers();
-        };
+    $: if (selectedProblem !== undefined) {
+        recieveGradedAnswers();
+    };
 
     function sortedGradedAnswers() {
         return gradedAnswers.slice().sort((a, b) => {
@@ -40,6 +39,7 @@
     (async () => {
         problems = await getTestProblems(test_id, null, "*, problems(*)");
         problem_list = Object.keys(problems);
+        selectedProblem = 0;
         await recieveGradedAnswers();
         loading = false;
     })();
@@ -51,7 +51,7 @@
                 problems[selectedProblem].test_problem_id,
                 problems[selectedProblem].problem_id,
             );
-            gradedAnswers = sortedGradedAnswers(gradedAnswers);
+            gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
 
             subscribeToGradedAnswersChannel();
 
@@ -63,6 +63,7 @@
 
     async function submitUpdatedGrades() {
         try {
+            console.log(gradedAnswers);
             await updateGradedAnswers(gradedAnswers);
             toast.success("Successfully saved");
         } catch (e) {
@@ -77,7 +78,7 @@
             }
         });
 
-        gradedAnswers = await updateGradedAnswers(gradedAnswers);
+        await submitUpdatedGrades();
         gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
     }
 
@@ -267,9 +268,7 @@
                                             gradedAnswers[index].correct = true;
                                         }
                                         await updateGradedAnswers(gradedAnswers);
-                                        gradedAnswers = sortedGradedAnswers([
-                                            ...gradedAnswers,
-                                        ]);
+                                        await submitUpdatedGrades();
                                     }}>✅</button
                                 >
                                 <button
@@ -285,9 +284,7 @@
                                                 false;
                                         }
                                         await updateGradedAnswers(gradedAnswers);
-                                        gradedAnswers = sortedGradedAnswers([
-                                            ...gradedAnswers,
-                                        ]);
+                                        await submitUpdatedGrades();
                                     }}>❌</button
                                 >
                                 <p style="margin: 2px;">{answer.count}</p>
