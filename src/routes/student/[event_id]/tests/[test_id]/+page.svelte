@@ -14,6 +14,7 @@
 		getTest,
 		getTeamId,
 	} from "$lib/supabase";
+  import { TextSubscript } from "carbon-icons-svelte";
 
 	let loading = true;
 	let disallowed = false;
@@ -62,6 +63,9 @@
 {:else}
 	<br />
 	<h1>{test.test_name}</h1>
+	{#if test.division}
+		<h2>{test.division}</h2>
+	{/if}
 	<div style="padding: 20px;">
 		<ExpandableTile light expanded tileExpandedLabel="View less" tileCollapsedLabel="View more">
 			<div slot="above"><p style="font-weight: bold">Test Instructions</p></div>

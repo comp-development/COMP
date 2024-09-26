@@ -310,8 +310,8 @@
 			{#each problems as problem}
 				<div class="problem-container">
 					<div class="problem-div">
-						<h5>
-							{#if meltTime}
+						{#if meltTime}
+							<h5>
 								<FormattedTimeLeft timeLeft={problem.problem_number*parseInt(meltTime) - timeElapsed/1000} totalTime={problem.problem_number*parseInt(meltTime)} let:prop={time}>
 									{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
 										Melted!
@@ -319,15 +319,16 @@
 										Melts in {time}
 									{/if}
 								</FormattedTimeLeft>
-							{/if}
-						</h5>
+							</h5>
+						{/if}
+						
 						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
 						<div style="margin-top: 30px; width: 300px;">
 							<div style="display:flex; align-items: center;">
 								<TextInput
 									labelText="Answer"
 									bind:value={answersMap[problem.test_problem_id]}
-									disabled={problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
+									disabled={meltTime ? problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0 : false}
 									on:focus={handleFocus}
 									on:keydown={(e) => e.key === 'Enter' && changeAnswer(e, problem.test_problem_id)}
 									on:blur={(e) =>

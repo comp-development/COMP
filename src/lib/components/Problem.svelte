@@ -7,7 +7,7 @@
 
 <p style="margin-bottom: 5px;">
     <span style="font-size: 20px; font-weight: bold;">
-        Problem {problem.name && problem.name != "" ? problem.name : problem.problem_number}
+        {problem.name && problem.name != "" ? problem.name : "Problem "+problem.problem_number}
     </span>
     {#if problem.points}
         ({problem.points} {problem.points == 1 ? "pt" : "pts"})

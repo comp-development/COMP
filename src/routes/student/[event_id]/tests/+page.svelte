@@ -291,7 +291,8 @@
 		</div>
 		<br />
 		<Modal passiveModal bind:open modalHeading={name} on:open on:close>
-			<MathJax math={instructions} />
+			<div style="text-align:left"><MathJax math={instructions} /></div>
+			
 		</Modal>
 	{/if}
 </div>
