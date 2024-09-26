@@ -30,7 +30,7 @@
 <div class="menu">
 	<br /><br />
 	<div class="flex">
-		<img src="/favicon.png" alt={"MMT_logo"} width="50" height="50" />
+		<img src="/COMP_White.png" alt={"COMP_logo"} width="150" />
 	</div>
 	<br />
 	<p class="emphasize">{isUserAdmin ? "Admin" : "Student"}</p>
