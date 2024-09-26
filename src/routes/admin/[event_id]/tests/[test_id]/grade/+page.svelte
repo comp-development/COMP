@@ -336,6 +336,7 @@
         border-radius: 5px;
         display: grid;
         grid-template-columns: 75% 25%;
+        min-height: 50px;
     }
 
     .answer {
