@@ -1377,6 +1377,11 @@ flatpickr@4.6.9:
   resolved "https://registry.npmjs.org/flatpickr/-/flatpickr-4.6.9.tgz"
   integrity sha512-F0azNNi8foVWKSF+8X+ZJzz8r9sE1G4hl06RyceIaLvyltKvDl6vqk9Lm/6AUUCi5HWaIjiUbk7UpeE/fOXOpw==
 
+fontawesome-free@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.npmjs.org/fontawesome-free/-/fontawesome-free-1.0.4.tgz"
+  integrity sha512-7sX6Lbg2oQiClFFFFitJlKg20h3YTBON6rdmq3uGjNwDo8G6EjF2bfj2OjjcCUmf4OvZCgyHaXfW2JseqissLw==
+
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"

@@ -241,11 +241,12 @@
 							{/if}
 							<p style="text-align: left;">Duration: {test.length / 60} mins</p>
 						</div>
-						<div class="flex">
-							<p style="margin-right: 10px;">
+						<div class="flex" style="gap: 5px">
+							<p style="margin-right: 5px;">
 								{testStatusMap[test.test_id].countdown}
 							</p>
 							<button
+								class="test-button full"
 								disabled={testStatusMap[test.test_id].disabled}
 								on:click={async (e) => {
 									e.preventDefault();
@@ -255,8 +256,8 @@
 							>
 								{testStatusMap[test.test_id].status}
 							</button>
-							<SvelteButton
-								kind="ghost"
+							<button
+								class="test-button empty"
 								iconDescription="Instructions"
 								icon={Document}
 								on:click={() => {
@@ -264,7 +265,9 @@
 									instructions = test.instructions ?? "No Instructions Added";
 									name = test.test_name;
 								}}
-							/>
+							>
+								<Document/>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -299,23 +302,42 @@
 	}
 
 	.problemContainer button {
-		outline: none;
 		border: none;
-		padding: 10px 30px;
-		border-radius: 10px;
-		background-color: #a7f0ba;
 	}
+
+	.test-button {
+		padding: 10px 30px; /* Shared styles */
+		border-radius: 10px;
+		border: 1px solid #a7f0ba;
+		 /* Shared background */
+	}
+
+	.full {
+		background-color: #a7f0ba;
+		padding: 10px 30px;
+	}
+
+	.empty {
+		padding: 10px 10px;
+	}
+
 
 	button:disabled,
 	button[disabled] {
 		cursor: not-allowed;
 	}
 
-	.problemContainer button:not([disabled]):hover {
+	.test-button:not([disabled]):hover {
 		transform: scale(1.05);
-		border: 2px solid #3f9656;
-		background-color: #a7f0ba;
 		cursor: pointer;
+	}
+
+	.full:not([disabled]):hover {
+		border: 2px solid #3f9656;
+	}
+
+	.empty:not([disabled]):hover {
+		border: 2px solid #494949;
 	}
 
 	
