@@ -1,8 +1,9 @@
 <script lang="ts">
-    import { getStudentEvents, getThisUser } from "$lib/supabase";
+    import { getStudentEvents, getThisUser, getUser, getStudent } from "$lib/supabase";
     import { DataTable, Link, Pagination, Toolbar, ToolbarContent, ToolbarSearch } from "carbon-components-svelte";
 
     let user;
+	let student;
     let events = [];
     let pageSize = 25;
 	let page = 1;
@@ -10,13 +11,14 @@
 
     (async () => {
         user = await getThisUser();
+		student = await getStudent(user.id);
         const eventsUnedited = await getStudentEvents(user.id, "*, events(*)");
 
         eventsUnedited.forEach((event) => {
             events.push({
-                id: event.event_id,
-                name: event.events.event_name,
-                date: event.events.event_date
+                event_id: event.event_id,
+                event_name: event.events.event_name,
+                event_date: event.events.event_date
             })
         })
 
@@ -27,9 +29,75 @@
 {#if loading}
     <p>Loading...</p>
 {:else}
+	<h1>Welcome, {student.first_name}</h1>
+	<h3>{student.email}</h3>
+	<!--
+	<div class="flex">
+		<div class="row">
+			<TextInput
+				class="inputField"
+				labelText="First Name"
+				placeholder="Type here..."
+				disabled
+				bind:value={user.first_name}
+			/>
+			<TextInput
+				class="inputField"
+				labelText="Last Name"
+				placeholder="Type here..."
+				disabled
+				bind:value={user.last_name}
+			/>
+		</div>
+	</div>
+
+	{#if !user.isAdmin}
+		<div class="flex">
+			<div class="row">
+				<TextInput
+					class="inputField"
+					labelText="Grade"
+					placeholder="Type here..."
+					disabled
+					bind:value={user.grade}
+				/>
+				<TextInput
+					class="inputField"
+					labelText="ContestDojo ID"
+					placeholder="Type here..."
+					disabled
+					bind:value={user.contest_dojo_id}
+				/>
+			</div>
+		</div>
+		<div class="flex">
+			<div class="row">
+				<TextInput
+					class="inputField"
+					labelText="Email"
+					placeholder="Type here..."
+					disabled
+					bind:value={user.email}
+				/>
+				<TextInput
+					class="inputField"
+					labelText="Division"
+					placeholder="Type here..."
+					disabled
+					bind:value={user.division}
+				/>
+			</div>
+		</div>
+	{/if}
+
+	<br />
+	<div class="flex">
+		<Button title="Submit" action={onSubmit} />
+	</div>-->
     <br />
-    <h1 style="text-align: center;">My Events</h1>
+    <h2 style="text-align: center;">My Events</h2>
     <br />
+	<!--
     <div style="padding: 10px;">
 		<DataTable
 			sortable
@@ -66,7 +134,7 @@
 				</div>
 			</svelte:fragment>
 		</DataTable>
-
+		
 		<Pagination
 			bind:pageSize
 			bind:page
@@ -74,4 +142,81 @@
 			pageSizeInputDisabled
 		/>
 	</div>
+	-->
+
+	<div class="buttonContainer">
+		{#each events as event}
+			<div>
+				<div class="problemContainer">
+					<div style="align-items: left">
+						<h4>
+							{event.event_name}
+						</h4>
+						<p>{event.event_date}</p>
+					</div>
+					<div class="flex">
+						<button
+							on:click={async (e) => {
+								window.location.href = `./student/${event.event_id}`;
+							}}
+						>
+							Go to Event
+						</button>
+					</div>
+				</div>
+			</div>
+		{/each}
+	</div>
 {/if}
+
+<style>
+	.problemContainer {
+		background-color: white;
+		border: 3px solid var(--primary-tint);
+		padding: 20px;
+		margin: 10px;
+		border-radius: 20px;
+		font-weight: bold;
+		text-decoration: none;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		color: var(--text-color-dark);
+		transition: all 0.3s ease; /* Add transition for smooth hover effect */
+	}
+
+	.problemContainer h4 {
+		font-weight: bold;
+		margin-right: 5px;
+	}
+
+	.problemContainer button {
+		outline: none;
+		border: none;
+		padding: 10px 30px;
+		border-radius: 10px;
+		background-color: #a7f0ba;
+	}
+
+	button:disabled,
+	button[disabled] {
+		cursor: not-allowed;
+	}
+
+	.problemContainer button:not([disabled]):hover {
+		transform: scale(1.05);
+		border: 2px solid #3f9656;
+		background-color: #a7f0ba;
+		cursor: pointer;
+	}
+
+	
+
+	.buttonContainer {
+		flex-direction: column; /* Align children vertically */
+		align-items: center; /* Center children horizontally */
+		justify-content: center; /* Center children vertically */
+		margin: 0 auto; /* Center the container horizontally on the page */
+		width: 70%;
+	}
+</style>

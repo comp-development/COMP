@@ -15,7 +15,6 @@
 		getTeamId,
 	} from "$lib/supabase";
 
-	console.log("SUP");
 	let loading = true;
 	let disallowed = false;
 
@@ -28,22 +27,22 @@
 	(async () => {
 		user = await getThisUser();
 		test = await getTest(test_id);
-		console.log("USER_ID", user.id);
+		//console.log("USER_ID", user.id);
 		await getThisTestTaker();
-		console.log("GOT TAKER")
+		//console.log("GOT TAKER")
 		loading = false;
 	})();
 
 	async function getThisTestTaker() {
-		console.log("GET TAKER")
+		//console.log("GET TAKER")
 		const is_team = (await getTest(test_id)).is_team;
 		let taker_id = user.id;
 		if (is_team) {
 			taker_id = await getTeamId(taker_id);
 		}
-		console.log("NUMBER", test_id);
+		//console.log("NUMBER", test_id);
 		test_taker = await getTestTaker(test_id, taker_id, is_team);
-		console.log("TEST_TAKER", test_taker);
+		//console.log("TEST_TAKER", test_taker);
 
 		if (!test_taker) {
 			disallowed = true;
@@ -52,7 +51,7 @@
 				"Test with id " + $page.params.test_id + " doesn't exist!",
 			);
 		}
-		console.log("TEST_TAKER", test_taker);
+		//console.log("TEST_TAKER", test_taker);
 	}
 </script>
 

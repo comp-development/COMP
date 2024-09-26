@@ -26,8 +26,9 @@ export async function getTeam(student_id, customSelect = "*") {
 
         const { data, error } = await supabase
             .from('student_events')
-            .select('*, students(first_name, last_name)')
-            .eq('team_id', studentTeamData[0].team_id);
+            .select('*, students(*)')
+            .eq('team_id', studentTeamData[0].team_id)
+            .order('front_id',{ascending: true});
         
         if (error) throw error;
 

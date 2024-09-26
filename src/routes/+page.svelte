@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
-	import { editUser, getThisUser, getUser } from "$lib/supabase";
+	import { editUser, getThisUser, getUser, isAdmin } from "$lib/supabase";
 	import { TextInput } from "carbon-components-svelte";
     import toast from "svelte-french-toast";
 
@@ -13,7 +13,12 @@
 		loading = true;
 		let thisUser = await getThisUser();
 		user_id = thisUser?.id;
-		user = await getUser(user_id);
+		const user_type = await isAdmin(user_id);
+		if (user_type) {
+			window.location.href='./admin'
+		} else {
+			window.location.href='./student'
+		}
 		loading = false;
 	}
 
@@ -42,7 +47,7 @@
 	<p>Loading...</p>
 {:else}
 	<h1>Welcome, {user.first_name}</h1>
-
+	<!--
 	<div class="flex">
 		<div class="row">
 			<TextInput
@@ -102,7 +107,7 @@
 	{/if}
 
 	<br />
-	<!--<div class="flex">
+	<div class="flex">
 		<Button title="Submit" action={onSubmit} />
 	</div>-->
 {/if}

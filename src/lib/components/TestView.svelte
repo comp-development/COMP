@@ -1,4 +1,5 @@
 <script lang="js">
+	import { onMount } from 'svelte';
 	import {onDestroy} from 'svelte';
 	import Button from "$lib/components/Button.svelte";
 	import Katex from "$lib/components/Katex.svelte";
@@ -31,7 +32,7 @@
 	let pages = settings.pages
 	let meltTime = settings.meltTime
 	export let is_team = false;
-	console.log("TESTAKER", test_taker);
+	//console.log("TESTAKER", test_taker);
 	let answers = [];
 	let problems = [];
 	let answersMap = {};
@@ -46,6 +47,7 @@
 	let timerInterval;
 	let endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
 	let startTimeMs = new Date(startTime).getTime();
+	let curPage = test_taker.page_number
 
 	let test_answers_channel;
 	let problem_clarifications_channel;
@@ -57,15 +59,12 @@
 	let open = false;
 
 	const changeProblemClarification = (payload) => {
-		console.log("CLARIFY", payload);
+		//console.log("CLARIFY", payload);
 		clarifications[payload.new.test_problem_id] =
 			payload.new.clarification_latex;
 	};
 
-	(async () => {
-		updateTimer()
-		await loadData()
-	})();
+	
 
 	async function loadData() {
 		loading = true;
@@ -73,7 +72,6 @@
 		await Promise.all([
 			fetchAnswers(),
 			fetchProblems(),
-			subscribeToChannels(),
 		]);
 		loading=false;
 		const endTime = performance.now();
@@ -92,6 +90,7 @@
 	async function fetchProblems() {
 		try {
 			problems = await fetchTestProblems(test_taker.test_taker_id);
+			subscribeToChannels(),
 			await Promise.all(problems.map(async (problem) => {
 				if (!(problem.test_problem_id in answersMap)) {
 					answersMap[problem.test_problem_id] = "";
@@ -107,12 +106,21 @@
 		}
 	}
 
+	const handleAnswersUpsert = (payload) => {
+		//console.log("UPSERT", payload);
+		open = false;
+		answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
+		saved[payload.new.test_problem_id] = payload.new.answer_latex;
+	};
+
 	
 
 	async function subscribeToChannels() {
 		if (problem_clarifications_channel) {
 			problem_clarifications_channel.unsubscribe()
 		}
+		console.log("PROBS", problems)
+		const problemIds = problems.map(problem => problem.test_problem_id).join(",")
 		problem_clarifications_channel = supabase
 			.channel("problem-clarification-for-test-" + test_taker.test_id + "-page-" + test_taker.page_number)
 			.on(
@@ -121,7 +129,7 @@
 					event: "UPDATE",
 					schema: "public",
 					table: "problem_clarifications",
-					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+					filter: `test_problem_id=in.(${problemIds})`
 				},
 				changeProblemClarification,
 			)
@@ -131,7 +139,7 @@
 					event: "INSERT",
 					schema: "public",
 					table: "problem_clarifications",
-					filter: `test_problem_id=in.(${problems.map(problem => problem.test_problem_id)})`
+					filter: `test_problem_id=in.(${problemIds})`
 				},
 				changeProblemClarification,
 			)
@@ -139,51 +147,19 @@
 	}
 
 	function handleFocus(event) {
-		console.log("EVENT", event)
+		//console.log("EVENT", event)
 		prevAnswer = event.target.value
         currentField = event.target;
     }
 
 	// Create a function to handle inserts
-	const handleAnswersUpsert = (payload) => {
-		console.log("UPSERT", payload);
-		answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
-		saved[payload.new.test_problem_id] = payload.new.answer_latex;
-	};
 
-	const handleTestTakerUpsert = (payload) => {
-		console.log("TEST TAKER UPSERT", payload);
+	const handleTestTakerUpsert = async (payload) => {
+		//console.log("TEST TAKER UPSERT", payload);
 		open = false;
 		test_taker.page_number = payload.new.page_number;
-		fetchProblems();
+		await loadData();
 	};
-
-	
-
-	// Listen to inserts
-	test_answers_channel = supabase
-	.channel("test-answers-for-taker-" + test_taker.test_taker_id)
-	.on(
-		"postgres_changes",
-		{
-			event: "UPDATE",
-			schema: "public",
-			table: "test_answers",
-			filter: "test_taker_id=eq." + test_taker.test_taker_id,
-		},
-		handleAnswersUpsert,
-	)
-	.on(
-		"postgres_changes",
-		{
-			event: "INSERT",
-			schema: "public",
-			table: "test_answers",
-			filter: "test_taker_id=eq." + test_taker.test_taker_id,
-		},
-		handleAnswersUpsert,
-	)
-	.subscribe();
 
 	test_taker_channel = supabase
 	.channel("test-takers-" + test_taker.test_taker_id)
@@ -198,11 +174,30 @@
 		handleTestTakerUpsert,
 	)
 	.subscribe();
-	
 
-	
-
-	
+	test_answers_channel = supabase
+		.channel("test-answers-for-taker-" + test_taker.test_taker_id + "-page-" + test_taker.page_number)
+		.on(
+			"postgres_changes",
+			{
+				event: "UPDATE",
+				schema: "public",
+				table: "test_answers",
+				filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+			},
+			handleAnswersUpsert,
+		)
+		.on(
+			"postgres_changes",
+			{
+				event: "INSERT",
+				schema: "public",
+				table: "test_answers",
+				filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+			},
+			handleAnswersUpsert,
+		)
+		.subscribe();
 
 	function updateTimer() {
 		if (!endTime) return;
@@ -275,10 +270,8 @@
 	
 
 	async function handleContinue() {
-		const newPage = test_taker.page_number + 1;
-		console.log("PAGE CHANGE")
-		await changePage(test_taker.test_taker_id, newPage);
-		test_taker.page_number = newPage;
+		await changePage(test_taker.test_taker_id, curPage + 1);
+		test_taker.page_number = curPage + 1;
 		await loadData();
 	}
 
@@ -288,9 +281,9 @@
 
 	async function changeAnswer(e, id) {
 		try {
-			console.log("ANSWER CHANGE")
+			//console.log("ANSWER CHANGE")
 			const upsertSuccess = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
-			console.log("SUCCESSFUL UPSERT", upsertSuccess)
+			//console.log("SUCCESSFUL UPSERT", upsertSuccess)
 			if (upsertSuccess == 'Upsert succeeded') {
 				saved[id] = answersMap[id]
 			} else {
@@ -300,6 +293,11 @@
 			handleError(e);
 		}
 	}
+
+	(async () => {
+		updateTimer()
+		await loadData()
+	})();
 </script>
 
 <div class="test-div">
@@ -366,6 +364,7 @@
 			{#if test_taker.page_number < pages.length}
 				<Button action={(e) => {
 					open = true;
+
 				}}
 					title={"Continue"}
 				/>
@@ -374,18 +373,20 @@
 	</div>
 </div>
 <div class="panel">
-	<div style="display:flex">
+	<div style="display:flex align-items:center">
+		
 		<TooltipIcon tooltipText="Answers are automatically submitted when time runs out." icon={Information} direction="left" style="margin-right: 4px"/>
 		<p>
 			<FormattedTimeLeft timeLeft={timeRemaining/1000} totalTime={(endTimeMs - startTimeMs)/1000}>
 				Time left: {formattedTime}
 			</FormattedTimeLeft>
 		</p> <!--Make tooltip in line with time remaining-->
-		
 	</div>
+	
 	{#if test_taker.page_number < pages.length}
 		<Button action={(e) => {
 			open = true;
+			curPage = test_taker.page_number
 		}}
 			title={"Continue"}
 		/>

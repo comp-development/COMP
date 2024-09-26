@@ -5,11 +5,11 @@
 <div class="header">
 	<img
 		src="/favicon.png"
-		alt={"MMT_logo"}
+		alt={"COMP_logo"}
 		width="50"
 		height="50"
 	/>
-	<h4 style="">Mustang Math</h4>
+	<h4 style="">COMP</h4>
 </div>
 
 <style>

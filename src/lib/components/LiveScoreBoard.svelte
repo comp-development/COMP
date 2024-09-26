@@ -5,7 +5,6 @@
 	export let test;
     export let max_per_side = 10;
     let num_rounds = test.settings.pages.length
-	let round = "Guts Round: Score Display";
 	let screen_width = screen.width;
 	let curr_screen = 0
 	let num_screens = 0
@@ -77,8 +76,9 @@
 </script>
 
 <div>
-	<h1 style="text-align: center">{test.test_name}</h1>
-	<p style="text-align: center">{round || ""}</p>
+	<h1 style="text-align: center">{test.event_name}</h1>
+	<h2 style="text-align: center">{test.test_name}</h2>
+	{#if test.division}<h3 style="text-align: center">{test.division}</h3>{/if}
 
 	<br />
 	<p style="font-style: italic; text-align: center;">Please note that all scores from Set {num_rounds} will not be shown.</p>

@@ -120,7 +120,7 @@
 						),
 				);
 		}
-		else if (!test.opening_time || currentTime < new Date(test.opening_time)) {
+		else if (!test.end_time && (!test.opening_time || currentTime < new Date(test.opening_time))) {
 			newStatus.status = "Not Open";
 			if (test.opening_time) {
 				newStatus.countdown =

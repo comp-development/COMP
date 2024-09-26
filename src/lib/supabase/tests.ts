@@ -37,7 +37,7 @@ export async function fetchTestProblems(
     const { data, error } = await supabase
         .rpc('fetch_test_problems', {
             p_test_taker_id: test_taker_id,
-        });
+        })
     if (error) { throw error; }
     return data;
 }
@@ -67,6 +67,17 @@ export async function getTestAnswers(
 export async function getTest(test_id, customSelect = "*") {
     const { data, error } = await supabase
         .from("tests")
+        .select(customSelect)
+        .eq("test_id", test_id)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function getGutsTest(test_id, customSelect = "*") {
+    const { data, error } = await supabase
+        .from("guts_tests")
         .select(customSelect)
         .eq("test_id", test_id)
         .single();
