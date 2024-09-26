@@ -80,3 +80,84 @@ export async function replaceTestProblem(test_problem_id: number, new_problem_id
 
     return data;
 }
+
+export async function getGradedAnswers(test_problem_id: number, problem_id: number) {
+    const { data, error } = await supabase
+        .from("graded_answer_count")
+        .select("*")
+        .eq("test_problem_id", test_problem_id);
+
+    if (error) throw error;
+
+    data.forEach(async (value) => {
+        const { data: data2, error: error2 } = await supabase
+            .from("graded_answers")
+            .select("*")
+            .eq("problem_id", problem_id)
+            .eq("answer_latex", value.answer_latex);
+        
+        if (error2) throw error2;
+
+        if (data2 == null || data2.length == 0) {
+            const { data: data3, error: error3 } = await supabase
+                .from("graded_answers")
+                .insert({
+                    "problem_id": problem_id,
+                    "answer_latex": value.answer_latex,
+                    "correct": null
+                })
+                .select()
+                .single();
+            
+            if (error3) throw error3;
+
+            value.graded_answer_id = data3.graded_answer_id;
+        } else {
+            value.problem_id = problem_id;
+            value.graded_answer_id = data2[0].graded_answer_id;
+        }
+    });
+
+    return data;
+}
+
+export async function updateGradedAnswers(gradedAnswers) {
+    gradedAnswers.forEach(async (gradedAnswer) => {
+        const { error } = await supabase
+            .from('graded_answers')
+            .update({
+                "correct": gradedAnswer.correct,
+            })
+            .eq("graded_answer_id", gradedAnswer.graded_answer_id);
+
+        if (error) throw error;
+    });
+}
+
+export async function insertGradedAnswers(gradedAnswer) {
+    const { fetched, error2 } = await supabase
+        .from("graded_answers")
+        .select("*")
+        .eq("problem_id", gradedAnswer.problem_id)
+        .eq("answer_latex", gradedAnswer.answer_latex);
+    
+    if (error2 || fetched == null) {
+        const { data, error } = await supabase
+            .from('graded_answers')
+            .insert({
+                "problem_id": gradedAnswer.problem_id,
+                "answer_latex": gradedAnswer.answer_latex,
+                "correct": null
+            })
+            .select()
+            .single();
+        
+        if (error) throw error;
+
+        gradedAnswer.graded_answer_id = data.graded_answer_id;
+    } else {
+        gradedAnswer.graded_answer_id = fetched.graded_answer_id;
+    }
+
+    return gradedAnswer;
+}
