@@ -53,6 +53,8 @@
             );
             gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
 
+            console.log(gradedAnswers);
+
             subscribeToGradedAnswersChannel();
 
             loading = false;
@@ -287,7 +289,7 @@
                                         await submitUpdatedGrades();
                                     }}>❌</button
                                 >
-                                <p style="margin: 2px;">{answer.count}</p>
+                                <p style="margin: 2px;">{answer.count ?? "0"}</p>
                             </div>
                         </div>
                     {/each}
