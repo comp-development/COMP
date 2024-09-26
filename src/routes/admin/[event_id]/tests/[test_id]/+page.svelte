@@ -249,6 +249,7 @@
 		</p>
 	</div>
 	<br />
+	<Button title="Grade Test" href={$page.url.pathname + "/grade"} />
 	<div class="box box-basic">
 		<p style="font-weight: bold; font-size: 24px;">Test Instructions</p>
 		<div class="row">

@@ -20,6 +20,11 @@
 	async function roleManager() {
 		try {
             events = await getAllEvents();
+
+			events.forEach((event) => {
+				event.id = event.event_id;
+			})
+
 			loading = false;
 		} catch (error) {
 			handleError(error);
@@ -45,7 +50,7 @@
 			size="compact"
 			headers={[
 				{ key: "edit", value: "", width: "20px"},
-                { key: "event_id", value: "ID" },
+                { key: "id", value: "ID" },
 				{ key: "event_name", value: "Name" },
 				{ key: "event_date", value: "Date" },
 			]}
