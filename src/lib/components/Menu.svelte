@@ -36,10 +36,11 @@
 	<p class="emphasize">{isUserAdmin ? "Admin" : "Student"}</p>
 	<br />
 	<div class="linkExterior">
-		<a href="/" class={path == "" ? "active link" : "link"}>Home</a>
+		<a href="/{isUserAdmin ? "admin" : "student"}" class={path == "" ? "active link" : "link"}>Home</a>
 	</div>
 	<br />
 	{#if isUserAdmin}
+		
 		<div class="linkExterior">
 			<a
 				href="/admin/users"
@@ -49,15 +50,16 @@
 			</a>
 		</div>
 		<br />
-		<div class="linkExterior">
-			<a
-				href="/admin/events"
-				class={path == "/admin/events" ? "active link" : "link"}
-			>
-				Events
-			</a>
-		</div>
-		<br />
+			<!--
+			<div class="linkExterior">
+				<a
+					href="/admin/events"
+					class={path == "/admin/events" ? "active link" : "link"}
+				>
+					Events
+				</a>
+			</div>
+			<br />
 		<div class="linkExterior">
 			<a
 				href="/admin/import-problems"
@@ -68,16 +70,16 @@
 				Import
 			</a>
 		</div>
-	{:else}
-		<div class="linkExterior">
-			<a
-				href="./"
-				class={path == "/student" ? "active link" : "link"}
-			>
-				Back
-			</a>
-		</div>
+		-->
 	{/if}
+	<div class="linkExterior">
+		<a
+			href="./"
+			class={path == "/student" ? "active link" : "link"}
+		>
+			Back
+		</a>
+	</div>
 	<br />
 	<div class="fixedHr" />
 	<div class="flex">
