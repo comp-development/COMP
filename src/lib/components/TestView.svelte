@@ -365,6 +365,7 @@
 			{#if test_taker.page_number < pages.length}
 				<Button action={(e) => {
 					open = true;
+					curPage = test_taker.page_number
 
 				}}
 					title={"Continue"}
