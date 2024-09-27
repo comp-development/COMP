@@ -64,9 +64,9 @@ export async function getTestAnswers(
 	return data;
 }
 
-export async function getTest(test_id, customSelect = "*") {
+export async function getTest(test_id, detailed=false, customSelect = "*") {
     const { data, error } = await supabase
-        .from("tests")
+        .from(detailed ? "tests_detailed" : "tests")
         .select(customSelect)
         .eq("test_id", test_id)
         .single();
@@ -175,6 +175,15 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
         console.error('Error retrieving test taker:', error);
         return null;
     }
+}
+
+export async function getTestTakers(test_id, detailed=false, customSelect="*") {
+    const { data, error } = await supabase
+        .from(detailed ? "test_takers_detailed" : "test_takers")
+        .select(customSelect)
+        .eq("test_id", test_id);
+    if (error) throw error;
+    return data;
 }
 
 export async function updateTest(test_id, testData) {

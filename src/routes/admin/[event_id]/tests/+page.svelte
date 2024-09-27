@@ -7,6 +7,7 @@
 	import Document from "carbon-icons-svelte/lib/Document.svelte";
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte";
 	import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
+	import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import { onDestroy, onMount } from "svelte";
@@ -215,6 +216,16 @@
 										<ListCheckedMirror/>
 									</button>
 									<span class="tooltip">Grade Test</span>
+								</a>
+							</div>
+							<div class="tooltip-container">
+								<a href="./tests/{test.test_id}/results">
+									<button
+										class="test-button empty"
+									>
+										<TableSplit />
+									</button>
+									<span class="tooltip">Results</span>
 								</a>
 							</div>
 							<button
