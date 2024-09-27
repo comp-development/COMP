@@ -383,7 +383,6 @@
 												);
 
 												problems.splice(index, 1);
-												problems = [...problems];
 
 												for (
 													let i = index;
@@ -394,6 +393,8 @@
 														index
 													].problem_number -= 1;
 												}
+
+												problems = [...problems];
 
 												await saveTest();
 											}}>🗑️</button
