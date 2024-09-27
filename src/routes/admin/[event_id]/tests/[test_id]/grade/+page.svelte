@@ -11,6 +11,7 @@
     import toast from "svelte-french-toast";
     import { handleError } from "$lib/handleError";
     import { supabase } from "$lib/supabaseClient";
+    import Katex from "$lib/components/Katex.svelte";
 
     let test_id = Number($page.params.test_id);
     let problems: [];
@@ -256,7 +257,7 @@
                                 : 'rgb(220, 220, 220)'}"
                         >
                             <div class="answer">
-                                <MathJax math={answer.answer_latex} />
+                                <Katex value={answer.answer_latex} />
                             </div>
                             <div style="display: flex;">
                                 <button
