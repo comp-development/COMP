@@ -1,18 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import toast from "svelte-french-toast";
-	import {
-		TextArea,
-		TextInput,
-		Accordion,
-		AccordionItem,
-		DataTable,
-		Link,
-		Toolbar,
-		ToolbarContent,
-		ToolbarSearch,
-		Pagination,
-	} from "carbon-components-svelte";
+	import { TextArea, TextInput } from "carbon-components-svelte";
 	import {} from "carbon-components-svelte";
 	import MathJax from "$lib/components/MathJax.svelte";
 	import Button from "$lib/components/Button.svelte";
@@ -32,7 +21,8 @@
 		updateTestProblem,
 	} from "$lib/supabase";
 	import Problem from "$lib/components/Problem.svelte";
-	import Katex from "$lib/components/Katex.svelte";
+    import SelectProblem from "$lib/components/SelectProblem.svelte";
+    import CreateProblemModal from "$lib/components/CreateProblemModal.svelte";
 
 	let loading = true;
 
@@ -41,10 +31,9 @@
 	let bufferEditable = false;
 	let instructionsEditable = false;
 
-	let pageSize = 25;
-	let pageT = 1;
-
 	let modalProblem: number | null = null;
+	let openAddProblemModal: number | null = null;
+	let newProblemModal: boolean = false;
 
 	let test_id = Number($page.params.test_id);
 	let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
@@ -189,6 +178,54 @@
 
 		return grouped;
 	};
+
+	async function addNewProblemToTest(row) {
+		try {
+			const groupedProblems = groupByPageNumber(problems, test.settings.pages.length);
+			let prob_number = 0;
+			let idx = openAddProblemModal ?? test.settings.pages.length - 1;
+
+			if (groupedProblems[idx] && groupedProblems[idx].length > 0) {
+				prob_number = groupedProblems[idx][groupedProblems[idx].length - 1].problem_number;
+			} else {
+				if (groupedProblems[idx - 1] && groupedProblems[idx - 1].length > 0) {
+					prob_number = groupedProblems[idx-1][groupedProblems[idx-1].length - 1].problem_number;
+				} else if (groupedProblems[0] && groupedProblems[0].length > 0) {
+					prob_number = groupedProblems[0][groupedProblems[0].length - 1].problem_number;
+				}
+			}
+
+			const newProblem = await addNewTestProblem({
+				"problem_id": row.problem_id,
+				"test_id": test.test_id,
+				"page_number": idx + 1,
+				"points": 1,
+				"problem_number": prob_number + 1
+			}, "*, problems(*)");
+
+			problems.push(newProblem);
+
+			for (var i = openAddProblemModal + 1; i < test.settings.pages.length; i++) {
+				groupedProblems[i].forEach((problem) => {
+					problem.problem_number += 1;
+				})
+			}
+
+			clarifications[newProblem.test_problem_id] = {
+                "test_problem_id": newProblem.test_problem_id,
+                "clarification_latex": null
+            };
+
+			problems = [...problems];
+			clarifications = {...clarifications};
+
+			openAddProblemModal = null;
+
+			await saveTest();
+		} catch (e) {
+			handleError(e);
+		}
+	}
 </script>
 
 {#if loading}
@@ -466,7 +503,7 @@
 						title="Add New Problem"
 						action={async () => {
 							loading = true;
-							await addNewProblemPage(pageNumber + 1);
+							openAddProblemModal = pageNumber;
 							loading = false;
 						}}
 					/>
@@ -488,83 +525,30 @@
 		</div>
 	</div>
 
-	{#if modalProblem != null}
-		<div class="modal-overlay" on:click={() => (modalProblem = null)}>
-			<div class="modal" on:click|stopPropagation>
-				<button
-					class="close-button"
-					on:click={() => (modalProblem = null)}>✖</button
-				>
-				<h2>Select Problem</h2>
-				<br />
-				<Button title="Add New Problem" href="/admin/problems/new" />
-				<br /><br />
-				<DataTable
-					expandable
-					sortable
-					size="compact"
-					headers={[
-						{ key: "edit", value: "Select", width: "50px" },
-						{ key: "id", value: "ID", width: "50px" },
-						{
-							key: "problem_latex",
-							value: "Problem Latex",
-							width: "250px",
-						},
-					]}
-					rows={allProblems}
-					{pageSize}
-					page={pageT}
-				>
-					<Toolbar size="sm">
-						<ToolbarContent>
-							<ToolbarSearch persistent shouldFilterRows />
-						</ToolbarContent>
-					</Toolbar>
+	<SelectProblem open={modalProblem != null} changeNewProblem={() => { modalProblem = null; newProblemModal = true; }} closeModal={() => (modalProblem = null)} onSelect={async (row) => {
+		try {
+			const newProblem = await replaceTestProblem(
+				problems[modalProblem].test_problem_id,
+				row.problem_id,
+				"*, problems(*)",
+			);
+			problems[modalProblem] = newProblem;
+			problems = [...problems];
 
-					<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
-						<div>
-							{#if cell.key === "edit"}
-								<button
-									class="arrow-button"
-									on:click={async () => {
-										const newProblem =
-											await replaceTestProblem(
-												problems[modalProblem]
-													.test_problem_id,
-												row.problem_id,
-												"*, problems(*)",
-											);
-										problems[modalProblem] = newProblem;
-										problems = [...problems];
+			modalProblem = null;
+		} catch (e) {
+			handleError(e);
+		}
+	}} />
 
-										modalProblem = null;
-									}}>✅</button
-								>
-							{:else}
-								<div class="cell-content">
-									{cell.value == null || cell.value == ""
-										? "None"
-										: cell.value}
-								</div>
-							{/if}
-						</div>
-					</svelte:fragment>
+	<SelectProblem open={openAddProblemModal != null} changeNewProblem={() => { openAddProblemModal = null; newProblemModal = true; }} closeModal={() => { openAddProblemModal = null }} onSelect={async (row) => {
+		await addNewProblemToTest(row);
+	}} />
 
-					<svelte:fragment slot="expanded-row" let:row>
-						<MathJax math={row.problem_latex} />
-					</svelte:fragment>
-				</DataTable>
-
-				<Pagination
-					bind:pageSize
-					bind:page={pageT}
-					totalItems={allProblems.length}
-					pageSizeInputDisabled
-				/>
-			</div>
-		</div>
-	{/if}
+	<CreateProblemModal open={newProblemModal} changeNewProblem={() => { newProblemModal = true; }} closeModal={() => { newProblemModal = false; }} addProblemFunction={async (problem) => {
+		await addNewProblemToTest(problem);
+		newProblemModal = false;
+	}} />
 {/if}
 
 <style>
@@ -618,49 +602,5 @@
 		border: 3px solid var(--primary);
 		padding: 10px;
 		margin-bottom: 20px;
-	}
-
-	.cell-content {
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-
-	.modal-overlay {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		z-index: 1000;
-	}
-
-	.modal {
-		background-color: white;
-		padding: 20px;
-		width: 600px;
-		max-width: 90%;
-		max-height: 500px;
-		overflow-y: auto;
-		border-radius: 8px;
-		position: relative;
-	}
-
-	.close-button {
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		background: none;
-		border: none;
-		font-size: 1.5rem;
-		cursor: pointer;
-	}
-
-	.problem-details {
-		margin-top: 10px;
 	}
 </style>

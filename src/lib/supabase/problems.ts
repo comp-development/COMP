@@ -2,11 +2,15 @@ import { error } from "@sveltejs/kit";
 import { supabase } from "../supabaseClient";
 
 export async function addProblem(problem) {
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from("problems")
-        .insert(problem);
+        .insert(problem)
+        .select()
+        .single();
 
     if (error) throw error;
+
+    return data;
 }
 
 export async function getAllProblems(customSelect: string = "*") {
