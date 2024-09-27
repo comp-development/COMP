@@ -19,6 +19,7 @@
 		getAllProblemClarifications,
 		updateProblemClarifications,
 		updateTestProblem,
+        updateClarification,
 	} from "$lib/supabase";
 	import Problem from "$lib/components/Problem.svelte";
     import SelectProblem from "$lib/components/SelectProblem.svelte";
@@ -472,6 +473,7 @@
 													test.test_id,
 													problems[index],
 												);
+												clarifications[problem.test_problem_id] = await updateClarification({...clarifications[problem.test_problem_id]});
 												toast.success("Saved problem");
 											} catch (e) {
 												await handleError(e);

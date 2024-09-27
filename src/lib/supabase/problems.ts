@@ -55,27 +55,33 @@ export async function getAllProblemClarifications(problems) {
 
 export async function updateProblemClarifications(clarifications) {
     for (const [key, clarification] of Object.entries(clarifications)) {
-        if ("clarification_id" in clarification) {
-            const { error: probError } = await supabase
-                .from("problem_clarifications")
-                .update(clarification)
-                .eq("clarification_id", clarification.clarification_id);
-
-            if (probError) throw probError;
-        } else if (clarification.clarification_latex != null) {
-            const { data, error: probError } = await supabase
-                .from("problem_clarifications")
-                .insert(clarification)
-                .select()
-                .single();
-
-            if (probError) throw probError;
-
-            clarifications[key] = data;
-        }
+        clarifications[key] = await updateClarification(clarification);
     }
 
     return clarifications;
+}
+
+export async function updateClarification(clarification) {
+    if ("clarification_id" in clarification) {
+        const { error: probError } = await supabase
+            .from("problem_clarifications")
+            .update(clarification)
+            .eq("clarification_id", clarification.clarification_id);
+
+        if (probError) throw probError;
+    } else if (clarification.clarification_latex != null) {
+        const { data, error: probError } = await supabase
+            .from("problem_clarifications")
+            .insert(clarification)
+            .select()
+            .single();
+
+        if (probError) throw probError;
+
+        clarification = data;
+    }
+
+    return clarification;
 }
 
 export async function updateTestProblems(test_id: number, oldProblems) {
@@ -136,7 +142,7 @@ export async function replaceTestProblem(test_problem_id: number, new_problem_id
     return data;
 }
 
-export async function getGradedAnswers(test_problem_id: number, problem_id: number) {
+export async function getGradedAnswers(test_problem_id: number) {
     const { data, error } = await supabase
         .from("graded_answer_count")
         .select("*")
@@ -144,40 +150,11 @@ export async function getGradedAnswers(test_problem_id: number, problem_id: numb
 
     if (error) throw error;
 
-    data.forEach(async (value) => {
-        const { data: data2, error: error2 } = await supabase
-            .from("graded_answers")
-            .select("*")
-            .eq("problem_id", problem_id)
-            .eq("answer_latex", value.answer_latex);
-        
-        if (error2) throw error2;
-
-        if (data2 == null || data2.length == 0) {
-            const { data: data3, error: error3 } = await supabase
-                .from("graded_answers")
-                .insert({
-                    "problem_id": problem_id,
-                    "answer_latex": value.answer_latex,
-                    "correct": null
-                })
-                .select()
-                .single();
-            
-            if (error3) throw error3;
-
-            value.graded_answer_id = data3.graded_answer_id;
-        } else {
-            value.problem_id = problem_id;
-            value.graded_answer_id = data2[0].graded_answer_id;
-        }
-    });
-
     return data;
 }
 
 export async function updateGradedAnswers(gradedAnswers) {
-    gradedAnswers.forEach(async (gradedAnswer) => {
+    for (const gradedAnswer of gradedAnswers) {
         const { error } = await supabase
             .from('graded_answers')
             .update({
@@ -186,33 +163,30 @@ export async function updateGradedAnswers(gradedAnswers) {
             .eq("graded_answer_id", gradedAnswer.graded_answer_id);
 
         if (error) throw error;
-    });
+    };
 }
 
 export async function insertGradedAnswers(gradedAnswer) {
-    const { fetched, error2 } = await supabase
-        .from("graded_answers")
-        .select("*")
-        .eq("problem_id", gradedAnswer.problem_id)
-        .eq("answer_latex", gradedAnswer.answer_latex);
-    
-    if (error2 || fetched == null) {
-        const { data, error } = await supabase
-            .from('graded_answers')
-            .insert({
+    if (gradedAnswer.answer_latex != null && gradedAnswer.answer_latex != "") {
+        const { error: error2 } = await supabase
+            .from("graded_answers")
+            .upsert({
+                "correct": gradedAnswer.correct,
                 "problem_id": gradedAnswer.problem_id,
                 "answer_latex": gradedAnswer.answer_latex,
-                "correct": null
-            })
-            .select()
+            }, { onConflict: 'problem_id, answer_latex' });
+        
+        if (error2) throw error2;
+
+        const { data, error } = await supabase
+            .from("graded_answer_count")
+            .select("*")
+            .eq("test_problem_id", gradedAnswer.test_problem_id)
+            .eq("answer_latex", gradedAnswer.answer_latex)
             .single();
         
         if (error) throw error;
 
-        gradedAnswer.graded_answer_id = data.graded_answer_id;
-    } else {
-        gradedAnswer.graded_answer_id = fetched.graded_answer_id;
+        return data;
     }
-
-    return gradedAnswer;
 }
