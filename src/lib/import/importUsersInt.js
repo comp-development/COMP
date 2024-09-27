@@ -16,7 +16,7 @@ const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Define the event_id constant
-const event_id = 3;
+const event_id = 2;
 
 // Function to process each student from the CSV
 async function processStudent(student) {
@@ -48,7 +48,7 @@ async function processStudent(student) {
       if (updateError) {
         console.error(`Error updating student ${student.contestdojo_id}:`, updateError);
       } else {
-        console.log(`Updated student with contestdojo_id ${student.contestdojo_id}`);
+        //console.log(`Updated student with contestdojo_id ${student.contestdojo_id}`);
       }
 
     } else {
@@ -150,7 +150,7 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 //console.log('Current directory:', currentDir);
 
 // Construct the path to the CSV file
-const csvFilePath = join(currentDir, 'students.csv');
+const csvFilePath = join(currentDir, 'studentsInt.csv');
 //console.log('CSV file path:', csvFilePath);
 
 // Check if the file exists
@@ -161,7 +161,7 @@ if (!fs.existsSync(csvFilePath)) {
 
 // If the file exists, proceed with reading
 function processStudentsCSV() {
-  const studentsFilePath = join(currentDir, 'students.csv');
+  const studentsFilePath = join(currentDir, 'studentsInt.csv');
   //console.log('Student CSV file path:', studentsFilePath);
 
   if (!fs.existsSync(studentsFilePath)) {
@@ -190,7 +190,7 @@ function processStudentsCSV() {
 
 // Function to process teams CSV
 function processTeamsCSV() {
-  const teamsFilePath = join(currentDir, 'teams.csv');
+  const teamsFilePath = join(currentDir, 'teamsInt.csv');
   //console.log('Teams CSV file path:', teamsFilePath);
 
   if (!fs.existsSync(teamsFilePath)) {
@@ -279,7 +279,7 @@ async function processStudentEvent(student) {
       if (updateError) {
         console.error(`Error updating student_event for ${student.contestdojo_id}:`, updateError);
       } else {
-        console.log(`Updated student_event for contestdojo_id ${student.contestdojo_id}`);
+        //console.log(`Updated student_event for contestdojo_id ${student.contestdojo_id}`);
       }
     } else {
       // Insert new entry
@@ -298,5 +298,5 @@ async function processStudentEvent(student) {
   }
 }
 
-processTeamsCSV()
-//processStudentsCSV()
+//processTeamsCSV()
+processStudentsCSV()

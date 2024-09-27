@@ -282,7 +282,7 @@
 	async function changeAnswer(e, id) {
 		try {
 			//console.log("ANSWER CHANGE")
-			const upsertSuccess = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id]);
+			const upsertSuccess = await upsertTestAnswer(test_taker.test_taker_id, id, answersMap[id].trim());
 			//console.log("SUCCESSFUL UPSERT", upsertSuccess)
 			if (upsertSuccess == 'Upsert succeeded') {
 				saved[id] = answersMap[id]

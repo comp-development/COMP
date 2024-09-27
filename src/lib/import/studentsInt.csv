@@ -1,0 +1,426 @@
+contestdojo_id,first_name,last_name,email,grade,team_contestdojo_id,division,front_id,password
+994241000102,ARIF SURKHAYZADE,,994241000102@mustangmath.com,4,AZ01,Foal,AZ01A,fiddlercrab-blackpanther-mouse-unau
+994241000106,AMIN ALASGARLI,,994241000106@mustangmath.com,5,AZ01,Foal,AZ01B,lamb-umbrellabird-myotis-junco
+994241000110,ADNAN JAFARLI,,994241000110@mustangmath.com,6,AZ01,Foal,AZ01C,bordercollie-dassierat-eelelephant-buckeyebutterfly
+994241000114,FATEH AZIZOV,,994241000114@mustangmath.com,6,AZ01,Foal,AZ01D,pheasant-ynambu-stingray-zonetailedpigeon
+994241000103,ELVIN MAHMUDLU,,994241000103@mustangmath.com,4,AZ02,Foal,AZ02A,alpaca-yaffle-irukandjijellyfish-mangabey
+994241000107,AYSUN SALIMLI,,994241000107@mustangmath.com,5,AZ02,Foal,AZ02B,wingedmagpie-vipersquid-wolf-tarsier
+994241000111,AYKHAN MUSABAYLI,,994241000111@mustangmath.com,6,AZ02,Foal,AZ02C,ibis-racer-flickertailsquirrel-grizzlybear
+994241000115,MEHDI SHEYDAYEV,,994241000115@mustangmath.com,6,AZ02,Foal,AZ02D,jaguarundi-whitetaileddeer-noolbenger-umbrellabird
+994241000104,TUNJAY VALIYEV,,994241000104@mustangmath.com,4,AZ03,Foal,AZ03A,jumpingbean-zebradove-urchin-coelacanth
+994241000108,HAZI ASLANOV,,994241000108@mustangmath.com,5,AZ03,Foal,AZ03B,umbrellabird-jaguar-equine-nettlefish
+994241000112,AZIM HAJIYEV,,994241000112@mustangmath.com,6,AZ03,Foal,AZ03C,vulture-herald-quinquespinosus-prawn
+994241000116,MURAD HASANLI,,994241000116@mustangmath.com,6,AZ03,Foal,AZ03D,saltwatercrocodile-duiker-yak-nandu
+994241000105,ZEYNAB AZIZLI,,994241000105@mustangmath.com,4,AZ04,Foal,AZ04A,dikkops-nabarlek-otter-orca
+994241000109,MARYAM NAJAFOVA,,994241000109@mustangmath.com,5,AZ04,Foal,AZ04B,palmsquirrel-nagapies-goldfinch-teal
+994241000113,FARID ABDULLAYEV,,994241000113@mustangmath.com,6,AZ04,Foal,AZ04C,apatosaur-eskimodog-emperorpenguin-xenops
+994241000117,OMAR JABRAYILZADA,,994241000117@mustangmath.com,6,AZ04,Foal,AZ04D,badger-umbrette-icterinewarbler-oxen
+994241000118,ZEYNAB ALIZADE,,994241000118@mustangmath.com,6,AZ05,Stallion,AZ05A,gavial-pike-wreckfish-frenchbulldog
+994241000101,ALIKAMAL HASAN,,994241000101@mustangmath.com,7,AZ05,Stallion,AZ05B,nightmonkeys-moa-doctorfish-rainbowfish
+994241000124,NARMIN AKBAROVA,,994241000124@mustangmath.com,8,AZ05,Stallion,AZ05C,rasbora-quadrisectus-ray-palmsquirrel
+994241000119,ZULFIYYA KHALILOVA,,994241000119@mustangmath.com,6,AZ06,Stallion,AZ06D,rhesusmonkey-caiman-umbrette-zebratailedlizard
+994241000120,HUMAY SEYIDOVA,,994241000120@mustangmath.com,7,AZ06,Stallion,AZ06A,indigowingedparrot-hypsilophodon-deermouse-eelelephant
+994241000127,TURAN MURADLI,,994241000127@mustangmath.com,8,AZ06,Stallion,AZ06B,opossum-rodent-terrier-jackrabbit
+994241000122,PASHAM ALIZADE,,994241000122@mustangmath.com,7,AZ07,Stallion,AZ07C,bluet-leech-nase-earwig
+994241000125,RASUL SHUKUROV,,994241000125@mustangmath.com,8,AZ07,Stallion,AZ07D,zebradove-goldfinch-mongoose-thoroughbred
+994241000126,TUNAR HASANZADE,,994241000126@mustangmath.com,8,AZ07,Stallion,AZ07A,ling-goshawk-coelacanth-tuna
+55241000717,PEDRO MOURAO MENEZES,,55241000717@mustangmath.com,4,BR01,Foal,BR01B,viper-hectorsdolphin-motmot-upupa
+55241000719,BEATRIZ ARAUJO OLIVEIRA LEVY,,55241000719@mustangmath.com,5,BR01,Foal,BR01C,sparrow-ringneckparakeet-rainbowlorikeet-mantis
+55241000720,DANIEL KENZO HAYASHI,,55241000720@mustangmath.com,5,BR01,Foal,BR01D,aldabratortoise-rockrat-ostrich-rainbowtrout
+55241000721,LUCCA FONTES ARAGAO,,55241000721@mustangmath.com,5,BR01,Foal,BR01A,deer-yardant-zebrafish-smew
+55241000734,BEATRIZ GONCALVES BRITO,,55241000734@mustangmath.com,4,BR02,Foal,BR02B,trout-urubu-ostracod-brownbutterfly
+55241000722,MURILO STANKEVICIUS LULUSKI,,55241000722@mustangmath.com,5,BR02,Foal,BR02C,yorkshireterrier-honeycreeper-flicker-meadowhawk
+55241000723,BENTO VENTURINI PESSUTTI,,55241000723@mustangmath.com,6,BR02,Foal,BR02D,emperorpenguin-ox-drever-chafer
+55241000724,DAVI GONCALVES RIBEIRO,,55241000724@mustangmath.com,6,BR02,Foal,BR02A,coney-yaffle-salamander-octopus
+55241000725,DAVI ALMEIDA CARDOSO,,55241000725@mustangmath.com,7,BR03,Stallion,BR03B,zooplankton-guppy-junco-zander
+55241000728,JULIA MARIA FARIA SAMPAIO,,55241000728@mustangmath.com,7,BR03,Stallion,BR03C,xiphosuran-jackal-quadrisectus-equine
+55241000729,LORENZO DO PRADO OLIVEIRA,,55241000729@mustangmath.com,7,BR03,Stallion,BR03D,yellowlegs-kob-opossum-creamdraft
+55241000733,JULIA NAMI HAYASHI,,55241000733@mustangmath.com,8,BR03,Stallion,BR03A,coral-ram-urus-laughinggull
+55241000726,HEITOR PARAVIDINE SASAKI,,55241000726@mustangmath.com,7,BR04,Stallion,BR04B,quetzalcoatlus-unau-xenoposeidon-gallinule
+55241000727,JOAO VITOR GIORDANI,,55241000727@mustangmath.com,7,BR04,Stallion,BR04C,nabarlek-kingfisher-dassie-roebuck
+55241000731,AMANDA CARVALLO LOSSO,,55241000731@mustangmath.com,8,BR04,Stallion,BR04D,waterbug-nauplius-firefly-urva
+55241000732,DAVI ZANCHETTA AGUIAR,,55241000732@mustangmath.com,8,BR04,Stallion,BR04A,quetzal-auk-urubu-ratfish
+1241000088,JASMAN SINGH,,1241000088@mustangmath.com,4,CA01,Foal,CA01B,laika-leafwing-adouri-polyp
+1241000091,OWEN WANG,,1241000091@mustangmath.com,5,CA01,Foal,CA01C,titi-yearling-milksnake-kingsnake
+1240000066,YIZHI ZENG,,1240000066@mustangmath.com,6,CA01,Foal,CA01D,oryx-eyelashpitviper-ungulate-cavy
+1241000094,LEO LIU,,1241000094@mustangmath.com,6,CA01,Foal,CA01A,zebratailedlizard-tarsier-molly-mockingbird
+1241000089,DYLAN HUA,,1241000089@mustangmath.com,5,CA02,Foal,CA02B,yardant-vicuna-xiphiasgladius-mantid
+1241000090,JAYDEN CHOW,,1241000090@mustangmath.com,5,CA02,Foal,CA02C,crossbill-nutcracker-amurstarfish-zigzagsalamander
+1241000092,BORIS CHEUNG,,1241000092@mustangmath.com,6,CA02,Foal,CA02D,diamondbackrattlesnake-zigzagsalamander-cuttlefish-adouri
+1241000093,ELIAS KIM,,1241000093@mustangmath.com,6,CA02,Foal,CA02A,nandine-skink-ewe-mollies
+1241000095,MAX LAI,,1241000095@mustangmath.com,7,CA03,Stallion,CA03B,herald-lionfish-umbrellabird-otter
+1241000096,ERIC TIAN WANG,,1241000096@mustangmath.com,8,CA03,Stallion,CA03C,xeme-needlefish-conure-shepherd
+1241000097,ETHAN WONG,,1241000097@mustangmath.com,8,CA03,Stallion,CA03D,labradorretriever-siskin-elkhound-lovebird
+1241000098,YIHU ZENG,,1241000098@mustangmath.com,8,CA03,Stallion,CA03A,neonredguppy-quokka-urial-kinglet
+86241000317,RUNYAO MING,,86241000317@mustangmath.com,6,CH01,Colt,CH01B,clam-halibut-upupa-leafwing
+86241000319,KEVIN LI,,86241000319@mustangmath.com,7,CH01,Colt,CH01C,junco-zebra-urutu-carpenterant
+86241000320,WENTAO XU,,86241000320@mustangmath.com,7,CH01,Colt,CH01D,quagga-whooper-nettlefish-quail
+86241000321,TIANXING QIAO,,86241000321@mustangmath.com,7,CH01,Colt,CH01A,eskimodog-tigershark-whippoorwill-dotterel
+86241000312,DINGYAN WU,,86241000312@mustangmath.com,5,CH02,Foal,CH02B,xrayfish-bellsnake-chevrotain-equine
+86241000313,KWUNTING LEE,,86241000313@mustangmath.com,5,CH02,Foal,CH02C,nautilus-racer-jaguar-sow
+86241000314,YIYI ZHOU,,86241000314@mustangmath.com,5,CH02,Foal,CH02D,gonolek-yardant-freshwaterclam-herring
+86241000316,CRUZ JINXI LI,,86241000316@mustangmath.com,6,CH02,Foal,CH02A,tilefish-xenurine-thrush-roach
+62241015309,CLIFTON MAYER GANDHA,,62241015309@mustangmath.com,7,ID01,Colt,ID01B,plover-eft-civet-firefly
+62241015314,KYLE HAYDEN CHRISTOPHER WINATA,,62241015314@mustangmath.com,7,ID01,Colt,ID01C,quagga-intermediateegret-harborporpoise-flea
+62241015315,LOUIS HIMAWAN,,62241015315@mustangmath.com,7,ID01,Colt,ID01D,quagga-lizard-otter-racer
+62241015317,SEAN ALDRICH WIRANATA,,62241015317@mustangmath.com,7,ID01,Colt,ID01A,lemming-eyas-daygecko-quail
+62241015349,CALVIN KHO,,62241015349@mustangmath.com,7,ID02,Colt,ID02B,vole-xanthareel-walkingstick-wilddog
+62241015353,MAXIMILLIAN HALIM,,62241015353@mustangmath.com,7,ID02,Colt,ID02C,hectorsdolphin-argali-mastiff-polyturator
+62241015354,MICHIO MOCCA SIMAN,,62241015354@mustangmath.com,7,ID02,Colt,ID02D,equestrian-esok-velociraptor-iguana
+62241015355,NATHANIA CHELAN PRIYANKA WISETYA,,62241015355@mustangmath.com,7,ID02,Colt,ID02A,zebradove-treeboa-xenurine-zigzagsalamander
+62241015347,AWRON WONG,,62241015347@mustangmath.com,7,ID03,Colt,ID03B,roadrunner-gypsymoth-waterbug-trumpetfish
+62241015348,BOSCO HUI SASMINTA,,62241015348@mustangmath.com,7,ID03,Colt,ID03C,quahog-olm-lamprey-firecrest
+62241015351,CLINTON RAHARDJA,,62241015351@mustangmath.com,7,ID03,Colt,ID03D,zenaida-pilchard-halibut-raptors
+62241015358,WILLIAM HANDAYA,,62241015358@mustangmath.com,7,ID03,Colt,ID03A,noctilio-ghostshrimp-umbrellabird-hamadryad
+62241015346,ARFA HAFIZI ZAKWAN,,62241015346@mustangmath.com,6,ID04,Colt,ID04B,mollusk-viper-xiphiasgladius-quelea
+62241015356,PETER JOYKARSTEN,,62241015356@mustangmath.com,6,ID04,Colt,ID04C,yaffle-vampirebat-imago-yellowhammer
+62241015357,ROBERT OLIVIER LIESTER,,62241015357@mustangmath.com,6,ID04,Colt,ID04D,lemming-sloth-quokka-wilddog
+62241015382,MAXWELL DAMIAN SETIA,,62241015382@mustangmath.com,7,ID04,Colt,ID04A,rockpython-quadrisectus-mantid-ichthyosaurs
+62241015304,ZHENG PEI LIANG,,62241015304@mustangmath.com,6,ID05,Colt,ID05B,creamdraft-polyturator-dachshund-lionfish
+62241015345,ANYA PRAMESWARI FIRMANSYAH,,62241015345@mustangmath.com,6,ID05,Colt,ID05C,muskrat-yak-oriole-nabarlek
+62241015352,KENT WARREN LIM,,62241015352@mustangmath.com,6,ID05,Colt,ID05D,fowl-quetzal-polyp-xraytetra
+62241015383,STEVE JUNAEDI,,62241015383@mustangmath.com,7,ID05,Colt,ID05A,dipper-nandine-dormouse-scallop
+62241015290,BRYAN RICHIE HUANG,,62241015290@mustangmath.com,5,ID06,Foal,ID06B,javalina-oropendola-duckbillcat-moorhen
+62241015293,GEORGE MAXIMILIAN TANJAYA,,62241015293@mustangmath.com,5,ID06,Foal,ID06C,groundjay-kingsnake-illadopsis-aruanas
+62241015299,PUTU ESA INDRASTRA NUGRAHA,,62241015299@mustangmath.com,5,ID06,Foal,ID06D,hackee-yellow-belliedmarmot-lamprey-ichthyostega
+62241015301,TERRY ROLAND MARZUKI,,62241015301@mustangmath.com,6,ID06,Foal,ID06A,jabiru-tayra-koalabear-vulpesvulpes
+62241015292,ETHAN FORBES CHURNIAWAN,,62241015292@mustangmath.com,4,ID07,Foal,ID07B,eft-zonetailedpigeon-ovenbird-tinamou
+62241015294,NIXON YEO,,62241015294@mustangmath.com,4,ID07,Foal,ID07C,kite-quillback-laughingthrush-zebu
+62241015295,AXEL LOGAN KARTIKA,,62241015295@mustangmath.com,5,ID07,Foal,ID07D,groundjay-yellow-belliedlizard-fireant-joey
+62241015297,DAZLE DAVID TOALU,,62241015297@mustangmath.com,5,ID07,Foal,ID07A,leafcutterant-kelpie-dingo-pinemarten
+62241015331,ETHAN MATTHEW SINGGIH,,62241015331@mustangmath.com,4,ID08,Foal,ID08B,grouse-janenschia-illadopsis-jerboa
+62241015344,ANTHONY SUJAYAPUTERA,,62241015344@mustangmath.com,6,ID08,Foal,ID08C,coney-scorpion-canadagoose-quagga
+62241015350,CHRISTOPHER BRYCE REAGAN LIN,,62241015350@mustangmath.com,6,ID08,Foal,ID08D,gemclam-amurratsnake-molesnake-zebradove
+62241015359,WILLIAM OWEN WONGSO,,62241015359@mustangmath.com,6,ID08,Foal,ID08A,binturong-flatcoatretriever-hamadryad-jingle
+62241015342,REYNARD EMERSON KARTOLO,,62241015342@mustangmath.com,5,ID09,Foal,ID09B,nightheron-zigzagsalamander-pipistrelle-waterdragons
+62241015303,DALVIN NARDJO LAI,,62241015303@mustangmath.com,6,ID09,Foal,ID09C,pupa-quokka-monarch-feline
+62241015363,KEZIA CHARIS TJOKROSAPUTRA,,62241015363@mustangmath.com,6,ID09,Foal,ID09D,kiwi-woodpecker-bighorn-curlew
+62241015364,LUCAS SEBASTIAN LIN,,62241015364@mustangmath.com,6,ID09,Foal,ID09A,turaco-bergerpicard-tragopan-hellbender
+62241015333,JADEN JODA WU,,62241015333@mustangmath.com,5,ID10,Foal,ID10B,jellyfish-ibizanhound-topi-kodiakbear
+62241015335,KEVIN FERNANDO HALIM,,62241015335@mustangmath.com,5,ID10,Foal,ID10C,nudibranch-quail-oropendola-gorilla
+62241015336,KIMBERLY ANNABELLE LIM,,62241015336@mustangmath.com,5,ID10,Foal,ID10D,larva-jerboa-dragon-quokka
+62241015337,LYZANDER HALIM,,62241015337@mustangmath.com,5,ID10,Foal,ID10A,xantus-small-clawedotter-xiphiasgladius-fightingfish
+62241015334,JUSTIN SATYADHARMA,,62241015334@mustangmath.com,4,ID11,Foal,ID11B,starling-fireant-hellbender-armedcrab
+62241015340,CELINE KIMBERLY MURSALIM,,62241015340@mustangmath.com,5,ID11,Foal,ID11C,iridescentshark-wolfhound-viperfish-merlin
+62241015341,JOSEPHINE RENATA TENGGARA,,62241015341@mustangmath.com,5,ID11,Foal,ID11D,sloth-acornwoodpecker-redsquirrel-urubu
+62241015343,WILLIAM RAFAEL GUNAWAN,,62241015343@mustangmath.com,5,ID11,Foal,ID11A,quelea-fruitbat-gaur-redheadedwoodpecker
+62241015298,LEFRANT VALEO RUSTAM,,62241015298@mustangmath.com,5,ID12,Foal,ID12B,xenopus-urubu-vampirebat-copepod
+62241015339,SHANE YOHANES JUNAEDI,,62241015339@mustangmath.com,5,ID12,Foal,ID12C,acornwoodpecker-nene-reptile-erne
+62241015296,CAI YUSHAN,,62241015296@mustangmath.com,6,ID12,Foal,ID12D,veery-malamute-feline-dinosaur
+62241015381,TYARA BEATRICE THARANAD,,62241015381@mustangmath.com,6,ID12,Foal,ID12A,hagfish-rainbowlorikeet-elkhound-xiphias
+62241015322,ELDRICH NATHAN DJONG,,62241015322@mustangmath.com,4,ID13,Foal,ID13B,nightheron-phoebe-raccoon-emperorpenguin
+62241015324,LUIS ALEXANDER SANJAYA,,62241015324@mustangmath.com,4,ID13,Foal,ID13C,icefish-nymph-xeme-zebrafinch
+62241015332,EVAN JACOB KUNCORO,,62241015332@mustangmath.com,5,ID13,Foal,ID13D,pelicinuspetrel-bilby-armadillo-laika
+62241015338,ROY ALEXANDER RUSLI,,62241015338@mustangmath.com,5,ID13,Foal,ID13A,umbrellabird-rainbowlorikeet-equine-polliwog
+62241015325,NATHAN MISHAEL KURNIAWAN,,62241015325@mustangmath.com,4,ID14,Foal,ID14B,angwantibo-kakapo-lemur-yearling
+62241015326,OTHNIEL MARC GANDAMIHARDJA,,62241015326@mustangmath.com,4,ID14,Foal,ID14C,serpent-shorthair-zeren-blackfly
+62241015327,WILLIAM HENRY HIDAJAT,,62241015327@mustangmath.com,4,ID14,Foal,ID14D,junco-cur-dobermanpinscher-xanclomys
+62241015328,AUSTIN PHOENIX HADIBROTO,,62241015328@mustangmath.com,4,ID14,Foal,ID14A,xoni-crossbill-rhinoceros-nandine
+62241015321,CALEB ELIAS DHARMAWIRYA,,62241015321@mustangmath.com,4,ID15,Foal,ID15B,fantail-xenoposeidon-yearling-iaerismetalmark
+62241015329,CARLSEN RAYCHOU,,62241015329@mustangmath.com,4,ID15,Foal,ID15C,hedgehog-finwhale-yellow-belliedlizard-harpyeagle
+62241015379,NICHOLAS RICHIE,,62241015379@mustangmath.com,4,ID15,Foal,ID15D,finch-catbird-fish-venomoussnake
+62241015380,LEON SKY SUTRISNO TJIANG,,62241015380@mustangmath.com,5,ID15,Foal,ID15A,scorpion-lorikeet-woodborer-trumpeterswan
+62241015300,SERAPHINE PEYTON ZHANG,,62241015300@mustangmath.com,6,ID16,Stallion,ID16B,zander-brocketdeer-noctilio-waterspaniel
+62241015308,AVNER MAXWELL LIM,,62241015308@mustangmath.com,8,ID16,Stallion,ID16C,duckling-halicore-kingsnake-eeve
+62241015313,KEAN SHEN,,62241015313@mustangmath.com,8,ID16,Stallion,ID16D,lhasaapso-sable-ilsamochadegu-wobbegongshark
+62241015316,RYAN STEFANO,,62241015316@mustangmath.com,8,ID16,Stallion,ID16A,ibex-viper-honeybee-nyala
+62241015362,GLENN NORIYUKI KHUANG,,62241015362@mustangmath.com,6,ID17,Stallion,ID17B,leafhopper-boutu-moa-indusriverdolphin
+62241015369,JOSHUA LEONARDUS SANJAYA,,62241015369@mustangmath.com,7,ID17,Stallion,ID17C,vulpesvulpes-duckling-devilfish-quagga
+62241015372,PRAJNA VIRIYA SETIO,,62241015372@mustangmath.com,7,ID17,Stallion,ID17D,emeraldtreeskink-redheadedwoodpecker-ermine-vipersquid
+62241015375,MICHELLE ELAINE LIE,,62241015375@mustangmath.com,8,ID17,Stallion,ID17A,yellowhammer-illadopsis-degu-queensnake
+62241015367,CALLIE ANGELINE SUTANTO,,62241015367@mustangmath.com,8,ID18,Stallion,ID18B,needletail-imago-baboon-pilchard
+62241015368,DAMIEN SUWANDI,,62241015368@mustangmath.com,8,ID18,Stallion,ID18C,kid-louse-blackfish-horse
+62241015371,MAXIMILIAN HALIM WIDJAJA,,62241015371@mustangmath.com,8,ID18,Stallion,ID18D,zeren-rodent-giantschnauzer-kittiwake
+62241015373,XAVERIUS LIONEL ZHENG,,62241015373@mustangmath.com,8,ID18,Stallion,ID18A,mealworm-zebrafinch-waterdogs-zebradove
+62241015361,ANDREAS RIBERRY NATHANAEL SIHOMBING,,62241015361@mustangmath.com,6,ID19,Stallion,ID19B,quinquespinosus-chuckwalla-watermoccasin-ostracod
+62241015370,JUSTIN MAXWELL,,62241015370@mustangmath.com,7,ID19,Stallion,ID19C,marabou-langur-yellowhammer-zebrafinch
+62241015366,AYRENA KWAN,,62241015366@mustangmath.com,8,ID19,Stallion,ID19D,iggypops-nene-kiskadee-cassowary
+62241015374,JERICO,,62241015374@mustangmath.com,8,ID19,Stallion,ID19A,nene-civet-waterspaniel-whitebeakeddolphin
+62241015305,CHINDY SCHATZI QUEENA,,62241015305@mustangmath.com,7,ID20,Stallion,ID20B,devilfish-yeti-nerka-emperorpenguin
+62241015307,NICHOLAS ARTHUR WIBISONO,,62241015307@mustangmath.com,7,ID20,Stallion,ID20C,kite-polyturator-otter-duiker
+62241015384,MARCO DZAKI RABBANI EDWARD,,62241015384@mustangmath.com,7,ID20,Stallion,ID20D,kronosaurus-civet-lovebird-reptile
+62241015306,IMMANUEL HARREL GONDO,,62241015306@mustangmath.com,8,ID20,Stallion,ID20A,platypus-grouper-firesalamander-orca
+62241015302,ZACHARY AYDEN JULONG JEFFREY,,62241015302@mustangmath.com,5,ID21,Stallion,ID21B,eskimodog-xenoposeidon-bushviper-hackee
+62241015310,EVAN FREDERICK WONO,,62241015310@mustangmath.com,8,ID21,Stallion,ID21C,hadrosaurus-quokka-curassow-lcont
+62241015311,EZRA POGIJANTO,,62241015311@mustangmath.com,8,ID21,Stallion,ID21D,grayfox-feline-lungfish-lionfish
+62241015312,JOSE WILLIAM THERUNA,,62241015312@mustangmath.com,8,ID21,Stallion,ID21A,herringgull-urutu-cock-newtnutria
+62241015330,ETHAN JUVE ONGGOWARSITO,,62241015330@mustangmath.com,4,ID22,Foal,ID22B,lovebird-yellowthroat-xiphosuran-langur
+62241015360,ALDEN PIERO ONGGOWARSITO,,62241015360@mustangmath.com,6,ID22,Foal,ID22C,polyp-goblinshark-gannet-vulture
+62241015365,NATHANAEL EHUD WANG,,62241015365@mustangmath.com,6,ID22,Foal,ID22D,kitten-lhasaapso-hermitcrab-macropod
+55241000718,VITOR VERAS LIMA,,55241000718@mustangmath.com,4,IL01,Colt,IL01A,ichneumonfly-yardant-fallowdeer-mountaincat
+55241000735,LORENZO CARVALHO RODRIGUES,,55241000735@mustangmath.com,4,IL01,Colt,IL01B,isabellinewheatear-steed-ewe-wigeon
+55241000730,MIGUEL GARUTE LOZER MACIEL,,55241000730@mustangmath.com,7,IL01,Colt,IL01C,jumpingbean-xiphiasgladius-fawn-iridescentshark
+60241000363,YEW MING RUEY,,60241000363@mustangmath.com,7,IL01,Colt,IL01D,hogdeer-goshawk-makoshark-chiffchaff
+62241015291,NAINA MAHANTY,,62241015291@mustangmath.com,4,IL02,Foal,IL02A,lice-tanager-labradorretriever-emeraldtreeskink
+62241015323,KAYLA VELOVE WIGUNA,,62241015323@mustangmath.com,4,IL02,Foal,IL02B,widgeon-vaquita-barnswallow-nightjar
+86241000315,CHENG STANLEY,,86241000315@mustangmath.com,6,IL02,Foal,IL02C,urva-zenaida-ratsnake-venomoussnake
+86241000318,TIANYU GE,,86241000318@mustangmath.com,6,IL02,Foal,IL02D,manta-mantid-mink-ynambu
+95241000705,AGGA MOE @ ANDISON,,95241000705@mustangmath.com,4,IL03,Foal,IL03A,anteater-indigowingedparrot-eyra-motmot
+95241000706,AKARI SOE PYAE,,95241000706@mustangmath.com,4,IL03,Foal,IL03B,emu-puffer-yellowthroat-dromaeosaur
+94241000040,DULNITHA MAHEEPALA,,94241000040@mustangmath.com,6,IL03,Foal,IL03C,velociraptor-fiddlercrab-huia-warbler
+66241001720,KANUTCH SIWACHAT,,66241001720@mustangmath.com,6,IL03,Foal,IL03D,kangaroo-gypsymoth-zooplankton-ibadanmalimbe
+62241015378,JOANNA TANUWIJAYA,,62241015378@mustangmath.com,4,IL04,Foal,IL04A,tapaculo-creature-jacana-heifer
+63241001931,TAN JASTIN ALEXANDER ANGELES,,63241001931@mustangmath.com,4,IL04,Foal,IL04B,toadfish-samoyeddog-sifaka-sanderling
+63241001936,MAGNABE KALEL DREW YULO,,63241001936@mustangmath.com,5,IL04,Foal,IL04C,jaguarundi-redsquirrel-naga-zenaida
+63241001938,NG ALYSSA GRACE CHUA,,63241001938@mustangmath.com,5,IL04,Foal,IL04D,woodcock-guillemot-yaffle-hammerheadbird
+998241000091,ABDULOV ALAN,,998241000091@mustangmath.com,7,IL05,Stallion,IL05A,quelea-seamonkey-prawn-xiaosaurus
+996240000691,ALIYAROVA KAMILA,,996240000691@mustangmath.com,8,IL05,Stallion,IL05B,zebratailedlizard-pinniped-hatchetfish-nighthawk
+996240000692,KALBEKOVA ADELIA,,996240000692@mustangmath.com,8,IL05,Stallion,IL05C,harpyeagle-swan-nandu-gonolek
+996240000693,TOROZHANOV NURISLAM,,996240000693@mustangmath.com,8,IL05,Stallion,IL05D,smelts-phoebe-tapir-newt
+63241001948,CABIGON RYAN THEODORE CAUNAN,,63241001948@mustangmath.com,7,IL06,Colt,IL06A,zebra-louse-olm-willet
+63241001949,GUARIN JOHN ELROM CAEL TAN CARDOSO,,63241001949@mustangmath.com,7,IL06,Colt,IL06B,urva-volvox-whelp-cranefly
+63241001952,MANAMPARAN ADRIEL LENARD CANUPEN,,63241001952@mustangmath.com,7,IL06,Colt,IL06C,orca-turnstone-aardvark-koi
+65241006313,VISHWAM SRIVASTAVA,,65241006313@mustangmath.com,7,IL07,Stallion,IL07D,urutu-johndory-paradiseflycatcher-zebu
+65241006314,ZIYANG HUANG,,65241006314@mustangmath.com,7,IL07,Stallion,IL07A,boar-cat-nubiangoat-quahog
+60241000360,AUSTIN WEIBIN CHEAH,,60241000360@mustangmath.com,8,IL07,Stallion,IL07B,eskimodog-javalina-ratsnake-krill
+60241000364,LEE YU YANG,,60241000364@mustangmath.com,8,IL07,Stallion,IL07C,tapir-dinosaur-dunlin-iaerismetalmark
+994241000121,ISMAYIL NAGHIYEV,,994241000121@mustangmath.com,7,IL08,Stallion,IL08D,flickertailsquirrel-woodpecker-banteng-wirehair
+994241000123,BARISH VALIZADA,,994241000123@mustangmath.com,8,IL08,Stallion,IL08A,vampirebat-titi-yellow-belliedmarmot-astrangiacoral
+90241000138,YUSUF IHSAN YASAR,,90241000138@mustangmath.com,8,IL08,Stallion,IL08B,quillback-zorilla-plankton-zopilote
+90241000139,ZEYNEP KARA,,90241000139@mustangmath.com,8,IL08,Stallion,IL08C,cat-thrasher-blackmamba-kiwi
+996240000699,ASANALIEV AMANTUR,,996240000699@mustangmath.com,4,KG01,Foal,KG01D,xenops-canadagoose-ragfish-zebrafish
+996240000700,BAKYTOV TIMUR EMIR,,996240000700@mustangmath.com,4,KG01,Foal,KG01A,greatwhiteshark-vampirebat-warmblood-javalina
+996240000701,SHARABIDINOV BAYAS,,996240000701@mustangmath.com,5,KG01,Foal,KG01B,iggypops-quetzalcoatlus-vulpesvulpes-lacewing
+996240000697,YSAKOV BAIGAZY,,996240000697@mustangmath.com,6,KG01,Foal,KG01C,blacklab-barnowl-kawala-killifish
+996240000698,DZHUMADILOV ALINURISLAM,,996240000698@mustangmath.com,4,KG02,Colt,KG02D,elver-apatosaur-gilamonster-firebelliedtoad
+996240000696,BEKESHOV AKTAN,,996240000696@mustangmath.com,6,KG02,Colt,KG02A,wolverine-vireo-joey-deinonychus
+996240000694,BATKULDAEV ARGEN,,996240000694@mustangmath.com,7,KG02,Colt,KG02B,bantamrooster-dowitcher-redsquirrel-flycatcher
+996240000695,ZHARATOV NURMUKHAMMED,,996240000695@mustangmath.com,7,KG02,Colt,KG02C,ratfish-canadagoose-flatcoatretriever-earthworm
+855241001091,NHEM KHEMA MOROKOT,,855241001091@mustangmath.com,5,KH01,Colt,KH01D,xenurine-astarte-kingbird-hellbender
+855241001092,RITHIRATH LY,,855241001092@mustangmath.com,5,KH01,Colt,KH01A,brontosaurus-quahog-hind-quail
+855241001095,SOKREY AVIYA,,855241001095@mustangmath.com,5,KH01,Colt,KH01B,tilefish-urva-vireo-giantschnauzer
+855241001103,CHEA ROSESICA,,855241001103@mustangmath.com,7,KH01,Colt,KH01C,longspur-tahr-pharaohhound-elk
+855241001082,LY SOKSOPHEA,,855241001082@mustangmath.com,4,KH02,Foal,KH02D,larva-neontetra-jaguar-kakarikis
+855241001094,SEM MEASPHEANUN,,855241001094@mustangmath.com,5,KH02,Foal,KH02A,worm-lizard-mandrill-velvetcrab
+855241001099,MEAS SOPORPICH,,855241001099@mustangmath.com,6,KH02,Foal,KH02B,lark-rhea-myna-tilefish
+855241001101,SALINA LAY,,855241001101@mustangmath.com,6,KH02,Foal,KH02C,mangabey-jaguar-homalocephale-janenschia
+855241001081,LIM SONGCHHAY,,855241001081@mustangmath.com,4,KH03,Foal,KH03D,ynambu-tadpole-trout-sora
+855241001086,THOU THERAYU,,855241001086@mustangmath.com,4,KH03,Foal,KH03A,dore-xiphias-fiddlercrab-zebradove
+855241001098,LY SOKUNTHEA,,855241001098@mustangmath.com,6,KH03,Foal,KH03B,joey-finnishspitz-fantail-flatcoatretriever
+855241001100,RITH DUONGLEAKSMY,,855241001100@mustangmath.com,6,KH03,Foal,KH03C,moose-anglerfish-hydra-kinkajou
+855241001080,HENG MEAS OUDOM,,855241001080@mustangmath.com,4,KH04,Foal,KH04D,quelea-liger-taruca-rasbora
+855241001084,SAING DARITA,,855241001084@mustangmath.com,4,KH04,Foal,KH04A,hogget-barnswallow-kronosaurus-joey
+855241001087,VA MALY,,855241001087@mustangmath.com,4,KH04,Foal,KH04B,aztecant-piedkingfisher-dobermanpinscher-davidstiger
+855241001088,VUTH MEASSOMBRATHNA,,855241001088@mustangmath.com,4,KH04,Foal,KH04C,olingo-equine-albacoretuna-longspur
+855241001079,DAMBURAE LIYANAGE YASAS THARINDA DAMSARA,,855241001079@mustangmath.com,4,KH05,Foal,KH05D,lunamoth-earwig-quillback-stoat
+855241001083,POV MONYROTH,,855241001083@mustangmath.com,4,KH05,Foal,KH05A,jackrabbit-izuthrush-alleycat-nag
+855241001093,SARON BOTHYROTH,,855241001093@mustangmath.com,5,KH05,Foal,KH05B,eider-pig-sandbarshark-fightingfish
+855241001096,CHAU MARK MIGUEL,,855241001096@mustangmath.com,6,KH05,Foal,KH05C,caimanlizard-egg-vireo-komondor
+855241001085,THEA PORNGY,,855241001085@mustangmath.com,4,KH06,Foal,KH06D,zorilla-velvetcrab-porpoise-fennecfox
+855241001089,EA HUY SINH,,855241001089@mustangmath.com,5,KH06,Foal,KH06A,ungulate-lobster-kite-crane
+855241001090,HOK PUTHIYA,,855241001090@mustangmath.com,5,KH06,Foal,KH06B,crocodilelizard-uakari-farmdog-gibbon
+855241001102,SAMNANGNITH LYKA,,855241001102@mustangmath.com,6,KH06,Foal,KH06C,kitten-quarterhorse-chinchilla-prairiedog
+855241001097,CHEA CHANNALIN,,855241001097@mustangmath.com,6,KH07,Stallion,KH07D,dolphin-yeti-groundhog-egg
+855241001104,KUOCH EVA,,855241001104@mustangmath.com,7,KH07,Stallion,KH07A,esok-jerboa-monkfish-nandoo
+855241001109,DY RATHCHANTSURAHPONGS,,855241001109@mustangmath.com,8,KH07,Stallion,KH07B,yucker-elephantseal-howlermonkey-loggerheadturtle
+855241001113,SEM MEASPHEANIT,,855241001113@mustangmath.com,8,KH07,Stallion,KH07C,woodstorks-oxpecker-cobra-vervet
+855241001105,OEUNG SAMBATH,,855241001105@mustangmath.com,7,KH08,Stallion,KH08D,xeme-vase-killdeer-urial
+855241001106,SARON BOTHREACH,,855241001106@mustangmath.com,7,KH08,Stallion,KH08A,deer-aztecant-hermitcrab-weevil
+855241001107,SENG BUNVINORAK,,855241001107@mustangmath.com,7,KH08,Stallion,KH08B,basil-xrayfish-joey-frenchbulldog
+855241001111,HE JINGYEAK,,855241001111@mustangmath.com,8,KH08,Stallion,KH08C,grayfox-vasesponge-zonetailedpigeon-zooplankton
+855241001108,ALLISON NISA LIN,,855241001108@mustangmath.com,8,KH09,Stallion,KH09D,nandine-angora-roller-crow
+855241001110,EM KUNNORRENT,,855241001110@mustangmath.com,8,KH09,Stallion,KH09A,zenaida-vixen-deer-kagu
+855241001112,PHY GUECHHEANG,,855241001112@mustangmath.com,8,KH09,Stallion,KH09B,finnishspitz-okapi-vase-chihuahua
+855241001114,THA CHANNARATH,,855241001114@mustangmath.com,8,KH09,Stallion,KH09C,honeybadger-zeren-whiteeye-tench
+95241000707,AUNG KAUNG KHANT NAING,,95241000707@mustangmath.com,4,MM01,Foal,MM01D,garpike-midwifetoad-fairybluebird-hound
+95241000708,AYE MON ZAW,,95241000708@mustangmath.com,4,MM01,Foal,MM01A,roach-xenopus-grison-wolfhound
+95241000737,ADRIAN LINN,,95241000737@mustangmath.com,5,MM01,Foal,MM01B,lizard-plankton-zeren-loggerheadturtle
+95241000756,AUNG HPONE MAW,,95241000756@mustangmath.com,6,MM01,Foal,MM01C,vaquita-zebradove-desertpupfish-zebu
+95241000709,BHONE MAUNG,,95241000709@mustangmath.com,4,MM02,Foal,MM02D,noctilio-trout-velvetworm-xinjiangovenator
+95241000710,CHAN NYEIN SAN,,95241000710@mustangmath.com,4,MM02,Foal,MM02A,unau-arkshell-elver-urial
+95241000738,ALEX YE AUNG,,95241000738@mustangmath.com,5,MM02,Foal,MM02B,devil-xenarthra-albino-owlbutterfly
+95241000739,CHAN LIN NYI @CHAD,,95241000739@mustangmath.com,5,MM02,Foal,MM02C,marlin-zebrafinch-vulpesvelox-needlefish
+95241000711,CHERRY THAUNG TAN,,95241000711@mustangmath.com,4,MM03,Foal,MM03D,zebra-umbrellabird-lorikeet-yellowthroat
+95241000736,ZAW THU NYAN,,95241000736@mustangmath.com,4,MM03,Foal,MM03A,heifer-hyracotherium-treeboa-lionfish
+95241000740,CHU SHWE SIN,,95241000740@mustangmath.com,5,MM03,Foal,MM03B,groundjay-atlasmoth-islandcanary-koodoo
+95241000758,KHIN WATI KYAW,,95241000758@mustangmath.com,6,MM03,Foal,MM03C,devilfish-bonobo-naga-jaguarundi
+95241000712,DARNA MAUNG,,95241000712@mustangmath.com,4,MM04,Foal,MM04D,redtailedhawk-rainbowlorikeet-racer-nabarlek
+95241000713,ETHAN @ PHONE PYAE HTUN,,95241000713@mustangmath.com,4,MM04,Foal,MM04A,zebrafish-kudu-eyra-jabiru
+95241000742,HAN LIN HTET,,95241000742@mustangmath.com,5,MM04,Foal,MM04B,takin-plankton-quahog-unicorn
+95241000752,SHWE HMONE YATHAW,,95241000752@mustangmath.com,5,MM04,Foal,MM04C,ynambu-jingle-zenaida-yapok
+95241000714,ETHAN OAKKAR SOE,,95241000714@mustangmath.com,4,MM05,Foal,MM05D,zebra-goosefish-llama-mountaincat
+95241000715,KAUNG HTET HTAY YIN (CODY),,95241000715@mustangmath.com,4,MM05,Foal,MM05A,seaurchin-alligatorlizard-ungulate-zebradove
+95241000744,KAUNG SINT THU,,95241000744@mustangmath.com,5,MM05,Foal,MM05B,chuckwalla-chinchilla-emperorshrimp-dingo
+95241000763,NYEIN MIN SOE,,95241000763@mustangmath.com,6,MM05,Foal,MM05C,viper-opossum-quetzal-vole
+95241000716,KAUNG KHANT,,95241000716@mustangmath.com,4,MM06,Foal,MM06D,olingo-tigershark-panda-nudibranch
+95241000717,KAUNG KYAL SIN KYAW,,95241000717@mustangmath.com,4,MM06,Foal,MM06A,kitty-ragfish-coral-paradiseflycatcher
+95241000718,KAUNG PYAE WA,,95241000718@mustangmath.com,4,MM06,Foal,MM06B,junco-nudibranch-whitetaileddeer-okapi
+95241000765,WAI YAN MIN MYAT,,95241000765@mustangmath.com,6,MM06,Foal,MM06C,sloth-viperfish-fly-viperfish
+95241000719,KAUNG SETT AUNG,,95241000719@mustangmath.com,4,MM07,Foal,MM07D,cornsnake-hamster-xiphiasgladius-whitetippedreefshark
+95241000720,KHANT MYO AUNG,,95241000720@mustangmath.com,4,MM07,Foal,MM07A,nuthatch-darwinsfox-needlefish-peregrinefalcon
+95241000745,LA WON EAIN @EMILY,,95241000745@mustangmath.com,5,MM07,Foal,MM07B,aztecant-zeren-jackal-goldfinch
+95241000748,MYA THAWDAR KHIN,,95241000748@mustangmath.com,5,MM07,Foal,MM07C,drever-majungatholus-caudata-xenopus
+95241000721,KHIN BHONE PYET WIN AUNG @BOTE,,95241000721@mustangmath.com,4,MM08,Foal,MM08D,shrew-yucker-bushviper-nutria
+95241000722,KHIN SHIN THANT,,95241000722@mustangmath.com,4,MM08,Foal,MM08A,jenny-yapok-ovenbird-pipistrelle
+95241000723,KYITHA SAN HTAR KO,,95241000723@mustangmath.com,4,MM08,Foal,MM08B,kawala-hippopotamus-iaerismetalmark-jacana
+95241000749,MYINT MYAT WIN THAW,,95241000749@mustangmath.com,5,MM08,Foal,MM08C,yearling-hoiho-jackal-umbrette
+95241000724,LYNN AGGA,,95241000724@mustangmath.com,4,MM09,Foal,MM09D,ichidna-kronosaurus-warbler-quail
+95241000725,LYNN MYAT KHANT,,95241000725@mustangmath.com,4,MM09,Foal,MM09A,papillon-urson-caribou-seagull
+95241000750,MYO THIHA,,95241000750@mustangmath.com,5,MM09,Foal,MM09B,bison-zebrafinch-marten-urus
+95241000755,WINT THADAR AUNG,,95241000755@mustangmath.com,5,MM09,Foal,MM09C,elver-lamb-halcyon-roebuck
+95241000726,MYA PHOO AUNG ZIN,,95241000726@mustangmath.com,4,MM10,Foal,MM10D,harpseal-pikeperch-wolfhound-hornedviper
+95241000727,MYAT PWINT CHAL KHAING,,95241000727@mustangmath.com,4,MM10,Foal,MM10A,jackrabbit-finwhale-warbler-moose
+95241000728,NYI SITT THWIN,,95241000728@mustangmath.com,4,MM10,Foal,MM10B,worm-irrawaddydolphin-moose-mandrill
+95241000754,THIN MYAT NOE SAN (LUCY),,95241000754@mustangmath.com,5,MM10,Foal,MM10C,caecilian-terrier-auk-janenschia
+95241000729,PAING SAY HMUE KHANT,,95241000729@mustangmath.com,4,MM11,Colt,MM11D,fawn-largemouthbass-weevil-finch
+95241000743,KAUNG SHAN THAR,,95241000743@mustangmath.com,5,MM11,Colt,MM11A,jerboa-ilsamochadegu-quoll-iaerismetalmark
+95241000766,BHONE SETT TI,,95241000766@mustangmath.com,7,MM11,Colt,MM11B,zenaida-pitbull-ibadanmalimbe-cricket
+95241000769,MYAT MIN KHIN,,95241000769@mustangmath.com,7,MM11,Colt,MM11C,yellowlegs-lemonshark-spadefoot-pheasant
+95241000730,PYAE BHONE KHANT,,95241000730@mustangmath.com,4,MM12,Colt,MM12D,kudu-ringneckparakeet-ladybird-elephant
+95241000757,KHIN TINT TEL @GLORIA,,95241000757@mustangmath.com,6,MM12,Colt,MM12A,auk-imperialeagle-dowitcher-pilchard
+95241000760,LA WON THAW TAR,,95241000760@mustangmath.com,6,MM12,Colt,MM12B,vixen-eyelashpitviper-duckbillcat-moa
+95241000771,PHONE SAY THAW,,95241000771@mustangmath.com,7,MM12,Colt,MM12C,velvetworm-terrapin-chihuahua-treeboa
+95241000731,THANT BHONE KHANT,,95241000731@mustangmath.com,4,MM13,Foal,MM13D,pangolin-woodpecker-chimneyswift-zebu
+95241000732,THEIN MIN AUNG,,95241000732@mustangmath.com,4,MM13,Foal,MM13A,kitfox-dikdik-bilby-jaguarundi
+95241000733,THONDAYI BHONE MYAT,,95241000733@mustangmath.com,4,MM13,Foal,MM13B,trex-opossum-liger-zebrafish
+95241000753,THANT THIRI NWE,,95241000753@mustangmath.com,5,MM13,Foal,MM13C,alpinegoat-indigowingedparrot-queenconch-kitty
+95241000734,THU HNINE AANT,,95241000734@mustangmath.com,4,MM14,Colt,MM14D,snake-copperhead-foxhound-doe
+95241000746,MAY THIT CHEAL,,95241000746@mustangmath.com,5,MM14,Colt,MM14A,urva-quinquespinosus-olm-tomtit
+95241000759,KYAL SYN MIN HAN,,95241000759@mustangmath.com,6,MM14,Colt,MM14B,halcyon-anchovy-unicorn-rockrat
+95241000773,THIRI PHYO SHWE,,95241000773@mustangmath.com,7,MM14,Colt,MM14C,venomoussnake-unicorn-dunlin-astrangiacoral
+95241000735,YIN TINTEL,,95241000735@mustangmath.com,4,MM15,Colt,MM15D,albino-ungulate-hog-aegeancat
+95241000747,MIN YE YINT LWIN @ WILLIAM,,95241000747@mustangmath.com,5,MM15,Colt,MM15A,nightcrawler-hammerheadbird-ovenbird-uakari
+95241000762,NYAN MYINT MO TUN @ GEORGE,,95241000762@mustangmath.com,6,MM15,Colt,MM15B,pachyderm-sanddollar-leafhopper-creature
+95241000767,KAUNG SETT THAR WIN,,95241000767@mustangmath.com,7,MM15,Colt,MM15C,quagga-komondor-terrier-anhinga
+95241000741,EAIN SI MOE,,95241000741@mustangmath.com,5,MM16,Stallion,MM16D,fishingcat-okapi-aracari-nubiangoat
+95241000751,SHIN THANT YATI AUNG,,95241000751@mustangmath.com,5,MM16,Stallion,MM16A,owlbutterfly-ringtailedlemur-doe-porpoise
+95241000774,BHONE MYINT NAING,,95241000774@mustangmath.com,8,MM16,Stallion,MM16B,largemouthbass-banteng-nutria-akitainu
+95241000775,KAUNG ZAW THIHA,,95241000775@mustangmath.com,8,MM16,Stallion,MM16C,xiphosuran-vasesponge-blackbird-orca
+95241000761,LIN THURIYA PHO HLAING,,95241000761@mustangmath.com,6,MM17,Stallion,MM17D,zebu-paca-horseshoecrab-rottweiler
+95241000768,KHUN KHANT ZAYAR,,95241000768@mustangmath.com,7,MM17,Stallion,MM17A,macaw-viper-quetzal-quetzalcoatlus
+95241000776,KHIN LAY PYAY THWAY,,95241000776@mustangmath.com,8,MM17,Stallion,MM17B,racer-sableantelope-neonrainbowfish-tortoise
+95241000777,PHYU THWE WINT,,95241000777@mustangmath.com,8,MM17,Stallion,MM17C,urson-kagu-dassierat-venomoussnake
+95241000764,THWIN THIT NYEIN,,95241000764@mustangmath.com,6,MM18,Stallion,MM18D,emu-lemming-upupa-possum
+95241000770,PHONE KHANT PYAE SONE,,95241000770@mustangmath.com,7,MM18,Stallion,MM18A,zopilote-noolbenger-mink-vipersquid
+95241000772,THAN LWIN,,95241000772@mustangmath.com,7,MM18,Stallion,MM18B,lemming-mynah-ragfish-vampirebat
+95241000778,SOE HTUT ZARNI,,95241000778@mustangmath.com,8,MM18,Stallion,MM18C,joey-roller-trex-schnauzer
+60241000299,FOON HUI ZHI,,60241000299@mustangmath.com,4,MY01,Foal,MY01D,eyelashpitviper-guanaco-xerus-steed
+60241000300,LEONG MUN HOONG,,60241000300@mustangmath.com,4,MY01,Foal,MY01A,squeaker-nabarlek-earwig-leonberger
+60241000303,KAYLEE CHONG JIN EE,,60241000303@mustangmath.com,5,MY01,Foal,MY01B,killifish-wallaby-ynambu-ibadanmalimbe
+60241000306,JONATHAN CHOW JING HENG,,60241000306@mustangmath.com,6,MY01,Foal,MY01C,oriole-tinamou-hagfish-grayreefshark
+60241000354,LIU YI KANG,,60241000354@mustangmath.com,4,MY02,Foal,MY02D,volvox-oyster-turaco-riograndeescuerzo
+60241000355,TAN ZE ERN,,60241000355@mustangmath.com,4,MY02,Foal,MY02A,coney-porcupine-zebrafinch-deinonychus
+60241000301,BENJAMIN CHEW TIAN HONG,,60241000301@mustangmath.com,5,MY02,Foal,MY02B,swordfish-chick-neondwarfgourami-gannet
+60241000358,LIEW SING HAO,,60241000358@mustangmath.com,6,MY02,Foal,MY02C,intermediateegret-fulmar-nightjar-hornshark
+60241000302,ISABELLE LIM XINN HAEN,,60241000302@mustangmath.com,5,MY03,Colt,MY03D,haddock-mealworm-catfish-towhee
+60241000304,SAMUEL GOH YU SIANG,,60241000304@mustangmath.com,5,MY03,Colt,MY03A,shepherddog-xiphiasgladius-lion-zebradove
+60241000307,LIEW YAN HUI,,60241000307@mustangmath.com,6,MY03,Colt,MY03B,nilgai-skink-otter-rattail
+60241000309,LIM SHAN YONG,,60241000309@mustangmath.com,7,MY03,Colt,MY03C,sponge-labradorretriever-ozarkbigearedbat-killerwhale
+60241000305,TAN SZE KAI,,60241000305@mustangmath.com,5,MY04,Colt,MY04D,robberfly-minibeast-javalina-verdin
+60241000356,LAW ZI LE,,60241000356@mustangmath.com,5,MY04,Colt,MY04A,frog-peregrinefalcon-redsquirrel-vaquita
+60241000357,GAN KAIUS,,60241000357@mustangmath.com,6,MY04,Colt,MY04B,tadpole-caimanlizard-isabellinewheatear-waterdogs
+60241000359,SEAH YU HENG,,60241000359@mustangmath.com,7,MY04,Colt,MY04C,canvasback-swan-wobbegongshark-emeraldtreeskink
+60241000310,NATALIE KHO HUI ERN,,60241000310@mustangmath.com,7,MY05,Stallion,MY05D,pygmy-redsquirrel-robin-triceratops
+60241000311,ONG BOON SHENG,,60241000311@mustangmath.com,7,MY05,Stallion,MY05A,zenaida-quadrisectus-xenopus-aztecant
+60241000312,DANNY SON,,60241000312@mustangmath.com,8,MY05,Stallion,MY05B,kittiwake-zebrafinch-quahog-aoudad
+60241000313,ISAAC LIM ZHI YANN,,60241000313@mustangmath.com,8,MY05,Stallion,MY05C,marmot-rhea-chevrotain-umbrellabird
+60241000362,LAI JOE HERN,,60241000362@mustangmath.com,7,MY06,Stallion,MY06D,verdin-echidna-plankton-nettlefish
+60241000314,KONG HO MIN,,60241000314@mustangmath.com,8,MY06,Stallion,MY06A,guillemot-killdeer-redhead-zander
+60241000315,YAP WEI KEAT,,60241000315@mustangmath.com,8,MY06,Stallion,MY06B,muskrat-abalone-ringneckparakeet-dartfrog
+60241000361,TYLER JORDANNIO KRISANTO,,60241000361@mustangmath.com,8,MY06,Stallion,MY06C,ungulate-ringneckparakeet-kentrosaurus-urutu
+64241000042,OLIVER YANG,,64241000042@mustangmath.com,4,NZ01,Foal,NZ01D,unau-vase-acouchi-dinosaur
+64241000043,EDWARD SU,,64241000043@mustangmath.com,5,NZ01,Foal,NZ01A,polliwog-spoonbill-bandicoot-jenny
+64241000044,JASON GONG,,64241000044@mustangmath.com,5,NZ01,Foal,NZ01B,joey-jaguarundi-joey-veery
+64241000045,WEIXIN KONG,,64241000045@mustangmath.com,5,NZ01,Foal,NZ01C,mara-needletail-springtail-umbrette
+64241000041,JEFFREY ZHAO,,64241000041@mustangmath.com,4,NZ02,Foal,NZ02D,ermine-quetzal-zebratailedlizard-kinkajou
+64241000046,YINGYUE ZHAO,,64241000046@mustangmath.com,5,NZ02,Foal,NZ02A,lacewing-limpet-augurbuzzard-icterinewarbler
+64241000047,JUSTIN ZHAO,,64241000047@mustangmath.com,6,NZ02,Foal,NZ02B,trumpeterbird-nabarlek-darwinsfox-groundsquirrel
+63241001946,ANG CARSTEN EDMUND SECADES,,63241001946@mustangmath.com,7,PH01,Colt,PH01C,imago-hyena-owl-freshwaterclam
+63241001947,AQUINO KATE MARIE RODRIGUEZ,,63241001947@mustangmath.com,7,PH01,Colt,PH01D,eagle-umbrellabird-duckbillcat-tortoise
+63241001950,HONG KAI DANIELLA TY,,63241001950@mustangmath.com,7,PH01,Colt,PH01A,vireo-wigeon-eyas-glassfish
+63241001951,JAVIER PACO ALFONSO ROJAS,,63241001951@mustangmath.com,7,PH01,Colt,PH01B,sunbittern-lionfish-ynambu-tegus
+63241001932,YU STEVE JACOB CHU,,63241001932@mustangmath.com,4,PH02,Foal,PH02C,uakari-shibainu-leopard-indigobunting
+63241001940,YU ANNETTE TIFFANY NGO,,63241001940@mustangmath.com,5,PH02,Foal,PH02D,johndory-xiaosaurus-cobra-jaguarundi
+63241001942,LEE JENELLE NYKA GAN,,63241001942@mustangmath.com,6,PH02,Foal,PH02A,ermine-weaverbird-oxen-marmot
+63241001943,LORENZO HILLARY BEATRICE YU,,63241001943@mustangmath.com,6,PH02,Foal,PH02B,yellowlegs-xrayfish-freshwatereel-humpbackwhale
+63241001924,CAY LEONARD VASH UY,,63241001924@mustangmath.com,4,PH03,Foal,PH03C,volvox-duiker-zebu-zopilote
+63241001928,PORNILLOS LEBRON JAMES BERMUDEZ,,63241001928@mustangmath.com,4,PH03,Foal,PH03D,zebra-polliwog-lionfish-pronghorn
+63241001937,MONTEAGUDO JAMES PARKER BETSAYDA,,63241001937@mustangmath.com,5,PH03,Foal,PH03A,cutworm-zenaida-aracari-chipmunk
+63241001941,BERTOSO RYU SHEALTIEL AGUILAR,,63241001941@mustangmath.com,6,PH03,Foal,PH03B,bunny-darwinsfox-ichthyostega-ocelot
+63241001925,GOHOC NATHAN YIP,,63241001925@mustangmath.com,4,PH04,Foal,PH04C,robberfly-kingbird-yak-bumblebee
+63241001926,MENDOZA FRANCHEZKA,,63241001926@mustangmath.com,4,PH04,Foal,PH04D,karakul-johndory-meerkat-firesalamander
+63241001939,TAN JIMENEZ KAYLEE NICHOLE NUBLA,,63241001939@mustangmath.com,5,PH04,Foal,PH04A,jumpingbean-armyant-equestrian-mamba
+63241001944,MARI JARED CONNOR NG,,63241001944@mustangmath.com,6,PH04,Foal,PH04B,myna-killifish-johndory-ibadanmalimbe
+63241001923,CALACDAY LEXIE VENICE ANG,,63241001923@mustangmath.com,4,PH05,Foal,PH05C,dartfrog-buzzard-dowitcher-xanthareel
+63241001927,PARDINAS REESE ALLISON PENAFLOR,,63241001927@mustangmath.com,4,PH05,Foal,PH05D,dungenesscrab-kinkajou-kodiakbear-nettlefish
+63241001933,BLANCAFLOR XEREENE KAIRRAEL,,63241001933@mustangmath.com,5,PH05,Foal,PH05A,freshwatereel-kentrosaurus-yellow-belliedmarmot-thrasher
+63241001945,TOPACIO MA. JILLIAN VENICE BARRAL,,63241001945@mustangmath.com,6,PH05,Foal,PH05B,ovenbird-affenpinscher-flamingo-owl
+63241001929,SIOCO RAPHAEL CODY KUO,,63241001929@mustangmath.com,4,PH06,Foal,PH06C,seaslug-airedaleterrier-equestrian-lamb
+63241001930,SUNICO RHYO LINCOLN PADILLA,,63241001930@mustangmath.com,4,PH06,Foal,PH06D,ovenbird-ammonite-viper-nandoo
+63241001934,CADIZ JADEN MATTHEW PADUA,,63241001934@mustangmath.com,5,PH06,Foal,PH06A,pharaohhound-yellowlegs-zonetailedpigeon-umbrette
+63241001935,DE LARA ZAC ANDRE ESTANISLAO,,63241001935@mustangmath.com,5,PH06,Foal,PH06B,leafcutterant-xenopus-seaurchin-isabellineshrike
+63241001956,CHUA DENISE PHOEBE LIM,,63241001956@mustangmath.com,8,PH07,Stallion,PH07C,urson-feline-newt-donkey
+63241001957,PEREZ HARRY GERARD LUNA,,63241001957@mustangmath.com,8,PH07,Stallion,PH07D,vase-newtnutria-antlion-yapok
+63241001958,POH LEUNG SHAUN LAWRENCE TIONG,,63241001958@mustangmath.com,8,PH07,Stallion,PH07A,fish-mangabey-zander-fantail
+63241001960,TIONG MARIBETH JULLIAN NG,,63241001960@mustangmath.com,8,PH07,Stallion,PH07B,limpet-zigzagsalamander-inganue-kiwi
+63241001953,AREVALO ELLEN CHARICE VALDEMAR,,63241001953@mustangmath.com,8,PH08,Stallion,PH08C,megalosaurus-quetzalcoatlus-kite-cygnet
+63241001954,AVANTE ERNICE MADISON ALVAREZ,,63241001954@mustangmath.com,8,PH08,Stallion,PH08D,kagu-chamois-imago-iceblueredtopzebra
+63241001955,CABIGON ANDREW LORENZ CAUNAN,,63241001955@mustangmath.com,8,PH08,Stallion,PH08A,jenny-guillemot-nag-velvetworm
+63241001959,POKHAREL ROSS LOUIS LOPEZ,,63241001959@mustangmath.com,8,PH08,Stallion,PH08B,teal-krill-pterodactyl-ridgeback
+65241006305,TREVOR LEE JIA JUN,,65241006305@mustangmath.com,4,SG01,Foal,SG01C,quokka-xenops-blackcrappie-dachshund
+65241006304,DENNIS LIAM NG DE JUN,,65241006304@mustangmath.com,5,SG01,Foal,SG01D,isopod-mongrel-javalina-balloonfish
+65241006306,VASCO CONNOR,,65241006306@mustangmath.com,6,SG01,Foal,SG01A,genet-okapi-kid-black-footedferret
+65241006309,MEYDHANSH BAHL,,65241006309@mustangmath.com,6,SG01,Foal,SG01B,eft-lcont-xiaosaurus-anura
+65241006310,ZI YI TAI,,65241006310@mustangmath.com,4,SG02,Colt,SG02C,umbrette-coyote-swift-eyas
+65241006316,LUO XINYI,,65241006316@mustangmath.com,5,SG02,Colt,SG02D,dairycow-bluetang-nettlefish-chickadee
+65241006315,MARWIN LERTVIRIYASAK,,65241006315@mustangmath.com,6,SG02,Colt,SG02A,xenops-firesalamander-waterbuck-barnowl
+65241006303,KAYDEN CHUA KAI EN,,65241006303@mustangmath.com,7,SG02,Colt,SG02B,jabiru-ass-fulmar-osprey
+65241006307,ANSHU REVURU,,65241006307@mustangmath.com,8,SG03,Stallion,SG03C,pewee-hydra-unicorn-urubu
+65241006308,SARAH PANJWANI,,65241006308@mustangmath.com,8,SG03,Stallion,SG03D,ichthyostega-mite-larva-laughingthrush
+65241006311,ZIHENG WU,,65241006311@mustangmath.com,8,SG03,Stallion,SG03A,bustard-shibainu-wirehair-lizard
+65241006312,LI SHENGYU,,65241006312@mustangmath.com,8,SG03,Stallion,SG03B,kouprey-killdeer-barasingha-gallowaycow
+65241006317,⁠⁠XIZHE (JAYDON) SUN,,65241006317@mustangmath.com,8,SG04,Stallion,SG04C,jay-pterodactyl-crane-albatross
+65241006318,NIKHIL RAHUL,,65241006318@mustangmath.com,8,SG04,Stallion,SG04D,redpoll-neondwarfgourami-redpoll-joey
+65241006319,ZIHENG WU,,65241006319@mustangmath.com,8,SG04,Stallion,SG04A,osprey-quetzalcoatlus-tuatara-ringtailedlemur
+65241006320,TERRENCE LI,,65241006320@mustangmath.com,8,SG04,Stallion,SG04B,reptile-yorkshireterrier-rockpython-grackle
+66241001716,PANNATHAT INSUK,,66241001716@mustangmath.com,4,TH01,Foal,TH01C,whimbrel-vaquita-bats-bittern
+66241001717,PEERAPAT PASOONTARAKARN,,66241001717@mustangmath.com,4,TH01,Foal,TH01D,kid-thoroughbred-zeren-dodo
+66241001718,APICHAYA HONGHIRUNRUANG,,66241001718@mustangmath.com,5,TH01,Foal,TH01A,flycatcher-opossum-amphibian-spaniel
+66241001719,NATHADED SUJJASONTIS,,66241001719@mustangmath.com,5,TH01,Foal,TH01B,acornwoodpecker-jingle-cicada-nematode
+90241000111,AZRA TANIS,,90241000111@mustangmath.com,4,TR01,Foal,TR01C,kawala-farmdog-snail-zooplankton
+90241000117,EMIR SAHIN,,90241000117@mustangmath.com,5,TR01,Foal,TR01D,wolverine-xanthareel-robin-noctilio
+90241000110,ATLAS HASER,,90241000110@mustangmath.com,6,TR01,Foal,TR01A,viperfish-pika-nabarlek-pachyderm
+90241000112,BERA MUSTU,,90241000112@mustangmath.com,4,TR02,Foal,TR02B,horseshoebat-urutu-woodcock-dorking
+90241000113,BETUL TANIS,,90241000113@mustangmath.com,4,TR02,Foal,TR02C,komododragon-appaloosa-upupa-jaguarundi
+90241000118,ISMAIL KEMAL IVGIN,,90241000118@mustangmath.com,5,TR02,Foal,TR02D,hound-blackmamba-yellowthroat-gentoopenguin
+90241000122,BERKAY YENICERI,,90241000122@mustangmath.com,6,TR02,Foal,TR02A,corydorascatfish-kelpie-wreckfish-eelelephant
+90241000114,BUNYAMIN SALIH MORKOC,,90241000114@mustangmath.com,4,TR03,Foal,TR03B,xantus-naga-zopilote-grackle
+90241000115,GUNES SOLAKOGLU,,90241000115@mustangmath.com,4,TR03,Foal,TR03C,ibisbill-dassie-minibeast-mynah
+90241000119,MUHAMMET ALI EREN,,90241000119@mustangmath.com,5,TR03,Foal,TR03D,lorikeet-numbat-xenurine-yellow-belliedlizard
+90241000123,DEMIR KARSLIOGLU,,90241000123@mustangmath.com,6,TR03,Foal,TR03A,zebradove-nandine-fireant-ibizanhound
+90241000116,MEHMET ERDEMIR,,90241000116@mustangmath.com,4,TR04,Colt,TR04B,redandwhitesetter-crocodileskink-shearwater-quagga
+90241000120,UMUT EGE YILDIZ,,90241000120@mustangmath.com,5,TR04,Colt,TR04C,widgeon-piedkingfisher-umbrette-yellowthroat
+90241000124,DENIZ BESTE CAYIR,,90241000124@mustangmath.com,6,TR04,Colt,TR04D,rattail-quail-xantus-sugarglider
+90241000135,TUNA BABACAN,,90241000135@mustangmath.com,7,TR04,Colt,TR04A,quadrisectus-flatfish-vireo-amurstarfish
+90241000125,EMIR SELAHATTIN DEMIRCI,,90241000125@mustangmath.com,6,TR05,Colt,TR05B,capeghostfrog-tern-esok-bird
+90241000126,IRMAK YILDIZ,,90241000126@mustangmath.com,6,TR05,Colt,TR05C,pikeperch-bird-quarterhorse-wallaby
+90241000128,BATU EMIRHAN ARIK,,90241000128@mustangmath.com,7,TR05,Colt,TR05D,rainbowlorikeet-gull-yorkshireterrier-osprey
+90241000129,BATUHAN KOCA,,90241000129@mustangmath.com,7,TR05,Colt,TR05A,imperialeagle-jacana-glassfrog-ridgeback
+90241000127,NEHIR YILDIZ,,90241000127@mustangmath.com,6,TR06,Colt,TR06B,jacana-hermitcrab-mussaurus-killerwhale
+90241000130,DURU SENEL,,90241000130@mustangmath.com,7,TR06,Colt,TR06C,chickadee-egret-velvetcrab-tomtit
+90241000131,ELIF YAGMUR DURU,,90241000131@mustangmath.com,7,TR06,Colt,TR06D,mantid-wrenchbird-owl-duck
+90241000132,MEHMET EMRE KARABUDAK,,90241000132@mustangmath.com,7,TR06,Colt,TR06A,gilamonster-xiaosaurus-creamdraft-platypus
+90241000133,MERT GERENLI,,90241000133@mustangmath.com,7,TR07,Stallion,TR07B,grayreefshark-prairiedog-firecrest-grizzlybear
+90241000134,OZGUR AYDIN,,90241000134@mustangmath.com,7,TR07,Stallion,TR07C,piglet-walkingstick-jenny-limpet
+90241000136,OMER AKHAN,,90241000136@mustangmath.com,8,TR07,Stallion,TR07D,tenrec-boto-pinniped-venomoussnake
+90241000137,SINAN GENCER,,90241000137@mustangmath.com,8,TR07,Stallion,TR07A,duckbillcat-dikkops-equine-lamb
+998241000079,DUSTOV DAVID,,998241000079@mustangmath.com,4,UZ01,Foal,UZ01B,aoudad-rockrat-roller-barracuda
+998241000083,BOTIRJONOV ABDULLOKH,,998241000083@mustangmath.com,5,UZ01,Foal,UZ01C,zopilote-coney-xenurine-tenrec
+998241000084,KUZNETSOV DMITRII,,998241000084@mustangmath.com,5,UZ01,Foal,UZ01D,ovenbird-quetzalcoatlus-quillback-ostracod
+998241000088,ESHMURODOV MUKHAMMADJON,,998241000088@mustangmath.com,6,UZ01,Foal,UZ01A,ynambu-islandwhistler-quetzal-lcont
+998241000080,KARABAEV AMIR,,998241000080@mustangmath.com,4,UZ02,Foal,UZ02B,dingo-akitainu-oyster-birdofparadise
+998241000081,KHAYDAROV SALAVAT,,998241000081@mustangmath.com,4,UZ02,Foal,UZ02C,puffer-louse-vulture-jellyfish
+998241000085,MAKHMUDOV MIRMAKHMUD,,998241000085@mustangmath.com,5,UZ02,Foal,UZ02D,stork-quarterhorse-woodpecker-octopus
+998241000089,IVANOV ROMAN,,998241000089@mustangmath.com,6,UZ02,Foal,UZ02A,zigzagsalamander-silkyterrier-mare-rasbora
+998241000082,KIM VIKTORIYA,,998241000082@mustangmath.com,4,UZ03,Foal,UZ03B,urson-zenaida-rockrat-ankole-watusi
+998241000086,MUTALOV JAKHONGIR,,998241000086@mustangmath.com,5,UZ03,Foal,UZ03C,crane-zooplankton-quetzal-urus
+998241000087,SAPAEV MUKHAMMAD,,998241000087@mustangmath.com,5,UZ03,Foal,UZ03D,hind-rhea-cuckoo-islandcanary
+998241000090,SOBIROV SAMIR,,998241000090@mustangmath.com,6,UZ03,Foal,UZ03A,ichidna-javalina-quoll-doctorfish
+998241000092,AIPKIN MAKSIM,,998241000092@mustangmath.com,7,UZ04,Colt,UZ04B,pinniped-zopilote-panther-rat
+998241000093,ANVARKHODJAEV KOMRONKHUJA,,998241000093@mustangmath.com,7,UZ04,Colt,UZ04C,cricket-ynambu-davidstiger-laughinggull
+998241000094,MAHAMADJONOV ISMAIL,,998241000094@mustangmath.com,7,UZ04,Colt,UZ04D,fowl-kite-treecreeper-antelope
+998241000095,TASHPULATOVA NAFISA,,998241000095@mustangmath.com,7,UZ04,Colt,UZ04A,tarsier-saiga-greatargus-kite
+998241000096,EM ALYONA,,998241000096@mustangmath.com,8,UZ05,Stallion,UZ05B,thoroughbred-oropendola-adouri-treecreeper
+998241000097,IBRAGIMOV DONIYOR,,998241000097@mustangmath.com,8,UZ05,Stallion,UZ05C,yak-gelding-xenoposeidon-oriole
+998241000098,IBRAGIMOV JASUR,,998241000098@mustangmath.com,8,UZ05,Stallion,UZ05D,wrasse-heron-quoll-armedcrab
+998241000099,RUHIDDINOV MIRZAMUHAMMAD,,998241000099@mustangmath.com,8,UZ05,Stallion,UZ05A,honeybadger-hamadryas-nighthawk-iguana
