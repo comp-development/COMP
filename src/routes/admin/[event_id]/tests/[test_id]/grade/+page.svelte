@@ -24,11 +24,13 @@
 
     $: if (selectedProblem !== undefined) {
         recieveGradedAnswers();
-    };
+    }
 
     function sortedGradedAnswers() {
         return gradedAnswers.slice().sort((a, b) => {
-            if (a.correct === b.correct) { return b.count - a.count; }
+            if (a.correct === b.correct) {
+                return b.count - a.count;
+            }
             if (a.correct === true) return -1;
             if (b.correct === true) return 1;
             if (a.correct === false) return -1;
@@ -50,23 +52,19 @@
             loading = true;
             gradedAnswers = await getGradedAnswers(
                 problems[selectedProblem].test_problem_id,
-                problems[selectedProblem].problem_id,
             );
             gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
-
-            console.log(gradedAnswers);
 
             subscribeToGradedAnswersChannel();
 
             loading = false;
         } catch (e) {
-            await handleError(e);
+            handleError(e);
         }
     }
 
     async function submitUpdatedGrades() {
         try {
-            console.log(gradedAnswers);
             await updateGradedAnswers(gradedAnswers);
             toast.success("Successfully saved");
         } catch (e) {
@@ -92,14 +90,10 @@
         );
 
         if (existingIndex !== -1) {
-            // Update existing answer
-            gradedAnswers[existingIndex] = updatedAnswer;
-        } else {
-            // Add new answer
-            gradedAnswers.push(updatedAnswer);
+            gradedAnswers[existingIndex].correct = updatedAnswer.correct;
         }
 
-        // Re-sort the array after the update
+        gradedAnswers = [...gradedAnswers];
         gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
     }
 
@@ -109,37 +103,37 @@
             (answer) => answer.answer_latex === updatedAnswer.answer_latex,
         );
 
-        console.log(payload);
+        const parameter = {
+            problem_id: problems[selectedProblem]["problem_id"],
+            ...updatedAnswer,
+        };
+        const newGradedAnswer = await insertGradedAnswers(parameter);
 
         if (existingIndex !== -1) {
-            // Update existing answer
-            // gradedAnswers[existingIndex] = {
-            //     problem_id: gradedAnswers[existingIndex].problem_id,
-            //     graded_answer_id: gradedAnswers[existingIndex].graded_answer_id,
-            //     correct: gradedAnswers[existingIndex].correct,
-            //     test_problem_id: gradedAnswers[existingIndex].test_problem_id,
-            //     count: gradedAnswers[existingIndex].count + 1
-            // };
-
-            //IMPLEMENT DELETE OLD ROW FROM GRADED_ANSWERS
+            gradedAnswers[existingIndex].correct = newGradedAnswer.correct;
+            gradedAnswers[existingIndex].count += 1;
         } else {
-            const parameter = {"problem_id": problems[selectedProblem]["problem_id"], ...updatedAnswer};
-            const newGradedAnswer = await insertGradedAnswers(parameter);
-
-            // gradedAnswers.push({
-            //     count: 1,
-            //     problem_id: updatedAnswer.problem_id,
-            //     graded_answer_id: newGradedAnswer.graded_answer_id,
-            //     correct: null,
-            //     test_problem_id: updatedAnswer.test_problem_id
-            // });
+            gradedAnswers.push(newGradedAnswer);
         }
 
-        gradedAnswers = await getGradedAnswers(
-            problems[selectedProblem].test_problem_id,
-            problems[selectedProblem].problem_id,
-        );
+        gradedAnswers = [...gradedAnswers];
         gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
+    }
+
+    async function handleTestAnswerChange(payload) {
+        const oldAnswer = payload.old;
+        const existingIndex = gradedAnswers.findIndex(
+            (answer) => answer.answer_latex === oldAnswer.answer_latex,
+        );
+
+        gradedAnswers[existingIndex].count -= 1;
+        if (gradedAnswers[existingIndex].count == 0) {
+            gradedAnswers.splice(existingIndex, 1);
+        }
+
+        gradedAnswers = [...gradedAnswers];
+
+        await handleTestAnswerNew(payload);
     }
 
     function subscribeToGradedAnswersChannel() {
@@ -152,7 +146,9 @@
         }
 
         gradedAnswerCountChannel = supabase
-            .channel(`test-answers-${problems[selectedProblem].test_problem_id}`)
+            .channel(
+                `test-answers-${problems[selectedProblem].test_problem_id}`,
+            )
             .on(
                 "postgres_changes",
                 {
@@ -171,7 +167,7 @@
                     table: "test_answers",
                     filter: `test_problem_id=eq.${problems[selectedProblem].test_problem_id}`,
                 },
-                handleTestAnswerNew,
+                handleTestAnswerChange,
             )
             .subscribe();
 
@@ -270,7 +266,9 @@
                                         } else {
                                             gradedAnswers[index].correct = true;
                                         }
-                                        await updateGradedAnswers(gradedAnswers);
+                                        await updateGradedAnswers(
+                                            gradedAnswers,
+                                        );
                                         await submitUpdatedGrades();
                                     }}>✅</button
                                 >
@@ -286,11 +284,15 @@
                                             gradedAnswers[index].correct =
                                                 false;
                                         }
-                                        await updateGradedAnswers(gradedAnswers);
+                                        await updateGradedAnswers(
+                                            gradedAnswers,
+                                        );
                                         await submitUpdatedGrades();
                                     }}>❌</button
                                 >
-                                <p style="margin: 2px;">{answer.count ?? "0"}</p>
+                                <p style="margin: 2px;">
+                                    {answer.count ?? "0"}
+                                </p>
                             </div>
                         </div>
                     {/each}

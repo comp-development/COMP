@@ -142,7 +142,7 @@ export async function replaceTestProblem(test_problem_id: number, new_problem_id
     return data;
 }
 
-export async function getGradedAnswers(test_problem_id: number, problem_id: number) {
+export async function getGradedAnswers(test_problem_id: number) {
     const { data, error } = await supabase
         .from("graded_answer_count")
         .select("*")
@@ -150,29 +150,11 @@ export async function getGradedAnswers(test_problem_id: number, problem_id: numb
 
     if (error) throw error;
 
-    data.forEach(async (value) => {
-        const { data: data2, error: error2 } = await supabase
-            .from("graded_answers")
-            .upsert({
-                "problem_id": problem_id,
-                "answer_latex": value.answer_latex,
-            })
-            .select("*")
-            .single();
-        
-        if (error2) throw error2;
-
-        value.graded_answer_id = data2.graded_answer_id;
-        value.problem_id = problem_id;
-
-        console.log(value);
-    });
-
     return data;
 }
 
 export async function updateGradedAnswers(gradedAnswers) {
-    gradedAnswers.forEach(async (gradedAnswer) => {
+    for (const gradedAnswer of gradedAnswers) {
         const { error } = await supabase
             .from('graded_answers')
             .update({
@@ -181,11 +163,21 @@ export async function updateGradedAnswers(gradedAnswers) {
             .eq("graded_answer_id", gradedAnswer.graded_answer_id);
 
         if (error) throw error;
-    });
+    };
 }
 
 export async function insertGradedAnswers(gradedAnswer) {
     if (gradedAnswer.answer_latex != null && gradedAnswer.answer_latex != "") {
+        const { error: error2 } = await supabase
+            .from("graded_answers")
+            .upsert({
+                "correct": gradedAnswer.correct,
+                "problem_id": gradedAnswer.problem_id,
+                "answer_latex": gradedAnswer.answer_latex,
+            }, { onConflict: 'problem_id, answer_latex' });
+        
+        if (error2) throw error2;
+
         const { data, error } = await supabase
             .from("graded_answer_count")
             .select("*")
@@ -195,19 +187,6 @@ export async function insertGradedAnswers(gradedAnswer) {
         
         if (error) throw error;
 
-        const { data: data2, error: error2 } = await supabase
-            .from("graded_answers")
-            .upsert({
-                "problem_id": gradedAnswer.problem_id,
-                "answer_latex": gradedAnswer.answer_latex,
-            })
-            .select("*")
-            .single();
-        
-        if (error2) throw error2;
-
-        data2.count = data.count;
-
-        return data2;
+        return data;
     }
 }
