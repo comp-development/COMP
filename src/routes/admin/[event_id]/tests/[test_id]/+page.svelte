@@ -4,10 +4,16 @@
 	import {
 		TextArea,
 		TextInput,
-		Modal,
 		Accordion,
 		AccordionItem,
+		DataTable,
+		Link,
+		Toolbar,
+		ToolbarContent,
+		ToolbarSearch,
+		Pagination,
 	} from "carbon-components-svelte";
+	import {} from "carbon-components-svelte";
 	import MathJax from "$lib/components/MathJax.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
@@ -21,6 +27,9 @@
 		addNewTestProblem,
 		deleteTestProblem,
 		replaceTestProblem,
+		getAllProblemClarifications,
+		updateProblemClarifications,
+		updateTestProblem,
 	} from "$lib/supabase";
 	import Problem from "$lib/components/Problem.svelte";
 	import Katex from "$lib/components/Katex.svelte";
@@ -32,7 +41,10 @@
 	let bufferEditable = false;
 	let instructionsEditable = false;
 
-	let modalProblem = null;
+	let pageSize = 25;
+	let pageT = 1;
+
+	let modalProblem: number | null = null;
 
 	let test_id = Number($page.params.test_id);
 	let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
@@ -41,6 +53,7 @@
 	let test;
 	let problems;
 	let test_taker;
+	let clarifications;
 	let allProblems;
 
 	(async () => {
@@ -48,6 +61,10 @@
 		test = await getTest(test_id);
 		problems = await getTestProblems(test_id, null, "*, problems(*)");
 		allProblems = await getAllProblems();
+		allProblems.forEach((problem) => {
+			problem.id = problem.problem_id;
+		});
+		clarifications = await getAllProblemClarifications(problems);
 		loading = false;
 	})();
 
@@ -133,63 +150,44 @@
 		await updateTest(test.test_id, test);
 	}
 
-	async function updateTestWithKey(event, key) {
+	async function updateTestWithKey(event, key, autoUpdate = false) {
 		test[key] = event.target.value;
-	}
-
-	async function updateProblemWithKey(event, key, problem_idx) {
-		problems[problem_idx][key] = event.target.value;
+		if (autoUpdate) {
+			await updateTest(test.test_id, test);
+		}
 	}
 
 	async function saveTest() {
-		await updateTest(test.test_id, test);
-		await updateTestProblems(test.test_id, problems);
-		toast.success("Successfully saved");
+		try {
+			await updateTest(test.test_id, test);
+			await updateTestProblems(test.test_id, problems);
+			clarifications = await updateProblemClarifications(clarifications);
+			toast.success("Successfully saved");
+		} catch (e) {
+			handleError(e);
+		}
 	}
 
-	async function addNewProblemPage(pageNumber: number) {
-		var groupedProblems = groupByPageNumber(problems);
-		const page = groupedProblems[pageNumber] ? pageNumber : pageNumber - 1;
-		const prevProblem = groupedProblems[page][groupedProblems[page].length - 1];
-		const newProblem = { ...prevProblem, };
-
-		delete newProblem.problems;
-		newProblem.page_number = Number(pageNumber);
-		newProblem.problem_number += 1;
-
-		let index = 0;
-		let change = false;
-
-		for (var i = 0; i < problems.length; i++) {
-			if (change) { problems[i].problem_number += 1; }
-			if (problems[i].test_problem_id == newProblem.test_problem_id) {
-				change = true;
-				index = i;
-			}
-		}
-
-		delete newProblem.test_problem_id;
-
-		const insertedProblem = await addNewTestProblem(
-			newProblem,
-			"*, problems(*)",
-		);
-
-		problems.splice(index+1, 0, insertedProblem);
-
-		await saveTest();
+	async function addNewProblemPage() {
+		test.settings.pages.push("Page " + (test.settings.pages.length + 1));
+		await updateTest(test.test_id, test);
 	}
 
 	// Group problems by page_number
-	const groupByPageNumber = (problems) => {
-		return problems.reduce((acc, problem) => {
-			const pageNumber = problem.page_number;
-			if (!acc[pageNumber]) {
-				acc[pageNumber] = [];
+	const groupByPageNumber = (problems, totalPages) => {
+		const grouped = Array.from({ length: totalPages }, () => []);
+
+		problems.forEach((problem) => {
+			const pageNumber = problem.page_number - 1;
+			if (grouped[pageNumber]) {
+				grouped[pageNumber].push(problem);
+			} else {
+				problem.pageNumber = 1;
+				group[0].push(problem);
 			}
-			acc[pageNumber].push(problem);
-			return acc;
-		}, {});
+		});
+
+		return grouped;
 	};
 </script>
 
@@ -250,6 +248,14 @@
 	</div>
 	<br />
 	<Button title="Grade Test" href={$page.url.pathname + "/grade"} />
+	<br /><br />
+	<Button
+		title="Save Test"
+		action={async () => {
+			await saveTest();
+		}}
+	/>
+	<br />
 	<div class="box box-basic">
 		<p style="font-weight: bold; font-size: 24px;">Test Instructions</p>
 		<div class="row">
@@ -258,7 +264,7 @@
 				<TextArea
 					class="textArea"
 					bind:value={test.instructions}
-					on:input={(e) => updateTestWithKey(e, "instructions")}
+					on:input={(e) => updateTestWithKey(e, "instructions", true)}
 					required={true}
 				/>
 			</div>
@@ -272,9 +278,27 @@
 	<div class="box-basic">
 		<p style="font-weight: bold; font-size: 24px;">Problem Rearrangement</p>
 		<div>
-			{#each Object.entries(groupByPageNumber(problems)) as [pageNumber, pageProblems]}
+			{#each groupByPageNumber(problems, test.settings.pages.length) as pageProblems, pageNumber}
 				<div class="page-container">
-					<h4>Page {pageNumber}</h4>
+					<div class="flex">
+						<TextInput
+							labelText="Page Title"
+							bind:value={test.settings.pages[pageNumber]}
+							style="width: 500px"
+							on:blur={(e) => {
+								test.settings.pages[pageNumber] =
+									e.target.value;
+							}}
+						/>
+						<button
+							class="arrow-button"
+							on:click={async () => {
+								test.settings.pages.splice(pageNumber, 1);
+								test = { ...test };
+								await saveTest();
+							}}>🗑️</button
+						>
+					</div>
 					<br />
 					{#each pageProblems as problem, index}
 						<div class="container">
@@ -342,34 +366,28 @@
 									<TextInput
 										labelText="Name"
 										bind:value={problem.name}
-										on:blur={(e) =>
-											updateProblemWithKey(
-												e,
-												"name",
-												index,
-											)}
+										on:blur={(e) => {
+											problems[index]["name"] =
+												e.target.value;
+										}}
 									/>
 									<br />
 									<div class="row">
 										<TextInput
 											labelText="Page Number"
 											bind:value={problem.page_number}
-											on:blur={(e) =>
-												updateProblemWithKey(
-													e,
-													"page_number",
-													index,
-												)}
+											on:blur={(e) => {
+												problems[index]["page_number"] =
+													e.target.value;
+											}}
 										/>
 										<TextInput
 											labelText="Points"
 											bind:value={problem.points}
-											on:blur={(e) =>
-												updateProblemWithKey(
-													e,
-													"points",
-													index,
-												)}
+											on:blur={(e) => {
+												problems[index]["points"] =
+													e.target.value;
+											}}
 										/>
 									</div>
 									<br />
@@ -377,31 +395,46 @@
 										labelText="Problem Latex"
 										bind:value={problem.problems
 											.problem_latex}
-										on:input={(e) =>
-											updateProblemWithKey(
-												e,
-												"problems.problem_latex",
-												index,
-											)}
+										on:input={(e) => {
+											problems[index]["problems"][
+												"problem_latex"
+											] = e.target.value;
+										}}
+									/>
+									<br />
+									<TextArea
+										labelText="Clarification Latex"
+										bind:value={clarifications[
+											problem.test_problem_id
+										].clarification_latex}
+										on:input={(e) => {
+											clarifications[
+												problem.test_problem_id
+											].clarification_latex =
+												e.target.value;
+										}}
 									/>
 									<br />
 									<TextInput
 										labelText="Answer Latex"
 										bind:value={problem.problems
 											.answer_latex}
-										on:blur={(e) =>
-											updateProblemWithKey(
-												e,
-												"problems.answer_latex",
-												index,
-											)}
+										on:blur={(e) => {
+											problems[index]["problems"][
+												"answer_latex"
+											] = e.target.value;
+										}}
 									/>
 									<br />
 									<Button
 										title="Save Changes"
 										action={async () => {
 											try {
-												await saveTest();
+												await updateTestProblem(
+													test.test_id,
+													problems[index],
+												);
+												toast.success("Saved problem");
 											} catch (e) {
 												await handleError(e);
 											}
@@ -411,7 +444,12 @@
 								</div>
 								<div>
 									<h4>Display</h4>
-									<Problem {problem} />
+									<Problem
+										{problem}
+										clarification={clarifications[
+											problem.test_problem_id
+										].clarification_latex}
+									/>
 									<br /><br />
 									<MathJax
 										math={"Answer: " +
@@ -420,6 +458,7 @@
 								</div>
 							</div>
 						</div>
+						<br />
 					{/each}
 
 					<br />
@@ -427,12 +466,13 @@
 						title="Add New Problem"
 						action={async () => {
 							loading = true;
-							await addNewProblemPage(pageNumber);
+							await addNewProblemPage(pageNumber + 1);
 							loading = false;
 						}}
 					/>
 					<br /><br />
 				</div>
+				<br />
 			{/each}
 			<Button
 				title="Add New Page"
@@ -448,44 +488,83 @@
 		</div>
 	</div>
 
-	<Modal
-		open={modalProblem != null}
-		modalHeading="Select Problem"
-		primaryButtonText="Confirm"
-		secondaryButtonText="Cancel"
-		on:click:button--secondary={() => (modalProblem = null)}
-		on:open
-		on:close
-		on:submit={() => (modalProblem = null)}
-	>
-		<Button title="Add New Problem" href="/admin/problems/new" />
-		<br /><br />
-		<Accordion>
-			{#each allProblems as problem, index}
-				<AccordionItem title="Problem ID: {problem.problem_id}">
-					<div class="problem-details">
-						<p>Problem:</p>
-						<MathJax math={problem.problem_latex} />
-						<br />
-						<Button
-							title="Select"
-							action={async () => {
-								const newProblem = await replaceTestProblem(
-									problems[modalProblem].test_problem_id,
-									problem.problem_id,
-									"*, problems(*)",
-								);
-								problems[modalProblem] = newProblem;
-								problems = [...problems];
+	{#if modalProblem != null}
+		<div class="modal-overlay" on:click={() => (modalProblem = null)}>
+			<div class="modal" on:click|stopPropagation>
+				<button
+					class="close-button"
+					on:click={() => (modalProblem = null)}>✖</button
+				>
+				<h2>Select Problem</h2>
+				<br />
+				<Button title="Add New Problem" href="/admin/problems/new" />
+				<br /><br />
+				<DataTable
+					expandable
+					sortable
+					size="compact"
+					headers={[
+						{ key: "edit", value: "Select", width: "50px" },
+						{ key: "id", value: "ID", width: "50px" },
+						{
+							key: "problem_latex",
+							value: "Problem Latex",
+							width: "250px",
+						},
+					]}
+					rows={allProblems}
+					{pageSize}
+					page={pageT}
+				>
+					<Toolbar size="sm">
+						<ToolbarContent>
+							<ToolbarSearch persistent shouldFilterRows />
+						</ToolbarContent>
+					</Toolbar>
 
-								modalProblem = null;
-							}}
-						/>
-					</div>
-				</AccordionItem>
-			{/each}
-		</Accordion>
-	</Modal>
+					<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
+						<div>
+							{#if cell.key === "edit"}
+								<button
+									class="arrow-button"
+									on:click={async () => {
+										const newProblem =
+											await replaceTestProblem(
+												problems[modalProblem]
+													.test_problem_id,
+												row.problem_id,
+												"*, problems(*)",
+											);
+										problems[modalProblem] = newProblem;
+										problems = [...problems];
+
+										modalProblem = null;
+									}}>✅</button
+								>
+							{:else}
+								<div class="cell-content">
+									{cell.value == null || cell.value == ""
+										? "None"
+										: cell.value}
+								</div>
+							{/if}
+						</div>
+					</svelte:fragment>
+
+					<svelte:fragment slot="expanded-row" let:row>
+						<MathJax math={row.problem_latex} />
+					</svelte:fragment>
+				</DataTable>
+
+				<Pagination
+					bind:pageSize
+					bind:page={pageT}
+					totalItems={allProblems.length}
+					pageSizeInputDisabled
+				/>
+			</div>
+		</div>
+	{/if}
 {/if}
 
 <style>
@@ -510,7 +589,7 @@
 	}
 
 	.container {
-		border: 1px dashed #000000;
+		border: 2px solid #000000;
 		align-items: center;
 		padding: 10px;
 		margin-bottom: 10px;
@@ -536,12 +615,52 @@
 	}
 
 	.page-container {
-		border: 1px solid #000;
+		border: 3px solid var(--primary);
 		padding: 10px;
 		margin-bottom: 20px;
 	}
 
-	.problem-details {
+	.cell-content {
+		overflow: hidden;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
 		width: 100%;
+		height: 100%;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+	}
+
+	.modal {
+		background-color: white;
+		padding: 20px;
+		width: 600px;
+		max-width: 90%;
+		max-height: 500px;
+		overflow-y: auto;
+		border-radius: 8px;
+		position: relative;
+	}
+
+	.close-button {
+		position: absolute;
+		top: 10px;
+		right: 10px;
+		background: none;
+		border: none;
+		font-size: 1.5rem;
+		cursor: pointer;
+	}
+
+	.problem-details {
+		margin-top: 10px;
 	}
 </style>
