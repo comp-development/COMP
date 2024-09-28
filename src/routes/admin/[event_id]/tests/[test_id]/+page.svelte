@@ -350,7 +350,7 @@
 										<button
 											class="arrow-button"
 											on:click={() => {
-												modalProblem = index;
+												modalProblem = problems.indexOf(problem);
 											}}>🔁</button
 										>
 										<button
@@ -406,8 +406,6 @@
 										labelText="Name"
 										bind:value={problem.name}
 										on:blur={(e) => {
-											console.log("BLURRING")
-											console.log(problems[index])
 											problems[problems.problem_number - 1]["name"] =
 												e.target.value;
 										}}
@@ -418,7 +416,7 @@
 											labelText="Page Number"
 											bind:value={problem.page_number}
 											on:blur={(e) => {
-												problems[index]["page_number"] =
+												problems[problems.indexOf(problem)]["page_number"] =
 													e.target.value;
 											}}
 										/>
@@ -426,7 +424,7 @@
 											labelText="Points"
 											bind:value={problem.points}
 											on:blur={(e) => {
-												problems[index]["points"] =
+												problems[problems.indexOf(problem)]["points"] =
 													e.target.value;
 											}}
 										/>
@@ -437,7 +435,7 @@
 										bind:value={problem.problems
 											.problem_latex}
 										on:input={(e) => {
-											problems[index]["problems"][
+											problems[problems.indexOf(problem)]["problems"][
 												"problem_latex"
 											] = e.target.value;
 										}}
@@ -461,7 +459,7 @@
 										bind:value={problem.problems
 											.answer_latex}
 										on:blur={(e) => {
-											problems[index]["problems"][
+											problems[problems.indexOf(problem)]["problems"][
 												"answer_latex"
 											] = e.target.value;
 										}}
@@ -473,7 +471,7 @@
 											try {
 												await updateTestProblem(
 													test.test_id,
-													problems[index],
+													problems[problems.indexOf(problem)],
 												);
 												clarifications[problem.test_problem_id] = await updateClarification({...clarifications[problem.test_problem_id]});
 												toast.success("Saved problem");
