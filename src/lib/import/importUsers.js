@@ -82,7 +82,6 @@ async function processStudent(student) {
         console.log(`Inserted new student with contestdojo_id ${student.contestdojo_id}`);
       }
     }
-    //processStudentEvent(student)
   } catch (error) {
     console.error(`Error processing student ${student.contestdojo_id}:`, error);
   }
@@ -212,7 +211,6 @@ function processTeamsCSV() {
     })
     .on('end', async () => {
       console.log('Finished processing teams CSV.');
-      //await processStudentsCSV();
     });
 }
 
@@ -298,5 +296,5 @@ async function processStudentEvent(student) {
   }
 }
 
-processTeamsCSV()
-//processStudentsCSV()
+//processTeamsCSV()
+processStudentsCSV()
