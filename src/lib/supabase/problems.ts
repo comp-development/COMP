@@ -155,15 +155,24 @@ export async function getGradedAnswers(test_problem_id: number) {
 
 export async function updateGradedAnswers(gradedAnswers) {
     for (const gradedAnswer of gradedAnswers) {
-        const { error } = await supabase
-            .from('graded_answers')
-            .update({
-                "correct": gradedAnswer.correct,
-            })
-            .eq("graded_answer_id", gradedAnswer.graded_answer_id);
-
-        if (error) throw error;
+        await updateGradedAnswer(gradedAnswer);
     };
+}
+
+export async function updateGradedAnswer(gradedAnswer) {
+    const { data: data, error: error2 } = await supabase
+        .from("graded_answers")
+        .upsert({
+            "correct": gradedAnswer.correct,
+            "problem_id": gradedAnswer.problem_id,
+            "answer_latex": gradedAnswer.answer_latex,
+        }, { onConflict: 'problem_id, answer_latex' })
+        .select("*")
+        .single();
+    
+    if (error2) throw error2;
+
+    gradedAnswer.graded_answer_id = data.graded_answer_id;
 }
 
 export async function insertGradedAnswers(gradedAnswer) {

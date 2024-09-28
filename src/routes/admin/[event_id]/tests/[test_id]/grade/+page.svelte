@@ -5,6 +5,7 @@
         getGradedAnswers,
         getTestProblems,
         insertGradedAnswers,
+        updateGradedAnswer,
         updateGradedAnswers,
     } from "$lib/supabase";
     import Button from "$lib/components/Button.svelte";
@@ -63,24 +64,20 @@
         }
     }
 
-    async function submitUpdatedGrades() {
+    async function markRestIncorrect() {
         try {
+            gradedAnswers.forEach((gradedAnswer) => {
+                if (gradedAnswer.correct != true) {
+                    gradedAnswer.correct = false;
+                }
+            });
+
             await updateGradedAnswers(gradedAnswers);
+            gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
             toast.success("Successfully saved");
         } catch (e) {
-            await handleError(e);
+            handleError(e);
         }
-    }
-
-    async function markRestIncorrect() {
-        gradedAnswers.forEach((gradedAnswer) => {
-            if (gradedAnswer.correct != true) {
-                gradedAnswer.correct = false;
-            }
-        });
-
-        await submitUpdatedGrades();
-        gradedAnswers = sortedGradedAnswers([...gradedAnswers]);
     }
 
     function handleGradedAnswerChange(payload) {
@@ -266,10 +263,9 @@
                                         } else {
                                             gradedAnswers[index].correct = true;
                                         }
-                                        await updateGradedAnswers(
-                                            gradedAnswers,
+                                        await updateGradedAnswer(
+                                            gradedAnswers[index],
                                         );
-                                        await submitUpdatedGrades();
                                     }}>✅</button
                                 >
                                 <button
@@ -284,10 +280,9 @@
                                             gradedAnswers[index].correct =
                                                 false;
                                         }
-                                        await updateGradedAnswers(
-                                            gradedAnswers,
+                                        await updateGradedAnswer(
+                                            gradedAnswers[index],
                                         );
-                                        await submitUpdatedGrades();
                                     }}>❌</button
                                 >
                                 <p style="margin: 2px;">
