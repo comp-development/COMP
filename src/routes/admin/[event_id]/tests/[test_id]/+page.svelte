@@ -405,17 +405,20 @@
 									<TextInput
 										labelText="Name"
 										bind:value={problem.name}
-										on:blur={(e) => {
+										on:input={(e) => {
+											problem.edits = true
 											problems[problems.problem_number - 1]["name"] =
 												e.target.value;
 										}}
 									/>
+
 									<br />
 									<div class="row">
 										<TextInput
 											labelText="Page Number"
 											bind:value={problem.page_number}
-											on:blur={(e) => {
+											on:input={(e) => {
+												problem.edits = true
 												problems[problems.indexOf(problem)]["page_number"] =
 													e.target.value;
 											}}
@@ -423,7 +426,8 @@
 										<TextInput
 											labelText="Points"
 											bind:value={problem.points}
-											on:blur={(e) => {
+											on:input={(e) => {
+												problem.edits=true
 												problems[problems.indexOf(problem)]["points"] =
 													e.target.value;
 											}}
