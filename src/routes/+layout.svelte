@@ -37,10 +37,10 @@
 		type="image/png"
 		href="https://mustangmath.com/logo.png"
 	/>
-	<title>Mustang Math Tournament Platform</title>
+	<title>Contest Organization & Management Platform (COMP)</title>
 	<meta
 		name="description"
-		content="This is a platform that solves platforms."
+		content="COMP is an all-in-one solution for running contests."
 	/>
 </svelte:head>
 
