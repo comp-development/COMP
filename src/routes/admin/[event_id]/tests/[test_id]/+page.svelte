@@ -387,15 +387,17 @@
 													problem.test_problem_id,
 												);
 
-												problems.splice(index, 1);
+												const curIndex = problems.indexOf(problem)
+
+												problems.splice(curIndex, 1);
 
 												for (
-													let i = index;
+													let i = curIndex;
 													i < problems.length;
 													i++
 												) {
 													problems[
-														index
+														curIndex
 													].problem_number -= 1;
 												}
 
