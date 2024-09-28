@@ -345,7 +345,7 @@
 									<h4>Editable</h4>
 									<div class="arrows">
 										<p style="margin: 0; padding: 0">
-											ID: {problem.problems.problem_id}
+											{problem.problem_number}.
 										</p>
 										<button
 											class="arrow-button"
@@ -406,7 +406,9 @@
 										labelText="Name"
 										bind:value={problem.name}
 										on:blur={(e) => {
-											problems[index]["name"] =
+											console.log("BLURRING")
+											console.log(problems[index])
+											problems[problems.problem_number - 1]["name"] =
 												e.target.value;
 										}}
 									/>
