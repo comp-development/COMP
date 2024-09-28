@@ -435,6 +435,7 @@
 										bind:value={problem.problems
 											.problem_latex}
 										on:input={(e) => {
+											problem.edits = true
 											problems[problems.indexOf(problem)]["problems"][
 												"problem_latex"
 											] = e.target.value;
@@ -447,6 +448,7 @@
 											problem.test_problem_id
 										].clarification_latex}
 										on:input={(e) => {
+											problem.edits = true
 											clarifications[
 												problem.test_problem_id
 											].clarification_latex =
@@ -458,28 +460,32 @@
 										labelText="Answer Latex"
 										bind:value={problem.problems
 											.answer_latex}
-										on:blur={(e) => {
+										on:input={(e) => {
+											problem.edits = true
 											problems[problems.indexOf(problem)]["problems"][
 												"answer_latex"
 											] = e.target.value;
 										}}
 									/>
 									<br />
-									<Button
-										title="Save Changes"
-										action={async () => {
-											try {
-												await updateTestProblem(
-													test.test_id,
-													problems[problems.indexOf(problem)],
-												);
-												clarifications[problem.test_problem_id] = await updateClarification({...clarifications[problem.test_problem_id]});
-												toast.success("Saved problem");
-											} catch (e) {
-												await handleError(e);
-											}
-										}}
-									/>
+									{#if problem.edits}
+										<Button
+											title="Save Changes"
+											action={async () => {
+												try {
+													delete problem.edits
+													await updateTestProblem(
+														test.test_id,
+														problems[problems.indexOf(problem)],
+													);
+													clarifications[problem.test_problem_id] = await updateClarification({...clarifications[problem.test_problem_id]});
+													toast.success("Saved problem");
+												} catch (e) {
+													await handleError(e);
+												}
+											}}
+										/>
+									{/if}
 									<br />
 								</div>
 								<div>
