@@ -56,19 +56,20 @@
 		user = await getThisUser();
 		teamId = await getTeamId(user.id);
 		console.log("USER", user);
+		console.log("teamId", teamId)
 		await getTests();
 		loading = false;
 
 		// Listen to inserts
 		subscription = supabase
-			.channel("test-takers-" + (user ? user.id : ""))
+			.channel("test-takers-" + teamId)
 			.on(
 				"postgres_changes",
 				{
 					event: "UPDATE",
 					schema: "public",
 					table: "test_takers",
-					filter: "student_id=eq." + (user ? user.id : ""),
+					filter: "team_id=eq." + teamId,
 				},
 				handleTestTakerUpdate,
 			)
@@ -78,7 +79,7 @@
 					event: "INSERT",
 					schema: "public",
 					table: "test_takers",
-					filter: "student_id=eq." + (user ? user.id : ""),
+					filter: "student_id=eq." + teamId,
 				},
 				handleTestTakerUpdate,
 			)
@@ -180,8 +181,14 @@
 	async function handleTestStart(test) {
 		console.log("START TEST", test);
 		console.log("")
+		let res;
 		if (!test.start_time || !test.end_time) {
-			await addTestTaker(test.test_id)
+			res = await addTestTaker(test.test_id)
+		}
+		if (!res || res == "A test taker entry for this taker already exists" || res == "Inserted test_taker") {
+			window.location.href = `./tests/${test.test_id}`;
+		} else {
+			toast.error(res)
 		}
 	}
 

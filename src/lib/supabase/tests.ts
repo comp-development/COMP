@@ -89,7 +89,7 @@ export async function getGutsTest(test_id, customSelect = "*") {
 export async function addTestTaker(test_id) {
     console.log("TESTID",test_id)
     const { data, error } = await supabase
-        .rpc('add_test_taker', {
+        .rpc('add_test_taker_2', {
             p_test_id: test_id,
         });
     console.log("ERROR", error)

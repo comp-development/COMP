@@ -208,6 +208,7 @@
 		timeElapsed = now - startTimeMs;
 		// If time has passed, stop the timer
 		if (timeRemaining <= 0 || now < startTimeMs) {
+			console.log("OUT OF TIME")
 			timeRemaining = 0;
 			saveFinalAnswer();
 			clearInterval(timerInterval);
