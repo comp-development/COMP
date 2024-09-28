@@ -33,7 +33,8 @@
 	let instructionsEditable = false;
 
 	let modalProblem: number | null = null;
-	let openAddProblemModal: number | null = null;
+	let curPage: number | null = null;
+	let openAddProblemModal: boolean = false;
 	let newProblemModal: boolean = false;
 
 	let test_id = Number($page.params.test_id);
@@ -184,7 +185,7 @@
 		try {
 			const groupedProblems = groupByPageNumber(problems, test.settings.pages.length);
 			let prob_number = 0;
-			let idx = openAddProblemModal ?? test.settings.pages.length - 1;
+			let idx = curPage ?? test.settings.pages.length - 1;
 
 			if (groupedProblems[idx] && groupedProblems[idx].length > 0) {
 				prob_number = groupedProblems[idx][groupedProblems[idx].length - 1].problem_number;
@@ -206,7 +207,7 @@
 
 			problems.push(newProblem);
 
-			for (var i = openAddProblemModal + 1; i < test.settings.pages.length; i++) {
+			for (var i = curPage + 1; i < test.settings.pages.length; i++) {
 				groupedProblems[i].forEach((problem) => {
 					problem.problem_number += 1;
 				})
@@ -220,7 +221,7 @@
 			problems = [...problems];
 			clarifications = {...clarifications};
 
-			openAddProblemModal = null;
+			curPage = null;
 
 			await saveTest();
 		} catch (e) {
@@ -519,7 +520,8 @@
 						title="Add New Problem"
 						action={async () => {
 							loading = true;
-							openAddProblemModal = pageNumber;
+							curPage = pageNumber;
+							openAddProblemModal = true
 							loading = false;
 						}}
 					/>
@@ -557,11 +559,13 @@
 		}
 	}} />
 
-	<SelectProblem open={openAddProblemModal != null} changeNewProblem={() => { openAddProblemModal = null; newProblemModal = true; }} closeModal={() => { openAddProblemModal = null }} onSelect={async (row) => {
+	<SelectProblem open={openAddProblemModal} changeNewProblem={() => { openAddProblemModal = false; newProblemModal = true; }} closeModal={() => { openAddProblemModal = false }} onSelect={async (row) => {
+		console.log("ROW",row)
 		await addNewProblemToTest(row);
 	}} />
 
 	<CreateProblemModal open={newProblemModal} changeNewProblem={() => { newProblemModal = true; }} closeModal={() => { newProblemModal = false; }} addProblemFunction={async (problem) => {
+		console.log("PROBLEM",problem)
 		await addNewProblemToTest(problem);
 		newProblemModal = false;
 	}} />
