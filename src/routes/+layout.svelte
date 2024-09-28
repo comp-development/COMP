@@ -51,7 +51,7 @@
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
-	{:else if !$user && !$page.route.id.includes('/scores') && $page.route.id != "/password-reset"}
+	{:else if !$user && $page.route.id &&!$page.route.id.includes('/scores') && $page.route.id != "/password-reset"}
 		{#if hasAccount}
 			<Banner />
 			<br />
@@ -113,7 +113,7 @@
 				</div>
 			</div>
 		{/if}
-	{:else if $page.route.id.includes('/scores')}
+	{:else if $page.route.id && $page.route.id.includes('/scores')}
 		<div>
 			<slot />
 		</div>
