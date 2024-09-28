@@ -29,6 +29,38 @@
 		});
 	}
 
+    function exportToCSV() {
+		const rows = [];
+		const headers = ['Front ID', 'Taker Name', 'Start Time', 'Points', ...Array.from({length: test.num_problems}, (_, i) => `A${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `C${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `P${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `T${i + 1}`)];
+		rows.push(headers.join(','));
+
+		Object.values(testTakersMap).forEach(testTaker => {
+            const totalPoints = Object.keys(testTaker).reduce((sum, key) => {
+				return sum + (testTaker[key]?.points || 0);
+			}, 0);
+			const row = [
+				testTaker.front_id,
+				testTaker.taker_name,
+                testTaker.start_time,
+                totalPoints,
+                ...Array.from({length: test.num_problems}, (_, i) => String(testTaker[i + 1]?.answer_latex || "")),
+				...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.correct ? 1 : 0 || 0),
+                ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.points || 0),
+                ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.last_edited_time || ""),
+			];
+			rows.push(row.join(','));
+		});
+
+		const csvContent = 'data:text/csv;charset=utf-8,' + rows.join('\n');
+		const encodedUri = encodeURI(csvContent);
+		const link = document.createElement('a');
+		link.setAttribute('href', encodedUri);
+		link.setAttribute('download', test.test_name+' scores.csv');
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+	}
+
 	function getCellValue(entry) {
 		if (!entry) return {style: 'color:#a7a7a7; background-color:white', value:'—'};
 		if (entry.correct === null) return {style: 'color:#eebc69; background-color:#f8ebcc', value:'?'};
@@ -38,11 +70,13 @@
 
 <div>
 	<h2 style="text-align: center">Scores</h2>
+    <button on:click={exportToCSV}>Export to CSV</button>
 	<table class="scoresTable">
 		<thead>
 			<tr>
 				<th>Front ID</th>
 				<th>Taker Name</th>
+                <th>Points</th>
 				{#each {length: test.num_problems} as _, i}
 					<th>Problem {i+1}</th>
 				{/each}
@@ -54,6 +88,11 @@
 
 					<td>{testTaker.front_id}</td>
 					<td>{testTaker.taker_name}</td>
+                    <td>
+						{Object.keys(testTaker).reduce((sum, key) => {
+							return sum + (testTaker[key]?.points || 0);
+						}, 0)} <!-- Sum of points -->
+					</td>
 					{#each {length: test.num_problems} as _, i}
                         {@const cell = getCellValue(testTaker[i+1])}
 						<td style="font-size: 2em; {cell.style}; justify-content: center; align-items: center; height: 100%; min-height: 50px"><b>{cell.value}</b></td>
