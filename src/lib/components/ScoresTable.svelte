@@ -62,7 +62,7 @@
 	}
 
 	function getCellValue(entry) {
-		if (!entry) return {style: 'color:#a7a7a7; background-color:white', value:'—'};
+		if (!entry || !entry.answer_latex) return {style: 'color:#a7a7a7; background-color:white', value:'—'};
 		if (entry.correct === null) return {style: 'color:#eebc69; background-color:#f8ebcc', value:'?'};
 		return entry.correct ? {style: 'color:#5f974a; background-color:#d3f4d8', value:'✓'} : {style: 'color:#e45e52; background-color:#f4d8d8', value:'✗'};
 	}
