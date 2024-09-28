@@ -155,15 +155,19 @@ export async function getGradedAnswers(test_problem_id: number) {
 
 export async function updateGradedAnswers(gradedAnswers) {
     for (const gradedAnswer of gradedAnswers) {
-        const { error } = await supabase
-            .from('graded_answers')
-            .update({
-                "correct": gradedAnswer.correct,
-            })
-            .eq("graded_answer_id", gradedAnswer.graded_answer_id);
-
-        if (error) throw error;
+        await updateGradedAnswer(gradedAnswer);
     };
+}
+
+export async function updateGradedAnswer(gradedAnswer) {
+    const { error } = await supabase
+        .from('graded_answers')
+        .update({
+            "correct": gradedAnswer.correct,
+        })
+        .eq("graded_answer_id", gradedAnswer.graded_answer_id);
+
+    if (error) throw error;
 }
 
 export async function insertGradedAnswers(gradedAnswer) {
