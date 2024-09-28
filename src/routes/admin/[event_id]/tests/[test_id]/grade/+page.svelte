@@ -241,55 +241,58 @@
                 <br /><br /><br />
                 <div class="grid">
                     {#each gradedAnswers as answer, index}
-                        <div
-                            class="answerbox"
-                            style="background-color: {answer.correct != null
-                                ? answer.correct == true
-                                    ? 'var(--primary-tint)'
-                                    : 'var(--error-tint)'
-                                : 'rgb(220, 220, 220)'}"
-                        >
-                            <div class="answer">
-                                <Katex value={answer.answer_latex} />
+                        {#if answer.answer_latex}
+                            <div
+                                class="answerbox"
+                                style="background-color: {answer.correct != null
+                                    ? answer.correct == true
+                                        ? 'var(--primary-tint)'
+                                        : 'var(--error-tint)'
+                                    : 'rgb(220, 220, 220)'}"
+                            >
+                                <div class="answer">
+                                    <Katex value={answer.answer_latex} /><br>
+                                    {answer.answer_latex}
+                                </div>
+                                <div style="display: flex;">
+                                    <button
+                                        class="arrow-button"
+                                        on:click={async () => {
+                                            if (
+                                                gradedAnswers[index].correct == true
+                                            ) {
+                                                gradedAnswers[index].correct = null;
+                                            } else {
+                                                gradedAnswers[index].correct = true;
+                                            }
+                                            await updateGradedAnswer(
+                                                gradedAnswers[index],
+                                            );
+                                        }}>✅</button
+                                    >
+                                    <button
+                                        class="arrow-button"
+                                        on:click={async () => {
+                                            if (
+                                                gradedAnswers[index].correct ==
+                                                false
+                                            ) {
+                                                gradedAnswers[index].correct = null;
+                                            } else {
+                                                gradedAnswers[index].correct =
+                                                    false;
+                                            }
+                                            await updateGradedAnswer(
+                                                gradedAnswers[index],
+                                            );
+                                        }}>❌</button
+                                    >
+                                    <p style="margin: 2px;">
+                                        {answer.count ?? "0"}
+                                    </p>
+                                </div>
                             </div>
-                            <div style="display: flex;">
-                                <button
-                                    class="arrow-button"
-                                    on:click={async () => {
-                                        if (
-                                            gradedAnswers[index].correct == true
-                                        ) {
-                                            gradedAnswers[index].correct = null;
-                                        } else {
-                                            gradedAnswers[index].correct = true;
-                                        }
-                                        await updateGradedAnswer(
-                                            gradedAnswers[index],
-                                        );
-                                    }}>✅</button
-                                >
-                                <button
-                                    class="arrow-button"
-                                    on:click={async () => {
-                                        if (
-                                            gradedAnswers[index].correct ==
-                                            false
-                                        ) {
-                                            gradedAnswers[index].correct = null;
-                                        } else {
-                                            gradedAnswers[index].correct =
-                                                false;
-                                        }
-                                        await updateGradedAnswer(
-                                            gradedAnswers[index],
-                                        );
-                                    }}>❌</button
-                                >
-                                <p style="margin: 2px;">
-                                    {answer.count ?? "0"}
-                                </p>
-                            </div>
-                        </div>
+                        {/if}
                     {/each}
                 </div>
             </div>
