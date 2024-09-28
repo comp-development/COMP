@@ -248,6 +248,9 @@
 	>
 		{test.test_name}
 	</h1>
+	{#if test.division}
+		<h2>{test.division}</h2>
+	{/if}
 	<div>
 		Test Length (seconds):<br />
 		<p
