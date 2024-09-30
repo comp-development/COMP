@@ -240,6 +240,8 @@ async function processStudentEvent(student) {
         .eq('contestdojo_id', student.team_contestdojo_id)
         .single();
 
+      
+
       if (teamError) {
         console.error(`Error fetching team_id for ${student.team_contestdojo_id}:`, teamError);
       } else {
@@ -279,7 +281,7 @@ async function processStudentEvent(student) {
       if (updateError) {
         console.error(`Error updating student_event for ${student.contestdojo_id}:`, updateError);
       } else {
-        //console.log(`Updated student_event for contestdojo_id ${student.contestdojo_id}`);
+        console.log(`Updated student_event for contestdojo_id ${student.contestdojo_id}`);
       }
     } else {
       // Insert new entry
