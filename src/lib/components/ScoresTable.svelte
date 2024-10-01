@@ -5,11 +5,27 @@
 	import SortDescending from "carbon-icons-svelte/lib/SortDescending.svelte";
     import Checkmark from "carbon-icons-svelte/lib/Checkmark.svelte";
     import CloseLarge from "carbon-icons-svelte/lib/CloseLarge.svelte";
+    import { Chart, registerables } from 'chart.js';
+	import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the data labels plugin
+	import ChartAnnotation from 'chartjs-plugin-annotation'; // Import the annotation plugin
+    Chart.register(...registerables);
 
 	export let test;
     let testTakersMap = {};
     let sortColumn = '';
 	let sortOrder = 'asc';
+	let problemChartInstance;
+	let histogramChartInstance;
+
+	let chartData = {
+		labels: Array.from({ length: test.num_problems }, (_, i) => `${i + 1}`),
+		datasets: [
+			{ label: 'Correct', data: [], backgroundColor: 'rgba(76, 175, 80, 0.6)' },
+			{ label: 'Wrong', data: [], backgroundColor: 'rgba(244, 67, 54, 0.6)' },
+			{ label: 'Ungraded', data: [], backgroundColor: 'rgba(255, 193, 7, 0.6)' },
+			{ label: 'Blank', data: [], backgroundColor: 'rgba(158, 158, 158, 0.6)' },
+		]
+	};
 
 	onMount(async () => {
 		await fetchTestTakers();
@@ -22,7 +38,6 @@
         testTakers.forEach((obj) => {
 			testTakersMap[obj.test_taker_id] = obj;
 		});
-        console.log("testTakers", testTakersMap)
 	}
 
 	async function updateTable() {
@@ -38,7 +53,8 @@
 			}, 0);
 			testTaker.points = totalPoints;
 		});
-
+		updateChartData();
+		updateHistogramData();
 	}
 
     function exportToCSV() {
@@ -113,6 +129,130 @@
 
 		testTakersMap = Object.fromEntries(sortedTakers.map(taker => [taker.test_taker_id, taker]));
 	}
+
+	function updateHistogramData() {
+		const points = Object.values(testTakersMap).map(taker => taker.points || 0);
+		const frequency = Array.from({ length: Math.max(...points) + 1 }, () => 0);
+
+		points.forEach(point => {
+			frequency[point]++;
+		});
+
+		const density = frequency.map((freq, index) => freq / points.length); // Calculate density
+
+		if (histogramChartInstance) {
+			histogramChartInstance.data.datasets[0].data = frequency;
+			histogramChartInstance.data.datasets[1].data = density;
+			histogramChartInstance.update();
+		} else {
+			const ctx = document.getElementById('histogramChart').getContext('2d');
+			histogramChartInstance = new Chart(ctx, {
+				type: 'bar',
+				data: {
+					labels: Array.from({ length: frequency.length }, (_, i) => i),
+					datasets: [
+						{
+							label: 'Frequency',
+							data: frequency,
+							backgroundColor: 'rgba(76, 175, 80, 0.6)',
+						},
+						{
+							label: 'Density',
+							data: density,
+							type: 'line',
+							borderColor: 'rgba(244, 67, 54, 0.6)',
+							fill: false,
+							yAxisID: 'density',
+						}
+					]
+				},
+				options: {
+					scales: {
+						y: {
+							title: {
+								display: true,
+								text: 'Frequency'
+							}
+						},
+						density: {
+							type: 'linear',
+							position: 'right',
+							title: {
+								display: true,
+								text: 'Density'
+							},
+							grid: {
+								drawOnChartArea: false,
+							}
+						}
+					},
+					plugins: {
+						datalabels: {
+							anchor: 'end',
+							align: 'end',
+						}
+					}
+				}
+			});
+		}
+	}
+
+	function updateChartData() {
+		const correctCounts = new Array(test.num_problems).fill(0);
+		const wrongCounts = new Array(test.num_problems).fill(0);
+		const ungradedCounts = new Array(test.num_problems).fill(0);
+		const blankCounts = new Array(test.num_problems).fill(0);
+
+		Object.values(testTakersMap).forEach(testTaker => {
+			for (let i = 1; i <= test.num_problems; i++) {
+				const entry = testTaker[i];
+				if (entry) {
+					if (entry.correct == true) correctCounts[i - 1]++;
+					else if (entry.correct == false) wrongCounts[i - 1]++;
+					else if (entry.answer_latex.trim() == "") blankCounts[i - 1]++;
+					else ungradedCounts[i - 1]++;
+				} else {
+					blankCounts[i - 1]++;
+				}
+			}
+		});
+		chartData.datasets[0].data = correctCounts;
+		chartData.datasets[1].data = wrongCounts;
+		chartData.datasets[2].data = ungradedCounts;
+		chartData.datasets[3].data = blankCounts;
+
+		if (problemChartInstance) {
+			problemChartInstance.data.datasets[0].data = correctCounts;
+			problemChartInstance.data.datasets[1].data = wrongCounts;
+			problemChartInstance.data.datasets[2].data = ungradedCounts;
+			problemChartInstance.data.datasets[3].data = blankCounts;
+			problemChartInstance.update(); // Animate the transition
+		} else {
+			const ctx = document.getElementById('scoresChart').getContext('2d');
+			problemChartInstance = new Chart(ctx, {
+				type: 'bar',
+				data: chartData,
+				options: {
+					scales: {
+						x: {
+							stacked: true,
+							title: {
+								display: true,
+								text: 'Problem #'
+							}
+						},
+						y: {
+							stacked: true,
+							title: {
+								display: true,
+								text: 'Taker Count'
+							}
+						}
+					}
+				}
+			});
+		}
+	}
 </script>
 
 <div>
@@ -182,6 +322,9 @@
 	</table>
 </div>
 
+<canvas id="scoresChart"></canvas>
+<canvas id="histogramChart"></canvas>
+
 <style>
 	.scoresTable {
 		width: 100%;
@@ -195,5 +338,9 @@
 	.scoresTable th {
 		background-color: var(--primary);
 		color: white;
+	}
+	canvas {
+		max-width: 100%;
+		height: 400px;
 	}
 </style>
