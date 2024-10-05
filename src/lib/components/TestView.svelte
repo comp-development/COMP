@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import {onDestroy} from 'svelte';
 	import Button from "$lib/components/Button.svelte";
-	import Katex from "$lib/components/Katex.svelte";
+	import AsciiMath from "$lib/components/AsciiMath.svelte";
 	import MathJax from "$lib/components/MathJax.svelte"
 	import FormattedTimeLeft from "$lib/components/FormattedTimeLeft.svelte"
 	import { Tooltip, TooltipIcon, TextInput, Dropdown, Modal } from "carbon-components-svelte";
@@ -347,7 +347,7 @@
 								</TooltipIcon>
 							</div>
 							<br />
-							<Katex
+							<AsciiMath
 								value={answersMap[problem.test_problem_id]}
 							/>
 							{#if saved[problem.test_problem_id]}

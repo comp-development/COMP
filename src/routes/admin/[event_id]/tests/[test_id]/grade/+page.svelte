@@ -12,7 +12,7 @@
     import toast from "svelte-french-toast";
     import { handleError } from "$lib/handleError";
     import { supabase } from "$lib/supabaseClient";
-    import Katex from "$lib/components/Katex.svelte";
+    import AsciiMath from "$lib/components/AsciiMath.svelte";
 
     let test_id = Number($page.params.test_id);
     let problems: [];
@@ -251,7 +251,7 @@
                                     : 'rgb(220, 220, 220)'}"
                             >
                                 <div class="answer">
-                                    <Katex value={answer.answer_latex} /><br>
+                                    <AsciiMath value={answer.answer_latex} /><br>
                                     {answer.answer_latex}
                                 </div>
                                 <div style="display: flex;">
