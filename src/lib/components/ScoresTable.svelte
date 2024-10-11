@@ -209,7 +209,7 @@
 				if (entry) {
 					if (entry.correct == true) correctCounts[i - 1]++;
 					else if (entry.correct == false) wrongCounts[i - 1]++;
-					else if (entry.answer_latex.trim() == "") blankCounts[i - 1]++;
+					else if (!entry.answer_latex || entry.answer_latex.trim() == "") blankCounts[i - 1]++;
 					else ungradedCounts[i - 1]++;
 				} else {
 					blankCounts[i - 1]++;
