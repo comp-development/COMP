@@ -8,6 +8,7 @@
     import { Chart, registerables } from 'chart.js';
 	import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the data labels plugin
 	import ChartAnnotation from 'chartjs-plugin-annotation'; // Import the annotation plugin
+  import { Logger } from "sass";
     Chart.register(...registerables);
 
 	export let test;
@@ -63,19 +64,26 @@
 		rows.push(headers.join(','));
 
 		Object.values(testTakersMap).forEach(testTaker => {
+			if (testTaker.front_id == "KH01") {
+				console.log(testTaker.front_id,testTaker)
+				console.log(testTaker[1]?.correct ? 1 : 0 || 0)
+			}
             const totalPoints = Object.keys(testTaker).reduce((sum, key) => {
 				return sum + (testTaker[key]?.points || 0);
 			}, 0);
 			const row = [
-				testTaker.front_id,
-				testTaker.taker_name,
-                testTaker.start_time,
+				`"testTaker.front_id"`,
+				`"testTaker.taker_name"`,
+                `"testTaker.start_time"`,
                 totalPoints,
-                ...Array.from({length: test.num_problems}, (_, i) => String(testTaker[i + 1]?.answer_latex || "")),
+                ...Array.from({length: test.num_problems}, (_, i) => `"${String(testTaker[i + 1]?.answer_latex || "").replace(/"/g, '""')}"`),
 				...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.correct ? 1 : 0 || 0),
                 ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.points || 0),
                 ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.last_edited_time || ""),
 			];
+			if (testTaker.front_id == "KH01") {
+				console.log(row)
+			}
 			rows.push(row.join(','));
 		});
 
