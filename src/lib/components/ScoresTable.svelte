@@ -59,7 +59,7 @@
 
     function exportToCSV() {
 		const rows = [];
-		const headers = ['Front ID', 'Taker Name', 'Start Time', 'Points', ...Array.from({length: test.num_problems}, (_, i) => `A${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `C${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `P${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `T${i + 1}`)];
+		const headers = ['#', 'Taker Name', 'Start Time', 'Points', ...Array.from({length: test.num_problems}, (_, i) => `A${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `C${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `P${i + 1}`), ...Array.from({length: test.num_problems}, (_, i) => `T${i + 1}`)];
 		rows.push(headers.join(','));
 
 		Object.values(testTakersMap).forEach(testTaker => {
@@ -262,7 +262,7 @@
 		<thead>
 			<tr>
 				<th on:click={() => sortTable('front_id')}>
-					Front ID
+					#
 					{#if sortColumn === 'front_id'}
 						{#if sortOrder === 'asc'}
 							<SortAscending />
