@@ -64,7 +64,7 @@
 		rows.push(headers.join(','));
 
 		Object.values(testTakersMap).forEach(testTaker => {
-			if (testTaker.front_id == "KH01") {
+			if (testTaker.front_id == "MM12") {
 				console.log(testTaker.front_id,testTaker)
 				console.log(testTaker[1]?.correct ? 1 : 0 || 0)
 			}
@@ -72,16 +72,16 @@
 				return sum + (testTaker[key]?.points || 0);
 			}, 0);
 			const row = [
-				`"testTaker.front_id"`,
-				`"testTaker.taker_name"`,
-                `"testTaker.start_time"`,
+				`"${testTaker.front_id}"`,
+				`"${testTaker.taker_name}"`,
+                `"${testTaker.start_time}"`,
                 totalPoints,
                 ...Array.from({length: test.num_problems}, (_, i) => `"${String(testTaker[i + 1]?.answer_latex || "").replace(/"/g, '""')}"`),
 				...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.correct ? 1 : 0 || 0),
                 ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.points || 0),
                 ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.last_edited_time || ""),
 			];
-			if (testTaker.front_id == "KH01") {
+			if (testTaker.front_id == "MM12") {
 				console.log(row)
 			}
 			rows.push(row.join(','));
