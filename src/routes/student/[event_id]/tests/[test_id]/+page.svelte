@@ -54,6 +54,8 @@
 		}
 		//console.log("TEST_TAKER", test_taker);
 	}
+
+	
 </script>
 
 {#if loading}

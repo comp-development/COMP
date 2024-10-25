@@ -58,6 +58,15 @@
 
 	let open = false;
 
+	window.onblur = function () {
+		document.querySelector('.protected-content').classList.add('blurred');
+		console.log("BLUR");
+	};
+	window.onfocus = function () {
+		document.querySelector('.protected-content').classList.remove('blurred');
+		console.log("FOCUS");
+	};
+
 	const changeProblemClarification = (payload) => {
 		//console.log("CLARIFY", payload);
 		clarifications[payload.new.test_problem_id] =
@@ -323,7 +332,7 @@
 							</h5>
 						{/if}
 						
-						<Problem problem={problem} clarification={clarifications[problem.test_problem_id]} />
+						<Problem classs="protected-content" problem={problem} clarification={clarifications[problem.test_problem_id]} />
 						<div style="margin-top: 30px; width: 300px;">
 							<div style="display:flex; align-items: center;">
 								<TextInput
@@ -431,6 +440,10 @@
 		display: flex;
 		justify-content: center;
 		padding-bottom: 20px;
+	}
+
+	.blurred {
+		filter: blur(8px);
 	}
 
 	.inner-div {
