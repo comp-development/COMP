@@ -9,14 +9,14 @@
 	import { handleError } from "$lib/handleError";
 	
 	import { List, Schematics } from "carbon-icons-svelte";
-    import { getStudent, getStudentEvents } from "$lib/supabase";
-
-	import { page } from "$app/stores";
+    import { getStudents } from "$lib/supabase/students";
 
 	
 
 	
+
 	
+	let students = [];
 
 
 	let time_filtered_students = [];
@@ -25,11 +25,9 @@
 	let loaded = false;
 	let user;
     let userRole;
-	let students = [];
-	let event_id = $page.params.event_id;
 
 	let openModal = false;
-	let values = ["Students", "Emails", "Tournament", "Phone Number"];
+	let values = ["Students", "Answers", "Solutions", "Comments"];
 	let group = values.slice(0, 1);
 
 	let scheme = {};
@@ -37,13 +35,8 @@
 
 	(async () => {
 		try {
-			console.log(event_id);
-			students = await getStudentEvents(event_id);
-			
-			console.log("hi");
-			
-			console.log(students);
-
+        
+			students = await getStudents({ });
             sortStudents();
 			
 			console.log(time_filtered_students.length);
