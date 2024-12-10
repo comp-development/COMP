@@ -8,7 +8,9 @@
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte";
 	import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
 	import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
+	import Locked from "carbon-icons-svelte/lib/Locked.svelte";
 	import toast from "svelte-french-toast";
+	import { supabase } from "$lib/supabaseClient";
 	import { handleError } from "$lib/handleError";
 	import { onDestroy, onMount } from "svelte";
 	import {
@@ -18,10 +20,12 @@
 		updateTest
 
 	} from "$lib/supabase";
+  import Account from '$lib/components/Account.svelte';
 
 	let loading = true;
 
-	let open = false;
+	let openTestModal = false;
+	let openLockModal = false;
 	let instructions = ""
 	let name = ""
 
@@ -81,7 +85,7 @@
 		Object.values(testStatusMap).forEach(updateStatus);
     }, 1000);
 
-	async function handleSubmit() {
+	async function handleTestSubmit() {
 		curTest.buffer_time = parseInt(curTest.buffer_time)
 		let [hours, minutes] = curTest.time.split(':');
 		if (curTest.amPm === 'pm' && hours !== '12') {
@@ -114,6 +118,20 @@
 		console.log(formatDuration(Math.abs(diffBetweenDates(new Date(), addTime(new Date(curTest.opening_time), curTest.length + curTest.buffer_time, "seconds"), "seconds"))))
 	}
 
+	async function handleLockSubmit() {
+		const data = {
+			access_rules: curTest.access_rules
+		};
+
+		try {
+			await updateTest(curTest.test_id, data);
+			console.log("Access rules updated for test:", curTest.test_id);
+		} catch (error) {
+			handleError(error);
+			toast.error(error.message);
+		}
+	}
+
 	function validateInput() {
 		// Check if the value is a nonnegative integer using regex
 		isInvalid = !/^\d+$/.test(curTest.buffer_time);
@@ -122,6 +140,7 @@
 
 	async function getTests() {
 		try {
+			console.log("GETTING TESTS")
 			tests = await getEventTests($page.params.event_id)
 			console.log(tests)
 			for (const test of tests) {
@@ -131,6 +150,24 @@
 		} catch (error) {
 			handleError(error);
 			toast.error(error.message);
+		}
+	}
+
+	let accessPreview = [];
+
+	async function fetchAccessPreview() {
+		try {
+			// Replace this with the appropriate query to fetch all students
+			const { data } = await supabase.rpc('get_students_with_access', {
+				p_test_id: curTest.test_id,
+			});
+			console.log("DATA",data)
+			// Filter out null results
+			accessPreview = data
+			console.log("ACCESS PREVIEW", accessPreview)
+		} catch (error) {
+			handleError(error);
+			toast.error('Failed to fetch access preview.');
 		}
 	}
 </script>
@@ -228,12 +265,25 @@
 									<span class="tooltip">Results</span>
 								</a>
 							</div>
+							<div class="tooltip-container">
+								<button
+									class="test-button empty"
+									on:click={(e) => {
+										curTest = test
+										console.log("CURTEST", curTest)
+										openLockModal = true;
+									}}
+								>
+									<Locked />
+								</button>
+								<span class="tooltip">Test Access</span>
+							</div>
 							<button
 								class="test-button full"
 								on:click={(e) => {
 									curTest = test
 									setupTime(curTest.openingTime ? new Date(curTest.openingTime) : new Date())
-									open = true;
+									openTestModal = true;
 								}}
 							>
 								Open
@@ -246,17 +296,17 @@
 		</div>
 		<br />
 		<Modal 
-			bind:open 
-			modalHeading={name} 
+			bind:open={openTestModal}
+			modalHeading="Open {curTest.test_name}" 
 			on:open 
 			on:close 
 			primaryButtonText="Save"
 			secondaryButtonText="Cancel" 
 			size="lg"
-			on:click:button--secondary={() => (open = false)}
+			on:click:button--secondary={() => (openTestModal = false)}
 			on:submit = {async () => {
-				open = false;
-				await handleSubmit();
+				openTestModal = false;
+				await handleTestSubmit();
 			}}
 			
 		>
@@ -289,6 +339,132 @@
 
 
 			<br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+		</Modal>
+
+		<Modal 
+			bind:open={openLockModal}
+			modalHeading="{curTest.test_name} Access Rules" 
+			on:open 
+			on:close 
+			primaryButtonText="Save"
+			secondaryButtonText="Cancel" 
+			size="lg"
+			on:click:button--secondary={() => (openLockModal = false)}
+			on:submit={async () => {
+				openLockModal = false;
+				await handleLockSubmit();
+			}}
+		>
+			{curTest.test_name} Test Access Rules
+			<div>
+				<!-- Rules List -->
+				{#if curTest.access_rules?.rules?.length > 0}
+					<!-- Combine Logic -->
+					{#if curTest.access_rules.rules.length > 1}
+						<div class="rule-group">
+							<label>Combine Logic</label>
+							<select bind:value={curTest.access_rules.combine}>
+								<option value="AND">AND</option>
+								<option value="OR">OR</option>
+							</select>
+						</div>
+					{/if}
+					{#each curTest.access_rules.rules as rule, index}
+						<div class="rule" style="display: flex; align-items: center; gap: 10px;">
+							<!-- Field -->
+							<TextInput
+								labelText="Field"
+								bind:value={rule.field}
+								placeholder="Enter field name (e.g., grade, subject)"
+							/>
+
+							<!-- Operator -->
+							<select bind:value={rule.operator}>
+								<option value="=">Equals</option>
+								<option value="!=">Not Equals</option>
+								<option value=">">Greater Than</option>
+								<option value="<">Less Than</option>
+								<option value=">=">Greater Than or Equals</option>
+								<option value="<=">Less Than or Equals</option>
+								<option value="~">Contains Regex (case-sensitive)</option>
+								<option value="!~">Does Not Contain Regex (case-sensitive)</option>
+								<option value="~*">Contains Regex (case-insensitive)</option>
+								<option value="!~*">Does Not Contain Regex (case-insensitive)</option>
+								<option value="IN">One Of (comma-separated)</option>
+								<option value="NOT IN">Not One Of (comma-separated)</option>
+							</select>
+
+							<!-- Value -->
+							<TextInput
+								labelText="Value"
+								bind:value={rule.value}
+								placeholder="Enter value (e.g., 7, Algebra)"
+							/>
+
+							<!-- Remove Rule Button -->
+							<Button
+								title="Remove Rule"
+								action={() => {
+									console.log("REMOVE");
+									curTest.access_rules.rules = curTest.access_rules.rules.filter((_, i) => i !== index);
+									if (curTest.access_rules.rules.length == 0) {
+										curTest.access_rules = null;
+									}
+								}}
+
+							>
+								Remove Rule
+							</Button>
+						</div>
+					{/each}
+				{:else}
+					<p>All students can access the test.</p>
+				{/if}
+
+				<!-- Add New Rule -->
+				<Button
+					title="Add Rule"
+					action={() => {
+						if (curTest.access_rules) {
+							console.log(curTest.access_rules)
+							console.log(("rules" in curTest.access_rules))
+						}
+						
+						if (!curTest.access_rules || !("rules" in curTest.access_rules)) {
+							curTest.access_rules = { combine: 'AND', rules: [] };
+						}
+						console.log("PUSHING")
+						curTest.access_rules.rules.push({ field: '', operator: '==', value: '' });
+						curTest.access_rules = curTest.access_rules
+					}}
+				>
+					Add Rule
+				</Button>
+			</div>
+			{JSON.stringify(curTest.access_rules, null, 2)}
+			<div>
+				<!-- Preview Access -->
+				<Button
+					title="Preview Access"
+					action={async () => {
+						await fetchAccessPreview();
+					}}
+				>
+					Preview Access
+				</Button>
+		
+				<!-- Access Preview -->
+				{#if accessPreview && accessPreview.length > 0}
+					<h3>Students with Access</h3>
+					<ul>
+						{#each accessPreview as student}
+							<li>{student.first_name} {student.last_name}</li>
+						{/each}
+					</ul>
+				{:else if accessPreview && accessPreview.length === 0}
+					<p>No students have access based on the current rules.</p>
+				{/if}
+			</div>
 		</Modal>
 	{/if}
 </div>
