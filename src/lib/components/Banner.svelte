@@ -18,7 +18,7 @@
 		/* color: var(--text-color-light); */
 		display: flex;
 		align-items: center;
-		background-color: #206c24;
+		background-color: var(--primary);
 	}
 
 	.header h4 {

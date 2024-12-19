@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import "carbon-components-svelte/css/white.css";
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
@@ -10,6 +10,8 @@
 	import { page } from "$app/stores";
 	import { Toaster } from "svelte-french-toast";
 	import { getThisUser } from "$lib/supabase";
+	import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
+	let scheme: any = defaultSettings; // Initialize scheme variable
 
 	let loaded = false;
 
@@ -24,6 +26,15 @@
 	});
 
 	onMount(async () => {
+		// Fetch style settings from the database
+		// Set CSS variables dynamically
+		scheme = await fetchSettings();
+		Object.entries(scheme.styles || {})
+			.concat(Object.entries(scheme.constants || {}))
+			.forEach(([key, value]) => {
+				document.documentElement.style.setProperty(`--${key}`, value as string);
+			});
+
 		loaded = true;
 	});
 
@@ -51,7 +62,7 @@
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
-	{:else if !$user && $page.route.id &&!$page.route.id.includes('/scores') && $page.route.id != "/password-reset"}
+	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores") && $page.route.id != "/password-reset"}
 		{#if hasAccount}
 			<Banner />
 			<br />
@@ -113,7 +124,7 @@
 				</div>
 			</div>
 		{/if}
-	{:else if $page.route.id && $page.route.id.includes('/scores')}
+	{:else if $page.route.id && $page.route.id.includes("/scores")}
 		<div>
 			<slot />
 		</div>
@@ -130,30 +141,11 @@
 <style>
 	/* Overall styling */
 	:global(:root) {
-		--font-family: var(--font-family), "Roboto", Arial, -apple-system,
-			BlinkMacSystemFont, "Segoe UI", Oxygen, Cantarell, "Open Sans",
-			"Helvetica Neue", sans-serif;
-
+		--font-family: "Ubuntu";
 		--large-gap: 30px;
 		--medium-gap: 20px;
 		--small-gap: 10px;
-
-		--text-color-light: #fff;
-		--text-color-dark: #000;
-		--background: #f5fffb;
-		--background-dark: #dcfff1;
-		--primary: #1c6825;
-		--primary-light: #65c083;
-		--primary-dark: #5b8064;
-		--primary-tint: #d9f5e2;
-		--error-tint: #ffe0e0;
-		--error-light: #ff8a8a;
-		--error-dark: #ff3636;
-		--secondary: #213d44;
-		--secondary-light: #1b9aaa;
-		--secondary-dark: #061333;
-		--secondary-tint: #b9c6d2;
-		--font-family: "Ubuntu";
+		--primary: gray;
 	}
 
 	:global(h1) {
