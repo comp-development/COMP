@@ -16,6 +16,7 @@
 	import { handleError } from "$lib/handleError";
 	import Button from "$lib/components/Button.svelte";
 
+	let hostId = $page.params.host_id;
 	let eventId = $page.params.event_id;
 	let pageSize = 25;
 	let pages = 1;
@@ -88,7 +89,7 @@
 							<div class="pencil">
 								<Link
 									class="link"
-									href={"/admin/" + eventId + "/tests/" + row.id}
+									href={`/admin/${hostId}/${eventId}/tests/${row.id}`}
 									><i class="ri-pencil-fill" /></Link
 								>
 							</div>
@@ -145,7 +146,7 @@
 							<div class="pencil">
 								<Link
 									class="link"
-									href={"/admin/" + eventId + "/teams/" + row.id}
+									href={`/admin/${hostId}/${eventId}/teams/${row.id}`}
 									><i class="ri-pencil-fill" /></Link
 								>
 							</div>
