@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { getStudentEvents, getThisUser, getUser, getStudent } from "$lib/supabase";
+    import { getStudentEvents, getEventsbyStudentID, getThisUser, getUser, getStudent } from "$lib/supabase";
     import { DataTable, Link, Pagination, Toolbar, ToolbarContent, ToolbarSearch } from "carbon-components-svelte";
 
     let user;
@@ -12,7 +12,7 @@
     (async () => {
         user = await getThisUser();
 		student = await getStudent(user.id);
-        const eventsUnedited = await getStudentEvents(user.id, "*, events(*)");
+        const eventsUnedited = await getEventsbyStudentID(user.id, "*, events(*)");
 
         eventsUnedited.forEach((event) => {
             events.push({

@@ -141,8 +141,7 @@
 <div style="width:80%; margin: auto;margin-bottom: 20px;">
 	<UserTable 
         students={students} 
-        sortKey={"feedback_status"}
-        sortDirection={"ascending"}/>
+      />
 </div>
 
 <style>

@@ -9,9 +9,11 @@
 	import { handleError } from "$lib/handleError";
 	
 	import { List, Schematics } from "carbon-icons-svelte";
-    import { getStudent, getStudentEvents } from "$lib/supabase";
+    import { getStudent, getStudentEvents, getEventsbyStudentID, getCustomFields } from "$lib/supabase";
 
 	import { page } from "$app/stores";
+    import { getStudents } from "$lib/supabase/students";
+    
 
 	
 
@@ -25,7 +27,9 @@
 	let loaded = false;
 	let user;
     let userRole;
+	let custom_fields = [];
 	let students = [];
+	let studentTableInfo = [];
 	let event_id = $page.params.event_id;
 
 	let openModal = false;
@@ -34,18 +38,27 @@
 
 	let scheme = {};
 
+	// async function flattenTable(students) {
+	// 	students.student
+	// 	object destructuring
+	// }
 
 	(async () => {
 		try {
-			console.log(event_id);
+			//console.log(event_id);
 			students = await getStudentEvents(event_id);
+			studentTableInfo = await getStudents({});
+			custom_fields = await getCustomFields(event_id);
+			//console.log("new custom!");
+			console.log("new custom!",custom_fields);
+			//console.log("hi");
 			
-			console.log("hi");
-			
+			console.log("student event and student");
 			console.log(students);
+			console.log(studentTableInfo);
 
-            sortStudents();
-			
+            //sortStudents();
+			//console.log(students);
 			console.log(time_filtered_students.length);
 
 			const topicsCount = students.reduce((count, { topics }) => {
@@ -148,8 +161,10 @@
 <div style="width:80%; margin: auto;margin-bottom: 20px;">
 	<UserTable 
         students={students} 
-        sortKey={"feedback_status"}
-        sortDirection={"ascending"}/>
+		custom_fields={custom_fields}
+		
+        
+        />
 </div>
 
 <style>

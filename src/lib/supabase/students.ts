@@ -67,36 +67,38 @@ export async function getProblem(problem_id: number) {
 // 	if (error) throw error;
 // 	return data;
 // }
-export async function getStudentEvents(event_id, select = "*") {
-	const parsedEventId = parseInt(event_id, 10); // Parse event_id to integer
-	if (isNaN(parsedEventId)) {
-	  throw new Error("Invalid event_id: Must be a valid integer");
-	}
+// export async function getStudentEvents(event_id, select = "*") {
+// 	throw new Error("Invalidinvalid");
+// 	const parsedEventId = parseInt(event_id, 10); // Parse event_id to integer
+// 	console.log(parsedEventId)
+// 	if (isNaN(parsedEventId)) {
+// 	  throw new Error("Invalid event_id: Must be a valid integer");
+// 	}
   
-	const { data, error } = await supabase
-	  .from("student_events")
-	  .select(select)
-	  .eq("event_id", parsedEventId); // Use parsed integer
+// 	const { data, error } = await supabase
+// 	  .from("student_events")
+// 	  .select(select)
+// 	  .eq("event_id", parsedEventId); // Use parsed integer
   
-	if (error) throw error;
-	return data;
-  }
-/**
- * Get front id of problem from id
- *
- * @param problem_id
- * @returns front_id string
- */
-async function getFrontID(problem_id: number) {
-	let { data, error } = await supabase
-		.from("front_ids")
-		.select("front_id")
-		.eq("problem_id", problem_id)
-		.single();
+// 	if (error) throw error;
+// 	return data;
+//   }
+// /**
+//  * Get front id of problem from id
+//  *
+//  * @param problem_id
+//  * @returns front_id string
+//  */
+// async function getFrontID(problem_id: number) {
+// 	let { data, error } = await supabase
+// 		.from("front_ids")
+// 		.select("front_id")
+// 		.eq("problem_id", problem_id)
+// 		.single();
 
-	if (error) throw error;
-	return data.front_id;
-}
+// 	if (error) throw error;
+// 	return data.front_id;
+// }
 
 /**
  * Returns all problems from the database.

@@ -12,7 +12,7 @@
 	} from "carbon-components-svelte";
 	
 	
-	import Problem from "$lib/components/Problem.svelte";
+	
 
 	import Switcher from "carbon-icons-svelte/lib/Switcher.svelte";
 	import { createEventDispatcher } from "svelte";
@@ -20,8 +20,13 @@
 	import toast from "svelte-french-toast";
 	
 	import { LogarithmicScale } from "chart.js";
+    import { json } from "@sveltejs/kit";
+    import { getCustomFields } from "$lib/supabase";
+   
 
 	export let students = [];
+	export let custom_fields = null;
+	export let studentTableInfo = [];
 	export let selectable = false;
 	export let stickyHeader = false;
 	export let selectedItems = [];
@@ -33,17 +38,18 @@
 	export let customHeaders = [];
 	export let draggable = false;
 	export let pageEnabled = true;
-	export let minWidth = 100;
+	export let minWidth = 500;
 
 	export let showList = [
-		"full_name",
-		"topics_short",
-		"average_difficulty",
-		"average_quality",
-		"status",
-		"feedback_status",
-		"problem_tests",
-		"created_at"
+		"division",
+		"student_id",
+		"first_name",
+		"last",
+		"grade",
+		"email",
+		"team_id",
+		"front_id",
+		"event_id"
 	];
 
 	const dispatch = createEventDispatcher();
@@ -53,11 +59,7 @@
 	$: colWidth = (width - 100) / Math.min(maxCols, showList.length);
 
 	let mobileFriendly = {
-		Algebra: "Alg",
-		Mixed: "Mx",
-		"Number Theory": "NT",
-		Combination: "Comb",
-		Geometry: "Geo",
+		
 	};
 
 	let pageSize = 25;
@@ -67,102 +69,94 @@
 
 	let headers = [
 		{
-			key: "full_name",
-			value: "Author",
-			short: "Author",
+			key: "division",
+			value: "division",
+			short: "division",
 			icon: "ri-user-fill",
 			width: "10%"
 		},
-		{
-			key: "topics_short",
-			value: "Topics",
-			short: "Topics",
-			icon: "ri-pie-chart-2-fill",
-			width: "15%"
-		},
-		{
-			key: "sub_topics",
-			value: "Subtopics",
-			short: "SubTps",
-			icon: "ri-node-tree",
-			width: "20%"
-		},
-		{
-			key: "average_difficulty",
-			value: "Difficulty",
-			short: "Diff",
-			icon: "ri-bar-chart-2-fill",
-			width: "7%"
-		},
-		{
-			key: "average_quality",
-			value: "Quality",
-			short: "Qlty",
-			icon: "ri-star-fill",
-			width: "7%"
-		},
-		{
-			key: "unresolved_count",
-			value: "Feedback",
-			short: "Fdbk",
-			icon: "ri-flag-fill",
-			width: "10%"
-		},
-		{
-			key: "status",
-			value: "Stage",
-			short: "Stage",
-			icon: "ri-stairs-fill",
-			width: "10%",
-			sort: (a, b) => {
-				const order = ['Draft', 'Idea', 'Endorsed', 'On Test', 'Published', 'Archived'];
-				return order.indexOf(a) - order.indexOf(b);
-			}
-		},
-		{
-			key: "feedback_status",
-			value: "Status",
-			short: "Status",
-			icon: "ri-feedback-fill",
-			width: "10%",
-			sort: (a, b) => {
-				const order = ['Needs Review', 'Awaiting Feedback', 'Awaiting Endorsement', 'Awaiting Testsolve', 'Complete'];
-				return order.indexOf(a) - order.indexOf(b);
-			}
-		},
-		{
-			key: "problem_tests",
-			value: "Tests",
-			short: "Tests",
-			icon: "ri-file-list-3-fill",
-			width: "15%"
-		},
-		{
-			key: "created_at",
-			value: "Created",
-			short: "Create",
-			icon: "ri-calendar-event-fill",
-		},
-		{
-			key: "edited_at",
-			value: "Edited",
-			icon: "ri-calendar-todo-fill",
-		},
+		
+		
+		
 	];
 
+	
+	let output = [];
+	$: {
 
+		for (const field of custom_fields) {
+			console.log("field", field, field.key);
+			output.push({
+				key: field.key,
+				value: field.key,
+				icon: "ri-key-2-fill",
+				width: "90px",
+			})
+			
+		}
+		console.log("output", output)
+	}
+
+	$: console.log("hoorayy",custom_fields);
 	$: headersF = headers.filter((row) => showList.includes(row.key));
 	$: curHeaders = [
+		
 		...(editable ? [editHeader] : []),
 		...[
+			
+			
 			{
-				key: "front_id",
-				value: "ID",
+				key: "student_id",
+				value: "student_id",
 				icon: "ri-key-2-fill",
 				
 				width: "90px",
 			},
+			{
+				key: "first_name",
+				value: "first_name",
+				icon: "ri-key-2-fill",
+				
+				width: "90px",
+			},
+			{
+				key: "last_name",
+				value: "last",
+				icon: "ri-key-2-fill",
+				
+				width: "90px",
+			},
+			{
+				key: "grade",
+				value: "grade",
+				icon: "ri-key-2-fill",
+				
+				width: "90px",
+			},
+			{
+				key: "email",
+				value: "email",
+				icon: "ri-key-2-fill",
+				
+				width: "90px",
+			},
+			{
+				key: "team_id",
+				value: "team_id",
+				icon: "ri-key-2-fill",
+				
+				width: "90px",
+			},
+			{
+				key: "front_id",
+				value: "front_id",
+				icon: "ri-key-2-fill",
+				
+				width: "90px",
+			},
+			
 		],
+		...output,
 		...headersF.slice(0, maxCols),
 		...customHeaders,
 	];
@@ -175,10 +169,57 @@
 	}
 
 	let listeners = {};
+	$: {
+	console.log("students original");
+	console.log(students);
+	
+	console.log("custom custom");
+	console.log(custom_fields);
+
+	students = students.map((s, i) => {
+		const s_data = s.students;
+		console.log(s_data)
+		s.students = null;
+		//for every custom field, add custom field on s
+		for (let i = 0; i<custom_fields.length; i++) {
+			s[custom_fields[i].key] = s.custom_fields[custom_fields[i].custom_field_id];
+		}
+		
+		
+		console.log(JSON.stringify(s.custom_fields));
+		return {
+			id: i + 1,
+			...s,
+			...s_data,
+		}
+	});
+	for (let i = 0; i<students.length; i++) {
+		if (students[i].grade != null) {
+			console.log("found it");
+		}
+	}
+	
+
+	console.log("after add ID");
+	console.log(students);
+	students = students;
+	}
+
+	
 	$: if (draggable && tableContainerDiv && !draggingRow) {
 		try {
+			
 			for (let i = 0; i < students.length; i++) {
 				const row = students[i];
+				let elem = getRowElement(row.id);
+				if (row.id in listeners) {
+					elem?.removeEventListener("dragenter", listeners[row.id]);
+				}
+				listeners[row.id] = (e) => handleDragEnter(e, row);
+				elem?.addEventListener("dragenter", listeners[row.id]);
+			}
+			for (let i = 0; i < studentTableInfo.length; i++) {
+				const row = studentTableInfo[i];
 				let elem = getRowElement(row.id);
 				if (row.id in listeners) {
 					elem?.removeEventListener("dragenter", listeners[row.id]);
@@ -219,6 +260,14 @@
 			students.splice(students.indexOf(draggedRow), 1);
 			students.splice(ind, 0, draggedRow);
 			students = students;
+
+			// const ind = studentTableInfo.indexOf(row);
+			// lastDraggedInd = ind;
+			// studentTableInfo.splice(studentTableInfo.indexOf(draggedRow), 1);
+			// studentTableInfo.splice(ind, 0, draggedRow);
+			// studentTableInfo = studentTableInfo;
+
+
 		} catch (error) {
 			handleError(error);
 			toast.error(error.message);
@@ -242,6 +291,51 @@
 			toast.error(error.message);
 		}
 	}
+	//export let students = [];
+    //export let studentTableInfo = [];
+
+    // Columns to display
+    // export let showList = [
+    //     "division",
+    //     "student_id",
+    //     "first",
+    //     "last",
+    //     "grade",
+    //     "email",
+    //     "team_id",
+    //     "front_id",
+    //     "event_id"
+    // ];
+
+    // Merge rows from students and studentTableInfo
+    //$: mergedStudents = mergeData(students, studentTableInfo);
+
+    function mergeData(students, studentTableInfo) {
+        const infoMap = new Map(
+            studentTableInfo.map(info => [info.student_id, info]) // Map by student_id
+        );
+
+        return students.map(student => {
+            // Match additional info by student_id
+            const additionalInfo = infoMap.get(student.student_id) || {};
+
+            // Merge student and additional info fields
+            return {
+                ...showList.reduce((acc, key) => {
+                    acc[key] = student[key] || additionalInfo[key] || '-';
+                    return acc;
+                }, {})
+            };
+        });
+    }
+
+    // Generate headers based on showList
+    $: mergedHeaders = showList.map(key => ({
+        key,
+        value: key.replace('_', ' ').toUpperCase(),
+        width: '120px',
+    }));
+
 </script>
 
 <svelte:window />
@@ -253,45 +347,11 @@
 		label="Filter visible columns"
 		items={[
 			{
-				id: "full_name",
-				text: "Author",
+				id: "division",
+				text: "division",
 			},
-			{
-				id: "topics_short",
-				text: "Topics",
-			},
-			{
-				id: "sub_topics",
-				text: "SubTopic",
-			},
-			{
-				id: "average_difficulty",
-				text: "Avg. Difficulty",
-			},
-			{
-				id: "average_quality",
-				text: "Avg. Quality",
-			},
-			{
-				id: "status",
-				text: "Stage",
-			},
-			{
-				id: "feedback_status",
-				text: "Status",
-			},
-			{
-				id: "problem_tests",
-				text: "Tests",
-			},
-			{
-				id: "created_at",
-				text: "Created on",
-			},
-			{
-				id: "edited_at",
-				text: "Edited on",
-			},
+			
+			
 			
 		]}
 	/>
@@ -309,8 +369,8 @@
 		expandable
 		sortable
 		batchExpansion
-		{sortKey}
-		{sortDirection}
+		
+		
 		{selectable}
 		{stickyHeader}
 		bind:selectedRowIds={selectedItems}
@@ -318,8 +378,9 @@
 			? students.map((pb) => pb.id)
 			: nonselectableItems}
 		class="datatable"
-		headers={curHeaders}
+		headers={curHeaders} 
 		rows={students}
+		
 		pageSize={pageEnabled ? pageSize : undefined}
 		page={pageEnabled ? page : undefined}
 	>
@@ -373,14 +434,17 @@
 							{/each}
 						{/if}
 					</div>
-				{:else if cell.key === "author"}
+				{:else if cell.key === "division"}
 					<div style="overflow: hidden;">
-						{cell.value == null || cell.value == ""
+						{cell.value}
+						<!-- {cell.value == null || cell.value == ""
 							? "None"
 							: width > 700
 							? cell.value
-							: cell.value.split(" ")[0].charAt(0) +
-							  cell.value.split(" ")[1].charAt(0)}
+							
+							//: cell.value.split(" ")[0].charAt(0) +
+							  //cell.value.split(" ")[1].charAt(0)
+						} -->
 					</div>
 				{:else if cell.key === "created_at"}
 					<div style="overflow: hidden;">
