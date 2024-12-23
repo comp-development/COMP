@@ -84,7 +84,7 @@ async function main() {
     "$2a$10$.KWPj66/5wCO1C5c2w98wexdaZm4rwWWA0VPjz2mErXmOhKRnv9/e",
     {},
   );
-  (await create_user(
+  await create_user(
     seed,
     UserType.Student,
     "Addison",
@@ -92,7 +92,7 @@ async function main() {
     "student@gmail.com",
     "$2a$10$GPaPWd5mKl5ivBV/7uZmm.f.hwgGxbz6R2KS8.QfK4sNrJ.yEr/AG",
     {},
-  )) as Store;
+  );
 
   await seed.hosts([
     {
@@ -119,9 +119,9 @@ async function main() {
               ],
               student_events: [
                 {
-                  student_id: store.students.find(
-                    (s) => s.email == "student@gmail.com",
-                  )?.student_id,
+                  student_id: seed.$store.users.find((u) => {
+                    return u.email == "student@gmail.com";
+                  })!.id,
                 },
               ],
             };
