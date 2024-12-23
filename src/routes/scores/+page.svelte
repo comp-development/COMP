@@ -13,7 +13,6 @@
 		getTestAnswers,
 	} from "$lib/supabase";
 
-	console.log("SUP");
 	let loading = true;
 
 	let test_id = Number($page.params.test_id);

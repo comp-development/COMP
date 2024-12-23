@@ -6,7 +6,7 @@ import toast from "svelte-french-toast";
  * @param error Error
  **/
 export function handleError(error: Error) {
-	console.log(error.message);
-	console.log(error);
-	toast.error(error.message);
+  console.error(error.message);
+  console.error(error);
+  toast.error(error.message);
 }

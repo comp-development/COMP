@@ -16,10 +16,9 @@
 	let loaded = false;
 
 	let hasAccount = true;
-	// user.set(browser ? localStorage.getItem("user") : null);
-	(async () => {
-		user.set(await getThisUser());
-	})();
+	if ($page.route.id?.includes("/signup")) {
+		hasAccount = false;
+	}
 
 	supabase.auth.onAuthStateChange((_, session) => {
 		user.set(session?.user);
@@ -75,7 +74,7 @@
 					<br />
 					<div class="flex">
 						<div class="bottomSection" style="color: white;">
-							<!--<button
+							<button
 								size="lg"
 								class="link"
 								id="switchScreen"
@@ -87,7 +86,7 @@
 								><a href="/password-reset" style="color: black;"
 									>Forgot Password</a
 								></button
-							>-->
+							>
 						</div>
 					</div>
 				</div>
