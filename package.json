@@ -45,6 +45,7 @@
 		"svelte-drawer-component": "^1.2.2",
 		"svelte-french-toast": "^1.2.0",
 		"svelte-katex": "^0.1.2",
+		"type-fest": "^4.30.2",
 		"unified-latex": "^1.1.3"
 	}
 }

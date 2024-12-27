@@ -16,5 +16,9 @@
     "@types/pg": "^8.11.10",
     "pg": "^8.13.0",
     "tsx": "^4.19.2"
+  },
+  "postinstall": "patch-package",
+  "dependencies": {
+    "patch-package": "^8.0.0"
   }
 }

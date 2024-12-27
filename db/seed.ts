@@ -1,5 +1,5 @@
 import { SeedClient, Store, createSeedClient } from "@snaplet/seed";
-import { copycat } from "@snaplet/copycat";
+import { copycat, Input } from "@snaplet/copycat";
 
 async function create_style(seed: SeedClient) {
   await seed.settings([
@@ -69,8 +69,117 @@ async function create_user(
   }
 }
 
+function permute<T>(
+  input: Input,
+  array: T[],
+  index: (i: Input, { min, max }: { min: number; max: number }) => number,
+): T[] {
+  const left = 0;
+  for (let right = array.length - 1; right > left; right--) {
+    // Select random index in range left to right
+    const swap_index = index([input, right], { min: 0, max: right });
+    const temp = array[swap_index];
+    array[swap_index] = array[right];
+    array[right] = temp;
+  }
+  return array;
+}
+
+function chunks<T>(
+  input: Input,
+  array: T[],
+  attempted_min: number,
+  max_chunk_size: number,
+  size: (i: Input, range: { min: number; max: number }) => number,
+): T[][] {
+  let index = 0;
+  let output: T[][] = [];
+  while (true) {
+    let next_index = Math.min(
+      index + size([input, index], { min: attempted_min, max: max_chunk_size }),
+      array.length,
+    );
+    output.push(array.slice(index, next_index));
+    if (next_index == array.length) {
+      break;
+    }
+    index = next_index;
+  }
+  return output;
+}
+
 async function main() {
-  const seed = await createSeedClient({ dryRun: true });
+  const seed = await createSeedClient({
+    dryRun: true,
+    models: {
+      users: {
+        data: {
+          email: (ctx) => copycat.email(ctx.seed),
+        },
+      },
+      admins: {
+        data: {
+          first_name: (ctx) => copycat.firstName(ctx.seed),
+          last_name: (ctx) => copycat.lastName(ctx.seed),
+        },
+      },
+      coaches: {
+        data: {
+          first_name: (ctx) => copycat.firstName(ctx.seed),
+          last_name: (ctx) => copycat.lastName(ctx.seed),
+        },
+      },
+      events: {
+        data: {
+          event_name: (ctx) =>
+            "Tournament " +
+            copycat.words(ctx.seed, { min: 1, max: 2, capitalize: "all" }),
+        },
+      },
+      hosts: {
+        data: {
+          host_name: (ctx) =>
+            "Host " + copycat.word(ctx.seed, { capitalize: true }),
+        },
+      },
+      org_events: {
+        data: {
+          join_code: (ctx) => "org-" + copycat.uuid(ctx.seed),
+        },
+      },
+      orgs: {
+        data: {
+          name: (ctx) =>
+            "Organization " + copycat.word(ctx.seed, { capitalize: true }),
+          address: (ctx) => copycat.postalAddress(ctx.seed),
+        },
+      },
+      students: {
+        data: {
+          first_name: (ctx) => copycat.firstName(ctx.seed),
+          last_name: (ctx) => copycat.lastName(ctx.seed),
+          grade: (ctx) =>
+            "Grade " + copycat.int(ctx.seed, { min: 6, max: 12 }).toString(),
+        },
+      },
+      teams: {
+        data: {
+          team_name: (ctx) => "Team " + copycat.word(ctx.seed),
+          join_code: (ctx) => "team-" + copycat.uuid(ctx.seed),
+          division: null,
+        },
+      },
+      tests: {
+        data: {
+          test_name: (ctx) => "Test " + copycat.word(ctx.seed),
+          buffer_time: (ctx) => copycat.int(ctx.seed, { min: 0, max: 10 }) * 60,
+          length: (ctx) => copycat.int(ctx.seed, { min: 10, max: 60 }) * 60,
+          division: null,
+          access_rules: {},
+        },
+      },
+    },
+  });
   await seed.$resetDatabase();
 
   await create_style(seed);
@@ -93,47 +202,139 @@ async function main() {
     "$2a$10$GPaPWd5mKl5ivBV/7uZmm.f.hwgGxbz6R2KS8.QfK4sNrJ.yEr/AG",
     {},
   );
+  const debug_student = seed.$store.students[0];
 
-  await seed.hosts([
+  // TODO: coaches
+
+  let { students } = await seed.students((x) => x(30));
+  students.push(debug_student);
+
+  const { hosts } = await seed.hosts((x) => x(3));
+  const { events } = await seed.events(
+    (x) =>
+      x(hosts.length * 4, () => ({
+        tests: (x) => x(3),
+      })),
     {
-      host_name: "Sample Host",
-      events: (x) =>
-        x(3, ({ index, store }) => {
-          if (index === 0) {
-            return {
-              event_name: "Sample Event",
-              event_date: new Date(),
-              published: true,
-              tests: [
-                {
-                  test_name: "Sample Test",
-                  buffer_time: 20,
-                  instructions: "This is a sample test.",
-                  opening_time: new Date(),
-                  length: 60 * 60,
-                  is_team: false,
-                  visible: true,
-                  test_mode: "Standard",
-                  test_problems: (x) => x(5),
-                },
-              ],
-              student_events: [
-                {
-                  student_id: seed.$store.users.find((u) => {
-                    return u.email == "student@gmail.com";
-                  })!.id,
-                },
-              ],
-            };
-          } else {
-            return {
-              tests: (x) => x(3),
-              student_events: (x) => x(5),
-            };
-          }
-        }),
+      connect: { hosts },
     },
-  ]);
+  );
+  const { orgs } = await seed.orgs((x) => x(3));
+  for (const [i, event] of events.entries()) {
+    // Choose some organizations to join event.
+    const org_choices = copycat.someOf(
+      [1, orgs.length],
+      orgs,
+    )(["org_events", i]);
+    const { org_events } = await seed.org_events(
+      org_choices.map((o) => ({ org_id: o.org_id })),
+      {
+        connect: { events: [event] },
+      },
+    );
+
+    // Choose some students to join event.
+    const s = copycat.someOf([1, students.length], students)(["students", i]);
+
+    // Permute and split the students to join with an organization or as individual teams.
+    const scrambled_s = permute(["permute", i], s, copycat.int);
+    const split = <T,>(a: T[], i: number) => [a.slice(0, i), a.slice(i)];
+    const [org_s, indiv_s] = split(
+      scrambled_s,
+      copycat.int(["organization or individual", i], {
+        min: 0,
+        max: scrambled_s.length,
+      }),
+    );
+    const { student_org_events } = await seed.student_org_events(
+      (x) =>
+        x(org_s.length, ({ index }) => ({
+          student_id: org_s[index].student_id,
+        })),
+      { connect: { org_events } },
+    );
+
+    // Have organizations purchase at least sufficient tickets for their students.
+    // Map from org ids to student ids.
+    let org_to_s: Map<number, string[]> = new Map();
+    student_org_events.map((e) => {
+      const key = org_events.find((oe) => oe.id == e.org_event_id)!.org_id!;
+      org_to_s.set(key, (org_to_s.get(key) ?? []).concat([e.student_id]));
+    });
+    const { ticket_orders: org_ticket_orders } = await seed.ticket_orders(
+      (x) =>
+        x(
+          org_to_s.size,
+          ({ index }) =>
+            [...org_to_s.entries()].map(([e, s]) => ({
+              student_id: null,
+              org_id: e,
+              quantity:
+                s.length +
+                copycat.int(["extra tickets", i], { min: 0, max: 3 }),
+            }))[index],
+        ),
+      { connect: { events: [event] } },
+    );
+
+    // Group org students and indiv students into teams.
+    // Note that the grouping implementation may result in anywhere from 1 to
+    // max_group_size members in a team (for the final team).
+    let team_store = new Set();
+    const team_letters = "ABCDE";
+    await seed.teams(
+      [...org_to_s.entries()]
+        .flatMap(([o, s]) =>
+          chunks(["team_orgs", o, i], s, 2, 4, copycat.int).map(
+            (s) => [o, s] as [number, string[]],
+          ),
+        )
+        .map(([org_id, student_ids], t_i) => {
+          const team_id = copycat.unique(
+            ["org team #", i, t_i],
+            (i) => copycat.int(i, { max: 999 }),
+            team_store,
+          ) as number;
+          return {
+            org_id,
+            student_teams: student_ids.map((student_id, s_i) => ({
+              student_id,
+              // TODO: these (quadratic) array finds can be turned into (linear) map lookups
+              // but performance may not matter much
+              ticket_order_id: org_ticket_orders.find(
+                (oto) => oto.org_id == org_id,
+              )!.id,
+              front_id: team_id.toString().padStart(3, "0") + team_letters[s_i],
+            })),
+          };
+        }),
+      { connect: { events: [event] } },
+    );
+
+    const indiv_teams_s = chunks(["indiv org", i], indiv_s, 2, 4, copycat.int);
+    await seed.teams(
+      indiv_teams_s.map((s, t_i) => {
+        const team_id = copycat.unique(
+          ["indiv team #", i, t_i],
+          (i) => copycat.int(i, { max: 999 }),
+          team_store,
+        ) as number;
+        return {
+          org_id: null,
+          student_teams: s.map((s, s_i) => ({
+            student_id: s.student_id,
+            ticket_orders: {
+              org_id: null,
+              student_id: s.student_id,
+              quantity: 1,
+            },
+            front_id: team_id.toString().padStart(3, "0") + team_letters[s_i],
+          })),
+        };
+      }),
+      { connect: { events: [event] } },
+    );
+  }
 
   process.exit();
 }

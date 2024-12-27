@@ -33,11 +33,10 @@
 			.forEach(([key, value]) => {
 				document.documentElement.style.setProperty(`--${key}`, value as string);
 			});
+		user.set((await supabase.auth.getUser()).data.user);
 
 		loaded = true;
 	});
-
-	// user.subscribe(val => browser ? localStorage.setItem("user", val) : null);
 </script>
 
 <svelte:head>
