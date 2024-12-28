@@ -2,13 +2,7 @@
   import { page } from "$app/stores";
   import Button from "$lib/components/Button.svelte";
   import { user } from "$lib/sessionStore";
-  import {
-    getEventInformation,
-    getStudentEvent,
-    getTeam,
-    getThisUser,
-    getUser,
-  } from "$lib/supabase";
+  import { getEventInformation, getStudentEvent } from "$lib/supabase";
   import { Tag } from "carbon-components-svelte";
   import type { Tables } from "../../../../db/database.types";
 
@@ -35,6 +29,11 @@
     student_event_details = await getStudentEvent($user!.id, event_id);
 
     team = student_event_details?.teams;
+    // Sort team members by front_id (alphabetical descending).
+    team?.student_events_detailed.sort((a, b) =>
+      ((a?.front_id ?? "") < (b?.front_id ?? "")) ? -1 : 1,
+    );
+
     console.log($user!.id, event_id);
     console.log("student_event_details", student_event_details);
     event_details = await getEventInformation(event_id);
