@@ -1,4 +1,4 @@
-import { SeedClient, Store, createSeedClient } from "@snaplet/seed";
+import { SeedClient, createSeedClient } from "@snaplet/seed";
 import { copycat, Input } from "@snaplet/copycat";
 
 async function create_style(seed: SeedClient) {
@@ -165,7 +165,6 @@ async function main() {
       teams: {
         data: {
           team_name: (ctx) => "Team " + copycat.word(ctx.seed),
-          join_code: (ctx) => "team-" + copycat.uuid(ctx.seed),
           division: null,
         },
       },
@@ -282,6 +281,7 @@ async function main() {
     // max_group_size members in a team (for the final team).
     let team_store = new Set();
     const team_letters = "ABCDE";
+    // TODO: don't use assign ALL students to a team. choose [0, 5 or so] to omit.
     await seed.teams(
       [...org_to_s.entries()]
         .flatMap(([o, s]) =>
@@ -297,6 +297,7 @@ async function main() {
           ) as number;
           return {
             org_id,
+            join_code: null,
             student_teams: student_ids.map((student_id, s_i) => ({
               student_id,
               // TODO: these (quadratic) array finds can be turned into (linear) map lookups
@@ -321,6 +322,7 @@ async function main() {
         ) as number;
         return {
           org_id: null,
+          join_code: (ctx) => "team-" + copycat.uuid(ctx.seed),
           student_teams: s.map((s, s_i) => ({
             student_id: s.student_id,
             ticket_orders: {
