@@ -134,6 +134,8 @@ async function main() {
           event_name: (ctx) =>
             "Tournament " +
             copycat.words(ctx.seed, { min: 1, max: 2, capitalize: "all" }),
+          ticket_price_cents: (ctx) =>
+            copycat.int(ctx.seed, { min: 5, max: 20 }) * 100,
         },
       },
       hosts: {
@@ -175,6 +177,12 @@ async function main() {
           length: (ctx) => copycat.int(ctx.seed, { min: 10, max: 60 }) * 60,
           division: null,
           access_rules: {},
+        },
+      },
+      ticket_orders: {
+        data: {
+          order_id: (ctx) =>
+            "cs_test_" + copycat.times(ctx.seed, 20, copycat.char).join(""),
         },
       },
     },

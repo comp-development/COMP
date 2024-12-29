@@ -1,12 +1,8 @@
 <script lang="ts">
-    import { user } from "$lib/sessionStore";
-	import {
-		getStudentTeams,
-		getThisUser,
-		getStudent,
-		getAllEvents,
-	} from "$lib/supabase";
-	import type { User } from "@supabase/supabase-js";
+	import { user } from "$lib/sessionStore";
+	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
+    import { supabase } from "$lib/supabaseClient";
+    import { Tag } from "carbon-components-svelte";
 
 	let student: any;
 	let my_events: {
@@ -14,24 +10,27 @@
 		event_name: string;
 		event_date: string;
 	}[] = [];
+	let my_event_ids: Set<string> = new Set();
 	let all_events: {
-		event_id: string;
+		event_id: number;
 		event_name: string;
 		event_date: string;
 	}[] = [];
 	let loading = true;
 
 	(async () => {
+		// console.log((await supabase.auth.getSession()).data.session?.access_token)
 		student = await getStudent($user!.id);
-		const eventsUnedited = await getStudentTeams($user!.id);
+		my_events = (await getStudentTeams($user!.id)).map((e) => ({
+			event_id: e.teams.event_id.toString(),
+			event_name: e.teams.events.event_name ?? "Unnamed Event",
+			event_date: e.teams.events.event_date ?? "Missing Date",
+		}));
+		my_events.sort((a, b) => (a.event_date < b.event_date ? -1 : 1));
+		for (const e of my_events) {
+			my_event_ids.add(e.event_id.toString());
+		}
 
-		eventsUnedited.forEach((event) => {
-			my_events.push({
-				event_id: event.teams.event_id.toString(),
-				event_name: event.teams.events.event_name ?? "Unnamed Event",
-				event_date: event.teams.events.event_date ?? "Missing Date",
-			});
-		});
 		all_events = (await getAllEvents()) as any;
 
 		loading = false;
@@ -76,10 +75,12 @@
 						<h4>
 							{event.event_name}
 						</h4>
-						<p>{event.event_date}</p>
+						<div class="grouped" style="display: inline-block">
+							<p style="display: inline-block">{event.event_date}</p>
+						</div>
 					</div>
 					<div class="flex">
-						<a href={`./student/${event.event_id}`}>Go to Event</a>
+						<a href={`./student/${event.event_id}`}>{my_event_ids.has(event.event_id.toString()) ? "Go to Event" : "Sign Up"}</a>
 					</div>
 				</div>
 			</div>
@@ -106,6 +107,10 @@
 	.problemContainer h4 {
 		font-weight: bold;
 		margin-right: 5px;
+	}
+
+	.problemContainer  {
+		text-align: left;
 	}
 
 	.problemContainer a {

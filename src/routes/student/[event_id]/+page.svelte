@@ -5,6 +5,8 @@
   import { getEventInformation, getStudentEvent } from "$lib/supabase";
   import { Tag } from "carbon-components-svelte";
   import type { Tables } from "../../../../db/database.types";
+  import { supabase } from "$lib/supabaseClient";
+  import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
   let student_event_details:
@@ -20,28 +22,64 @@
       })
     | undefined
     | null = null;
-  let registered = true;
+  let on_team = false;
   let loading = true;
   let event_details: Tables<"events"> | null = null;
+  let token: string | null = null;
 
   (async () => {
     // Check if this student is registered in this event.
     student_event_details = await getStudentEvent($user!.id, event_id);
+    on_team = student_event_details != null;
 
     team = student_event_details?.teams;
     // Sort team members by front_id (alphabetical descending).
     team?.student_events_detailed.sort((a, b) =>
-      ((a?.front_id ?? "") < (b?.front_id ?? "")) ? -1 : 1,
+      (a?.front_id ?? "") < (b?.front_id ?? "") ? -1 : 1,
     );
 
-    console.log($user!.id, event_id);
     console.log("student_event_details", student_event_details);
     event_details = await getEventInformation(event_id);
-    // team = await getTeam(student_event_details.team_id);
-    // console.log(team);
-    // team = student_event_details?.
+
+    const { data, error } = await supabase.auth.getSession();
+    if (error != null) {
+      handleError(error);
+    }
+    token = data.session?.access_token ?? null;
+
     loading = false;
   })();
+
+  async function handleCreateTeam() {
+    // const { data, error } = await supabase
+    //   .from("teams")
+    //   .insert({
+    //     event_id,
+    //   })
+    //   .select("team_id")
+    //   .single();
+    // if (error != null) {
+    //   handleError({ name: "creating team", ...error });
+    //   return;
+    // }
+
+    const response = await fetch("/api/purchase-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event_id,
+        token,
+        quantity: 1,
+        creating_team: true,
+      }),
+    });
+    const text = await response.text();
+    if (response.ok) {
+      document.location.assign(text);
+    } else {
+      handleError(new Error(text));
+    }
+  }
 </script>
 
 {#if loading}
@@ -49,9 +87,40 @@
 {:else}
   <br />
   <h1>{event_details?.event_name}</h1>
-  <!-- choice: create team, join a team (code), join an org (code) -->
   <!-- check code valid => redirect to stripe => redirect back => verify stripe paid and code valid => add to student_events -->
-  {#if !student_event_details}
+  {#if !on_team}
+    <!-- TODO: if no student event details, but yes student_org_events, show diff page -->
+    <div class="grid-thirds">
+      <div>
+        <button on:click={handleCreateTeam}>Create Independent Team</button>
+      </div>
+      <div>
+        <form>
+          <div>
+            <label for="team-join-code">Team Join Code: </label>
+            <!-- TODO: bind -->
+            <input type="text" id="team-join-code" name="team-join-code" />
+          </div>
+          <br />
+          <div>
+            <button>Join Independent Team</button>
+          </div>
+        </form>
+      </div>
+      <div>
+        <form>
+          <div>
+            <label for="org-join-code">Org Join Code: </label>
+            <!-- TODO: bind -->
+            <input type="text" id="org-join-code" name="org-join-code" />
+          </div>
+          <br />
+          <div>
+            <button>Join with Organization</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <br />
   {:else}
     <br />

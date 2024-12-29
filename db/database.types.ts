@@ -820,6 +820,7 @@ export type Database = {
           event_name: string | null
           host_id: number
           published: boolean
+          ticket_price_cents: number
         }
         Insert: {
           event_date?: string | null
@@ -827,6 +828,7 @@ export type Database = {
           event_name?: string | null
           host_id: number
           published?: boolean
+          ticket_price_cents: number
         }
         Update: {
           event_date?: string | null
@@ -834,6 +836,7 @@ export type Database = {
           event_name?: string | null
           host_id?: number
           published?: boolean
+          ticket_price_cents?: number
         }
         Relationships: [
           {
@@ -1092,7 +1095,7 @@ export type Database = {
           front_id: string | null
           relation_id: number
           student_id: string
-          team_id: number | null
+          team_id: number
           ticket_order_id: number
         }
         Insert: {
@@ -1100,7 +1103,7 @@ export type Database = {
           front_id?: string | null
           relation_id?: number
           student_id: string
-          team_id?: number | null
+          team_id: number
           ticket_order_id: number
         }
         Update: {
@@ -1108,7 +1111,7 @@ export type Database = {
           front_id?: string | null
           relation_id?: number
           student_id?: string
-          team_id?: number | null
+          team_id?: number
           ticket_order_id?: number
         }
         Relationships: [
@@ -1739,6 +1742,13 @@ export type Database = {
         }
         Returns: string
       }
+      check_org_event_pair_exists: {
+        Args: {
+          in_org_id: number
+          in_event_id: number
+        }
+        Returns: boolean
+      }
       check_teammate: {
         Args: {
           p_student_id: string
@@ -1775,6 +1785,14 @@ export type Database = {
           email: string
           division: string
         }[]
+      }
+      student_team_requirements: {
+        Args: {
+          in_student_id: string
+          in_team_id: number
+          in_ticket_order_id: number
+        }
+        Returns: boolean
       }
       upsert_test_answer: {
         Args: {

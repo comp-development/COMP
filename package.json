@@ -42,6 +42,7 @@
 		"papaparse": "^5.4.1",
 		"rehype-stringify": "^10.0.0",
 		"sass": "1.63.6",
+		"stripe": "^17.5.0",
 		"svelte-drawer-component": "^1.2.2",
 		"svelte-french-toast": "^1.2.0",
 		"svelte-katex": "^0.1.2",

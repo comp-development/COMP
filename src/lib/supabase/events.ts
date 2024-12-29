@@ -40,7 +40,6 @@ export async function getStudentTeams(student_id: string) {
     .from("student_teams")
     .select("*, teams!inner(*, events!inner(*))")
     .eq("student_id", student_id);
-  data;
   if (error) throw error;
   return data;
 }
