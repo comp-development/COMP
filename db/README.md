@@ -8,10 +8,10 @@ tested one-time admin setup with colima on arm mac.
 
 All of the below require Docker/Colima and Supabase to be running.
 
-Work in either the COMP directory.
 ```
-cd COMP
+cd COMP/db
 npm ci install
+npx patch-package # applies our patch to the seed package
 supabase start 
 ```
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
@@ -30,7 +30,7 @@ Dev+Update Workflow:
 5. run `supabase db diff --schema public`, put diff in new migration: `supabase migration new migration_name`
 6. sync the db `npx @snaplet/seed sync`, add new sample seed data to `seed.ts`,  `npx tsx seed.ts > supabase/seed.sql`
 7. run `supabase db reset` to test running the migrations and adding seed data
-8. run `supabase gen types typescript --local > database.types.ts` for DB types
+8. run `supabase gen types typescript --local --schema public,auth > database.types.ts` for DB types
 9. test against COMP
 10. TODO: add automated tests (UI mockup for each user action + DB assertions)
 11. commit to VCS
