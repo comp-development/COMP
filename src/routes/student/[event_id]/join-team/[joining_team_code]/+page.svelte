@@ -90,7 +90,7 @@
   {#if failure?.reason == "payment not complete"}
     <p>Payment was not started but not completed.</p>
     <a href={failure?.stripe_url}
-      >Go to {failure?.stripe_url} to complete payment.</a
+      >Click here to complete payment.</a
     >
   {/if}
   {#if failure?.reason == "joined org, insufficient org tickets"}

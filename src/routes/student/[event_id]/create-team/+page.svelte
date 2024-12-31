@@ -92,9 +92,8 @@
   {#if failure?.reason == "payment not complete"}
     <p>Payment was not started but not completed.</p>
     <a href={failure?.stripe_url}
-      >Go to {failure?.stripe_url} to complete payment.</a
+      >Click here to complete payment.</a
     >
-    <a href=".">Return to event.</a>
   {/if}
   {#if failure?.reason == "payment expired"}
     <p>
@@ -102,7 +101,6 @@
       expiration.
     </p>
     <p>Return to the event to open a new payment session.</p>
-    <a href=".">Return to event.</a>
   {/if}
   {#if failure}
     <p>Failed to create team.</p>

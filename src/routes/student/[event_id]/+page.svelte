@@ -99,8 +99,21 @@
   }
 
   async function join_org() {
-    // TODO: supabase call get org id and add to student_event_orgs
-    // TODO: then refresh page
+    let body = {
+      token,
+      join_code: input_org_join_code,
+    };
+    const response = await fetch(`./${event_id}/join-org`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    if (response.ok) {
+      document.location.reload();
+    } else {
+      handleError(new Error(text));
+    }
   }
 
 </script>
