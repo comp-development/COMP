@@ -19,7 +19,7 @@
 			window.location.replace("/student");
 		} catch (e) {
 			let error = e as any;
-			console.log(e);
+			console.error(e);
 			if (
 				!(error.code === "PGRST116") &&
 				!error.message.includes("Cannot read properties of null")

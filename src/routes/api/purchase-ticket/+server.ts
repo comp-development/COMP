@@ -17,8 +17,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     token: string,
     quantity: number,
     creating_team: boolean,
-    joining_team_id: string | null,
+    joining_team_code: string | null,
     target_org_id: number | null;
+
   try {
     body = await request.request.json();
     const r = (k: string): any => {
@@ -32,19 +33,75 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     quantity = r("quantity");
     creating_team = r("creating_team");
     target_org_id = body.target_org_id;
-    joining_team_id = body.joining_team_id;
+    joining_team_code = body.joining_team_id;
   } catch (e: any) {
     return new Response("missing or malformed body: " + e.message);
   }
-  const student_is_purchasing = target_org_id == null;
+  const purchasing_org_ticket = target_org_id != null;
 
-  const user = await adminSupabase.auth.getUser(token);
-  if (user.error != null || user.data == null) {
-    return new Response("invalid JWT credentials");
+  const user_response = await adminSupabase.auth.getUser(token);
+  if (user_response.error != null || user_response.data == null) {
+    return new Response("invalid JWT credentials", { status: 400 });
   }
+  const user = user_response.data.user;
+
+  const dbg = <T,>(x: T): T => {
+    console.log(x);
+    return x;
+  };
+  const is_student =
+    (
+      await adminSupabase
+        .from("students")
+        .select("*")
+        .eq("student_id", user.id)
+        .maybeSingle()
+    ).data != null;
+  if (is_student && purchasing_org_ticket) {
+    return new Response("student attempting to purchase org ticket", {
+      status: 400,
+    });
+  }
+  if (!is_student && !purchasing_org_ticket) {
+    return new Response("org attempting to purchase student ticket", {
+      status: 400,
+    });
+  }
+
+  const transaction_stored =
+    (
+      await adminSupabase
+        .from("ticket_orders")
+        .select("*", { count: "exact" })
+        .eq("student_id", user.id)
+        .eq("event_id", event_id)
+    ).count == 1 ||
+    (purchasing_org_ticket &&
+      (
+        await adminSupabase
+          .from("ticket_orders")
+          .select("*", { count: "exact" })
+          .eq("org_id", target_org_id!)
+          .eq("event_id", event_id)
+      ).count) == 1;
+
+  if (transaction_stored) {
+    if (is_student) {
+      // Doing this instead of returning a redirect b/c local dev is http
+      // and CORS doesn't like redirects.
+      return new Response(`/student/${event_id}`);
+    }
+    // TODO: handle if org already has ticket transaction
+  }
+
+  // TODO: check that if purchasing org ticket, that the user is a coach for that org
 
   let redirect_url = null;
   try {
+    if (is_student && quantity != 1) {
+      throw Error("student may not purchase more than one ticket");
+    }
+
     const { data: e_data, error: e_error } = await adminSupabase
       .from("events")
       .select("event_name, ticket_price_cents")
@@ -57,23 +114,29 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       }
       throw Error(msg);
     }
+    const { ticket_price_cents, event_name } = e_data;
+
     const stripe = new Stripe(stripeSecretKey);
-    const redirect = student_is_purchasing
-      ? joining_team_id == null
-        ? creating_team
-          ? `${request.url.origin}/student/${event_id}/create-team`
-          : `${request.url.origin}/coach/${event_id}`
-        : `${request.url.origin}/student/${event_id}/join-team/${joining_team_id}`
-      : `${request.url.origin}/student/${event_id}`;
-    console.log(body, joining_team_id, creating_team, redirect);
+    const redirect = creating_team
+      ? `${request.url.origin}/student/${event_id}/create-team`
+      : joining_team_code
+        ? `${request.url.origin}/student/${event_id}/join-team/${joining_team_code}`
+        : target_org_id
+          ? `${request.url.origin}/coach/${event_id}`
+          : // This case shouldn't be hit.
+            (() => {
+              throw Error("unexpected request state");
+            })();
+    const cancel_url =
+      request.url.origin + (target_org_id ? "/coach/" : "/student/") + event_id;
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {
           price_data: {
             currency: "USD",
-            unit_amount: e_data.ticket_price_cents,
+            unit_amount: ticket_price_cents,
             product_data: {
-              name: "Ticket for " + (e_data.event_name ?? "unnamed event"),
+              name: "Ticket for " + (event_name ?? "unnamed event"),
             },
           },
           quantity,
@@ -81,15 +144,17 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       ],
       mode: "payment",
       success_url: redirect,
+      cancel_url,
     });
+
     // Insert session id into db. Status to be checked
     let ticket_order: any = {
       event_id,
       quantity: quantity as number,
       order_id: session.id,
     };
-    if (student_is_purchasing) {
-      ticket_order.student_id = user.data.user.id;
+    if (!purchasing_org_ticket) {
+      ticket_order.student_id = user.id;
     } else {
       ticket_order.org_id = target_org_id!;
     }
@@ -105,7 +170,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       throw Error(msg);
     }
 
-    console.log(session.id);
     redirect_url = session.url;
   } catch (e: any) {
     return new Response("failed to execute: " + e.message, { status: 400 });

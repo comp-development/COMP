@@ -900,7 +900,6 @@ export type Database = {
           id: number
           join_code: string | null
           org_id: number | null
-          organizer_pays: boolean
         }
         Insert: {
           created_at?: string
@@ -909,7 +908,6 @@ export type Database = {
           id?: number
           join_code?: string | null
           org_id?: number | null
-          organizer_pays: boolean
         }
         Update: {
           created_at?: string
@@ -918,7 +916,6 @@ export type Database = {
           id?: number
           join_code?: string | null
           org_id?: number | null
-          organizer_pays?: boolean
         }
         Relationships: [
           {
@@ -1465,6 +1462,7 @@ export type Database = {
           created_at: string
           event_id: number
           id: number
+          order_id: string
           org_id: number | null
           quantity: number
           student_id: string | null
@@ -1473,6 +1471,7 @@ export type Database = {
           created_at?: string
           event_id: number
           id?: number
+          order_id: string
           org_id?: number | null
           quantity: number
           student_id?: string | null
@@ -1481,6 +1480,7 @@ export type Database = {
           created_at?: string
           event_id?: number
           id?: number
+          order_id?: string
           org_id?: number | null
           quantity?: number
           student_id?: string | null
@@ -1610,6 +1610,7 @@ export type Database = {
           first_name: string | null
           front_id: string | null
           last_name: string | null
+          org_id: number | null
           relation_id: number | null
           student_id: string | null
           team_id: number | null
@@ -1635,6 +1636,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "teams_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["org_id"]
           },
         ]
       }

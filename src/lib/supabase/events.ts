@@ -54,3 +54,28 @@ export async function getStudentEvent(student_id: string, event_id: number) {
   if (error) throw error;
   return data;
 }
+
+export async function getStudentOrgEvent(student_id: string, event_id: number) {
+  const { data, error } = await supabase
+    .from("student_org_events")
+    .select("*, org_events!inner(*)")
+    .eq("student_id", student_id)
+    .eq("org_events.event_id", event_id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function getStudentTicketOrder(
+  student_id: string,
+  event_id: number,
+) {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*")
+    .eq("student_id", student_id)
+    .eq("event_id", event_id)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}

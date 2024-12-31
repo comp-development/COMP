@@ -2,7 +2,12 @@
   import { page } from "$app/stores";
   import Button from "$lib/components/Button.svelte";
   import { user } from "$lib/sessionStore";
-  import { getEventInformation, getStudentEvent } from "$lib/supabase";
+  import {
+    getEventInformation,
+    getStudentEvent,
+    getStudentOrgEvent,
+    getStudentTicketOrder,
+  } from "$lib/supabase";
   import { Tag } from "carbon-components-svelte";
   import type { Tables } from "../../../../db/database.types";
   import { supabase } from "$lib/supabaseClient";
@@ -16,21 +21,37 @@
         };
       })
     | null = null;
+  let event_details: Tables<"events"> | null = null;
+  let student_org_event:
+    | (Tables<"student_org_events"> & { org_events: Tables<"org_events"> })
+    | null = null;
   let team:
     | (Tables<"teams"> & {
         student_events_detailed: Tables<"student_events_detailed">[];
       })
     | undefined
     | null = null;
-  let on_team = false;
+  let ticket_order: Tables<"ticket_orders"> | null = null;
+  let in_team = false;
+  let in_org = false;
+  let transaction_stored = false;
+
   let loading = true;
-  let event_details: Tables<"events"> | null = null;
   let token: string | null = null;
+
+  let input_team_join_code = "";
+  let input_org_join_code = "";
 
   (async () => {
     // Check if this student is registered in this event.
     student_event_details = await getStudentEvent($user!.id, event_id);
-    on_team = student_event_details != null;
+    student_org_event = await getStudentOrgEvent($user!.id, event_id);
+    ticket_order = await getStudentTicketOrder($user!.id, event_id);
+    in_team = student_event_details != null;
+    in_org = student_org_event != null;
+    console.log($user!.id)
+    console.log("Ticket order", ticket_order)
+    transaction_stored = ticket_order != null;
 
     team = student_event_details?.teams;
     // Sort team members by front_id (alphabetical descending).
@@ -50,36 +71,38 @@
     loading = false;
   })();
 
-  async function handleCreateTeam() {
-    // const { data, error } = await supabase
-    //   .from("teams")
-    //   .insert({
-    //     event_id,
-    //   })
-    //   .select("team_id")
-    //   .single();
-    // if (error != null) {
-    //   handleError({ name: "creating team", ...error });
-    //   return;
-    // }
-
-    const response = await fetch("/api/purchase-ticket", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+  function purchase_ticket(options: {
+    creating_team?: boolean;
+    joining_team_code?: string;
+  }) {
+    return async () => {
+      let body = {
         event_id,
         token,
         quantity: 1,
-        creating_team: true,
-      }),
-    });
-    const text = await response.text();
-    if (response.ok) {
-      document.location.assign(text);
-    } else {
-      handleError(new Error(text));
-    }
+        creating_team: options.creating_team ?? false,
+        joining_team_code: options.joining_team_code ?? null,
+        is_coach: false,
+      };
+      const response = await fetch("/api/purchase-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const text = await response.text();
+      if (response.ok) {
+        document.location.assign(text);
+      } else {
+        handleError(new Error(text));
+      }
+    };
   }
+
+  async function join_org() {
+    // TODO: supabase call get org id and add to student_event_orgs
+    // TODO: then refresh page
+  }
+
 </script>
 
 {#if loading}
@@ -87,42 +110,75 @@
 {:else}
   <br />
   <h1>{event_details?.event_name}</h1>
-  <!-- check code valid => redirect to stripe => redirect back => verify stripe paid and code valid => add to student_events -->
-  {#if !on_team}
-    <!-- TODO: if no student event details, but yes student_org_events, show diff page -->
-    <div class="grid-thirds">
-      <div>
-        <button on:click={handleCreateTeam}>Create Independent Team</button>
+
+  {#if !in_org && !in_team}
+  	{#if !transaction_stored}
+      <!-- default case -->
+      <!-- TODO: custom fields -->
+      <div class="grid-thirds">
+        <div>
+          <button on:click={purchase_ticket({creating_team: true})}>Create Independent Team</button>
+        </div>
+        <div>
+          <form>
+            <div>
+              <label for="team-join-code">Team Join Code: </label>
+              <input type="text" id="team-join-code" bind:value={input_team_join_code}/>
+            </div>
+            <br />
+            <div>
+              <button on:click={purchase_ticket({joining_team_code: input_org_join_code})}>Join Independent Team</button>
+            </div>
+          </form>
+        </div>
+        <div>
+          <form>
+            <div>
+              <label for="org-join-code">Org Join Code: </label>
+              <input type="text" id="org-join-code" bind:value={input_org_join_code}/>
+            </div>
+            <br />
+            <div>
+              <button on:click={join_org}>Join with Organization</button>
+            </div>
+          </form>
+        </div>
       </div>
-      <div>
-        <form>
-          <div>
-            <label for="team-join-code">Team Join Code: </label>
-            <!-- TODO: bind -->
-            <input type="text" id="team-join-code" name="team-join-code" />
-          </div>
-          <br />
-          <div>
-            <button>Join Independent Team</button>
-          </div>
-        </form>
+  	{:else}
+  	  <p>Payment found but registration not complete</p>
+      <div class="grid-thirds">
+        <div>
+          <a href={`/student/${event_id}/create-team`}>Create Independent Team</a>
+        </div>
+        <div>
+          <form>
+            <div>
+              <label for="team-join-code">Team Join Code: </label>
+              <input type="text" id="team-join-code" bind:value={input_team_join_code}/>
+            </div>
+            <br />
+            <div>
+              <a href={`/student/${event_id}/join-team/${input_team_join_code}`}>Join Independent Team</a>
+            </div>
+          </form>
+        </div>
+        <div>
+          <form>
+            <div>
+              <label for="org-join-code">Org Join Code: </label>
+              <input type="text" id="org-join-code" bind:value={input_org_join_code}/>
+            </div>
+            <br />
+            <div>
+              <button on:click={join_org}>Join with Organization</button>
+            </div>
+          </form>
+        </div>
       </div>
-      <div>
-        <form>
-          <div>
-            <label for="org-join-code">Org Join Code: </label>
-            <!-- TODO: bind -->
-            <input type="text" id="org-join-code" name="org-join-code" />
-          </div>
-          <br />
-          <div>
-            <button>Join with Organization</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <br />
-  {:else}
+  	{/if}
+  {/if}
+  <!-- TODO: custom fields -->
+  {#if in_team}
     <br />
     <p style="text-align: center;">
       Welcome to this tournament! Below is the information for the team you are
@@ -162,6 +218,16 @@
         </div>
       {/each}
     </div>
+  {:else}
+    {#if in_org}
+      <p>Not yet assigned team by org</p>
+    {/if}
+  {/if}
+  {#if in_org}
+    <!-- TODO: org info -->
+    {#if !purchase_ticket}
+      <button on:click={purchase_ticket({})}>Purchase Individual Ticket (check with your organization if you need to do so)</button>
+    {/if}
   {/if}
 {/if}
 
