@@ -26,6 +26,8 @@
 			event_name: e.teams.events.event_name ?? "Unnamed Event",
 			event_date: e.teams.events.event_date ?? "Missing Date",
 		}));
+		// TODO: include events where the student joined with an org
+		// but is not yet in a team
 		my_events.sort((a, b) => (a.event_date < b.event_date ? -1 : 1));
 		for (const e of my_events) {
 			my_event_ids.add(e.event_id.toString());
