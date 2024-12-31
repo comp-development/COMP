@@ -193,14 +193,7 @@
 		grid-template-columns: 33% 33% 33%;
 	}
 
-	@media (max-width: 900px) {
-		:global(.grid),
-		:global(.grid-thirds) {
-			grid-template-columns: 50% 50%;
-		}
-	}
-
-	@media (max-width: 700px) {
+	@media (max-width: 800px) {
 		:global(.row),
 		:global(.grid),
 		:global(.grid-thirds) {
