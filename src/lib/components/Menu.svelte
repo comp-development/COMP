@@ -4,10 +4,15 @@
 	import { handleError } from "$lib/handleError";
 	import { isAdmin, signOut } from "$lib/supabase";
 
-	$: path = $page.route.id;
+	const path = $page.route.id;
 
 	let width = 0;
-	let isUserAdmin = false;
+	let user_type = "";
+	if (path?.startsWith("/admin")) {
+		user_type = "Admin"
+	} else if (path?.startsWith("/student")) {
+		user_type = "Student"
+	}
 
 	const handleSignout = async (e) => {
 		e.preventDefault();
@@ -18,14 +23,9 @@
 		}
 	};
 
-	async function onLoad() {
-		isUserAdmin = await isAdmin();
-	}
-
-	onLoad();
 </script>
 
-<svelte:window bind:outerWidth={width} />
+<svelte:window/>
 
 <div class="menu">
 	<br /><br />
@@ -33,13 +33,13 @@
 		<img src="/COMP_White.png" alt={"COMP_logo"} width="150" />
 	</div>
 	<br />
-	<p class="emphasize">{isUserAdmin ? "Admin" : "Student"}</p>
+	<p class="emphasize">{user_type}</p>
 	<br />
 	<div class="linkExterior">
-		<a href="/{isUserAdmin ? "admin" : "student"}" class={path == "" ? "active link" : "link"}>Home</a>
+		<a href="/{user_type.toLowerCase()}" class={path == "" ? "active link" : "link"}>Home</a>
 	</div>
 	<br />
-	{#if isUserAdmin}
+	{#if user_type == "Admin"}
 		
 		<div class="linkExterior">
 			<a

@@ -13,7 +13,7 @@
 	import { onDestroy, onMount } from "svelte";
 	import {
 		getThisUser,
-        getEventTests,
+    getEventTests,
 		getTeamId,
 		updateTest
 
@@ -130,7 +130,6 @@
 			}
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		}
 	}
 </script>

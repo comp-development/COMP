@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import "carbon-components-svelte/css/white.css";
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
@@ -10,24 +10,33 @@
 	import { page } from "$app/stores";
 	import { Toaster } from "svelte-french-toast";
 	import { getThisUser } from "$lib/supabase";
+	import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
+	let scheme: any = defaultSettings; // Initialize scheme variable
 
 	let loaded = false;
 
 	let hasAccount = true;
-	// user.set(browser ? localStorage.getItem("user") : null);
-	(async () => {
-		user.set(await getThisUser());
-	})();
+	if ($page.route.id?.includes("/signup")) {
+		hasAccount = false;
+	}
 
 	supabase.auth.onAuthStateChange((_, session) => {
 		user.set(session?.user);
 	});
 
 	onMount(async () => {
+		// Fetch style settings from the database
+		// Set CSS variables dynamically
+		scheme = await fetchSettings();
+		Object.entries(scheme.styles || {})
+			.concat(Object.entries(scheme.constants || {}))
+			.forEach(([key, value]) => {
+				document.documentElement.style.setProperty(`--${key}`, value as string);
+			});
+		user.set((await supabase.auth.getUser()).data.user);
+
 		loaded = true;
 	});
-
-	// user.subscribe(val => browser ? localStorage.setItem("user", val) : null);
 </script>
 
 <svelte:head>
@@ -51,7 +60,7 @@
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
-	{:else if !$user && $page.route.id &&!$page.route.id.includes('/scores') && $page.route.id != "/password-reset"}
+	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores") && $page.route.id != "/password-reset"}
 		{#if hasAccount}
 			<Banner />
 			<br />
@@ -64,7 +73,7 @@
 					<br />
 					<div class="flex">
 						<div class="bottomSection" style="color: white;">
-							<!--<button
+							<button
 								size="lg"
 								class="link"
 								id="switchScreen"
@@ -76,7 +85,7 @@
 								><a href="/password-reset" style="color: black;"
 									>Forgot Password</a
 								></button
-							>-->
+							>
 						</div>
 					</div>
 				</div>
@@ -113,7 +122,7 @@
 				</div>
 			</div>
 		{/if}
-	{:else if $page.route.id && $page.route.id.includes('/scores')}
+	{:else if $page.route.id && $page.route.id.includes("/scores")}
 		<div>
 			<slot />
 		</div>
@@ -130,30 +139,11 @@
 <style>
 	/* Overall styling */
 	:global(:root) {
-		--font-family: var(--font-family), "Roboto", Arial, -apple-system,
-			BlinkMacSystemFont, "Segoe UI", Oxygen, Cantarell, "Open Sans",
-			"Helvetica Neue", sans-serif;
-
+		--font-family: "Ubuntu";
 		--large-gap: 30px;
 		--medium-gap: 20px;
 		--small-gap: 10px;
-
-		--text-color-light: #fff;
-		--text-color-dark: #000;
-		--background: #f5fffb;
-		--background-dark: #dcfff1;
-		--primary: #1c6825;
-		--primary-light: #65c083;
-		--primary-dark: #5b8064;
-		--primary-tint: #d9f5e2;
-		--error-tint: #ffe0e0;
-		--error-light: #ff8a8a;
-		--error-dark: #ff3636;
-		--secondary: #213d44;
-		--secondary-light: #1b9aaa;
-		--secondary-dark: #061333;
-		--secondary-tint: #b9c6d2;
-		--font-family: "Ubuntu";
+		--primary: gray;
 	}
 
 	:global(h1) {
@@ -203,14 +193,7 @@
 		grid-template-columns: 33% 33% 33%;
 	}
 
-	@media (max-width: 900px) {
-		:global(.grid),
-		:global(.grid-thirds) {
-			grid-template-columns: 50% 50%;
-		}
-	}
-
-	@media (max-width: 700px) {
+	@media (max-width: 800px) {
 		:global(.row),
 		:global(.grid),
 		:global(.grid-thirds) {

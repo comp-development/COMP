@@ -16,7 +16,6 @@
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import {
-		getThisUser,
 		getEventTests,
 		getTeamId,
 		addTestTaker,
@@ -24,6 +23,7 @@
 	} from "$lib/supabase";
 	import MathJax from "$lib/components/MathJax.svelte";
 	import { supabase } from "$lib/supabaseClient";
+  import { user } from "$lib/sessionStore";
 
 	let loading = true;
 
@@ -36,8 +36,8 @@
 	let availableTests = [];
 	let testStatusMap = {};
 	$: tests = Object.values(testStatusMap);
-	let user = null;
-	let teamId = null;
+	let teamId: number | null = null;
+	let eventId = Number($page.params.event_id);
 
 	let subscription;
 
@@ -53,9 +53,7 @@
 	};
 
 	(async () => {
-		user = await getThisUser();
-		teamId = await getTeamId(user.id);
-		console.log("USER", user);
+		teamId = await getTeamId($user!.id, eventId);
 		console.log("teamId", teamId)
 		await getTests();
 		loading = false;
@@ -194,9 +192,9 @@
 
 	async function getTests() {
 		try {
-			const testList = await getEventTests($page.params.event_id);
+			const testList = await getEventTests($page.params.event_id) ?? [];
 			for (const test of testList) {
-				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : user.id, test.is_team) ?? {};
+				const testTaker = await getTestTaker(test.test_id, test.is_team ? teamId : $user!.id, test.is_team) ?? {};
 				console.log("TAKER",testTaker, test)
 				//test.start_time = testTaker ? testTaker.start_time : null
 				//test.end_time = testTaker ? testTaker.end_time : null
@@ -205,7 +203,6 @@
 			}
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		}
 	}
 </script>
@@ -327,7 +324,8 @@
 	}
 
 	.problemContainer button {
-		border: none;
+		/* avoid text placement shifting on hover */
+		border: 2px solid #00000000;
 	}
 
 	.test-button {
@@ -343,7 +341,6 @@
 	.empty {
 		padding: 10px 10px;
 	}
-
 
 	button:disabled,
 	button[disabled] {
@@ -363,7 +360,6 @@
 		border: 2px solid #494949;
 	}
 
-	
 
 	.buttonContainer {
 		flex-direction: column; /* Align children vertically */
