@@ -5,11 +5,11 @@
 <div class="header">
 	<img
 		src="/favicon.png"
-		alt={"MMT_logo"}
+		alt={"COMP_logo"}
 		width="50"
 		height="50"
 	/>
-	<h4 style="">Mustang Math</h4>
+	<h4 style="">COMP</h4>
 </div>
 
 <style>
@@ -18,7 +18,7 @@
 		/* color: var(--text-color-light); */
 		display: flex;
 		align-items: center;
-		background-color: #206c24;
+		background-color: var(--primary);
 	}
 
 	.header h4 {

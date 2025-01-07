@@ -57,26 +57,33 @@ export async function getThisUser() {
 
 export async function getUser(user_id: string) {
 	let admin = await isAdmin(user_id);
-
 	if (admin) {
-		let { data, error } = await supabase
-			.from('admins')
-			.select('*')
-			.eq('admin_id', user_id)
-			.single();
-		if (error) throw error;
-		data.isAdmin = true;
-		return data;
+		return (await getAdmin(user_id))
 	} else {
-		let { data, error } = await supabase
-			.from('students')
-			.select('*')
-			.eq('student_id', user_id)
-			.single();
-		if (error) throw error;
-		data.isAdmin = false;
-		return data;
+		return (await getStudent(user_id))
 	}	
+}
+
+export async function getAdmin(user_id: string) {
+	let { data, error } = await supabase
+		.from('admins')
+		.select('*')
+		.eq('admin_id', user_id)
+		.single();
+	if (error) throw error;
+	data.isAdmin = true;
+	return data;
+}
+
+export async function getStudent(user_id: string) {
+	let { data, error } = await supabase
+		.from('students')
+		.select('*')
+		.eq('student_id', user_id)
+		.single();
+	if (error) throw error;
+	data.isAdmin = false;
+	return data;
 }
 
 /**
@@ -158,4 +165,15 @@ export async function transferUser(user_id: string, to_admin: boolean) {
 		.from(to_admin ? "admins" : "students")
 		.insert(original_data);
 	if (error3) throw error3;
+}
+
+export async function editUser(user_id: string, isUserAdmin: boolean, user: any) {
+	let database = isUserAdmin ? "admin" : "student";
+
+	const { error } = await supabase
+		.from(database + "s")
+		.update(user)
+		.eq(database + "_id", user_id);
+
+	if (error) throw error;
 }

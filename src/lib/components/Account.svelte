@@ -16,7 +16,7 @@
 	const handleLogin = async () => {
 		try {
 			loading = true;
-			await signIntoAccount(email, password);
+			await signIntoAccount(email.trim(), password.trim());
 		} catch (error) {
 			handleError(error);
 		} finally {

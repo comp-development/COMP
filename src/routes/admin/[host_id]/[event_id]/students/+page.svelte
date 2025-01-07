@@ -68,7 +68,7 @@
 			sortable
 			size="compact"
 			headers={[
-				{key: "edit", value: "", width: "20px"},
+				{ key: "edit", value: "", width: "20px"},
 				{ key: "first_name", value: "First Name" },
 				{ key: "last_name", value: "Last Name" },
 				{ key: "role", value: "Role" },
