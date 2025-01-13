@@ -47,9 +47,9 @@ export async function getEventsbyStudentID(student_id: string, customSelect: str
 }
 
 export async function getStudentEvents(event_id: string, select = "*, students(*)") {
-	//throw new Error("Invalidinvalid");
+	
 	const parsedEventId = parseInt(event_id, 10); // Parse event_id to integer
-	//console.log(parsedEventId)
+	
 	if (isNaN(parsedEventId)) {
 	  throw new Error("Invalid event_id: Must be a valid integer");
 	}
@@ -65,9 +65,9 @@ export async function getStudentEvents(event_id: string, select = "*, students(*
 }
 
 export async function getCustomFields(event_id: string, select = "*") {
-	//throw new Error("Invalidinvalid");
+	
 	const parsedEventId = parseInt(event_id, 10); // Parse event_id to integer
-	//console.log("PARSED,", parsedEventId);
+	
 	if (isNaN(parsedEventId)) {
 	  throw new Error("Invalid event_id: Must be a valid integer");
 	}
@@ -75,12 +75,11 @@ export async function getCustomFields(event_id: string, select = "*") {
 	const { data, error } = await supabase
 	  .from("custom_fields")
 	  .select(select)
-	  .eq("event_id", parsedEventId); // Use parsed integer
+	  .eq("event_id", parsedEventId); 
 
 	if (error) {
 		console.error(error);
 		
 	}
-	//console.log("datadata",data);
 	return data
 }

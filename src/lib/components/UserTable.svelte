@@ -16,13 +16,7 @@
 
 	import Switcher from "carbon-icons-svelte/lib/Switcher.svelte";
 	import { createEventDispatcher } from "svelte";
-	import { Filter } from "carbon-icons-svelte";
 	import toast from "svelte-french-toast";
-	
-	import { LogarithmicScale } from "chart.js";
-    import { json } from "@sveltejs/kit";
-    import { getCustomFields } from "$lib/supabase";
-   
 
 	export let students = [];
 	export let custom_fields = null;
@@ -58,10 +52,6 @@
 	$: maxCols = Math.floor((width - 100) / minWidth);
 	$: colWidth = (width - 100) / Math.min(maxCols, showList.length);
 
-	let mobileFriendly = {
-		
-	};
-
 	let pageSize = 25;
 	let page = 1;
 
@@ -75,9 +65,6 @@
 			icon: "ri-user-fill",
 			width: "10%"
 		},
-		
-		
-		
 	];
 
 	
@@ -181,10 +168,9 @@
 		console.log(s_data)
 		s.students = null;
 		//for every custom field, add custom field on s
-		for (let i = 0; i<custom_fields.length; i++) {
+		for (let i = 0; i < custom_fields.length; i++) {
 			s[custom_fields[i].key] = s.custom_fields[custom_fields[i].custom_field_id];
 		}
-		
 		
 		console.log(JSON.stringify(s.custom_fields));
 		return {
@@ -193,22 +179,20 @@
 			...s_data,
 		}
 	});
+
 	for (let i = 0; i<students.length; i++) {
 		if (students[i].grade != null) {
 			console.log("found it");
 		}
 	}
-	
 
 	console.log("after add ID");
 	console.log(students);
 	students = students;
 	}
-
 	
 	$: if (draggable && tableContainerDiv && !draggingRow) {
 		try {
-			
 			for (let i = 0; i < students.length; i++) {
 				const row = students[i];
 				let elem = getRowElement(row.id);
@@ -261,13 +245,6 @@
 			students.splice(ind, 0, draggedRow);
 			students = students;
 
-			// const ind = studentTableInfo.indexOf(row);
-			// lastDraggedInd = ind;
-			// studentTableInfo.splice(studentTableInfo.indexOf(draggedRow), 1);
-			// studentTableInfo.splice(ind, 0, draggedRow);
-			// studentTableInfo = studentTableInfo;
-
-
 		} catch (error) {
 			handleError(error);
 			toast.error(error.message);
@@ -291,24 +268,6 @@
 			toast.error(error.message);
 		}
 	}
-	//export let students = [];
-    //export let studentTableInfo = [];
-
-    // Columns to display
-    // export let showList = [
-    //     "division",
-    //     "student_id",
-    //     "first",
-    //     "last",
-    //     "grade",
-    //     "email",
-    //     "team_id",
-    //     "front_id",
-    //     "event_id"
-    // ];
-
-    // Merge rows from students and studentTableInfo
-    //$: mergedStudents = mergeData(students, studentTableInfo);
 
     function mergeData(students, studentTableInfo) {
         const infoMap = new Map(
@@ -351,13 +310,9 @@
 				text: "division",
 			},
 			
-			
-			
 		]}
 	/>
 </div>
-
-
 
 <div
 	class="flex-dir-col"
@@ -437,14 +392,6 @@
 				{:else if cell.key === "division"}
 					<div style="overflow: hidden;">
 						{cell.value}
-						<!-- {cell.value == null || cell.value == ""
-							? "None"
-							: width > 700
-							? cell.value
-							
-							//: cell.value.split(" ")[0].charAt(0) +
-							  //cell.value.split(" ")[1].charAt(0)
-						} -->
 					</div>
 				{:else if cell.key === "created_at"}
 					<div style="overflow: hidden;">

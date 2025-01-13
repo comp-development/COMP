@@ -1,64 +1,38 @@
 <script lang="js">
-	import { supabase } from "$lib/supabaseClient";
-	import { get } from "svelte/store";
+	
 	import UserTable from "$lib/components/UserTable.svelte";
 	import Button from "$lib/components/Button.svelte";
-	import { Checkbox, TextArea } from "carbon-components-svelte";
-	import { onMount } from "svelte";
+	
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	
-	import { List, Schematics } from "carbon-icons-svelte";
-    import { getStudent, getStudentEvents, getEventsbyStudentID, getCustomFields } from "$lib/supabase";
+	
+    import { getStudentEvents, getCustomFields } from "$lib/supabase";
 
 	import { page } from "$app/stores";
     import { getStudents } from "$lib/supabase/students";
     
-
-	
-
-	
-	
-
-
 	let time_filtered_students = [];
-	let studentCounts = [];
+	
 	let width = 0;
 	let loaded = false;
-	let user;
+	
     let userRole;
 	let custom_fields = [];
 	let students = [];
 	let studentTableInfo = [];
 	let event_id = $page.params.event_id;
 
-	let openModal = false;
-	let values = ["Students", "Emails", "Tournament", "Phone Number"];
-	let group = values.slice(0, 1);
-
-	let scheme = {};
-
-	// async function flattenTable(students) {
-	// 	students.student
-	// 	object destructuring
-	// }
 
 	(async () => {
 		try {
-			//console.log(event_id);
 			students = await getStudentEvents(event_id);
 			studentTableInfo = await getStudents({});
 			custom_fields = await getCustomFields(event_id);
-			//console.log("new custom!");
-			console.log("new custom!",custom_fields);
-			//console.log("hi");
-			
+			console.log("new custom!",custom_fields);			
 			console.log("student event and student");
 			console.log(students);
 			console.log(studentTableInfo);
-
-            //sortStudents();
-			//console.log(students);
 			console.log(time_filtered_students.length);
 
 			const topicsCount = students.reduce((count, { topics }) => {
@@ -76,8 +50,6 @@
 				return count;
 			}, {});
 			console.log(topicsCount);
-            // find the console log error, errpr pccired after this
-            //comment out lines after this
 			
 			loaded = true;
 		} catch (error) {
@@ -85,7 +57,6 @@
 			toast.error(error.message);
 		}
 	})();
-
 
 
     function sortStudents() {
