@@ -39,7 +39,7 @@ export async function getEventTeams(event_id:number) {
 
 export async function getEventsbyStudentID(student_id: string, customSelect: string = "*") {
 	const { data, error } = await supabase
-		.from('student_events')
+		.from('student_events_detailed')
 		.select(customSelect)
 		.eq('student_id', student_id);
 	if (error) throw error;
@@ -55,7 +55,7 @@ export async function getStudentEvents(event_id: string, select = "*, students(*
 	}
   
 	const { data, error } = await supabase
-	  .from("student_events")
+	  .from("student_events_detailed")
 	  .select(select)
 	  .eq("event_id", parsedEventId); // Use parsed integer
 	if (error) {

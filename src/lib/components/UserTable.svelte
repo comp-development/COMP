@@ -157,22 +157,17 @@
 
 	let listeners = {};
 	$: {
-	console.log("students original");
-	console.log(students);
 	
-	console.log("custom custom");
-	console.log(custom_fields);
 
 	students = students.map((s, i) => {
 		const s_data = s.students;
-		console.log(s_data)
 		s.students = null;
 		//for every custom field, add custom field on s
 		for (let i = 0; i < custom_fields.length; i++) {
 			s[custom_fields[i].key] = s.custom_fields[custom_fields[i].custom_field_id];
 		}
 		
-		console.log(JSON.stringify(s.custom_fields));
+		
 		return {
 			id: i + 1,
 			...s,
@@ -180,14 +175,9 @@
 		}
 	});
 
-	for (let i = 0; i<students.length; i++) {
-		if (students[i].grade != null) {
-			console.log("found it");
-		}
-	}
+	
 
-	console.log("after add ID");
-	console.log(students);
+	
 	students = students;
 	}
 	
