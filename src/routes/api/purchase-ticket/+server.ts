@@ -9,7 +9,7 @@ import {
 } from "@sveltejs/kit";
 import { Stripe } from "stripe";
 import type { Tables } from "../../../../db/database.types";
-import { adminSupabase } from "$lib/supabaseClient";
+import { adminSupabase } from "$lib/adminSupabaseClient";
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;

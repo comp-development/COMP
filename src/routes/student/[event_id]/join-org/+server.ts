@@ -1,5 +1,5 @@
 import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
-import { adminSupabase } from "$lib/supabaseClient";
+import { adminSupabase } from "$lib/adminSupabaseClient";
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;

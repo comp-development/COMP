@@ -7,7 +7,7 @@ import {
 } from "@sveltejs/kit";
 import { Stripe } from "stripe";
 import type { Tables } from "../../../../../db/database.types";
-import { adminSupabase } from "$lib/supabaseClient";
+import { adminSupabase } from "$lib/adminSupabaseClient";
 import { get } from "svelte/store";
 import { page } from "$app/stores";
 import { getStudentEvent } from "$lib/supabase";
