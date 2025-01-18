@@ -13,28 +13,35 @@ cd COMP/db
 npm ci install
 npx patch-package # applies our patch to the seed package
 supabase start 
+touch ../.env
 ```
+Fill in the below variables in the `../.env` file using the output of `supabase status or supabase start`
+```
+VITE_SUPABASE_URL= # API URL
+VITE_SUPABASE_ANON_KEY= # anon key
+VITE_SUPABASE_SERVICE_KEY= # service_role key
+```
+
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
 
-One-time Admin Setup:
+Dev+Update Workflow:
+1. start supabase. run `supabase db reset` to get remote changes applied locally.
+2. fill out seed data with `npx @snaplet/seed sync`, `npx tsx seed.ts > supabase/seed.sql`, `supabase db reset`
+3. edit the db via UI or SQL commands
+4. run `supabase db diff --schema public`, put diff in new migration: `supabase migration new migration_name`
+5. sync the db `npx @snaplet/seed sync`, add new sample seed data to `seed.ts`,  `npx tsx seed.ts > supabase/seed.sql`
+6. run `supabase db reset` to test running the migrations and adding seed data
+7. run `supabase gen types typescript --local --schema public,auth > database.types.ts` for DB types
+8. test against COMP
+9. TODO: add automated tests (UI mockup for each user action + DB assertions)
+10. commit to VCS
+11. notify admin
+
+One-time Admin Setup (only if the `db` folder doesn't already exist):
 1. download current schema via `supabase login`, `supabase init`, `supabase link`, `supabase db pull`, `supabase db pull --schema auth`, etc. make the start migration as minimal as possible
 2. prep seed data: `npx @snaplet/seed init` (choose node-postgres), `npx @snaplet/seed sync`, edit `seed.config.ts` and `seed.ts`
 3. run `npx tsx seed.ts > supabase/seed.sql` and `supabase db reset`
 4. test against COMP and commit to VCS
-
-Dev+Update Workflow:
-1. clone supabase_dev repo / pull latest
-2. start supabase. run `supabase db reset` to get remote changes applied locally.
-3. fill out seed data with `npx @snaplet/seed sync`, `npx tsx seed.ts > supabase/seed.sql`, `supabase db reset`
-4. edit the db via UI or SQL commands
-5. run `supabase db diff --schema public`, put diff in new migration: `supabase migration new migration_name`
-6. sync the db `npx @snaplet/seed sync`, add new sample seed data to `seed.ts`,  `npx tsx seed.ts > supabase/seed.sql`
-7. run `supabase db reset` to test running the migrations and adding seed data
-8. run `supabase gen types typescript --local --schema public,auth > database.types.ts` for DB types
-9. test against COMP
-10. TODO: add automated tests (UI mockup for each user action + DB assertions)
-11. commit to VCS
-12. notify admin
 
 Admin Migration Workflow:
 1. get notified, pull latest
