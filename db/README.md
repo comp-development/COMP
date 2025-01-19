@@ -52,6 +52,19 @@ Admin Migration Workflow:
 6. run `supabase db push --dry-run`
 7. confirm with other admins, then run `supabase db push` (execute on latest only)
 
+# Known Errors
+
+If on Windows and using powershell, the value in `supabase/seed.sql` may be in
+UTF-16 encoding. VSCode makes it pretty convenient to switch back to UTF-8
+(there's a button in the bottom right to switch encodings).
+
+If there's errors saying there was an error using the `seed.sql` file, they may
+be because the database schema is mismatched with the seed script. A (somewhat)
+nuclear option is to delete the `supabase/seed.sql` file, run `supabase db reset`
+to get the schema in a good state, run `npx @snaplet/seed sync` to ensure the
+seeding data model matches the schema, run `npx tsx seed.ts > supabase/seed.sql`
+again, then finally `supabase db reset`.
+
 # COMP Dev DB
 
 Use the pre-authenticated email and password pairs below to sign in.
