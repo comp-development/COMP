@@ -1,0 +1,49 @@
+diff --git a/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js b/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js
+index bede21f..3e3cb3b 100644
+--- a/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js
++++ b/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js
+@@ -73,30 +73,6 @@ export class PgStore extends StoreBase {
+                     // We check if the column is part of a nullable parent relation
+                     const isNullableParent = checkIsNullableParent(this.dataModel, model.modelName, fieldName);
+                     // If it is, and the value is not null, we store the id of the parent in the update map
+-                    if (isNullableParent && value !== null) {
+-                        if (idFieldNames.length > 0) {
+-                            if (!updateRow) {
+-                                updateRow = {
+-                                    filter: idFieldNames.reduce((acc, idFieldName) => ({
+-                                        ...acc,
+-                                        [idFieldName]: serializeToSQL(
+-                                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+-                                        fieldMap.get(idFieldName).type, row[idFieldName]),
+-                                    }), {}),
+-                                    values: {},
+-                                };
+-                            }
+-                            updateRow.values[fieldName] = serializeToSQL(
+-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+-                            fieldMap.get(fieldName).type, value);
+-                        }
+-                        else {
+-                            errorsData.push({
+-                                modelName: model.modelName,
+-                                type: "missingPKForUpdateError",
+-                            });
+-                        }
+-                    }
+                     // If the field is a nullable parent with a defined value, we check if it's part of a unique constraint with a nullNotDistinct
+                     // if that's the case we already tried to solve the unique constraint for it so we can use it's value since null fallback will likely not be possible
+                     if (isNullableParent &&
+@@ -114,8 +90,11 @@ export class PgStore extends StoreBase {
+                     insertRowValues.push(serializeToSQL(
+                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                     fieldMap.get(fieldName).type, 
+-                    // if the field is a nullable parent, we defer the insert of its parent id for later to avoid fk constraint errors
+-                    isNullableParent ? null : value));
++                    // if the field is a nullable parent, seed previously deferred the insert of its parent id for later "to avoid fk constraint errors"
++                    // however this can violate more complex constraints (xor not null across two columns) by inserting two nulls, then
++                    // updating one of them.
++                    // we are just going for it - if there are issues, then we should see constraint errors pop up.
++                     value));
+                 }
+                 if (updateRow) {
+                     const updateStatement = [

@@ -22,7 +22,6 @@
 				.processSync(value).value;
 		} catch (error) {
 			handleError(error);
-			toast.error(error.message);
 		}
 	}
 

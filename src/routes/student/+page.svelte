@@ -1,151 +1,55 @@
 <script lang="ts">
-    import { getStudentEvents, getThisUser, getUser, getStudent } from "$lib/supabase";
-    import { DataTable, Link, Pagination, Toolbar, ToolbarContent, ToolbarSearch } from "carbon-components-svelte";
+	import { user } from "$lib/sessionStore";
+	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
+    import { supabase } from "$lib/supabaseClient";
+    import { Tag } from "carbon-components-svelte";
 
-    let user;
-	let student;
-    let events = [];
-    let pageSize = 25;
-	let page = 1;
-    let loading = true;
+	let student: any;
+	let my_events: {
+		event_id: string;
+		event_name: string;
+		event_date: string;
+	}[] = [];
+	let my_event_ids: Set<string> = new Set();
+	let all_events: {
+		event_id: number;
+		event_name: string;
+		event_date: string;
+	}[] = [];
+	let loading = true;
 
-    (async () => {
-        user = await getThisUser();
-		student = await getStudent(user.id);
-        const eventsUnedited = await getStudentEvents(user.id, "*, events(*)");
+	(async () => {
+		// console.log((await supabase.auth.getSession()).data.session?.access_token)
+		student = await getStudent($user!.id);
+		my_events = (await getStudentTeams($user!.id)).map((e) => ({
+			event_id: e.teams.event_id.toString(),
+			event_name: e.teams.events.event_name ?? "Unnamed Event",
+			event_date: e.teams.events.event_date ?? "Missing Date",
+		}));
+		// TODO: include events where the student joined with an org
+		// but is not yet in a team
+		my_events.sort((a, b) => (a.event_date < b.event_date ? -1 : 1));
+		for (const e of my_events) {
+			my_event_ids.add(e.event_id.toString());
+		}
 
-        eventsUnedited.forEach((event) => {
-            events.push({
-                event_id: event.event_id,
-                event_name: event.events.event_name,
-                event_date: event.events.event_date
-            })
-        })
+		all_events = (await getAllEvents()) as any;
 
-        loading = false;
-    })();
+		loading = false;
+	})();
 </script>
 
 {#if loading}
-    <p>Loading...</p>
+	<p>Loading...</p>
 {:else}
 	<h1>Welcome, {student.first_name}</h1>
-	<h3>{student.email}</h3>
-	<!--
-	<div class="flex">
-		<div class="row">
-			<TextInput
-				class="inputField"
-				labelText="First Name"
-				placeholder="Type here..."
-				disabled
-				bind:value={user.first_name}
-			/>
-			<TextInput
-				class="inputField"
-				labelText="Last Name"
-				placeholder="Type here..."
-				disabled
-				bind:value={user.last_name}
-			/>
-		</div>
-	</div>
-
-	{#if !user.isAdmin}
-		<div class="flex">
-			<div class="row">
-				<TextInput
-					class="inputField"
-					labelText="Grade"
-					placeholder="Type here..."
-					disabled
-					bind:value={user.grade}
-				/>
-				<TextInput
-					class="inputField"
-					labelText="ContestDojo ID"
-					placeholder="Type here..."
-					disabled
-					bind:value={user.contest_dojo_id}
-				/>
-			</div>
-		</div>
-		<div class="flex">
-			<div class="row">
-				<TextInput
-					class="inputField"
-					labelText="Email"
-					placeholder="Type here..."
-					disabled
-					bind:value={user.email}
-				/>
-				<TextInput
-					class="inputField"
-					labelText="Division"
-					placeholder="Type here..."
-					disabled
-					bind:value={user.division}
-				/>
-			</div>
-		</div>
-	{/if}
-
+	<h3>{$user?.email}</h3>
 	<br />
-	<div class="flex">
-		<Button title="Submit" action={onSubmit} />
-	</div>-->
-    <br />
-    <h2 style="text-align: center;">My Events</h2>
-    <br />
-	<!--
-    <div style="padding: 10px;">
-		<DataTable
-			sortable
-			size="compact"
-			headers={[
-                { key: "edit", value: "", width: "20px"},
-                { key: "id", value: "ID" },
-				{ key: "name", value: "Name" },
-				{ key: "date", value: "Date" },
-			]}
-			rows={events}
-			{pageSize}
-			{page}
-		>
-			<Toolbar size="sm">
-				<ToolbarContent>
-					<ToolbarSearch persistent shouldFilterRows />
-				</ToolbarContent>
-			</Toolbar>
-
-			<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
-				<div>
-					{#if cell.key === "edit"}
-						<div class="pencil">
-							<Link class="link" href={"/student/" + row.id}
-								><i class="fa-solid fa-arrow-up-right-from-square" /></Link
-							>
-						</div>
-					{:else}
-						<div style="overflow: hidden;">
-							{cell.value == null || cell.value == "" ? "None" : cell.value}
-						</div>
-					{/if}
-				</div>
-			</svelte:fragment>
-		</DataTable>
-		
-		<Pagination
-			bind:pageSize
-			bind:page
-			totalItems={events.length}
-			pageSizeInputDisabled
-		/>
-	</div>
-	-->
+	<h2 style="text-align: center;">My Events</h2>
+	<br />
 
 	<div class="buttonContainer">
-		{#each events as event}
+		{#each my_events as event}
 			<div>
 				<div class="problemContainer">
 					<div style="align-items: left">
@@ -155,13 +59,30 @@
 						<p>{event.event_date}</p>
 					</div>
 					<div class="flex">
-						<button
-							on:click={async (e) => {
-								window.location.href = `./student/${event.event_id}`;
-							}}
-						>
-							Go to Event
-						</button>
+						<a href={`./student/${event.event_id}`}>Go to Event</a>
+					</div>
+				</div>
+			</div>
+		{/each}
+	</div>
+	<br />
+	<h2 style="text-align: center;">All Events</h2>
+	<br />
+
+	<div class="buttonContainer">
+		{#each all_events as event}
+			<div>
+				<div class="problemContainer">
+					<div style="align-items: left">
+						<h4>
+							{event.event_name}
+						</h4>
+						<div class="grouped" style="display: inline-block">
+							<p style="display: inline-block">{event.event_date}</p>
+						</div>
+					</div>
+					<div class="flex">
+						<a href={`./student/${event.event_id}`}>{my_event_ids.has(event.event_id.toString()) ? "Go to Event" : "Sign Up"}</a>
 					</div>
 				</div>
 			</div>
@@ -190,27 +111,25 @@
 		margin-right: 5px;
 	}
 
-	.problemContainer button {
+	.problemContainer  {
+		text-align: left;
+	}
+
+	.problemContainer a {
 		outline: none;
-		border: none;
+		/* avoid text placement shifting when hovered */
+		border: 2px solid #00000000;
 		padding: 10px 30px;
 		border-radius: 10px;
 		background-color: #a7f0ba;
 	}
 
-	button:disabled,
-	button[disabled] {
-		cursor: not-allowed;
-	}
-
-	.problemContainer button:not([disabled]):hover {
-		transform: scale(1.05);
+	.problemContainer a:hover {
 		border: 2px solid #3f9656;
+		scale: 1.05;
 		background-color: #a7f0ba;
 		cursor: pointer;
 	}
-
-	
 
 	.buttonContainer {
 		flex-direction: column; /* Align children vertically */
