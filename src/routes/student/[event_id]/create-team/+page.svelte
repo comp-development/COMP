@@ -8,11 +8,11 @@
   const event_id = parseInt($page.params.event_id);
   let transaction_stored = false;
 
-  let loading = true;
+  let loading = $state(true);
   let token: string | null = null;
 
-  let team_name = "";
-  let failure: { reason: string; stripe_url?: string } | null = null;
+  let team_name = $state("");
+  let failure: { reason: string; stripe_url?: string } | null = $state(null);
 
   (async () => {
     const { data, error } = await supabase.auth.getSession();
@@ -86,7 +86,7 @@
     </div>
     <br />
     <div>
-      <button on:click={create_team}>Create Team</button>
+      <button onclick={create_team}>Create Team</button>
     </div>
   </form>
   {#if failure?.reason == "payment not complete"}

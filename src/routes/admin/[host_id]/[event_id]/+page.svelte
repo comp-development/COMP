@@ -18,14 +18,14 @@
 
 	let hostId = $page.params.host_id;
 	let eventId = $page.params.event_id;
-	let pageSize = 25;
-	let pages = 1;
-	let pageSize2 = 25;
-	let pages2 = 1;
-	let tests = [];
-	let teams = [];
-	let event_information = {};
-	let loading = true;
+	let pageSize = $state(25);
+	let pages = $state(1);
+	let pageSize2 = $state(25);
+	let pages2 = $state(1);
+	let tests = $state([]);
+	let teams = $state([]);
+	let event_information = $state({});
+	let loading = $state(true);
 
 	async function loadInformation() {
 		try {
@@ -83,25 +83,27 @@
 					</ToolbarContent>
 				</Toolbar>
 
-				<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
-					<div>
-						{#if cell.key === "edit"}
-							<div class="pencil">
-								<Link
-									class="link"
-									href={`/admin/${hostId}/${eventId}/tests/${row.id}`}
-									><i class="ri-pencil-fill" /></Link
-								>
-							</div>
-						{:else}
-							<div style="overflow: hidden;">
-								{cell.value == null || cell.value == ""
-									? "None"
-									: cell.value}
-							</div>
-						{/if}
-					</div>
-				</svelte:fragment>
+				{#snippet cell({ row, cell, rowIndex })}
+							
+						<div>
+							{#if cell.key === "edit"}
+								<div class="pencil">
+									<Link
+										class="link"
+										href={`/admin/${hostId}/${eventId}/tests/${row.id}`}
+										><i class="ri-pencil-fill"></i></Link
+									>
+								</div>
+							{:else}
+								<div style="overflow: hidden;">
+									{cell.value == null || cell.value == ""
+										? "None"
+										: cell.value}
+								</div>
+							{/if}
+						</div>
+					
+							{/snippet}
 			</DataTable>
 
 			<Pagination
@@ -140,25 +142,27 @@
 					</ToolbarContent>
 				</Toolbar>
 
-				<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
-					<div>
-						{#if cell.key === "edit"}
-							<div class="pencil">
-								<Link
-									class="link"
-									href={`/admin/${hostId}/${eventId}/teams/${row.id}`}
-									><i class="ri-pencil-fill" /></Link
-								>
-							</div>
-						{:else}
-							<div style="overflow: hidden;">
-								{cell.value == null || cell.value == ""
-									? "None"
-									: cell.value}
-							</div>
-						{/if}
-					</div>
-				</svelte:fragment>
+				{#snippet cell({ row, cell, rowIndex })}
+							
+						<div>
+							{#if cell.key === "edit"}
+								<div class="pencil">
+									<Link
+										class="link"
+										href={`/admin/${hostId}/${eventId}/teams/${row.id}`}
+										><i class="ri-pencil-fill"></i></Link
+									>
+								</div>
+							{:else}
+								<div style="overflow: hidden;">
+									{cell.value == null || cell.value == ""
+										? "None"
+										: cell.value}
+								</div>
+							{/if}
+						</div>
+					
+							{/snippet}
 			</DataTable>
 
 			<Pagination

@@ -7,10 +7,10 @@
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
 
-	let first_name = "";
-	let last_name = "";
-	let grade = "";
-	let loading = true;
+	let first_name = $state("");
+	let last_name = $state("");
+	let grade = $state("");
+	let loading = $state(true);
 
 	user.subscribe(async (user) => {
 		try {

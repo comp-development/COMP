@@ -11,10 +11,10 @@
   import { Logger } from "sass";
     Chart.register(...registerables);
 
-	export let test;
-    let testTakersMap = {};
-    let sortColumn = '';
-	let sortOrder = 'asc';
+	let { test } = $props();
+    let testTakersMap = $state({});
+    let sortColumn = $state('');
+	let sortOrder = $state('asc');
 	let problemChartInstance;
 	let histogramChartInstance;
 
@@ -265,11 +265,11 @@
 
 <div>
 	<h2 style="text-align: center">Scores</h2>
-    <button on:click={exportToCSV}>Export to CSV</button>
+    <button onclick={exportToCSV}>Export to CSV</button>
 	<table class="scoresTable">
 		<thead>
 			<tr>
-				<th on:click={() => sortTable('front_id')}>
+				<th onclick={() => sortTable('front_id')}>
 					Front ID
 					{#if sortColumn === 'front_id'}
 						{#if sortOrder === 'asc'}
@@ -279,7 +279,7 @@
 						{/if}
 					{/if}
 				</th>
-				<th on:click={() => sortTable('taker_name')}>
+				<th onclick={() => sortTable('taker_name')}>
 					Taker Name
 					{#if sortColumn === 'taker_name'}
 						{#if sortOrder === 'asc'}
@@ -289,7 +289,7 @@
 						{/if}
 					{/if}
 				</th>
-				<th on:click={() => sortTable('points')}>
+				<th onclick={() => sortTable('points')}>
 					Points
 					{#if sortColumn === 'points'}
 						{#if sortOrder === 'asc'}
@@ -300,7 +300,7 @@
 					{/if}
 				</th>
 				{#each {length: test.num_problems} as _, i}
-					<th on:click={() => sortTable(i+1)}>
+					<th onclick={() => sortTable(i+1)}>
 						Problem {i + 1}
 						{#if sortColumn === i+1}
 							{#if sortOrder === 'asc'}

@@ -1,12 +1,21 @@
-<script>
+<script lang="ts">
 	import { Button, Modal } from "carbon-components-svelte";
 	import TrashCan from "carbon-icons-svelte/lib/TrashCan.svelte";
 
-	let open = false;
-	export let runHeader;
-	export let onSubmit;
-	export let del = false;
-	export let stopPropagation = false;
+	let open = $state(false);
+	interface Props {
+		runHeader: any;
+		onSubmit: any;
+		del?: boolean;
+		stopPropagation?: boolean;
+	}
+
+	let {
+		runHeader,
+		onSubmit,
+		del = false,
+		stopPropagation = false
+	}: Props = $props();
 </script>
 
 {#if del}

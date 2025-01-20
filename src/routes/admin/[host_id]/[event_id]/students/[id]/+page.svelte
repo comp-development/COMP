@@ -8,8 +8,8 @@
 	import { TextInput } from "carbon-components-svelte";
 
 	let userId = $page.params.id;
-	let user = {};
-	let loading = true;
+	let user = $state({});
+	let loading = $state(true);
 
 	async function fetchUser() {
 		try {

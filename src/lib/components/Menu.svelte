@@ -7,7 +7,7 @@
 	const path = $page.route.id;
 
 	let width = 0;
-	let user_type = "";
+	let user_type = $state("");
 	if (path?.startsWith("/admin")) {
 		user_type = "Admin"
 	} else if (path?.startsWith("/student")) {
@@ -81,7 +81,7 @@
 		</a>
 	</div>
 	<br />
-	<div class="fixedHr" />
+	<div class="fixedHr"></div>
 	<div class="flex">
 		<Link on:click={handleSignout} class="link">
 			<p style="color: white">Sign Out</p>

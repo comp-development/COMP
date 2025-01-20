@@ -16,14 +16,14 @@
 	} from "$lib/supabase";
   import { TextSubscript } from "carbon-icons-svelte";
 
-	let loading = true;
-	let disallowed = false;
+	let loading = $state(true);
+	let disallowed = $state(false);
 
 	let test_id = Number($page.params.test_id);
 	let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
 
 	let user;
-	let test;
+	let test = $state();
 	let test_taker;
 	(async () => {
 		user = await getThisUser();

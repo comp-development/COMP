@@ -25,26 +25,26 @@
     import SelectProblem from "$lib/components/SelectProblem.svelte";
     import CreateProblemModal from "$lib/components/CreateProblemModal.svelte";
 
-	let loading = true;
+	let loading = $state(true);
 
-	let titleEditable = false;
-	let lengthEditable = false;
-	let bufferEditable = false;
+	let titleEditable = $state(false);
+	let lengthEditable = $state(false);
+	let bufferEditable = $state(false);
 	let instructionsEditable = false;
 
-	let modalProblem: number | null = null;
-	let curPage: number | null = null;
-	let openAddProblemModal: boolean = false;
-	let newProblemModal: boolean = false;
+	let modalProblem: number | null = $state(null);
+	let curPage: number | null = $state(null);
+	let openAddProblemModal: boolean = $state(false);
+	let newProblemModal: boolean = $state(false);
 
 	let test_id = Number($page.params.test_id);
 	let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
 
 	let user;
-	let test;
-	let problems;
+	let test = $state();
+	let problems = $state();
 	let test_taker;
-	let clarifications;
+	let clarifications = $state();
 	let allProblems;
 
 	(async () => {
@@ -237,13 +237,13 @@
 	<h1
 		contenteditable={titleEditable}
 		class:editable={titleEditable}
-		on:click={() => {
+		onclick={() => {
 			titleEditable = true;
 		}}
-		on:blur={async (e) => {
+		onblur={async (e) => {
 			await updateTitle(e);
 		}}
-		on:keypress={async (e) => {
+		onkeypress={async (e) => {
 			e.key == "Enter" && (await updateTitle(e));
 		}}
 	>
@@ -257,13 +257,13 @@
 		<p
 			contenteditable={lengthEditable}
 			class:editable={lengthEditable}
-			on:click={() => {
+			onclick={() => {
 				lengthEditable = true;
 			}}
-			on:blur={async (e) => {
+			onblur={async (e) => {
 				await updateLength(e);
 			}}
-			on:keypress={async (e) => {
+			onkeypress={async (e) => {
 				e.key == "Enter" && (await updateLength(e));
 			}}
 		>
@@ -275,13 +275,13 @@
 		<p
 			contenteditable={bufferEditable}
 			class:editable={bufferEditable}
-			on:click={() => {
+			onclick={() => {
 				bufferEditable = true;
 			}}
-			on:blur={async (e) => {
+			onblur={async (e) => {
 				await updateBuffer(e);
 			}}
-			on:keypress={async (e) => {
+			onkeypress={async (e) => {
 				e.key == "Enter" && (await updateBuffer(e));
 			}}
 		>
@@ -334,7 +334,7 @@
 						/>
 						<button
 							class="arrow-button"
-							on:click={async () => {
+							onclick={async () => {
 								test.settings.pages.splice(pageNumber, 1);
 								test = { ...test };
 								await saveTest();
@@ -353,13 +353,13 @@
 										</p>
 										<button
 											class="arrow-button"
-											on:click={() => {
+											onclick={() => {
 												modalProblem = problems.indexOf(problem);
 											}}>🔁</button
 										>
 										<button
 											class="arrow-button"
-											on:click={() =>
+											onclick={() =>
 												moveUp(
 													problems.indexOf(problem),
 												)}
@@ -370,7 +370,7 @@
 
 										<button
 											class="arrow-button"
-											on:click={() =>
+											onclick={() =>
 												moveDown(
 													problems.indexOf(problem),
 												)}
@@ -382,7 +382,7 @@
 
 										<button
 											class="arrow-button"
-											on:click={async () => {
+											onclick={async () => {
 												await deleteTestProblem(
 													problem.test_problem_id,
 												);

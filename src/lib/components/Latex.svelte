@@ -6,11 +6,15 @@
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 
-	export let style = "";
-	export let value;
+	interface Props {
+		style?: string;
+		value: any;
+	}
+
+	let { style = "", value }: Props = $props();
 
 	// fetch images
-	let rendered;
+	let rendered = $state();
 
 	async function loadLatex() {
 		try {

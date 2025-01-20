@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { getStudentUsers, getAdminUsers, transferUser } from "$lib/supabase";
 	import {
 		Select,
@@ -9,10 +11,10 @@
 	import { handleError } from "$lib/handleError";
     import toast from "svelte-french-toast";
 
-	let loading = true;
-	let users = [];
-	let curUser = "";
-    let toAdmin: string = "true";
+	let loading = $state(true);
+	let users = $state([]);
+	let curUser = $state("");
+    let toAdmin: string = $state("true");
 
 	async function getData() {
 		try {
@@ -39,7 +41,9 @@
 		}
     }
 
-	$: toAdmin, getData();
+	run(() => {
+		toAdmin, getData();
+	});
     getData();
 </script>
 

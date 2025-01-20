@@ -22,6 +22,6 @@
 </script>
 
 
-<input type = "button" value = "uplaod csv" on:click={upload}>
+<input type = "button" value = "uplaod csv" onclick={upload}>
 
 <DataTable id = "table"></DataTable>

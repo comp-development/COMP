@@ -21,7 +21,7 @@
         };
       })
     | null = null;
-  let event_details: Tables<"events"> | null = null;
+  let event_details: Tables<"events"> | null = $state(null);
   let student_org_event:
     | (Tables<"student_org_events"> & { org_events: Tables<"org_events"> })
     | null = null;
@@ -30,17 +30,17 @@
         student_events_detailed: Tables<"student_events_detailed">[];
       })
     | undefined
-    | null = null;
+    | null = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
-  let in_team = false;
-  let in_org = false;
-  let transaction_stored = false;
+  let in_team = $state(false);
+  let in_org = $state(false);
+  let transaction_stored = $state(false);
 
-  let loading = true;
+  let loading = $state(true);
   let token: string | null = null;
 
-  let input_team_join_code = "";
-  let input_org_join_code = "";
+  let input_team_join_code = $state("");
+  let input_org_join_code = $state("");
 
   (async () => {
     // Check if this student is registered in this event.
@@ -130,7 +130,7 @@
       <!-- TODO: custom fields -->
       <div class="grid-thirds">
         <div>
-          <button on:click={purchase_ticket({creating_team: true})}>Create Independent Team</button>
+          <button onclick={purchase_ticket({creating_team: true})}>Create Independent Team</button>
         </div>
         <div>
           <form>
@@ -140,7 +140,7 @@
             </div>
             <br />
             <div>
-              <button on:click={purchase_ticket({joining_team_code: input_org_join_code})}>Join Independent Team</button>
+              <button onclick={purchase_ticket({joining_team_code: input_org_join_code})}>Join Independent Team</button>
             </div>
           </form>
         </div>
@@ -152,7 +152,7 @@
             </div>
             <br />
             <div>
-              <button on:click={join_org}>Join with Organization</button>
+              <button onclick={join_org}>Join with Organization</button>
             </div>
           </form>
         </div>
@@ -183,7 +183,7 @@
             </div>
             <br />
             <div>
-              <button on:click={join_org}>Join with Organization</button>
+              <button onclick={join_org}>Join with Organization</button>
             </div>
           </form>
         </div>
@@ -239,7 +239,7 @@
   {#if in_org}
     <!-- TODO: org info -->
     {#if !purchase_ticket}
-      <button on:click={purchase_ticket({})}>Purchase Individual Ticket (check with your organization if you need to do so)</button>
+      <button onclick={purchase_ticket({})}>Purchase Individual Ticket (check with your organization if you need to do so)</button>
     {/if}
   {/if}
 {/if}

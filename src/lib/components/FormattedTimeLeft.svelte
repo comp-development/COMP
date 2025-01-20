@@ -1,19 +1,22 @@
-<script>
+<script lang="ts">
+  import { run } from 'svelte/legacy';
+
     import { formatDuration } from "$lib/dateUtils";
-    export let timeLeft; // in seconds
-    export let totalTime; // in seconds
-    let time;
+  let { timeLeft = $bindable(), totalTime, children } = $props();
+    let time = $derived(formatDuration(timeLeft));
   
     // Calculate color based on the proportion of timeLeft to totalTime
-    $: timeLeft = Math.max(timeLeft, 0)
-    $: proportion = timeLeft / totalTime;
-    $: color = `rgb(${Math.round(255 * (1 - proportion))}, 0, 0)`; // Red intensity increases as timeLeft decreases
+    run(() => {
+    timeLeft = Math.max(timeLeft, 0)
+  });
+    let proportion = $derived(timeLeft / totalTime);
+    let color = $derived(`rgb(${Math.round(255 * (1 - proportion))}, 0, 0)`); // Red intensity increases as timeLeft decreases
   
     // Format the timeLeft using the provided formatDuration function
-    $: time = formatDuration(timeLeft);
+    
   </script>
   
   <div class="formatted-duration" style="color: {color};">
-    <slot prop={time}>{time}</slot> <!-- Pass formattedTime directly to the slot -->
+    {#if children}{@render children({ prop: time, })}{:else}{time}{/if} <!-- Pass formattedTime directly to the slot -->
 </div>
   

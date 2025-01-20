@@ -25,17 +25,17 @@
 	import { supabase } from "$lib/supabaseClient";
   import { user } from "$lib/sessionStore";
 
-	let loading = true;
+	let loading = $state(true);
 
-	let open = false;
-	let instructions = "";
-	let name = "";
+	let open = $state(false);
+	let instructions = $state("");
+	let name = $state("");
 
 	let currentTime;
 
 	let availableTests = [];
-	let testStatusMap = {};
-	$: tests = Object.values(testStatusMap);
+	let testStatusMap = $state({});
+	let tests = $derived(Object.values(testStatusMap));
 	let teamId: number | null = null;
 	let eventId = Number($page.params.event_id);
 
@@ -266,7 +266,7 @@
 							<button
 								class="test-button full"
 								disabled={test.disabled}
-								on:click={async (e) => {
+								onclick={async (e) => {
 									e.preventDefault();
 									await handleTestStart(test);
 									window.location.href = `./tests/${test.test_id}`;
@@ -277,7 +277,7 @@
 							<div class="tooltip-container">
 								<button
 									class="test-button empty"
-									on:click={() => {
+									onclick={() => {
 										open = true;
 										instructions = test.instructions;
 										name = test.test_name;

@@ -2,16 +2,19 @@
 	import "carbon-components-svelte/css/white.css";
 	import Button from "$lib/components/Button.svelte";
 	import { Form, TextInput, PasswordInput } from "carbon-components-svelte";
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import { createAccount, signIntoAccount } from "$lib/supabase";
 
-	export let logIn: boolean;
+	interface Props {
+		logIn: boolean;
+	}
+
+	let { logIn }: Props = $props();
 	let loading = false;
-	let signupSuccess = false;
-	let email: string;
-	let password: string;
-	let retypePassword: string;
+	let signupSuccess = $state(false);
+	let email: string = $state();
+	let password: string = $state();
+	let retypePassword: string = $state();
 
 	const handleLogin = async () => {
 		try {

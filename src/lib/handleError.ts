@@ -1,4 +1,4 @@
-import toast from "svelte-french-toast";
+// import toast from "svelte-french-toast";
 
 /**
  * Handles errors that arises during usage.
@@ -8,5 +8,5 @@ import toast from "svelte-french-toast";
 export function handleError(error: Error) {
   console.error(error.message);
   console.error(error);
-  toast.error(error.message);
+  // toast.error(error.message);
 }

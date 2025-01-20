@@ -13,10 +13,10 @@
 		getTestAnswers,
 	} from "$lib/supabase";
 
-	let loading = true;
+	let loading = $state(true);
 
 	let test_id = Number($page.params.test_id);
-	let test;
+	let test = $state();
 	(async () => {
 		test = await getTest(test_id);
 		loading = false;

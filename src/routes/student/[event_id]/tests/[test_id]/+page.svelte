@@ -12,15 +12,15 @@
 	import { TextSubscript } from "carbon-icons-svelte";
 	import { user } from "$lib/sessionStore";
 
-	let loading = true;
-	let disallowed = false;
+	let loading = $state(true);
+	let disallowed = $state(false);
 
 	let event_id = Number($page.params.event_id);
 	let test_id = Number($page.params.test_id);
 	// let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
 
-	let test;
-	let test_taker;
+	let test = $state();
+	let test_taker = $state();
 	(async () => {
 		// user = await getThisUser();
 		test = await getTest(test_id);
@@ -69,8 +69,12 @@
 			tileExpandedLabel="View less"
 			tileCollapsedLabel="View more"
 		>
-			<div slot="above"><p style="font-weight: bold">Test Instructions</p></div>
-			<div slot="below"><MathJax math={test.instructions} /></div>
+			{#snippet above()}
+								<div ><p style="font-weight: bold">Test Instructions</p></div>
+							{/snippet}
+			{#snippet below()}
+								<div ><MathJax math={test.instructions} /></div>
+							{/snippet}
 		</ExpandableTile>
 		<br />
 		<TestView {test_taker} is_team={test.is_team} settings={test.settings} />
