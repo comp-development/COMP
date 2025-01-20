@@ -12,13 +12,15 @@
 	let show1 = $state(false);
 	let { logIn }: Props = $props();
 	let loading = false;
-	let signupSuccess = $state(false);
 	let email: string = $state();
 	let password: string = $state();
 	let retypePassword: string = $state();
 
 	const handleLogin = async () => {
 		try {
+			if (!email || !password || email == "" || password == "") {
+				throw new Error("Not all of the fields are complete");
+			}
 			loading = true;
 			await signIntoAccount(email.trim(), password.trim());
 		} catch (error) {
@@ -34,7 +36,7 @@
 				try {
 					loading = true;
 					await createAccount(email, password);
-					signupSuccess = true;
+					toast.success("Successfully signed up, check your email to confirm.");
 				} catch (error) {
 					throw error;
 				} finally {
@@ -104,12 +106,6 @@
 		{/if}
 	</div>
 </div>
-{#if signupSuccess}
-	<p style="text-align: center;">
-		Successfully signed up, check your email to confirm!
-	</p>
-	<br />
-{/if}
 
 <style>
 	#headerText {

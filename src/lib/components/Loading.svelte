@@ -3,7 +3,7 @@
 </script>
 
 <div class="outerDiv">
-    <h1>Loading... Hang Tight!</h1>
+    <h2>Loading... Hang Tight!</h2>
 	<div class="flex">
 		<Spinner size={20} />
 	</div>
@@ -14,7 +14,7 @@
 		display: block;
 	}
 
-	h1 {
+	h2 {
 		margin-bottom: 30px;
 	}
 </style>
