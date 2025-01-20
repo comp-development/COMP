@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import Button from "$lib/components/Button.svelte";
+  import { Button, Badge } from 'flowbite-svelte';
+  import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
   import {
     getEventInformation,
@@ -8,7 +9,6 @@
     getStudentOrgEvent,
     getStudentTicketOrder,
   } from "$lib/supabase";
-  import { Tag } from "carbon-components-svelte";
   import type { Tables } from "../../../../db/database.types";
   import { supabase } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
@@ -119,7 +119,7 @@
 </script>
 
 {#if loading}
-  <p>Loading...</p>
+  <Loading />
 {:else}
   <br />
   <h1>{event_details?.event_name}</h1>
@@ -202,7 +202,7 @@
     </p>
     <br />
     <div class="flex">
-      <Button title="Take Tests" href={"/student/" + event_id + "/tests"} />
+      <Button href={"/student/" + event_id + "/tests"} pill>Take Tests</Button>
     </div>
     <br />
 
@@ -215,11 +215,11 @@
       {#each team?.student_events_detailed ?? [] as teamMember}
         <div style="display: flex; align-items: center;">
           {#if teamMember.front_id}
-            <Tag type={teamMember.student_id == $user?.id ? "green" : "gray"}
-              >{teamMember.front_id}</Tag
+            <Badge color={teamMember.student_id == $user?.id ? "green" : "dark"} rounded
+              >{teamMember.front_id}</Badge
             >
           {/if}
-          <div style="display:flex">
+          <div style="display:flex; margin-left: 5px;">
             <p>
               {teamMember.first_name}
               {teamMember.last_name}

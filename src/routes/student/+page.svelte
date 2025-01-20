@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Button, Dropdown, DropdownItem } from 'flowbite-svelte';
-  import { ChevronDownOutline } from 'flowbite-svelte-icons';
+	import { Button, Dropdown, DropdownItem } from 'flowbite-svelte';
+	import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { user } from "$lib/sessionStore";
 	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
     import { supabase } from "$lib/supabaseClient";
-    import { Tag } from "carbon-components-svelte";
+	import Loading from "$lib/components/Loading.svelte";
 
 	let student: any = $state();
 	let my_events: {
@@ -42,17 +42,9 @@
 </script>
 
 {#if loading}
-	<p>Loading...</p>
+	<Loading />
 {:else}
-	<div class="p-8">
-		<Button>Example Dropdown button<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" /></Button>
-		<Dropdown>
-		  <DropdownItem class="font-bold underline">Dashboard</DropdownItem>
-		  <DropdownItem>Settings</DropdownItem>
-		  <DropdownItem>Earnings</DropdownItem>
-		  <DropdownItem>Sign out</DropdownItem>
-		</Dropdown>
-	</div>
+	<br />
 	<h1>Welcome, {student.first_name}</h1>
 	<h3>{$user?.email}</h3>
 	<br />
@@ -70,7 +62,7 @@
 						<p>{event.event_date}</p>
 					</div>
 					<div class="flex">
-						<a href={`./student/${event.event_id}`}>Go to Event</a>
+						<Button href={`./student/${event.event_id}`} pill>Go to Event</Button>
 					</div>
 				</div>
 			</div>
@@ -93,12 +85,13 @@
 						</div>
 					</div>
 					<div class="flex">
-						<a href={`./student/${event.event_id}`}>{my_event_ids.has(event.event_id.toString()) ? "Go to Event" : "Sign Up"}</a>
+						<Button href={`./student/${event.event_id}`} pill>{my_event_ids.has(event.event_id.toString()) ? "Go to Event" : "Sign Up"}</Button>
 					</div>
 				</div>
 			</div>
 		{/each}
 	</div>
+	<br />
 {/if}
 
 <style>

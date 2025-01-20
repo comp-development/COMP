@@ -1,17 +1,20 @@
 <script>
-	import "carbon-components-svelte/css/white.css";
-	import { Loading } from "carbon-components-svelte";
+	import { Spinner } from 'flowbite-svelte';
 </script>
 
 <div class="outerDiv">
-    <h1>Loading... Hang Tight</h1>
+    <h1>Loading... Hang Tight!</h1>
 	<div class="flex">
-		<Loading withOverlay={false} />
+		<Spinner size={20} />
 	</div>
 </div>
 
 <style>
 	.outerDiv {
 		display: block;
+	}
+
+	h1 {
+		margin-bottom: 30px;
 	}
 </style>
