@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { Button, Badge } from 'flowbite-svelte';
+  import { Button, Badge, Input, Label } from 'flowbite-svelte';
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
   import {
@@ -43,23 +43,17 @@
   let input_org_join_code = $state("");
 
   (async () => {
-    // Check if this student is registered in this event.
     student_event_details = await getStudentEvent($user!.id, event_id);
     student_org_event = await getStudentOrgEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     in_team = student_event_details != null;
     in_org = student_org_event != null;
-    console.log($user!.id)
-    console.log("Ticket order", ticket_order)
-    transaction_stored = ticket_order != null;
 
     team = student_event_details?.teams;
-    // Sort team members by front_id (alphabetical descending).
     team?.student_events_detailed.sort((a, b) =>
-      (a?.front_id ?? "") < (b?.front_id ?? "") ? -1 : 1,
+      (a?.front_id ?? "") < (b?.front_id ?? "") ? -1 : 1
     );
 
-    console.log("student_event_details", student_event_details);
     event_details = await getEventInformation(event_id);
 
     const { data, error } = await supabase.auth.getSession();
@@ -71,10 +65,7 @@
     loading = false;
   })();
 
-  function purchase_ticket(options: {
-    creating_team?: boolean;
-    joining_team_code?: string;
-  }) {
+  function purchase_ticket(options: { creating_team?: boolean; joining_team_code?: string }) {
     return async () => {
       let body = {
         event_id,
@@ -115,7 +106,6 @@
       handleError(new Error(text));
     }
   }
-
 </script>
 
 {#if loading}
@@ -123,124 +113,67 @@
 {:else}
   <br />
   <h1>{event_details?.event_name}</h1>
+  <br />
 
   {#if !in_org && !in_team}
-  	{#if !transaction_stored}
-      <!-- default case -->
-      <!-- TODO: custom fields -->
-      <div class="grid-thirds">
-        <div>
-          <button onclick={purchase_ticket({creating_team: true})}>Create Independent Team</button>
+    {#if !transaction_stored}
+      <Button pill onclick={purchase_ticket({ creating_team: true })}>Create Independent Team</Button>
+      <br /> <br />
+      <div class="flex">
+        <div class="formBox">
+          <div class="mb-4">
+            <Label for="team-join-code" value="Team Join Code" />
+            <Input id="team-join-code" bind:value={input_team_join_code} type="text" placeholder="Enter team join code" />
+          </div>
+          <div>
+            <Button pill onclick={purchase_ticket({ joining_team_code: input_team_join_code })}>
+              Join Independent Team
+            </Button>
+          </div>
         </div>
-        <div>
-          <form>
-            <div>
-              <label for="team-join-code">Team Join Code: </label>
-              <input type="text" id="team-join-code" bind:value={input_team_join_code}/>
-            </div>
-            <br />
-            <div>
-              <button onclick={purchase_ticket({joining_team_code: input_org_join_code})}>Join Independent Team</button>
-            </div>
-          </form>
-        </div>
-        <div>
-          <form>
-            <div>
-              <label for="org-join-code">Org Join Code: </label>
-              <input type="text" id="org-join-code" bind:value={input_org_join_code}/>
-            </div>
-            <br />
-            <div>
-              <button onclick={join_org}>Join with Organization</button>
-            </div>
-          </form>
+        <div class="formBox">
+          <div class="mb-4">
+            <Label for="org-join-code" value="Org Join Code" />
+            <Input id="org-join-code" bind:value={input_org_join_code} type="text" placeholder="Enter org join code" />
+          </div>
+          <div>
+            <Button pill onclick={join_org}>Join with Organization</Button>
+          </div>
         </div>
       </div>
-  	{:else}
-  	  <p>Payment found but registration not complete</p>
+    {:else}
+      <p>Payment found but registration not complete</p>
       <div class="grid-thirds">
         <div>
           <a href={`/student/${event_id}/create-team`}>Create Independent Team</a>
         </div>
         <div>
-          <form>
-            <div>
-              <label for="team-join-code">Team Join Code: </label>
-              <input type="text" id="team-join-code" bind:value={input_team_join_code}/>
-            </div>
-            <br />
-            <div>
-              <a href={`/student/${event_id}/join-team/${input_team_join_code}`}>Join Independent Team</a>
-            </div>
-          </form>
-        </div>
-        <div>
-          <form>
-            <div>
-              <label for="org-join-code">Org Join Code: </label>
-              <input type="text" id="org-join-code" bind:value={input_org_join_code}/>
-            </div>
-            <br />
-            <div>
-              <button onclick={join_org}>Join with Organization</button>
-            </div>
-          </form>
-        </div>
-      </div>
-  	{/if}
-  {/if}
-  <!-- TODO: custom fields -->
-  {#if in_team}
-    <br />
-    <p style="text-align: center;">
-      Welcome to this tournament! Below is the information for the team you are
-      registered in. If there is an issue, update the team information on
-      ContestDojo or email <a href="mailto:tournament@mustangmath.com"
-        >tournament@mustangmath.com</a
-      >
-    </p>
-    <br />
-    <div class="flex">
-      <Button href={"/student/" + event_id + "/tests"} pill>Take Tests</Button>
-    </div>
-    <br />
-
-    <div class="team_info">
-      <p style="font-weight: bold; font-size: 20px; align-items: left">
-        {team?.team_name}
-      </p>
-      {#if team?.division}<p>{team?.division} Division</p>{/if}
-
-      {#each team?.student_events_detailed ?? [] as teamMember}
-        <div style="display: flex; align-items: center;">
-          {#if teamMember.front_id}
-            <Badge color={teamMember.student_id == $user?.id ? "green" : "dark"} rounded
-              >{teamMember.front_id}</Badge
-            >
-          {/if}
-          <div style="display:flex; margin-left: 5px;">
-            <p>
-              {teamMember.first_name}
-              {teamMember.last_name}
-            </p>
-            <p style="margin-left: 10px">
-              <em>{teamMember.email}</em>
-            </p>
+          <div class="mb-4">
+            <Label for="team-join-code" value="Team Join Code" />
+            <Input id="team-join-code" bind:value={input_team_join_code} type="text" placeholder="Enter team join code" />
+          </div>
+          <div>
+            <a href={`/student/${event_id}/join-team/${input_team_join_code}`}>Join Independent Team</a>
           </div>
         </div>
-      {/each}
-    </div>
-  {:else}
-    {#if in_org}
-      <p>Not yet assigned team by org</p>
+        <div>
+          <div class="mb-4">
+            <Label for="org-join-code" value="Org Join Code" />
+            <Input id="org-join-code" bind:value={input_org_join_code} type="text" placeholder="Enter org join code" />
+          </div>
+          <div>
+            <button onclick={join_org}>Join with Organization</button>
+          </div>
+        </div>
+      </div>
     {/if}
   {/if}
-  {#if in_org}
-    <!-- TODO: org info -->
-    {#if !purchase_ticket}
-      <button onclick={purchase_ticket({})}>Purchase Individual Ticket (check with your organization if you need to do so)</button>
-    {/if}
+
+  <!-- Additional conditions for team and org information -->
+  {#if in_team}
+    <p>Team information...</p>
+  {:else if in_org}
+    <p>Org information...</p>
   {/if}
 {/if}
 
@@ -254,5 +187,12 @@
     margin: 20px;
     border: 2px solid var(--primary-light);
     border-radius: 10px;
+  }
+
+  .formBox {
+		border: 3px solid var(--primary-tint);
+		padding: 20px;
+		margin: 10px;
+		border-radius: 20px;
   }
 </style>
