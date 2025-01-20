@@ -16,10 +16,11 @@
 		"autoprefixer": "^10.4.20",
 		"flowbite": "^2.5.2",
 		"flowbite-svelte": "^0.47.4",
+		"flowbite-svelte-icons": "^2.0.2",
 		"postcss": "^8.5.1",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
-		"tailwindcss": "^3.4.17",
+		"tailwindcss": "^3.4.9",
 		"typescript": "^5.5.0",
 		"vite": "^6.0.0"
 	},
@@ -27,6 +28,7 @@
 	"dependencies": {
 		"@carbon/react": "1.33.0",
 		"@carbon/web-components": "^2.11.1",
+		"@popperjs/core": "^2.11.8",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.3",
 		"asciimath2tex": "^1.5.0",
@@ -43,6 +45,7 @@
 		"moment": "^2.30.1",
 		"papaparse": "^5.4.1",
 		"stripe": "^17.5.0",
+		"tailwind-merge": "^2.6.0",
 		"uuid": "^11.0.3"
 	}
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Alert } from 'flowbite-svelte';
+  import { Button, Dropdown, DropdownItem } from 'flowbite-svelte';
+  import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { user } from "$lib/sessionStore";
 	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
     import { supabase } from "$lib/supabaseClient";
@@ -44,10 +45,13 @@
 	<p>Loading...</p>
 {:else}
 	<div class="p-8">
-	  <Alert>
-	    <span class="font-medium">Info alert!</span>
-	    Change a few things up and try submitting again.
-	  </Alert>
+		<Button>Example Dropdown button<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" /></Button>
+		<Dropdown>
+		  <DropdownItem class="font-bold underline">Dashboard</DropdownItem>
+		  <DropdownItem>Settings</DropdownItem>
+		  <DropdownItem>Earnings</DropdownItem>
+		  <DropdownItem>Sign out</DropdownItem>
+		</Dropdown>
 	</div>
 	<h1>Welcome, {student.first_name}</h1>
 	<h3>{$user?.email}</h3>
