@@ -5,6 +5,7 @@
 	import Account from "$lib/components/Account.svelte";
 	import Banner from "$lib/components/Banner.svelte";
 	import Menu from "$lib/components/Menu.svelte";
+	import Navbar from "$lib/components/Navbar.svelte";
 	import Loading from "$lib/components/Loading.svelte";
 	import { user } from "$lib/sessionStore";
 	import { onMount } from "svelte";
@@ -133,8 +134,10 @@
 			{@render children?.()}
 		</div>
 	{:else}
+		<Navbar />
 		<div class="menu-split">
 			<Menu />
+			
 			<div>
 				{@render children?.()}
 			</div>
