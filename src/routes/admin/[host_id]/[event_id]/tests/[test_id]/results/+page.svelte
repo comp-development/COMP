@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 	import { ExpandableTile } from "carbon-components-svelte";
 	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
 

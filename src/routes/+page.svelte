@@ -4,7 +4,7 @@
 	import { handleError } from "$lib/handleError";
 	import { editUser, getThisUser, getUser, isAdmin } from "$lib/supabase";
 	import { TextInput } from "carbon-components-svelte";
-    // import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 
 	let user = $state();
 	let user_id;
@@ -34,7 +34,7 @@
 			user.isAdmin = userAdmin;
 			user[userAdmin ? "admin_id" : "student_id"] = user_id;
 
-			// toast.success("Successfully updated");
+			toast.success("Successfully updated");
 		} catch (error) {
 			handleError(error);
 		}

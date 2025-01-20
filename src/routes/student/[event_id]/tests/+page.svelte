@@ -13,6 +13,7 @@
 		isAfter,
 		diffBetweenDates,
 	} from "$lib/dateUtils";
+	import toast from "$lib/toast.svelte";
 	import { handleError } from "$lib/handleError";
 	import {
 		getEventTests,
@@ -185,7 +186,7 @@
 		if (!res || res == "A test taker entry for this taker already exists" || res == "Inserted test_taker") {
 			window.location.href = `./tests/${test.test_id}`;
 		} else {
-			// toast.error(res)
+			toast.error(res)
 		}
 	}
 

@@ -3,7 +3,7 @@
 	import { Form, TextInput } from "carbon-components-svelte";
 	import { user } from "$lib/sessionStore";
 	import { get } from "svelte/store";
-	import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
 

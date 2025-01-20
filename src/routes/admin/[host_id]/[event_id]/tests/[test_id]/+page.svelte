@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 	import { TextArea, TextInput } from "carbon-components-svelte";
 	import {} from "carbon-components-svelte";
 	import MathJax from "$lib/components/MathJax.svelte";
