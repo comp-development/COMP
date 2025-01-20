@@ -10,7 +10,6 @@
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte";
 	import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
 	import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import { onDestroy, onMount } from "svelte";
 	import {

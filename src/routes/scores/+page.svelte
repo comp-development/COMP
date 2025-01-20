@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import toast from "svelte-french-toast";
 	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
 
 	import LiveScoreBoard from "$lib/components/LiveScoreBoard.svelte";

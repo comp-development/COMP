@@ -12,7 +12,6 @@
 	import { createEventDispatcher } from "svelte";
 	import { formatDuration } from "$lib/dateUtils";
 	
-	// import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import {
 		getTestProblems,

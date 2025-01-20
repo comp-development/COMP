@@ -10,7 +10,7 @@
 	import { handleError } from "$lib/handleError";
 	import { getAllEvents } from "$lib/supabase";
     import Button from "$lib/components/Button.svelte";
-    import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 
 	let pageSize = $state(25);
 	let page = $state(1);

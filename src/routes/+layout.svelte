@@ -1,6 +1,7 @@
 <script lang="ts">
-  import "../app.css";
+	import "../app.css";
 	import "carbon-components-svelte/css/white.css";
+	import Toaster from "$lib/components/Toaster.svelte";
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
 	import Banner from "$lib/components/Banner.svelte";
@@ -9,11 +10,10 @@
 	import { user } from "$lib/sessionStore";
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
-	// import { Toaster } from "svelte-french-toast";
 	import { getThisUser } from "$lib/supabase";
 	import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
 	interface Props {
-		children?: import('svelte').Snippet;
+		children?: import("svelte").Snippet;
 	}
 
 	let { children }: Props = $props();
@@ -59,8 +59,10 @@
 	/>
 </svelte:head>
 
-<!-- <Toaster /> -->
 <main>
+	<div class="absolute flex items-center mt-3 w-full">
+		<Toaster></Toaster>
+	</div>
 	{#if !loaded}
 		<Banner />
 		<div class="loadingPage flex">

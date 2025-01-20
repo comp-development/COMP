@@ -11,7 +11,7 @@
         updateGradedAnswers,
     } from "$lib/supabase";
     import Button from "$lib/components/Button.svelte";
-    import toast from "svelte-french-toast";
+    	import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
     import { supabase } from "$lib/supabaseClient";
     import AsciiMath from "$lib/components/AsciiMath.svelte";

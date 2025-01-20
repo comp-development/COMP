@@ -3,8 +3,8 @@
   import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { user } from "$lib/sessionStore";
 	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
-    import { supabase } from "$lib/supabaseClient";
-    import { Tag } from "carbon-components-svelte";
+  import { supabase } from "$lib/supabaseClient";
+  import { Tag } from "carbon-components-svelte";
 
 	let student: any = $state();
 	let my_events: {

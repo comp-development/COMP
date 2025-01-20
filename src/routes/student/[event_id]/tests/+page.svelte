@@ -13,7 +13,7 @@
 		isAfter,
 		diffBetweenDates,
 	} from "$lib/dateUtils";
-	import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 	import { handleError } from "$lib/handleError";
 	import {
 		getEventTests,

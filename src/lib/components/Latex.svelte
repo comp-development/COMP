@@ -3,8 +3,6 @@
 	import { unifiedLatexToHast } from "@unified-latex/unified-latex-to-hast";
 	import { processLatexViaUnified } from "@unified-latex/unified-latex";
 	import rehypeStringify from "rehype-stringify";
-	import toast from "svelte-french-toast";
-	import { handleError } from "$lib/handleError";
 
 	interface Props {
 		style?: string;
