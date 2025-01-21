@@ -2,14 +2,15 @@
 	import { editUser, getUser, transferUser } from "$lib/supabase";
 	import { page } from "$app/stores";
 	import Loading from "$lib/components/Loading.svelte";
-	import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
+
 	import { handleError } from "$lib/handleError";
 	import Button from "$lib/components/Button.svelte";
 	import { TextInput } from "carbon-components-svelte";
 
 	let userId = $page.params.id;
-	let user = {};
-	let loading = true;
+	let user = $state({});
+	let loading = $state(true);
 
 	async function fetchUser() {
 		try {

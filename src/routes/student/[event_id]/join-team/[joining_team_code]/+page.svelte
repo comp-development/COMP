@@ -6,10 +6,10 @@
   const event_id = parseInt($page.params.event_id);
   const join_code = $page.params.joining_team_code;
 
-  let loading = true;
+  let loading = $state(true);
   let token: string | null = null;
 
-  let failure: { reason: string; stripe_url?: string } | null = null;
+  let failure: { reason: string; stripe_url?: string } | null = $state(null);
 
   (async () => {
     const { data, error } = await supabase.auth.getSession();
@@ -99,7 +99,7 @@
       organization lacking tickets.
     </p>
     <button
-      on:click={purchase_ticket({
+      onclick={purchase_ticket({
         creating_team: false,
         joining_team_code: join_code,
       })}>Purchase an individual ticket.</button

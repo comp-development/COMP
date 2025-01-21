@@ -6,10 +6,10 @@
     import { TextArea, TextInput } from "carbon-components-svelte";
     import { handleError } from "$lib/handleError";
 
-    let problem = {
+    let problem = $state({
         problem_latex: "",
         answer_latex: "",
-    };
+    });
 
     async function onSubmit() {
         try {

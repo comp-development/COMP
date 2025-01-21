@@ -1,4 +1,4 @@
-<script lang="js">
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import {onDestroy} from 'svelte';
 	import Button from "$lib/components/Button.svelte";
@@ -12,7 +12,6 @@
 	import { createEventDispatcher } from "svelte";
 	import { formatDuration } from "$lib/dateUtils";
 	
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import {
 		getTestProblems,
@@ -27,27 +26,31 @@
   import { mathlifier } from "mathlifier";
     import Problem from './Problem.svelte';
 
-	export let test_taker;
-	export let settings;
 	let pages = settings.pages
 	let meltTime = settings.meltTime
-	export let is_team = false;
+	interface Props {
+		test_taker: any;
+		settings: any;
+		is_team?: boolean;
+	}
+
+	let { test_taker = $bindable(), settings, is_team = false }: Props = $props();
 	//console.log("TESTAKER", test_taker);
 	let answers = [];
-	let problems = [];
-	let answersMap = {};
-	let clarifications = {};
-	let saved = {};
-	let loading = true;
+	let problems = $state([]);
+	let answersMap = $state({});
+	let clarifications = $state({});
+	let saved = $state({});
+	let loading = $state(true);
 	let startTime = test_taker.start_time;
 	let endTime = test_taker.end_time;
-	let formattedTime = "0:00:00";
-	let timeRemaining;
-	let timeElapsed;
+	let formattedTime = $state("0:00:00");
+	let timeRemaining = $state();
+	let timeElapsed = $state();
 	let timerInterval;
 	let endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
 	let startTimeMs = new Date(startTime).getTime();
-	let curPage = test_taker.page_number
+	let curPage = $state(test_taker.page_number)
 
 	let test_answers_channel;
 	let problem_clarifications_channel;
@@ -56,7 +59,7 @@
 	let currentField;
 	let prevAnswer;
 
-	let open = false;
+	let open = $state(false);
 
 	const changeProblemClarification = (payload) => {
 		//console.log("CLARIFY", payload);
@@ -312,13 +315,15 @@
 					<div class="problem-div">
 						{#if meltTime}
 							<h5>
-								<FormattedTimeLeft timeLeft={problem.problem_number*parseInt(meltTime) - timeElapsed/1000} totalTime={problem.problem_number*parseInt(meltTime)} let:prop={time}>
-									{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
-										Melted!
-									{:else}
-										Melts in {time}
-									{/if}
-								</FormattedTimeLeft>
+								<FormattedTimeLeft timeLeft={problem.problem_number*parseInt(meltTime) - timeElapsed/1000} totalTime={problem.problem_number*parseInt(meltTime)} >
+									{#snippet children({ prop: time })}
+																		{#if problem.problem_number*parseInt(meltTime) - timeElapsed/1000 < 0}
+											Melted!
+										{:else}
+											Melts in {time}
+										{/if}
+																										{/snippet}
+																</FormattedTimeLeft>
 							</h5>
 						{/if}
 						
@@ -340,9 +345,11 @@
 									direction="top"
 									style="margin-left: 8px; align-items: center; margin-top: 24px"
 								>
-									<p slot="tooltipText">
-										Utilize <a href="https://asciimath.org/#syntax" style="color: #abdbe3"  target="_blank">AsciiMath</a> for math typesetting!
-									</p>
+									{#snippet tooltipText()}
+																		<p >
+											Utilize <a href="https://asciimath.org/#syntax" style="color: #abdbe3"  target="_blank">AsciiMath</a> for math typesetting!
+										</p>
+																	{/snippet}
 								</TooltipIcon>
 							</div>
 							<br />

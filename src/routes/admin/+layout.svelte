@@ -1,9 +1,14 @@
 <script lang="ts">
     import { isAdmin } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
+    interface Props {
+        children?: import('svelte').Snippet;
+    }
 
-    let adminUser: boolean;
-    let loading = true;
+    let { children }: Props = $props();
+
+    let adminUser: boolean = $state();
+    let loading = $state(true);
 
     async function onPageLoad() {
         adminUser = await isAdmin();
@@ -17,7 +22,7 @@
     <Loading />
 {:else if adminUser}
     <div class="exterior">
-        <slot />
+        {@render children?.()}
     </div>
 {:else}
     <h2 style="text-align: center;">You do not have permission to access this page.</h2>

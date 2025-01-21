@@ -1,5 +1,7 @@
 <script lang="ts">
+	import "../app.css";
 	import "carbon-components-svelte/css/white.css";
+	import Toaster from "$lib/components/Toaster.svelte";
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
 	import Banner from "$lib/components/Banner.svelte";
@@ -8,14 +10,18 @@
 	import { user } from "$lib/sessionStore";
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
-	import { Toaster } from "svelte-french-toast";
 	import { getThisUser } from "$lib/supabase";
 	import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
+	interface Props {
+		children?: import("svelte").Snippet;
+	}
+
+	let { children }: Props = $props();
 	let scheme: any = defaultSettings; // Initialize scheme variable
 
-	let loaded = false;
+	let loaded = $state(false);
 
-	let hasAccount = true;
+	let hasAccount = $state(true);
 	if ($page.route.id?.includes("/signup")) {
 		hasAccount = false;
 	}
@@ -53,8 +59,10 @@
 	/>
 </svelte:head>
 
-<Toaster />
 <main>
+	<div class="absolute flex items-center mt-3 w-full">
+		<Toaster></Toaster>
+	</div>
 	{#if !loaded}
 		<Banner />
 		<div class="loadingPage flex">
@@ -77,7 +85,7 @@
 								size="lg"
 								class="link"
 								id="switchScreen"
-								on:click={() => {
+								onclick={() => {
 									hasAccount = false;
 								}}>Sign-Up</button
 							>
@@ -106,7 +114,7 @@
 								size="lg"
 								class="link"
 								id="switchScreen"
-								on:click={() => {
+								onclick={() => {
 									hasAccount = true;
 								}}
 							>
@@ -124,13 +132,13 @@
 		{/if}
 	{:else if $page.route.id && $page.route.id.includes("/scores")}
 		<div>
-			<slot />
+			{@render children?.()}
 		</div>
 	{:else}
 		<div class="menu-split">
 			<Menu />
 			<div>
-				<slot />
+				{@render children?.()}
 			</div>
 		</div>
 	{/if}

@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+    const bubble = createBubbler();
     import {
         DataTable,
         Toolbar,
@@ -10,15 +13,24 @@
     import MathJax from "$lib/components/MathJax.svelte";
     import { getAllProblems } from "$lib/supabase";
 
-    let pageSize = 25;
-    let pageT = 1;
+    let pageSize = $state(25);
+    let pageT = $state(1);
 
-    export let open: boolean;
-    export let onSelect;
-    export let closeModal;
-    export let changeNewProblem;
+    interface Props {
+        open: boolean;
+        onSelect: any;
+        closeModal: any;
+        changeNewProblem: any;
+    }
 
-    let allProblems;
+    let {
+        open,
+        onSelect,
+        closeModal,
+        changeNewProblem
+    }: Props = $props();
+
+    let allProblems = $state();
 
     (async () => {
         allProblems = await getAllProblems();
@@ -29,9 +41,9 @@
 </script>
 
 {#if open}
-    <div class="modal-overlay" on:click={closeModal}>
-        <div class="modal" on:click|stopPropagation>
-            <button class="close-button" on:click={closeModal}>✖</button>
+    <div class="modal-overlay" onclick={closeModal}>
+        <div class="modal" onclick={stopPropagation(bubble('click'))}>
+            <button class="close-button" onclick={closeModal}>✖</button>
             <h2>Select Problem</h2>
             <br />
             <Button title="Write New Problem" action={changeNewProblem} />
@@ -59,23 +71,26 @@
                     </ToolbarContent>
                 </Toolbar>
 
-                <svelte:fragment slot="cell" let:row let:cell let:rowIndex>
-                    <div>
-                        {#if cell.key === "edit"}
-                            <button class="arrow-button" on:click={() => {onSelect(row)}}
-                                >✅</button
-                            >
-                        {:else}
-                            <div class="cell-content">
-                                {cell.value == null || cell.value == ""
-                                    ? "None"
-                                    : cell.value}
-                            </div>
-                        {/if}
-                    </div>
-                </svelte:fragment>
+                {#snippet cell({ row, cell, rowIndex })}
+                            
+                        <div>
+                            {#if cell.key === "edit"}
+                                <button class="arrow-button" onclick={() => {onSelect(row)}}
+                                    >✅</button
+                                >
+                            {:else}
+                                <div class="cell-content">
+                                    {cell.value == null || cell.value == ""
+                                        ? "None"
+                                        : cell.value}
+                                </div>
+                            {/if}
+                        </div>
+                    
+                            {/snippet}
 
-                <svelte:fragment slot="expanded-row" let:row>
+                <!-- @migration-task: migrate this slot by hand, `expanded-row` is an invalid identifier -->
+    <svelte:fragment slot="expanded-row" let:row>
                     <MathJax math={row.problem_latex} />
                 </svelte:fragment>
             </DataTable>

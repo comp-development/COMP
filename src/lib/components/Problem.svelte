@@ -1,8 +1,12 @@
 <script lang="ts">
     import MathJax from "$lib/components/MathJax.svelte";
 
-    export let clarification: string | null = null;
-    export let problem;
+    interface Props {
+        clarification?: string | null;
+        problem: any;
+    }
+
+    let { clarification = null, problem }: Props = $props();
 </script>
 
 <p style="margin-bottom: 5px;">

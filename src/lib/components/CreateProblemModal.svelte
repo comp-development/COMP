@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+    const bubble = createBubbler();
     import {
         TextArea,
         TextInput
@@ -7,19 +10,23 @@
     import MathJax from "$lib/components/MathJax.svelte";
     import { addProblem, getAllProblems } from "$lib/supabase";
 
-    export let open: boolean;
-    export let closeModal;
-    export let addProblemFunction;
+    interface Props {
+        open: boolean;
+        closeModal: any;
+        addProblemFunction: any;
+    }
+
+    let { open, closeModal, addProblemFunction }: Props = $props();
 
     let allProblems;
 
     let pageSize = 25;
     let pageT = 1;
 
-    let problem = {
+    let problem = $state({
         problem_latex: "",
         answer_latex: "",
-    };
+    });
 
     async function onSubmit() {
         const newProblem = await addProblem(problem);
@@ -35,9 +42,9 @@
 </script>
 
 {#if open}
-    <div class="modal-overlay" on:click={closeModal}>
-        <div class="modal" on:click|stopPropagation>
-            <button class="close-button" on:click={closeModal}>✖</button>
+    <div class="modal-overlay" onclick={closeModal}>
+        <div class="modal" onclick={stopPropagation(bubble('click'))}>
+            <button class="close-button" onclick={closeModal}>✖</button>
             <h2>Write New Problem</h2>
             <br />
             <div class="row">

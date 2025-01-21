@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import toast from "svelte-french-toast";
 	import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
 
 	import LiveScoreBoard from "$lib/components/LiveScoreBoard.svelte";
@@ -13,10 +12,10 @@
 		getTestAnswers,
 	} from "$lib/supabase";
 
-	let loading = true;
+	let loading = $state(true);
 
 	let test_id = Number($page.params.test_id);
-	let test;
+	let test = $state();
 	(async () => {
 		test = await getTest(test_id);
 		loading = false;

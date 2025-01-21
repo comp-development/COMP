@@ -4,10 +4,10 @@
 	import { getGutsTest } from "$lib/supabase";
 
 	console.log("SUP");
-	let loading = true;
+	let loading = $state(true);
 
 	let test_id = Number($page.params.test_id);
-	let test;
+	let test = $state();
 	(async () => {
 		test = await getGutsTest(test_id);
 		loading = false;

@@ -1,22 +1,24 @@
 <script lang="ts">
+  import { Button, Dropdown, DropdownItem } from 'flowbite-svelte';
+  import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { user } from "$lib/sessionStore";
 	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
-    import { supabase } from "$lib/supabaseClient";
-    import { Tag } from "carbon-components-svelte";
+  import { supabase } from "$lib/supabaseClient";
+  import { Tag } from "carbon-components-svelte";
 
-	let student: any;
+	let student: any = $state();
 	let my_events: {
 		event_id: string;
 		event_name: string;
 		event_date: string;
-	}[] = [];
+	}[] = $state([]);
 	let my_event_ids: Set<string> = new Set();
 	let all_events: {
 		event_id: number;
 		event_name: string;
 		event_date: string;
-	}[] = [];
-	let loading = true;
+	}[] = $state([]);
+	let loading = $state(true);
 
 	(async () => {
 		// console.log((await supabase.auth.getSession()).data.session?.access_token)
@@ -42,6 +44,15 @@
 {#if loading}
 	<p>Loading...</p>
 {:else}
+	<div class="p-8">
+		<Button>Example Dropdown button<ChevronDownOutline class="w-6 h-6 ms-2 text-white dark:text-white" /></Button>
+		<Dropdown>
+		  <DropdownItem class="font-bold underline">Dashboard</DropdownItem>
+		  <DropdownItem>Settings</DropdownItem>
+		  <DropdownItem>Earnings</DropdownItem>
+		  <DropdownItem>Sign out</DropdownItem>
+		</Dropdown>
+	</div>
 	<h1>Welcome, {student.first_name}</h1>
 	<h3>{$user?.email}</h3>
 	<br />

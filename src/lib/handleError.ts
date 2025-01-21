@@ -1,4 +1,4 @@
-import toast from "svelte-french-toast";
+import toast from "$lib/toast.svelte";
 
 /**
  * Handles errors that arises during usage.

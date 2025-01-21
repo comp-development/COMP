@@ -10,12 +10,12 @@
 	import { handleError } from "$lib/handleError";
 	import { getAllEvents } from "$lib/supabase";
     import Button from "$lib/components/Button.svelte";
-    import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 
-	let pageSize = 25;
-	let page = 1;
-	let loading = true;
-	let events = [];
+	let pageSize = $state(25);
+	let page = $state(1);
+	let loading = $state(true);
+	let events = $state([]);
 
 	async function roleManager() {
 		try {
@@ -64,21 +64,23 @@
 				</ToolbarContent>
 			</Toolbar>
 
-			<svelte:fragment slot="cell" let:row let:cell let:rowIndex>
-				<div>
-					{#if cell.key === "edit"}
-						<div class="pencil">
-							<Link class="link" href={"/admin/" + row.event_id}
-								><i class="ri-pencil-fill" /></Link
-							>
-						</div>
-					{:else}
-						<div style="overflow: hidden;">
-							{cell.value == null || cell.value == "" ? "None" : cell.value}
-						</div>
-					{/if}
-				</div>
-			</svelte:fragment>
+			{#snippet cell({ row, cell, rowIndex })}
+					
+					<div>
+						{#if cell.key === "edit"}
+							<div class="pencil">
+								<Link class="link" href={"/admin/" + row.event_id}
+									><i class="ri-pencil-fill"></i></Link
+								>
+							</div>
+						{:else}
+							<div style="overflow: hidden;">
+								{cell.value == null || cell.value == "" ? "None" : cell.value}
+							</div>
+						{/if}
+					</div>
+				
+					{/snippet}
 		</DataTable>
 
 		<Pagination

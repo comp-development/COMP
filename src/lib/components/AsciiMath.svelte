@@ -1,21 +1,21 @@
-<script>
+<script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { math } from 'mathlifier';
     import AsciiMathParser from 'asciimath2tex';
     import { onMount } from 'svelte';
 
     const parser = new AsciiMathParser();
-    export let value = '';
-    export let size = '1.2em'
-
-    let tex = '';
-    let container;
-
-    $: {
-        tex = renderMath(parser.parse(value));
-        if (container) {
-            container.innerHTML = tex;
-        }
+    interface Props {
+        value?: string;
+        size?: string;
     }
+
+    let { value = '', size = '1.2em' }: Props = $props();
+
+    let tex = $state('');
+    let container = $state();
+
 
     function renderMath(texString) {
         const parsed = math(texString);
@@ -24,6 +24,12 @@
 
     onMount(() => {
         container.innerHTML = tex;
+    });
+    run(() => {
+        tex = renderMath(parser.parse(value));
+        if (container) {
+            container.innerHTML = tex;
+        }
     });
 </script>
 

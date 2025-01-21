@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { run } from 'svelte/legacy';
+
     import { page } from "$app/stores";
     import MathJax from "$lib/components/MathJax.svelte";
     import {
@@ -9,23 +11,20 @@
         updateGradedAnswers,
     } from "$lib/supabase";
     import Button from "$lib/components/Button.svelte";
-    import toast from "svelte-french-toast";
+    	import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
     import { supabase } from "$lib/supabaseClient";
     import AsciiMath from "$lib/components/AsciiMath.svelte";
 
     let test_id = Number($page.params.test_id);
-    let problems: [];
-    let problem_list: [];
-    let loading = true;
-    let selectedProblem;
-    let gradedAnswers: any[] = [];
+    let problems: [] = $state();
+    let problem_list: [] = $state();
+    let loading = $state(true);
+    let selectedProblem = $state();
+    let gradedAnswers: any[] = $state([]);
     let gradedAnswersChannel;
     let gradedAnswerCountChannel;
 
-    $: if (selectedProblem !== undefined) {
-        recieveGradedAnswers();
-    }
 
     function sortedGradedAnswers() {
         return gradedAnswers.slice().sort((a, b) => {
@@ -192,6 +191,11 @@
             )
             .subscribe();
     }
+    run(() => {
+        if (selectedProblem !== undefined) {
+            recieveGradedAnswers();
+        }
+    });
 </script>
 
 {#if loading}
@@ -208,7 +212,7 @@
                     style="background-color: {problem == selectedProblem
                         ? 'var(--secondary-light)'
                         : 'var(--primary-light)'};"
-                    on:click={() => {
+                    onclick={() => {
                         selectedProblem = index;
                     }}>{Number(problem) + 1}</button
                 >
@@ -257,7 +261,7 @@
                                 <div style="display: flex;">
                                     <button
                                         class="arrow-button"
-                                        on:click={async () => {
+                                        onclick={async () => {
                                             if (
                                                 gradedAnswers[index].correct == true
                                             ) {
@@ -272,7 +276,7 @@
                                     >
                                     <button
                                         class="arrow-button"
-                                        on:click={async () => {
+                                        onclick={async () => {
                                             if (
                                                 gradedAnswers[index].correct ==
                                                 false

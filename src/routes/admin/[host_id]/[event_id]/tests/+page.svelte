@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { page } from '$app/stores';
 	import Button from "$lib/components/Button.svelte";
 	import { Toggle, Tag, Modal, DatePicker, DatePickerInput, TimePicker, TimePickerSelect, SelectItem, TextInput } from "carbon-components-svelte";
@@ -8,7 +10,6 @@
 	import Edit from "carbon-icons-svelte/lib/Edit.svelte";
 	import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
 	import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
-	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	import { onDestroy, onMount } from "svelte";
 	import {
@@ -19,21 +20,24 @@
 
 	} from "$lib/supabase";
 
-	let loading = true;
+	let loading = $state(true);
 
-	let open = false;
+	let open = $state(false);
 	let instructions = ""
 	let name = ""
 
 	let availableTests = [];
-	let testStatusMap = {};
-	$: tests = Object.values(testStatusMap);
+	let testStatusMap = $state({});
+	let tests;
+	run(() => {
+		tests = Object.values(testStatusMap);
+	});
 	let user = null;
 	let teamId = null;
 
-	let curTest = {};
+	let curTest = $state({});
 
-	let isInvalid = false
+	let isInvalid = $state(false)
 
 	function setupTime(date) {
 		let month, day, year, hours, minutes, currentAmPm
@@ -229,7 +233,7 @@
 							</div>
 							<button
 								class="test-button full"
-								on:click={(e) => {
+								onclick={(e) => {
 									curTest = test
 									setupTime(curTest.openingTime ? new Date(curTest.openingTime) : new Date())
 									open = true;

@@ -1,13 +1,14 @@
 <script lang="ts">
+
 	import Button from "$lib/components/Button.svelte";
 	import { handleError } from "$lib/handleError";
 	import { editUser, getThisUser, getUser, isAdmin } from "$lib/supabase";
 	import { TextInput } from "carbon-components-svelte";
-    import toast from "svelte-french-toast";
+	import toast from "$lib/toast.svelte";
 
-	let user;
+	let user = $state();
 	let user_id;
-	let loading: boolean;
+	let loading: boolean = $state();
 
 	async function onLoad() {
 		loading = true;

@@ -2,15 +2,19 @@
 	import { onMount } from "svelte";
 	import { getGutsScores } from "$lib/supabase/";
 
-	export let test;
-    export let max_per_side = 10;
+	interface Props {
+		test: any;
+		max_per_side?: number;
+	}
+
+	let { test, max_per_side = 10 }: Props = $props();
     let num_rounds = test.settings.pages.length
 	let screen_width = screen.width;
 	let curr_screen = 0
 	let num_screens = 0
 	let num_teams = 0
     let num_copies = 1	
-	let scores = []
+	let scores = $state([])
 	let seconds = 0
 	let minutes = 60
 	//document.documentElement.style.setProperty('--light', styles["background-dark"]);

@@ -3,9 +3,14 @@
   import { user } from "$lib/sessionStore";
   import { supabase } from "$lib/supabaseClient";
   import { page } from "$app/stores";
+  interface Props {
+    children?: import('svelte').Snippet;
+  }
 
-  let can_view_page = false;
-  let loading = true;
+  let { children }: Props = $props();
+
+  let can_view_page = $state(false);
+  let loading = $state(true);
 
   (async () => {
     if ($page.url.pathname == "/student/signup") {
@@ -30,7 +35,7 @@
   <Loading />
 {:else if can_view_page}
   <div class="exterior">
-    <slot />
+    {@render children?.()}
   </div>
 {:else}
   <h2 style="text-align: center;">No Access</h2>
