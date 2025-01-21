@@ -1,6 +1,6 @@
 <script>
 	import Banner from "$lib/components/Banner.svelte";
-	import { Link } from "carbon-components-svelte";
+	import { Button } from 'flowbite-svelte';
 </script>
 
 <Banner />
@@ -13,27 +13,11 @@
 </p>
 <br />
 <div class="flex">
-	<div class="button">
-		<Link href="/" class="link"
-			><p>Navigate Home <i class="ri-home-fill"></i></p></Link
-		>
-	</div>
+	<Button href="/" class="link" pill>Navigate Home</Button>
 </div>
 
 <style>
 	:root {
 		text-align: center;
-	}
-
-	.button {
-		border: 2px solid var(--primary-light);
-		width: 30em;
-		padding: 10px;
-		color: var(--primary-light);
-	}
-
-	.button:hover {
-		background-color: var(--primary-light);
-		color: var(--text-color-light);
 	}
 </style>

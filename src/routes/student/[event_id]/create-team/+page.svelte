@@ -4,6 +4,8 @@
   import { handleError } from "$lib/handleError";
   import { getStudentTicketOrder } from "$lib/supabase";
   import { user } from "$lib/sessionStore";
+  import Loading from "$lib/components/Loading.svelte";
+  import { Button, Input } from 'flowbite-svelte';
 
   const event_id = parseInt($page.params.event_id);
   let transaction_stored = false;
@@ -75,18 +77,21 @@
 </script>
 
 {#if loading}
-  <p>Loading...</p>
+  <Loading />
 {:else}
+  <br />
+  <h1>Create Team</h1>
   <br />
   <!-- TODO: form for filling out team name, etc -->
   <form>
-    <div>
-      <label for="team-name">Team Name: </label>
-      <input type="text" id="team-name" bind:value={team_name} />
+    <div class="flex">
+      <div style="width: 400px;">
+        <Input type="text" id="team-name" bind:value={team_name} placeholder="Team Name" />
+      </div>
     </div>
     <br />
     <div>
-      <button onclick={create_team}>Create Team</button>
+      <Button onclick={create_team} pill>Create Team</Button>
     </div>
   </form>
   {#if failure?.reason == "payment not complete"}
