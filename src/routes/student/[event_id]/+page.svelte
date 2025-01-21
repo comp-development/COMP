@@ -171,9 +171,55 @@
 
   <!-- Additional conditions for team and org information -->
   {#if in_team}
-    <p>Team information...</p>
-  {:else if in_org}
-    <p>Org information...</p>
+    <br />
+    <p style="text-align: center;">
+      Welcome to this tournament! Below is the information for the team you are
+      registered in. If there is an issue, update the team information on
+      ContestDojo or email <a href="mailto:tournament@mustangmath.com"
+        >tournament@mustangmath.com</a
+      >
+    </p>
+    <br />
+    <div class="flex">
+      <Button title="Take Tests" href={"/student/" + event_id + "/tests"} />
+    </div>
+    <br />
+
+    <div class="team_info">
+      <p style="font-weight: bold; font-size: 20px; align-items: left">
+        {team?.team_name}
+      </p>
+      {#if team?.division}<p>{team?.division} Division</p>{/if}
+
+      {#each team?.student_events_detailed ?? [] as teamMember}
+        <div style="display: flex; align-items: center;">
+          {#if teamMember.front_id}
+            <Badge color={teamMember.student_id == $user?.id ? "green" : "dark"}
+              >{teamMember.front_id}</Badge
+            >
+          {/if}
+          <div style="display:flex">
+            <p>
+              {teamMember.first_name}
+              {teamMember.last_name}
+            </p>
+            <p style="margin-left: 10px">
+              <em>{teamMember.email}</em>
+            </p>
+          </div>
+        </div>
+      {/each}
+    </div>
+  {:else}
+    {#if in_org}
+      <p>Not yet assigned team by org</p>
+    {/if}
+  {/if}
+  {#if in_org}
+    <!-- TODO: org info -->
+    {#if !purchase_ticket}
+      <button onclick={purchase_ticket({})}>Purchase Individual Ticket (check with your organization if you need to do so)</button>
+    {/if}
   {/if}
 {/if}
 
