@@ -69,9 +69,14 @@ alter table "public"."coaches" drop column "created_at";
 
 alter table "public"."coaches" drop column "org_id";
 
-alter table "public"."coaches" alter column "coach_id" set default gen_random_uuid();
-
 alter table "public"."coaches" alter column "coach_id" drop identity;
+
+-- https://stackoverflow.com/questions/20342717/postgresql-change-column-type-from-int-to-uuid
+-- this OVERWRITES the previous bigint column with new uuids.
+-- we don't have any coaches yet, so there are no foreign references to fix.
+alter table "public"."coaches" alter column "coach_id" set data type uuid using (gen_random_uuid());
+
+alter table "public"."coaches" alter column "coach_id" set default gen_random_uuid();
 
 alter table "public"."coaches" alter column "coach_id" set data type uuid using "coach_id"::uuid;
 
