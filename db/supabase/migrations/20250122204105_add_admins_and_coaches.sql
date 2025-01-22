@@ -69,9 +69,9 @@ alter table "public"."coaches" drop column "created_at";
 
 alter table "public"."coaches" drop column "org_id";
 
-alter table "public"."coaches" alter column "coach_id" drop identity;
-
 alter table "public"."coaches" alter column "coach_id" set default gen_random_uuid();
+
+alter table "public"."coaches" alter column "coach_id" drop identity;
 
 alter table "public"."coaches" alter column "coach_id" set data type uuid using "coach_id"::uuid;
 
