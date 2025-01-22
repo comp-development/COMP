@@ -29,7 +29,8 @@ async function create_style(seed: SeedClient) {
 }
 
 enum UserType {
-  Admin = 1,
+  Superadmin = 1,
+  Admin,
   Student,
 }
 
@@ -62,8 +63,8 @@ async function create_user(
     last_name,
     ...other_fields,
   };
-  if (type == UserType.Admin) {
-    return await seed.admins([data]);
+  if (type == UserType.Superadmin) {
+    return await seed.superadmins([data]);
   } else if (type == UserType.Student) {
     return await seed.students([data]);
   }
@@ -117,6 +118,12 @@ async function main() {
           email: (ctx) => copycat.email(ctx.seed),
         },
       },
+      superadmins: {
+        data: {
+          first_name: (ctx) => copycat.firstName(ctx.seed),
+          last_name: (ctx) => copycat.lastName(ctx.seed),
+        },
+      },
       admins: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
@@ -144,6 +151,9 @@ async function main() {
             "Host " + copycat.word(ctx.seed, { capitalize: true }),
         },
       },
+      host_admins: {
+        data: {},
+      },
       org_events: {
         data: {
           join_code: (ctx) => "org-" + copycat.uuid(ctx.seed),
@@ -158,7 +168,7 @@ async function main() {
       },
       students: {
         data: {
-          first_name: (ctx) => copycat.firstName(ctx.seed),
+          //first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
           grade: (ctx) =>
             "Grade " + copycat.int(ctx.seed, { min: 6, max: 12 }).toString(),
@@ -193,7 +203,7 @@ async function main() {
 
   await create_user(
     seed,
-    UserType.Admin,
+    UserType.Superadmin,
     "Thomas",
     "Anderson",
     "admin@gmail.com",
@@ -216,7 +226,16 @@ async function main() {
   let { students } = await seed.students((x) => x(30));
   students.push(debug_student);
 
+  const { superadmins } = await seed.superadmins((x) => x(10));
+  const { admins } = await seed.admins((x) => x(10));
   const { hosts } = await seed.hosts((x) => x(3));
+
+  const { host_admins } = await seed.host_admins(
+    admins.map((a) => ({ admin_id: a.admin_id })),
+    {
+      connect: { hosts },
+    },  
+  )
   const { events } = await seed.events(
     (x) =>
       x(hosts.length * 4, () => ({
