@@ -29,7 +29,9 @@ async function create_style(seed: SeedClient) {
 }
 
 enum UserType {
-  Admin = 1,
+  Superadmin = 1,
+  Admin,
+  Coach,
   Student,
 }
 
@@ -62,8 +64,12 @@ async function create_user(
     last_name,
     ...other_fields,
   };
-  if (type == UserType.Admin) {
+  if (type == UserType.Superadmin) {
+    return await seed.superadmins([data]);
+  } else if (type == UserType.Admin) {
     return await seed.admins([data]);
+  } else if (type == UserType.Coach) {
+    return await seed.coaches([data]);
   } else if (type == UserType.Student) {
     return await seed.students([data]);
   }
@@ -117,6 +123,12 @@ async function main() {
           email: (ctx) => copycat.email(ctx.seed),
         },
       },
+      superadmins: {
+        data: {
+          first_name: (ctx) => copycat.firstName(ctx.seed),
+          last_name: (ctx) => copycat.lastName(ctx.seed),
+        },
+      },
       admins: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
@@ -143,6 +155,9 @@ async function main() {
           host_name: (ctx) =>
             "Host " + copycat.word(ctx.seed, { capitalize: true }),
         },
+      },
+      host_admins: {
+        data: {},
       },
       org_events: {
         data: {
@@ -194,29 +209,65 @@ async function main() {
   await create_user(
     seed,
     UserType.Admin,
-    "Thomas",
-    "Anderson",
+    "Test",
+    "Admin",
     "admin@gmail.com",
     "$2a$10$.KWPj66/5wCO1C5c2w98wexdaZm4rwWWA0VPjz2mErXmOhKRnv9/e",
     {},
   );
   await create_user(
     seed,
+    UserType.Coach,
+    "Test",
+    "Coach",
+    "coach@gmail.com",
+    "$2a$10$GWQTX.UReCTi/mS7DzfcQ.8u4VsPhIPMJHVZce1ION/2AiaVOhy.W",
+    {},
+  );
+  await create_user(
+    seed,
     UserType.Student,
-    "Addison",
-    "Addition",
+    "Test",
+    "Student",
     "student@gmail.com",
     "$2a$10$GPaPWd5mKl5ivBV/7uZmm.f.hwgGxbz6R2KS8.QfK4sNrJ.yEr/AG",
     {},
   );
+  await create_user(
+    seed,
+    UserType.Superadmin,
+    "Test",
+    "Superadmin",
+    "superadmin@gmail.com",
+    "$2a$10$t6.Am0kQrbW8d669u1Upwe5XW8jqOI3hFFWiE0EpNi4ipD3wmX1wW",
+    {},
+  );
   const debug_student = seed.$store.students[0];
+  const debug_coach = seed.$store.coaches[0];
+  const debug_admin = seed.$store.admins[0];
+  const debug_superadmin = seed.$store.superadmins[0];
 
   // TODO: coaches
 
   let { students } = await seed.students((x) => x(30));
   students.push(debug_student);
 
+  const { superadmins } = await seed.superadmins((x) => x(10));
+  superadmins.push(debug_superadmin);
+  const { admins } = await seed.admins((x) => x(10));
+  admins.push(debug_admin);
+  const { coaches } = await seed.coaches((x) => x(10));
+  coaches.push(debug_coach);
   const { hosts } = await seed.hosts((x) => x(3));
+
+  const { host_admins } = await seed.host_admins(
+    admins.flatMap((a) => ([{ admin_id: a.admin_id }, { admin_id: a.admin_id }])),
+    {
+      connect: { hosts },
+    },  
+  )
+  
+
   const { events } = await seed.events(
     (x) =>
       x(hosts.length * 4, () => ({
@@ -227,6 +278,12 @@ async function main() {
     },
   );
   const { orgs } = await seed.orgs((x) => x(3));
+  const { org_coaches } = await seed.org_coaches(
+    coaches.map((a) => ({ coach_id: a.coach_id })),
+    {
+      connect: { orgs },
+    },  
+  )
   for (const [i, event] of events.entries()) {
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(

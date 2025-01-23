@@ -15,6 +15,7 @@
 		let thisUser = await getThisUser();
 		user_id = thisUser?.id;
 		const user_type = await isAdmin(user_id);
+		console.log("user_type", user_type)
 		if (user_type) {
 			window.location.href='./admin'
 		} else {
