@@ -261,7 +261,7 @@ async function main() {
 
   const { events } = await seed.events(
     (x) =>
-      x(hosts.length * 2, () => ({
+      x(hosts.length * 4, () => ({
         tests: (x) => x(3),
       })),
     {
@@ -275,6 +275,8 @@ async function main() {
       connect: { orgs },
     },  
   )
+  /
+  /**
   for (const [i, event] of events.entries()) {
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(
@@ -301,15 +303,15 @@ async function main() {
         max: scrambled_s.length,
       }),
     );
+    
     const { student_events } = await seed.student_events(
       (x) =>
         x(org_s.length, ({ index }) => ({
           student_id: org_s[index].student_id,
-          event_id: event.event_id,
         })),
-      { connect: { orgs: org_choices } },
+      { connect: { org_events } },
     );
-
+    
     let team_store = new Set();
     const team_letters = "ABCDE";
     // Have organizations purchase at least sufficient tickets for their students.
@@ -385,9 +387,9 @@ async function main() {
       }),
       { connect: { events: [event] } },
     );
-    */
+    
   }
-
+  */
   process.exit();
 }
 
