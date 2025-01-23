@@ -98,6 +98,8 @@ export async function isAdmin(user_id: string | null = null) {
 		user_id = user?.id;
 	}
 
+	console.log("user_id", user_id);
+
 	const { data, error } = await supabase
 		.from('admins')
 		.select('admin_id')
