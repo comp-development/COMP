@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { Button, Dropdown, DropdownItem } from 'flowbite-svelte';
-	import { ChevronDownOutline } from 'flowbite-svelte-icons';
+	import { Button } from 'flowbite-svelte';
 	import { user } from "$lib/sessionStore";
 	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
-    import { supabase } from "$lib/supabaseClient";
 	import Loading from "$lib/components/Loading.svelte";
 
 	let student: any = $state();
@@ -45,8 +43,9 @@
 	<Loading />
 {:else}
 	<br />
-	<h1>Welcome, {student.first_name}</h1>
-	<h3>{$user?.email}</h3>
+	<h1>Welcome, {student.first_name} {student.last_name}</h1>
+	<h2 style="font-weight: 500">{$user?.email}</h2>
+	<br />
 	<br />
 	<h2 style="text-align: center;">My Events</h2>
 	<br />
@@ -61,13 +60,15 @@
 						</h4>
 						<p>{event.event_date}</p>
 					</div>
-					<div class="flex">
-						<Button href={`./student/${event.event_id}`} pill>Go to Event</Button>
+					<br />
+					<div>
+						<Button size="sm" href={`./student/${event.event_id}`} pill>Go to Event</Button>
 					</div>
 				</div>
 			</div>
 		{/each}
 	</div>
+	<br />
 	<br />
 	<h2 style="text-align: center;">All Events</h2>
 	<br />
@@ -84,8 +85,9 @@
 							<p style="display: inline-block">{event.event_date}</p>
 						</div>
 					</div>
-					<div class="flex">
-						<Button href={`./student/${event.event_id}`} pill>{my_event_ids.has(event.event_id.toString()) ? "Go to Event" : "Sign Up"}</Button>
+					<br />
+					<div>
+						<Button size="sm" href={`./student/${event.event_id}`} pill>{my_event_ids.has(event.event_id.toString()) ? "Go to Event" : "Sign Up"}</Button>
 					</div>
 				</div>
 			</div>
@@ -99,15 +101,15 @@
 		background-color: white;
 		border: 3px solid var(--primary-tint);
 		padding: 20px;
-		margin: 10px;
+		height: 100%;
 		border-radius: 20px;
 		font-weight: bold;
 		text-decoration: none;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
 		color: var(--text-color-dark);
-		transition: all 0.3s ease; /* Add transition for smooth hover effect */
+		transition: all 0.3s ease;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between
 	}
 
 	.problemContainer h4 {
@@ -119,27 +121,12 @@
 		text-align: left;
 	}
 
-	.problemContainer a {
-		outline: none;
-		/* avoid text placement shifting when hovered */
-		border: 2px solid #00000000;
-		padding: 10px 30px;
-		border-radius: 10px;
-		background-color: #a7f0ba;
-	}
-
-	.problemContainer a:hover {
-		border: 2px solid #3f9656;
-		scale: 1.05;
-		background-color: #a7f0ba;
-		cursor: pointer;
-	}
-
 	.buttonContainer {
-		flex-direction: column; /* Align children vertically */
-		align-items: center; /* Center children horizontally */
-		justify-content: center; /* Center children vertically */
-		margin: 0 auto; /* Center the container horizontally on the page */
+		display: grid;
+		grid-template-columns: 32% 32% 32%;
+		row-gap: 20px;
+		column-gap: 20px;
+		margin: 0 auto;
 		width: 70%;
 	}
 </style>
