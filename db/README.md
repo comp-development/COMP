@@ -65,6 +65,10 @@ to get the schema in a good state, run `npx @snaplet/seed sync` to ensure the
 seeding data model matches the schema, run `npx tsx seed.ts > supabase/seed.sql`
 again, then finally `supabase db reset`.
 
+`supabase db diff` can output a script which defines items in an invalid order.
+For example, defining a DB function after creating a table that uses the
+function.
+
 # COMP Dev DB
 
 Use the pre-authenticated email and password pairs below to sign in.
