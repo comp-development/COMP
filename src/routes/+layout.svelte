@@ -131,7 +131,13 @@
 			</div>
 		{/if}
 	{:else}
-		{@render children?.()}
+		<div class="menu-split">
+			<Menu />
+			<div>
+				{@render children?.()}
+			</div>
+		</div>
+		
 	{/if}
 </main>
 
