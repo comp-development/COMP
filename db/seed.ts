@@ -1,32 +1,7 @@
 import { SeedClient, createSeedClient } from "@snaplet/seed";
 import { copycat, Input } from "@snaplet/copycat";
 
-async function create_style(seed: SeedClient) {
-  await seed.settings([
-    {
-      settings: {
-        styles: {
-          primary: "#201c98",
-          secondary: "#81706d",
-          background: "#FFFBF0",
-          "primary-dark": "#0f1865",
-          "primary-tint": "#d9d8e9",
-          "primary-light": "#72ccdc",
-          "secondary-dark": "#544545",
-          "secondary-tint": "#f2dfdf",
-          "background-dark": "#ffd7d7",
-          "secondary-light": "#cfaeae",
-          "text-color-dark": "#000",
-          "text-color-light": "#fff",
-          "error-dark": "#ff3636",
-          "error-tint": "#ffe0e0",
-          "error-light": "#ff8a8a",
-          "font-family": "Ubuntu",
-        },
-      },
-    },
-  ]);
-}
+
 
 enum UserType {
   Superadmin = 1,
@@ -154,15 +129,36 @@ async function main() {
         data: {
           host_name: (ctx) =>
             "Host " + copycat.word(ctx.seed, { capitalize: true }),
+          styles: (ctx) => {
+            return {
+              primary: "#201c98",
+              secondary: "#81706d",
+              background: "#FFFBF0",
+              "primary-dark": "#0f1865",
+              "primary-tint": "#d9d8e9",
+              "primary-light": "#72ccdc",
+              "secondary-dark": "#544545",
+              "secondary-tint": "#f2dfdf",
+              "background-dark": "#ffd7d7",
+              "secondary-light": "#cfaeae",
+              "text-color-dark": "#000",
+              "text-color-light": "#fff",
+              "error-dark": "#ff3636",
+              "error-tint": "#ffe0e0",
+              "error-light": "#ff8a8a",
+              "font-family": "Ubuntu",
+            };
+          },
         },
       },
       host_admins: {
         data: {},
       },
       org_events: {
-        data: {
-          join_code: (ctx) => "org-" + copycat.uuid(ctx.seed),
-        },
+        data: {},
+      },
+      student_events: {
+        data: {},
       },
       orgs: {
         data: {
@@ -182,7 +178,6 @@ async function main() {
       teams: {
         data: {
           team_name: (ctx) => "Team " + copycat.word(ctx.seed),
-          division: null,
         },
       },
       tests: {
@@ -203,8 +198,6 @@ async function main() {
     },
   });
   await seed.$resetDatabase();
-
-  await create_style(seed);
 
   await create_user(
     seed,
@@ -247,8 +240,6 @@ async function main() {
   const debug_admin = seed.$store.admins[0];
   const debug_superadmin = seed.$store.superadmins[0];
 
-  // TODO: coaches
-
   let { students } = await seed.students((x) => x(30));
   students.push(debug_student);
 
@@ -284,6 +275,8 @@ async function main() {
       connect: { orgs },
     },  
   )
+  
+  
   for (const [i, event] of events.entries()) {
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(
@@ -298,31 +291,36 @@ async function main() {
     );
 
     // Choose some students to join event.
-    const s = copycat.someOf([1, students.length], students)(["students", i]);
+    const chosen_students = copycat.someOf([1, students.length], students)(["students", i]);
 
     // Permute and split the students to join with an organization or as individual teams.
-    const scrambled_s = permute(["permute", i], s, copycat.int);
+    const scrambled_students = permute(["permute", i], chosen_students, copycat.int);
     const split = <T,>(a: T[], i: number) => [a.slice(0, i), a.slice(i)];
     const [org_s, indiv_s] = split(
-      scrambled_s,
+      scrambled_students,
       copycat.int(["organization or individual", i], {
         min: 0,
-        max: scrambled_s.length,
+        max: scrambled_students.length,
       }),
     );
-    const { student_org_events } = await seed.student_org_events(
+    
+    /**
+    const { student_events } = await seed.student_events(
       (x) =>
         x(org_s.length, ({ index }) => ({
           student_id: org_s[index].student_id,
         })),
       { connect: { org_events } },
     );
-
+    
+    let team_store = new Set();
+    const team_letters = "ABCDE";
     // Have organizations purchase at least sufficient tickets for their students.
     // Map from org ids to student ids.
+    /**
     let org_to_s: Map<number, string[]> = new Map();
-    student_org_events.map((e) => {
-      const key = org_events.find((oe) => oe.id == e.org_event_id)!.org_id!;
+    student_events.map((e) => {
+      const key = org_events.find((oe) => oe.event_id == e.event_id)!.org_id!;
       org_to_s.set(key, (org_to_s.get(key) ?? []).concat([e.student_id]));
     });
     const { ticket_orders: org_ticket_orders } = await seed.ticket_orders(
@@ -340,12 +338,13 @@ async function main() {
         ),
       { connect: { events: [event] } },
     );
+    
 
     // Group org students and indiv students into teams.
     // Note that the grouping implementation may result in anywhere from 1 to
     // max_group_size members in a team (for the final team).
-    let team_store = new Set();
-    const team_letters = "ABCDE";
+    
+    
     // TODO: don't use assign ALL students to a team. choose [0, 5 or so] to omit.
     await seed.teams(
       [...org_to_s.entries()]
@@ -362,21 +361,15 @@ async function main() {
           ) as number;
           return {
             org_id,
-            join_code: null,
-            student_teams: student_ids.map((student_id, s_i) => ({
+            student_events: student_ids.map((student_id, s_i) => ({
               student_id,
-              // TODO: these (quadratic) array finds can be turned into (linear) map lookups
-              // but performance may not matter much
-              ticket_order_id: org_ticket_orders.find(
-                (oto) => oto.org_id == org_id,
-              )!.id,
               front_id: team_id.toString().padStart(3, "0") + team_letters[s_i],
             })),
           };
         }),
       { connect: { events: [event] } },
     );
-
+    
     const indiv_teams_s = chunks(["indiv org", i], indiv_s, 2, 4, copycat.int);
     await seed.teams(
       indiv_teams_s.map((s, t_i) => {
@@ -387,22 +380,16 @@ async function main() {
         ) as number;
         return {
           org_id: null,
-          join_code: (ctx) => "team-" + copycat.uuid(ctx.seed),
           student_teams: s.map((s, s_i) => ({
             student_id: s.student_id,
-            ticket_orders: {
-              org_id: null,
-              student_id: s.student_id,
-              quantity: 1,
-            },
             front_id: team_id.toString().padStart(3, "0") + team_letters[s_i],
           })),
         };
       }),
       { connect: { events: [event] } },
     );
+    */
   }
-
   process.exit();
 }
 
