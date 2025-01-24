@@ -275,8 +275,8 @@ async function main() {
       connect: { orgs },
     },  
   )
-  /
-  /**
+  
+  
   for (const [i, event] of events.entries()) {
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(
@@ -291,19 +291,20 @@ async function main() {
     );
 
     // Choose some students to join event.
-    const s = copycat.someOf([1, students.length], students)(["students", i]);
+    const chosen_students = copycat.someOf([1, students.length], students)(["students", i]);
 
     // Permute and split the students to join with an organization or as individual teams.
-    const scrambled_s = permute(["permute", i], s, copycat.int);
+    const scrambled_students = permute(["permute", i], chosen_students, copycat.int);
     const split = <T,>(a: T[], i: number) => [a.slice(0, i), a.slice(i)];
     const [org_s, indiv_s] = split(
-      scrambled_s,
+      scrambled_students,
       copycat.int(["organization or individual", i], {
         min: 0,
-        max: scrambled_s.length,
+        max: scrambled_students.length,
       }),
     );
     
+    /**
     const { student_events } = await seed.student_events(
       (x) =>
         x(org_s.length, ({ index }) => ({
@@ -387,9 +388,8 @@ async function main() {
       }),
       { connect: { events: [event] } },
     );
-    
+    */
   }
-  */
   process.exit();
 }
 
