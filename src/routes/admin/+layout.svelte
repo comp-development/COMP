@@ -1,6 +1,7 @@
 <script lang="ts">
     import { isAdmin } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
+    import Navbar from "$lib/components/Navbar.svelte";
     interface Props {
         children?: import('svelte').Snippet;
     }
@@ -21,6 +22,7 @@
 {#if loading}
     <Loading />
 {:else if adminUser}
+    <Navbar />
     <div class="exterior">
         {@render children?.()}
     </div>
