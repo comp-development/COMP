@@ -2,6 +2,7 @@
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
   import { supabase } from "$lib/supabaseClient";
+  import { getStudentUsers } from "$lib/supabase";
   import { page } from "$app/stores";
   interface Props {
     children?: import('svelte').Snippet;
@@ -17,11 +18,9 @@
       can_view_page = true;
     } else {
       try {
-        const { testData, testError } = await supabase
-          .from("students")
-          .select();
+        const studentData = await getStudentUsers();
 
-        console.log("Test Data", testData, testError);
+        console.log("Test Data", studentData);
 
         const { data, error } = await supabase
           .from("students")
