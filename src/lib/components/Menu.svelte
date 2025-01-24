@@ -2,16 +2,15 @@
 	import { Link } from "carbon-components-svelte";
 	import { page } from "$app/stores";
 	import { handleError } from "$lib/handleError";
-	import { isAdmin, signOut } from "$lib/supabase";
+	import { signOut } from "$lib/supabase";
 
 	const path = $page.route.id;
 
-	let width = 0;
 	let user_type = $state("");
 	if (path?.startsWith("/admin")) {
-		user_type = "Admin"
+		user_type = "Admin";
 	} else if (path?.startsWith("/student")) {
-		user_type = "Student"
+		user_type = "Student";
 	}
 
 	const handleSignout = async (e) => {

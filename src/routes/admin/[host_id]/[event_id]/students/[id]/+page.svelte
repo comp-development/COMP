@@ -23,7 +23,7 @@
 
 	async function onSubmitTransferUser() {
 		try {
-			await transferUser(userId, !user.isAdmin);
+			await transferUser(userId, !(user.userType == "admin"));
 			toast.success("User successfully transferred.");
 		} catch (error) {
 			handleError(error);
@@ -32,7 +32,7 @@
 
 	async function onUpdateUser() {
 		try {
-			await editUser(userId, user.isAdmin, user);
+			await editUser(userId, user.userType == "admin", user);
 			toast.success("User successfully transferred.");
 		} catch (error) {
 			handleError(error);
@@ -49,19 +49,19 @@
 {:else}
 	<div style="padding: 10px;">
 		<h1>{user.first_name} {user.last_name}</h1>
-		<p>ID: {user.isAdmin ? user.admin_id : user.student_id}</p>
+		<p>ID: {user.userType == "admin" ? user.admin_id : user.student_id}</p>
 		<br />
 		<Button
-			title="Change User Role To {user.isAdmin ? 'Student' : 'Admin'}"
+			title="Change User Role To {user.userType == "admin" ? 'Student' : 'Admin'}"
 			action={onSubmitTransferUser}
 		/>
 		<br /><br />
 
 		<div class="row">
 			{#each Object.entries(user) as [key, value]}
-				{#if key != "isAdmin" && key != "student_id"}
+				{#if key != "userType" && key != "student_id"}
 					<div>
-						{#if !user.isAdmin}
+						{#if !(user.userType == "admin")}
 							<TextInput
 								class="inputField"
 								labelText={key}
@@ -77,7 +77,7 @@
 			{/each}
 		</div>
 
-		{#if !user.isAdmin}
+		{#if !(user.userType == "admin")}
 			<Button title="Update User Information" action={onUpdateUser} />
 			<br /><br />
 		{/if}

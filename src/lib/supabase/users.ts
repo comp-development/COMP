@@ -56,11 +56,12 @@ export async function getThisUser() {
  */
 
 export async function getUser(user_id: string) {
-	let admin = await isAdmin(user_id);
-	if (admin) {
-		return (await getAdmin(user_id))
+	if (await isType("admin", user_id)) {
+		return (await getAdmin(user_id));
+	} else if (await isType("coach", user_id)) {
+		return (await getCoach(user_id));
 	} else {
-		return (await getStudent(user_id))
+		return (await getStudent(user_id));
 	}	
 }
 
@@ -71,7 +72,7 @@ export async function getAdmin(user_id: string) {
 		.eq('admin_id', user_id)
 		.single();
 	if (error) throw error;
-	data.isAdmin = true;
+	data.userType = "admin";
 	return data;
 }
 
@@ -82,29 +83,45 @@ export async function getStudent(user_id: string) {
 		.eq('student_id', user_id)
 		.single();
 	if (error) throw error;
-	data.isAdmin = false;
+	data.userType = "student";
+	return data;
+}
+
+export async function getCoach(user_id: string) {
+	let { data, error } = await supabase
+		.from('coaches')
+		.select('*')
+		.eq('coach_id', user_id)
+		.single();
+	if (error) throw error;
+	data.userType = "coach";
 	return data;
 }
 
 /**
- * Check if user is an admin
+ * Check if user is a certain type
  * 
+ * @param type: string
  * @param user_id: string
- * @returns boolean if user is admin or not
+ * @returns boolean if user is a certain type of user or not
  */
-export async function isAdmin(user_id: string | null = null) {
-	if (!user_id) {
-		const user = await getThisUser();
-		user_id = user?.id;
-	}
+export async function isType(type: string = "admin", user_id: string | null = null) {
+	try {
+		if (!user_id) {
+			const user = await getThisUser();
+			user_id = user?.id;
+		}
 
-	const { data, error } = await supabase
-		.from('admins')
-		.select('admin_id')
-		.eq('admin_id', user_id)
-		.single();
-	if (error) return false;
-	return data !== null;
+		const { data, error } = await supabase
+			.from(type === "coach" ? "coaches" : (type + "s"))
+			.select(type + '_id')
+			.eq(type + '_id', user_id);
+			
+		if (error) return false;
+		return data !== null && data.length > 0;
+	} catch (e) {
+		return false;
+	}
 }
 
 /**

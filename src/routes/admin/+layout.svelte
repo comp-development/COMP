@@ -1,36 +1,64 @@
 <script lang="ts">
-    import { isAdmin } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
+    import { user } from "$lib/sessionStore";
+    import { page } from "$app/stores";
+    import { goto } from "$app/navigation";
+    import { isType } from "$lib/supabase";
+  
     interface Props {
-        children?: import('svelte').Snippet;
+      children?: import("svelte").Snippet;
     }
-
+  
     let { children }: Props = $props();
-
-    let adminUser: boolean = $state();
+  
+    let can_view_page = $state(false);
     let loading = $state(true);
+  
+    (async () => {
+      try {
+        const isStudent = await isType("student", $user?.id);
+  
+        if (isStudent) {
+          can_view_page = true;
+        } else {
+            const newUrl = $page.url.pathname.replace("/student/", "/admin/");
+            goto(newUrl);
+            return;
 
-    async function onPageLoad() {
-        adminUser = await isAdmin();
+        //   const isCoach = await isType("coach", $user?.id);
+  
+        //   if (isCoach) {
+        //     const newUrl = $page.url.pathname.replace("/student/", "/coach/");
+        //     goto(newUrl);
+        //     return;
+        //   }
+          
+        //   const newUrl = $page.url.pathname.replace("/student/", "/admin/");
+        //   goto(newUrl);
+        //   return;
+        }
+      } catch (error) {
+        console.error("Error checking user role:", error);
+      } finally {
         loading = false;
-    }
-
-    onPageLoad();
-</script>
-
-{#if loading}
+      }
+    })();
+  </script>
+  
+  {#if loading}
     <Loading />
-{:else if adminUser}
+  {:else if can_view_page}
     <div class="exterior">
-        {@render children?.()}
+      {@render children?.()}
     </div>
-{:else}
-    <h2 style="text-align: center;">You do not have permission to access this page.</h2>
-{/if}
-
-<style>
+  {:else}
+    <br />
+    <h2 style="text-align: center;">No Access</h2>
+  {/if}
+  
+  <style>
     .exterior {
-        text-align: center;
-        align-items: center;
+      text-align: center;
+      align-items: center;
     }
-</style>
+  </style>  

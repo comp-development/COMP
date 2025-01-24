@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { handleError } from "$lib/handleError";
 	import { createAccount, signIntoAccount } from "$lib/supabase";
-	import { Label, Input, Button, ButtonGroup, InputAddon } from 'flowbite-svelte';
+	import { Input, Button, ButtonGroup, InputAddon } from 'flowbite-svelte';
   	import { EnvelopeSolid, EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
+	import toast from "$lib/toast.svelte";
 
 	interface Props {
 		logIn: boolean;

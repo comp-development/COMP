@@ -46,7 +46,7 @@
     {message}
   </Toast>
 {:else if status == "warning"}
-  <Toast {dismissable} transition={transition} toastStatus={$toastStatus} color="red">
+  <Toast {dismissable} transition={transition} toastStatus={$toastStatus} color="yellow">
     <svelte:fragment slot="icon">
       <ExclamationCircleSolid class="w-5 h-5" />
       <span class="sr-only">Warning icon</span>

@@ -4,13 +4,13 @@
     Button,
     Badge,
     Input,
-    ButtonGroup,
     InputAddon,
+    ButtonGroup,
     Tabs,
     TabItem,
-    Label,
     Helper,
     Select,
+    Label,
   } from "flowbite-svelte";
   import { EnvelopeSolid } from "flowbite-svelte-icons";
   import Loading from "$lib/components/Loading.svelte";
@@ -26,6 +26,7 @@
   import type { Tables } from "../../../../db/database.types";
   import { supabase } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
+  import toast from "$lib/toast.svelte";
 
   const event_id = parseInt($page.params.event_id);
   let student_event_details:
@@ -102,7 +103,9 @@
   function validateInput(key, value, regex) {
     if (regex) {
       const pattern = new RegExp(regex);
-      validation_errors[key] = !pattern.test(value) ? "Invalid input. Please follow the format." : null;
+      validation_errors[key] = !pattern.test(value)
+        ? "Invalid input. Please follow the format."
+        : null;
     } else {
       validation_errors[key] = null;
     }
@@ -156,16 +159,22 @@
   function handleSubmit(event) {
     event.preventDefault();
 
-    if (selectedOption === 'create_team') {
+    if (selectedOption === "create_team") {
       if (!transaction_stored) {
         purchase_ticket({ creating_team: true });
       } else {
         /*LOGIC NEEDS TO BE IMPLEMENTED*/
       }
-    } else if (selectedOption === 'join_team') {
+    } else if (selectedOption === "join_team") {
       purchase_ticket({ joining_team_code: input_team_join_code });
-    } else if (selectedOption === 'join_org') {
+    } else if (selectedOption === "join_org") {
       join_org();
+    }
+  }
+
+  function hovered(is_disabled: boolean) {
+    if (is_disabled) {
+      toast.warning("This field is disabled since it cannot be edited after being submitted.");
     }
   }
 </script>
@@ -216,7 +225,8 @@
       <form onsubmit={handleSubmit}>
         {#if selectedOption === "join_team"}
           <div class="text-left">
-            <Label for="team-join-code" class="block mb-2">Team Join Code</Label>
+            <Label for="team-join-code" class="block mb-2">Team Join Code</Label
+            >
             <Input
               id="team-join-code"
               bind:value={input_team_join_code}
@@ -240,8 +250,8 @@
           </div>
         {/if}
 
-        <div class="text-left">
-          <Label for="first-name" class="block mb-2">First Name</Label>
+        <div class="text-left" onmouseenter={() => hovered(true)} role="presentation">
+          <Label for="first-name" class="block mb-2">First Name<span class="text-red-600">&nbsp;*</span></Label>
           <Input
             id="first-name"
             bind:value={firstName}
@@ -252,8 +262,8 @@
           /><br />
         </div>
 
-        <div class="text-left">
-          <Label for="first-name" class="block mb-2">Last Name</Label>
+        <div class="text-left" onmouseenter={() => hovered(true)}>
+          <Label for="first-name" class="block mb-2">Last Name<span class="text-red-600">&nbsp;*</span></Label>
           <Input
             id="last-name"
             bind:value={lastName}
@@ -264,8 +274,8 @@
           /><br />
         </div>
 
-        <div class="text-left">
-          <Label for="email" class="block mb-2">Email</Label>
+        <div class="text-left" onmouseenter={() => hovered(true)}>
+          <Label for="email" class="block mb-2">Email<span class="text-red-600">&nbsp;*</span></Label>
           <ButtonGroup class="w-full">
             <InputAddon>
               <EnvelopeSolid class="w-4 h-4" />
@@ -283,17 +293,22 @@
 
         {#each event_custom_fields ?? [] as custom_field}
           {#if !custom_field.hidden}
-            <div class="text-left mb-6">
+            <div class="text-left mb-6" onmouseenter={() => hovered(!custom_field.editable)}>
               <Label
                 for={custom_field.key}
                 class="block mb-2"
                 color={validation_errors[custom_field.key] ? "red" : null}
               >
                 {custom_field.label}
+                {#if custom_field.required}
+                  <span class="text-red-600">&nbsp;*</span>
+                {/if}
               </Label>
 
               {#if validation_errors[custom_field.key]}
-                <Helper class="mb-3" color="red">Error: {validation_errors[custom_field.key]}</Helper>
+                <Helper class="mb-3" color="red"
+                  >Error: {validation_errors[custom_field.key]}</Helper
+                >
               {/if}
               {#if custom_field.help_text !== null}
                 <Helper class="mb-3">{custom_field.help_text}</Helper>
@@ -405,5 +420,13 @@
 
   .registrationForm {
     padding: 30px;
+  }
+
+  form {
+    border: 3px solid var(--primary-tint);
+		padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 20px;
   }
 </style>
