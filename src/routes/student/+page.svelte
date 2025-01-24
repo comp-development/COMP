@@ -2,7 +2,7 @@
   import { Button, Dropdown, DropdownItem } from 'flowbite-svelte';
   import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { user } from "$lib/sessionStore";
-	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
+	import { getStudentEvents, getStudent, getAllEvents } from "$lib/supabase";
   import { supabase } from "$lib/supabaseClient";
   import { Tag } from "carbon-components-svelte";
 
@@ -23,10 +23,10 @@
 	(async () => {
 		// console.log((await supabase.auth.getSession()).data.session?.access_token)
 		student = await getStudent($user!.id);
-		my_events = (await getStudentTeams($user!.id)).map((e) => ({
-			event_id: e.teams.event_id.toString(),
-			event_name: e.teams.events.event_name ?? "Unnamed Event",
-			event_date: e.teams.events.event_date ?? "Missing Date",
+		my_events = (await getStudentEvents($user!.id)).map((e) => ({
+			event_id: e.event_id.toString(),
+			event_name: e.event.event_name ?? "Unnamed Event",
+			event_date: e.event.event_date ?? "Missing Date",
 		}));
 		// TODO: include events where the student joined with an org
 		// but is not yet in a team

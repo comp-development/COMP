@@ -44,10 +44,21 @@ export async function getEventTeams(event_id: number) {
   return data;
 }
 
+/**
 export async function getStudentTeams(student_id: string) {
   const { data, error } = await supabase
     .from("student_teams")
     .select("*, teams!inner(*, events!inner(*))")
+    .eq("student_id", student_id);
+  if (error) throw error;
+  return data;
+}
+*/
+
+export async function getStudentEvents(student_id: string) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .select("*, event:events(*)")
     .eq("student_id", student_id);
   if (error) throw error;
   return data;

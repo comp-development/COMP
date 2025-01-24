@@ -17,11 +17,18 @@
       can_view_page = true;
     } else {
       try {
+        const { testData, testError } = await supabase
+          .from("students")
+          .select();
+
+        console.log("Test Data", testData, testError);
+
         const { data, error } = await supabase
           .from("students")
           .select()
           .eq("student_id", $user!.id)
           .maybeSingle();
+        console.log("DATA", data);
         can_view_page = error == null && data != null;
       } catch {
         can_view_page = false;
