@@ -130,10 +130,6 @@
 				</div>
 			</div>
 		{/if}
-	{:else if $page.route.id && $page.route.id.includes("/scores")}
-		<div>
-			{@render children?.()}
-		</div>
 	{:else}
 		<div class="menu-split">
 			<Menu />
@@ -141,6 +137,7 @@
 				{@render children?.()}
 			</div>
 		</div>
+		
 	{/if}
 </main>
 

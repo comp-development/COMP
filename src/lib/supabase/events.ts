@@ -6,6 +6,15 @@ export async function getAllEvents(select: string = "*") {
   return data;
 }
 
+export async function getHostEvents(host_id: string, customSelect: string = "*") {
+  const { data, error } = await supabase
+    .from("events")
+    .select(customSelect)
+    .eq("host_id", host_id);
+  if (error) throw error;
+  return data;
+}
+
 export async function getEventInformation(event_id: number) {
   const { data, error } = await supabase
     .from("events")
@@ -49,6 +58,16 @@ export async function getStudentTeams(student_id: string) {
   const { data, error } = await supabase
     .from("student_teams")
     .select("*, teams!inner(*, events!inner(*))")
+    .eq("student_id", student_id);
+  if (error) throw error;
+  return data;
+}
+*/
+
+export async function getStudentEvents(student_id: string) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .select("*, event:events(*)")
     .eq("student_id", student_id);
   if (error) throw error;
   return data;

@@ -21,10 +21,10 @@
 	(async () => {
 		// console.log((await supabase.auth.getSession()).data.session?.access_token)
 		student = await getStudent($user!.id);
-		my_events = (await getStudentTeams($user!.id)).map((e) => ({
-			event_id: e.teams.event_id.toString(),
-			event_name: e.teams.events.event_name ?? "Unnamed Event",
-			event_date: e.teams.events.event_date ?? "Missing Date",
+		my_events = (await getStudentEvents($user!.id)).map((e) => ({
+			event_id: e.event_id.toString(),
+			event_name: e.event.event_name ?? "Unnamed Event",
+			event_date: e.event.event_date ?? "Missing Date",
 		}));
 		// TODO: include events where the student joined with an org
 		// but is not yet in a team

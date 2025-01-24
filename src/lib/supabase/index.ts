@@ -5,3 +5,4 @@ export * from "./teams";
 export * from "./problems";
 export * from "./guts";
 export * from "./scores";
+export * from "./hosts";
