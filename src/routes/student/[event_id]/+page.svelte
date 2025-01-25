@@ -19,7 +19,7 @@
   let student_event: StudentEvent = null;
   let event_details: Tables<"events"> | null = $state(null);
   
-  let team: Get<StudentEvent, "teams"> = $state(null);
+  let team: Get<StudentEvent, "teams"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
   let in_team = $state(false);
   let in_org = $state(false);
@@ -28,6 +28,9 @@
   let student = $state(null);
 
   (async () => {
+    // const a = (b: any) => b + 1;
+    // debug_log("bonjour", a(3), {woah: "no shot"});
+
     // Check if this student is registered in this event.
     student_event = await getStudentEvent($user!.id, event_id);
     console.log("student_event", student_event);
@@ -37,6 +40,7 @@
     console.log($user!.id)
     console.log("Ticket order", ticket_order)
     transaction_stored = ticket_order != null;
+
 
     team = student_event?.teams;
     // Sort team members by front_id (alphabetical descending).
