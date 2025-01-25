@@ -1,8 +1,10 @@
 <script lang="ts">
     import Loading from "$lib/components/Loading.svelte";
     import { user } from "$lib/sessionStore";
-    import { supabase } from "$lib/supabaseClient";
     import { page } from "$app/stores";
+    import { goto } from "$app/navigation";
+    import { isType } from "$lib/supabase";
+
     interface Props {
         children?: import("svelte").Snippet;
     }
@@ -13,21 +15,30 @@
     let loading = $state(true);
 
     (async () => {
-        if ($page.url.pathname == "/coach/signup") {
-            can_view_page = true;
-        } else {
-            try {
-                const { data, error } = await supabase
-                    .from("coaches")
-                    .select()
-                    .eq("coach_id", $user!.id)
-                    .maybeSingle();
-                can_view_page = error == null && data != null;
-            } catch {
-                can_view_page = false;
+        try {
+            const isCoach = await isType("coach", $user?.id);
+
+            if (isCoach) {
+                can_view_page = true;
+            } else {
+                const isStudent = await isType("student", $user?.id);
+
+                if (isStudent) {
+                    const newUrl = $page.url.pathname.replace(
+                        "/coach",
+                        "/student",
+                    );
+                    goto(newUrl);
+                }
+
+                const newUrl = $page.url.pathname.replace("/coach", "/admin");
+                goto(newUrl);
             }
+        } catch (error) {
+            console.error("Error checking user role:", error);
+        } finally {
+            loading = false;
         }
-        loading = false;
     })();
 </script>
 

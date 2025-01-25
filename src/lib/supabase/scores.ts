@@ -1,4 +1,3 @@
-import { error } from "@sveltejs/kit";
 import { supabase } from "../supabaseClient";
 
 export async function getGradedTestAnswers(test_id, customSelect: string = "*") {

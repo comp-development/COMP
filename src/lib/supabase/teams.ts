@@ -3,30 +3,25 @@ import { supabase } from "../supabaseClient";
 import type { Merge } from "type-fest";
 
 export async function getTeam(team_id: string) {
-  try {
-    const { data: teamData, error: teamError } = await supabase
-      .from("teams")
-      .select("*")
-      .eq("team_id", team_id)
-      .single();
+  const { data: teamData, error: teamError } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("team_id", team_id)
+    .single();
 
-    if (teamError) throw teamError;
+  if (teamError) throw teamError;
 
-    const { data, error } = await supabase
-      .from("student_events_detailed")
-      .select("*, students(*)")
-      .eq("team_id", team_id)
-      .order("front_id", { ascending: true });
+  const { data, error } = await supabase
+    .from("student_events_detailed")
+    .select("*, students(*)")
+    .eq("team_id", team_id)
+    .order("front_id", { ascending: true });
 
-    if (error) throw error;
-    return {
-      teamMembers: data,
-      ...teamData,
-    };
-  } catch (error) {
-    console.error("Error retrieving team:", error);
-    throw error;
-  }
+  if (error) throw error;
+  return {
+    teamMembers: data,
+    ...teamData,
+  };
 }
 
 export async function getTeamId(student_id: string, event_id: number) {

@@ -62,7 +62,6 @@ export async function getStudentTeams(student_id: string) {
   if (error) throw error;
   return data;
 }
-*/
 
 export async function getStudentEvents(student_id: string) {
   const { data, error } = await supabase

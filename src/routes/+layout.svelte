@@ -161,6 +161,11 @@
 		font-size: 25px;
 	}
 
+	:global(h3) {
+		font-weight: 600;
+		font-size: 20px;
+	}
+
 	:global(h4) {
 		font-weight: 600;
 		font-size: 16px;

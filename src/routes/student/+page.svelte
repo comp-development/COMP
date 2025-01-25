@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from 'flowbite-svelte';
 	import { user } from "$lib/sessionStore";
-	import { getStudentTeams, getStudent, getAllEvents } from "$lib/supabase";
+	import { getStudentEvents, getStudent, getAllEvents } from "$lib/supabase";
 	import Loading from "$lib/components/Loading.svelte";
 
 	let student: any = $state();

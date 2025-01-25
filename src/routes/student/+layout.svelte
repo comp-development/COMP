@@ -21,18 +21,19 @@
       if (isStudent) {
         can_view_page = true;
       } else {
-          const isCoach = await isType("coach", $user?.id);
+        const isCoach = await isType("coach", $user?.id);
 
-          //MAKE SURE IT IS ACTUALLY REDIRECTING, WHICH IT IS NOT RIGHT NOW
-          if (isCoach) {
-            const newUrl = $page.url.pathname.replace("/student/", "/coach/");
-            goto(newUrl);
-            return;
-          }
-
-          const newUrl = $page.url.pathname.replace("/student/", "/admin/");
+        if (isCoach) {
+          const newUrl = $page.url.pathname.replace("/student", "/coach");
           goto(newUrl);
-          return;
+        }
+
+        const isAdmin = await isType("admin", $user?.id);
+        
+        if (isAdmin) {
+          const newUrl = $page.url.pathname.replace("/student", "/admin");
+          goto(newUrl);
+        }
       }
     } catch (error) {
       console.error("Error checking user role:", error);

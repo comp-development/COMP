@@ -1,3 +1,4 @@
+import { getUserTypeDatabase } from ".";
 import { supabase } from "../supabaseClient";
 
 /**
@@ -113,7 +114,7 @@ export async function isType(type: string = "admin", user_id: string | null = nu
 		}
 
 		const { data, error } = await supabase
-			.from(type === "coach" ? "coaches" : (type + "s"))
+			.from(getUserTypeDatabase(type))
 			.select(type + '_id')
 			.eq(type + '_id', user_id);
 			
