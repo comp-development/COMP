@@ -5,7 +5,6 @@
   import {
     getEventInformation,
     getStudentEvent,
-    getStudentOrgEvent,
     getStudentTicketOrder,
   } from "$lib/supabase";
   import { Tag } from "carbon-components-svelte";
@@ -14,22 +13,10 @@
   import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
-  let student_event:
-    | (Tables<"student_events"> & {
-        teams: Tables<"teams"> | null;
-      } & {
-        org_events: Tables<"org_events"> | null;
-      }
-    )
-    | null = null;
+  let student_event: any = null;
   let event_details: Tables<"events"> | null = $state(null);
   
-  let team:
-    | (Tables<"teams"> & {
-        student_events_detailed: Tables<"student_events">[];
-      })
-    | undefined
-    | null = $state(null);
+  let team: any = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
   let in_team = $state(false);
   let in_org = $state(false);
@@ -52,11 +39,13 @@
     console.log("Ticket order", ticket_order)
     transaction_stored = ticket_order != null;
 
-    team = student_event_details?.teams;
+    team = student_event?.teams;
     // Sort team members by front_id (alphabetical descending).
-    team?.student_events_detailed.sort((a, b) =>
-      (a?.front_id ?? "") < (b?.front_id ?? "") ? -1 : 1,
-    );
+    team?.student_events.sort((a, b) => {
+      const aValues = [a?.front_id ?? "", a?.student?.first_name ?? "", a?.student?.last_name ?? ""];
+      const bValues = [b?.front_id ?? "", b?.student?.first_name ?? "", b?.student?.last_name ?? ""];
+      return aValues < bValues ? 1 : -1;
+    });
 
     console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
