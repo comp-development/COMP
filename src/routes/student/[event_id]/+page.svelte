@@ -14,20 +14,20 @@
   import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
-  let student_event_details:
-    | (Tables<"student_events_detailed"> & {
-        teams: Tables<"teams"> & {
-          student_events_detailed: Tables<"student_events_detailed">[];
-        };
+  let student_event:
+    | (Tables<"student_events"> & {
+        teams: (Tables<"teams"> & {
+          student_events: Tables<"student_events">[];
+        })[];
       })
     | null = null;
   let event_details: Tables<"events"> | null = $state(null);
   let student_org_event:
-    | (Tables<"student_org_events"> & { org_events: Tables<"org_events"> })
+    | (Tables<"org_events">)
     | null = null;
   let team:
     | (Tables<"teams"> & {
-        student_events_detailed: Tables<"student_events_detailed">[];
+        student_events_detailed: Tables<"student_events">[];
       })
     | undefined
     | null = $state(null);
@@ -44,7 +44,8 @@
 
   (async () => {
     // Check if this student is registered in this event.
-    student_event_details = await getStudentEvent($user!.id, event_id);
+    student_event = await getStudentEvent($user!.id, event_id);
+    console.log("student_event", student_event);
     student_org_event = await getStudentOrgEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     in_team = student_event_details != null;

@@ -137,7 +137,6 @@
 				{@render children?.()}
 			</div>
 		</div>
-		
 	{/if}
 </main>
 
