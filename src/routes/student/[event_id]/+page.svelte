@@ -6,17 +6,18 @@
     getEventInformation,
     getStudentEvent,
     getStudentTicketOrder,
+    type StudentEvent,
   } from "$lib/supabase";
   import { Tag } from "carbon-components-svelte";
   import type { Tables } from "../../../../db/database.types";
-  import { supabase } from "$lib/supabaseClient";
+  import { supabase, type Get } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
-  let student_event: any = null;
+  let student_event: StudentEvent = null;
   let event_details: Tables<"events"> | null = $state(null);
   
-  let team: any = $state(null);
+  let team: Get<StudentEvent, "teams"> = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
   let in_team = $state(false);
   let in_org = $state(false);
@@ -42,8 +43,8 @@
     team = student_event?.teams;
     // Sort team members by front_id (alphabetical descending).
     team?.student_events.sort((a, b) => {
-      const aValues = [a?.front_id ?? "", a?.student?.first_name ?? "", a?.student?.last_name ?? ""];
-      const bValues = [b?.front_id ?? "", b?.student?.first_name ?? "", b?.student?.last_name ?? ""];
+      const aValues = [a?.front_id ?? "", a?.students?.first_name ?? "", a?.students?.last_name ?? ""];
+      const bValues = [b?.front_id ?? "", b?.students?.first_name ?? "", b?.students?.last_name ?? ""];
       return aValues < bValues ? 1 : -1;
     });
 

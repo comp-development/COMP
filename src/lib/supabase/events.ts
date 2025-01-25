@@ -1,4 +1,5 @@
-import { supabase } from "../supabaseClient";
+import type { QueryData } from "@supabase/supabase-js";
+import { supabase, type AsyncReturnType } from "../supabaseClient";
 
 export async function getAllEvents(select: string = "*") {
   const { data, error } = await supabase.from("events").select(select);
@@ -6,7 +7,10 @@ export async function getAllEvents(select: string = "*") {
   return data;
 }
 
-export async function getHostEvents(host_id: string, customSelect: string = "*") {
+export async function getHostEvents(
+  host_id: string,
+  customSelect: string = "*",
+) {
   const { data, error } = await supabase
     .from("events")
     .select(customSelect)
@@ -44,53 +48,28 @@ export async function getEventTeams(event_id: number) {
   return data;
 }
 
-/**
-export async function getStudentTeams(student_id: string) {
-  const { data, error } = await supabase
-    .from("student_teams")
-    .select("*, teams!inner(*, events!inner(*))")
-    .eq("student_id", student_id);
-  if (error) throw error;
-  return data;
-}
-*/
-
 export async function getStudentEvents(student_id: string) {
   const { data, error } = await supabase
     .from("student_events")
     .select("*, event:events(*)")
     .eq("student_id", student_id);
   if (error) throw error;
-  
   return data;
 }
 
+export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
+
 export async function getStudentEvent(student_id: string, event_id: number) {
-  console.log("GETTING STUDENT EVENT");
   const { data, error } = await supabase
     .from("student_events")
-    // .select("*")
-    .select("*, teams(*, student_events(*, students(*)))), org_events(*)")
+    .select("*, teams(*, student_events(*, students(*))), org_events(*)")
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();
   if (error) throw error;
-  console.log("STUDENT EVENT", data);
   return data;
 }
 
-/**
-export async function getStudentOrgEvent(student_id: string, event_id: number) {
-  const { data, error } = await supabase
-    .from("student_org_events")
-    .select("*, org_events!inner(*)")
-    .eq("student_id", student_id)
-    .eq("org_events.event_id", event_id)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-*/
 export async function getStudentTicketOrder(
   student_id: string,
   event_id: number,
