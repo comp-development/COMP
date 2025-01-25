@@ -329,9 +329,7 @@ CREATE UNIQUE INDEX student_event_unique ON public.student_events USING btree (s
 
 CREATE UNIQUE INDEX teams_event_id_join_code_uk ON public.teams USING btree (event_id, join_code);
 
-CREATE UNIQUE INDEX teams_team_event_uk ON public.teams USING btree (team_id, event_id);
-
-CREATE UNIQUE INDEX teams_team_org_uk ON public.teams USING btree (team_id, org_id);
+CREATE UNIQUE INDEX teams_team_event_org_uk ON public.teams USING btree (team_id, event_id, org_id);
 
 CREATE UNIQUE INDEX unique_custom_field_id_org_event_id ON public.custom_field_values USING btree (custom_field_id, org_event_id) WHERE (org_event_id IS NOT NULL);
 
@@ -389,13 +387,9 @@ alter table "public"."student_events" add constraint "student_events_student_id_
 
 alter table "public"."student_events" validate constraint "student_events_student_id_fkey";
 
-alter table "public"."student_events" add constraint "student_events_team_event_fkey" FOREIGN KEY (team_id, event_id) REFERENCES teams(team_id, event_id) ON UPDATE CASCADE ON DELETE SET NULL not valid;
+alter table "public"."student_events" add constraint "student_events_team_id_org_id_event_id_fkey" FOREIGN KEY (team_id, org_id, event_id) REFERENCES teams(team_id, org_id, event_id) ON UPDATE CASCADE ON DELETE SET NULL not valid;
 
-alter table "public"."student_events" validate constraint "student_events_team_event_fkey";
-
-alter table "public"."student_events" add constraint "student_events_team_org_fkey" FOREIGN KEY (team_id, org_id) REFERENCES teams(team_id, org_id) ON UPDATE CASCADE ON DELETE SET NULL not valid;
-
-alter table "public"."student_events" validate constraint "student_events_team_org_fkey";
+alter table "public"."student_events" validate constraint "student_events_team_id_org_id_event_id_fkey";
 
 alter table "public"."teams" add constraint "teams_event_id_join_code_uk" UNIQUE using index "teams_event_id_join_code_uk";
 
@@ -403,9 +397,7 @@ alter table "public"."teams" add constraint "teams_org_events_fkey" FOREIGN KEY 
 
 alter table "public"."teams" validate constraint "teams_org_events_fkey";
 
-alter table "public"."teams" add constraint "teams_team_event_uk" UNIQUE using index "teams_team_event_uk";
-
-alter table "public"."teams" add constraint "teams_team_org_uk" UNIQUE using index "teams_team_org_uk";
+alter table "public"."teams" add constraint "teams_team_event_org_uk" UNIQUE using index "teams_team_event_org_uk";
 
 alter table "public"."org_events" add constraint "org_events_event_id_fkey" FOREIGN KEY (event_id) REFERENCES events(event_id) not valid;
 
@@ -420,6 +412,8 @@ alter table "public"."teams" add constraint "teams_event_id_fkey" FOREIGN KEY (e
 alter table "public"."teams" validate constraint "teams_event_id_fkey";
 
 set check_function_bodies = off;
+
+
 
 CREATE OR REPLACE FUNCTION public.check_teammate(p_student_id uuid)
  RETURNS boolean
@@ -461,7 +455,7 @@ begin
     from tests t
     where t.test_id = p_test_id;
 
-    -- Verify that the user is associated with the testΓÇÖs event
+    -- Verify that the user is associated with the test╬ô├ç├ûs event
     if v_is_team then
         -- Get the user's team's event_id and division
         select tm.event_id, tm.division
@@ -470,7 +464,7 @@ begin
         join teams tm on st.team_id = tm.team_id
         where st.student_id = v_auth_uid;
 
-        -- Ensure the teamΓÇÖs event_id matches the testΓÇÖs event_id
+        -- Ensure the team╬ô├ç├ûs event_id matches the test╬ô├ç├ûs event_id
         if v_user_event_id != v_event_id then
             return false;
         end if;
@@ -485,7 +479,7 @@ begin
         -- from student_events st
         -- where st.student_id = v_auth_uid;
 
-        -- -- Ensure the student's event_id matches the testΓÇÖs event_id
+        -- -- Ensure the student's event_id matches the test╬ô├ç├ûs event_id
         -- if v_user_event_id != v_event_id then
         --     return false;
         -- end if;

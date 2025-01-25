@@ -5,7 +5,6 @@
   import {
     getEventInformation,
     getStudentEvent,
-    getStudentOrgEvent,
     getStudentTicketOrder,
   } from "$lib/supabase";
   import { Tag } from "carbon-components-svelte";
@@ -14,23 +13,10 @@
   import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
-  let student_event_details:
-    | (Tables<"student_events_detailed"> & {
-        teams: Tables<"teams"> & {
-          student_events_detailed: Tables<"student_events_detailed">[];
-        };
-      })
-    | null = null;
+  let student_event: any = null;
   let event_details: Tables<"events"> | null = $state(null);
-  let student_org_event:
-    | (Tables<"student_org_events"> & { org_events: Tables<"org_events"> })
-    | null = null;
-  let team:
-    | (Tables<"teams"> & {
-        student_events_detailed: Tables<"student_events_detailed">[];
-      })
-    | undefined
-    | null = $state(null);
+  
+  let team: any = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
   let in_team = $state(false);
   let in_org = $state(false);
@@ -44,22 +30,24 @@
 
   (async () => {
     // Check if this student is registered in this event.
-    student_event_details = await getStudentEvent($user!.id, event_id);
-    student_org_event = await getStudentOrgEvent($user!.id, event_id);
+    student_event = await getStudentEvent($user!.id, event_id);
+    console.log("student_event", student_event);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
-    in_team = student_event_details != null;
-    in_org = student_org_event != null;
+    in_team = student_event?.teams != null;
+    in_org = student_event?.org_events != null;
     console.log($user!.id)
     console.log("Ticket order", ticket_order)
     transaction_stored = ticket_order != null;
 
-    team = student_event_details?.teams;
+    team = student_event?.teams;
     // Sort team members by front_id (alphabetical descending).
-    team?.student_events_detailed.sort((a, b) =>
-      (a?.front_id ?? "") < (b?.front_id ?? "") ? -1 : 1,
-    );
+    team?.student_events.sort((a, b) => {
+      const aValues = [a?.front_id ?? "", a?.student?.first_name ?? "", a?.student?.last_name ?? ""];
+      const bValues = [b?.front_id ?? "", b?.student?.first_name ?? "", b?.student?.last_name ?? ""];
+      return aValues < bValues ? 1 : -1;
+    });
 
-    console.log("student_event_details", student_event_details);
+    console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
 
     const { data, error } = await supabase.auth.getSession();
