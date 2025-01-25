@@ -70,6 +70,7 @@ export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
     .select("*, teams(*)")
+    // .select("*")
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();
