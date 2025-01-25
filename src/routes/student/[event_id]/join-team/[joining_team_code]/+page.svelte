@@ -2,6 +2,7 @@
   import { page } from "$app/stores";
   import { supabase } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
+  import { Button } from 'flowbite-svelte';
     
   const event_id = parseInt($page.params.event_id);
   const join_code = $page.params.joining_team_code;
@@ -110,11 +111,13 @@
       Payment session expired because payment was not completed before
       expiration.
     </p>
+    <br />
     <p>Return to the event to open a new payment session.</p>
   {/if}
   {#if failure}
     <p>Failed to join team.</p>
-    <a href="..">Return to event.</a>
+    <br />
+    <Button href=".." pill>Return to event.</Button>
   {/if}
 {/if}
 

@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { page } from "$app/stores";
 	import { onDestroy } from "svelte";
-	import Button from "$lib/components/Button.svelte";
-	import { Button as SvelteButton } from "carbon-components-svelte";
-	import Document from "carbon-icons-svelte/lib/Document.svelte";
-	
-	import { Modal, Tag } from "carbon-components-svelte";
+	import { Button, Badge, Modal } from 'flowbite-svelte';
+	import { FileLinesSolid } from "flowbite-svelte-icons";
 	import { writable } from "svelte/store";
 	import {
 		formatDuration,
@@ -22,8 +19,9 @@
 		getTestTaker,
 	} from "$lib/supabase";
 	import MathJax from "$lib/components/MathJax.svelte";
+	import Loading from "$lib/components/Loading.svelte";
 	import { supabase } from "$lib/supabaseClient";
-  import { user } from "$lib/sessionStore";
+  	import { user } from "$lib/sessionStore";
 
 	let loading = $state(true);
 
@@ -210,13 +208,9 @@
 <br />
 <h1 style="text-align: center;">Tests</h1>
 <br />
-<div class="flex">
-	<Button href="." title={"Back"} />
-</div>
-<br />
 <div>
 	{#if loading}
-		<p>Loading...</p>
+		<Loading />
 	{:else if tests.length === 0}
 		<p>No available tests!</p>
 	{:else}
@@ -237,11 +231,11 @@
 								<h4>
 									{test.test_name}
 								</h4>
-								<Tag type="green"
-									>{test.is_team ? "Team" : "Individual"}</Tag
+								<Badge rounded color="green"
+									>{test.is_team ? "Team" : "Individual"}</Badge
 								>
 								{#if test.division}
-									<Tag type="green">{test.division}</Tag>
+									<Badge rounded color="green">{test.division}</Badge>
 								{/if}
 							</div>
 							{#if (test.status == "Not Open" && test.opening_time)}
@@ -263,7 +257,7 @@
 							<p style="margin-right: 5px;">
 								{test.countdown}
 							</p>
-							<button
+							<Button
 								class="test-button full"
 								disabled={test.disabled}
 								onclick={async (e) => {
@@ -273,10 +267,12 @@
 								}}
 							>
 								{test.status}
-							</button>
+							</Button>
 							<div class="tooltip-container">
-								<button
-									class="test-button empty"
+								<Button
+									pill
+									outline
+									class="!p-2"
 									onclick={() => {
 										open = true;
 										instructions = test.instructions;
@@ -284,8 +280,8 @@
 									}} 
 									disabled={!test.instructions}
 								>
-									<Document/>
-								</button>
+									<FileLinesSolid class="w-6 h-6 text-primary-700" />
+								</Button>
 								<span class="tooltip">{#if test.instructions}View Instructions{:else}No Instructions{/if}</span>
 							</div>
 						</div>

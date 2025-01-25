@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { user } from "$lib/sessionStore";
-	import { getAdmin } from "$lib/supabase";
+	import { getCoach } from "$lib/supabase";
 	import Loading from "$lib/components/Loading.svelte";
 
-	let admin: any = $state();
+	let coach: any = $state();
 	let loading = $state(true);
 
 	(async () => {
-		admin = await getAdmin($user!.id);
+		coach = await getCoach($user!.id);
 		loading = false;
 	})();
 </script>
@@ -16,6 +16,6 @@
 	<Loading />
 {:else}
     <br />
-    <h1 class="header" style="margin-bottom: 30px;">Welcome to the Admin Portal</h1>
-    <h2>{admin.first_name} {admin.last_name}</h2>
+    <h1 class="header" style="margin-bottom: 30px;">Welcome to the Coach Portal</h1>
+    <h2>{coach.first_name} {coach.last_name}</h2>
 {/if}

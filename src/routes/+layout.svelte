@@ -1,5 +1,5 @@
 <script lang="ts">
-	import "../app.css";
+  	import "../app.css";
 	import "carbon-components-svelte/css/white.css";
 	import Toaster from "$lib/components/Toaster.svelte";
 	import { supabase } from "$lib/supabaseClient";
@@ -141,7 +141,6 @@
 </main>
 
 <style>
-	/* Overall styling */
 	:global(:root) {
 		--font-family: "Ubuntu";
 		--large-gap: 30px;
@@ -152,7 +151,23 @@
 
 	:global(h1) {
 		font-weight: 700;
+		font-size: 40px;
 		color: var(--secondary-dark);
+	}
+
+	:global(h2) {
+		font-weight: 600;
+		font-size: 25px;
+	}
+
+	:global(h3) {
+		font-weight: 600;
+		font-size: 20px;
+	}
+
+	:global(h4) {
+		font-weight: 600;
+		font-size: 16px;
 	}
 
 	:global(::placeholder),

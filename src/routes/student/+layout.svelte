@@ -1,11 +1,12 @@
 <script lang="ts">
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
-  import { supabase } from "$lib/supabaseClient";
-  import { getStudentUsers } from "$lib/supabase";
   import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { isType } from "$lib/supabase";
+
   interface Props {
-    children?: import('svelte').Snippet;
+    children?: import("svelte").Snippet;
   }
 
   let { children }: Props = $props();
@@ -14,22 +15,31 @@
   let loading = $state(true);
 
   (async () => {
-    if ($page.url.pathname == "/student/signup") {
-      can_view_page = true;
-    } else {
-      try {
+    try {
+      const isStudent = await isType("student", $user?.id);
 
-        const { data, error } = await supabase
-          .from("students")
-          .select()
-          .eq("student_id", $user!.id)
-          .maybeSingle();
-        can_view_page = error == null && data != null;
-      } catch {
-        can_view_page = false;
+      if (isStudent) {
+        can_view_page = true;
+      } else {
+        const isCoach = await isType("coach", $user?.id);
+
+        if (isCoach) {
+          const newUrl = $page.url.pathname.replace("/student", "/coach");
+          goto(newUrl);
+        }
+
+        const isAdmin = await isType("admin", $user?.id);
+        
+        if (isAdmin) {
+          const newUrl = $page.url.pathname.replace("/student", "/admin");
+          goto(newUrl);
+        }
       }
+    } catch (error) {
+      console.error("Error checking user role:", error);
+    } finally {
+      loading = false;
     }
-    loading = false;
   })();
 </script>
 
@@ -40,13 +50,8 @@
     {@render children?.()}
   </div>
 {:else}
-  <h2 style="text-align: center;">No Access</h2>
   <br />
-  <p style="text-align: center;">
-    Register as a Student: <a href="/student/signup"
-      >{document.location.host + "/student/signup"}</a
-    >
-  </p>
+  <h2 style="text-align: center;">No Access</h2>
 {/if}
 
 <style>
