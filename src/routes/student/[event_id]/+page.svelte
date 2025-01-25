@@ -16,15 +16,14 @@
   const event_id = parseInt($page.params.event_id);
   let student_event:
     | (Tables<"student_events"> & {
-        teams: (Tables<"teams"> & {
-          student_events: Tables<"student_events">[];
-        })[];
-      })
+        teams: Tables<"teams"> | null;
+      } & {
+        org_events: Tables<"org_events"> | null;
+      }
+    )
     | null = null;
   let event_details: Tables<"events"> | null = $state(null);
-  let student_org_event:
-    | (Tables<"org_events">)
-    | null = null;
+  
   let team:
     | (Tables<"teams"> & {
         student_events_detailed: Tables<"student_events">[];
@@ -46,10 +45,9 @@
     // Check if this student is registered in this event.
     student_event = await getStudentEvent($user!.id, event_id);
     console.log("student_event", student_event);
-    student_org_event = await getStudentOrgEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
-    in_team = student_event_details != null;
-    in_org = student_org_event != null;
+    in_team = student_event?.teams != null;
+    in_org = student_event?.org_events != null;
     console.log($user!.id)
     console.log("Ticket order", ticket_order)
     transaction_stored = ticket_order != null;
@@ -60,7 +58,7 @@
       (a?.front_id ?? "") < (b?.front_id ?? "") ? -1 : 1,
     );
 
-    console.log("student_event_details", student_event_details);
+    console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
 
     const { data, error } = await supabase.auth.getSession();
