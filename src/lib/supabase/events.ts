@@ -1,4 +1,5 @@
-import { supabase } from "../supabaseClient";
+import type { QueryData } from "@supabase/supabase-js";
+import { supabase, type AsyncReturnType } from "../supabaseClient";
 
 export async function getAllEvents(select: string = "*") {
   const { data, error } = await supabase.from("events").select(select);
@@ -6,7 +7,10 @@ export async function getAllEvents(select: string = "*") {
   return data;
 }
 
-export async function getHostEvents(host_id: string, customSelect: string = "*") {
+export async function getHostEvents(
+  host_id: string,
+  customSelect: string = "*",
+) {
   const { data, error } = await supabase
     .from("events")
     .select(customSelect)
@@ -72,23 +76,14 @@ export async function getStudentEvents(student_id: string) {
   return data;
 }
 
+export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
+
 export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
-    .from("student_events_detailed")
-    .select("*, teams!inner(*, student_events_detailed!inner(*))")
+    .from("student_events")
+    .select("*, teams(*, student_events(*, students(*))), org_events(*)")
     .eq("student_id", student_id)
-    .eq("teams.event_id", event_id)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-export async function getStudentOrgEvent(student_id: string, event_id: number) {
-  const { data, error } = await supabase
-    .from("student_org_events")
-    .select("*, org_events!inner(*)")
-    .eq("student_id", student_id)
-    .eq("org_events.event_id", event_id)
+    .eq("event_id", event_id)
     .maybeSingle();
   if (error) throw error;
   return data;
