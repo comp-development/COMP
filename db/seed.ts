@@ -148,15 +148,15 @@ async function main() {
             };
           },
           email: (ctx) => copycat.email(ctx.seed),
-          summary: `**Are you ready to test your skills in the ultimate _Math Tournament_?** 🧮 Compete with **teams from all over the world** in events like:  
+          summary: `**Are you ready to test your skills in the ultimate _Math Tournament_?** Compete with **teams from all over the world** in events like:  
 - **Algebra Blitz**: Solve \(x^2 + 5x + 6 = 0\) faster than your opponents!  
 - _Geometry Dash_: Prove theorems and calculate areas of **complex polygons**.  
 - **Team Relays**: Work collaboratively to solve multi-step problems.
 
 Participants will have access to **exclusive study materials**, including:  
-1. 📝 _Sample problems_ with solutions.  
-2. 📊 A **leaderboard** updated in real-time.  
-3. 🏆 The chance to win **prizes**, from scholarships to cool gadgets.
+1. _Sample problems_ with solutions.  
+2. A **leaderboard** updated in real-time.  
+3. The chance to win **prizes**, from scholarships to cool gadgets.
 
 Check out our [official guide](https://math-tournament.example.com) for preparation tips, and don't forget to register by **March 1st, 2025**! 🚀`,
           logo: "https://www.mustangmath.com/logo.png"

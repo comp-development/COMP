@@ -79,8 +79,11 @@
 		{/if}
 
 		{#if host?.summary}
-			<h2>Summary</h2>
-			<MarkdownRender source={host.summary} />
+			<div class="summary">
+				<h2>Summary</h2>
+				<br />
+				<MarkdownRender source={host.summary} />
+			</div>
 		{/if}
 	</div>
 	<br />
@@ -152,6 +155,13 @@
 <style>
 	.container {
         max-width: 768px;
+    }
+
+	.summary {
+        border: 3px solid var(--primary-tint);
+        padding: 10px;
+        margin: 10px;
+        border-radius: 15px;
     }
 	
 	.problemContainer {

@@ -45,7 +45,7 @@
 		"moment": "^2.30.1",
 		"papaparse": "^5.4.1",
 		"stripe": "^17.5.0",
-		"svelte-markdown": "^0.4.1",
+		"svelte-exmarkdown": "^4.0.2",
 		"tailwind-merge": "^2.6.0",
 		"uuid": "^11.0.3"
 	}
