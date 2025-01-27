@@ -7,9 +7,15 @@
         getEventInformation,
         getCoachOrganization,
     } from "$lib/supabase";
-    import { Badge, Button, ButtonGroup, Indicator } from "flowbite-svelte";
+    import { Badge, Button, ButtonGroup } from "flowbite-svelte";
     import type { Tables } from "../../../../../db/database.types";
-    import { CartSolid, PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
+    import {
+        CartSolid,
+        PenSolid,
+        TrashBinSolid,
+        UserAddSolid,
+        UsersGroupSolid,
+    } from "flowbite-svelte-icons";
 
     let loading = $state(true);
     let coach: any = $state();
@@ -42,32 +48,46 @@
             <h2>{organization.orgs.name}</h2>
             <h4>{organization.orgs.address}</h4>
             <div style="margin: 10px 0;">
-                <Button pill>Add Team</Button>
+                <ButtonGroup class="mt-2 mb-1">
+                    <Button pill outline color="primary" onclick={() => {/*To be implemented*/}}>
+                        <CartSolid class="w-4 h-4 me-2" />
+                        Pay
+                    </Button>
+                    <Button pill outline color="primary" onclick={() => {/*To be implemented*/}}>
+                        <UsersGroupSolid class="w-4 h-4 me-2" />
+                        Add Team
+                    </Button>
+                    <Button pill outline color="primary" onclick={() => {/*To be implemented*/}}>
+                        <UserAddSolid class="w-4 h-4 me-2" />
+                        Add Student
+                    </Button>
+                </ButtonGroup>
             </div>
 
             <div class="grid-thirds">
                 {#each organization.teams as team}
                     <div class="team">
-                        <h3>{team.team_name}</h3>
+                        <div
+                            class="flex"
+                            style="justify-content: space-between"
+                        >
+                            <h3>{team.team_name}</h3>
+                            <div class="space-y-1">
+                                <button
+                                    class="hover:bg-blue-100 rounded-lg"
+                                    aria-label="Edit"
+                                >
+                                    <PenSolid class="w-5 h-5" />
+                                </button>
+                                <button
+                                    class="hover:bg-red-100 rounded-lg"
+                                    aria-label="Delete"
+                                >
+                                    <TrashBinSolid class="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
                         <p>Join Code: {team.join_code}</p>
-
-                        <ButtonGroup class="mt-2 mb-1">
-                            <Button pill outline color="primary">
-                                <PenSolid class="w-4 h-4 me-2" />
-                                Edit
-                            </Button>
-                            <Button pill outline color="primary">
-                                <CartSolid
-                                    class="w-4 h-4 me-2"
-                                />
-                                Pay
-                            </Button>
-                            <Button pill outline color="primary">
-                                <TrashBinSolid class="w-4 h-4 me-2" />
-                                Delete
-                            </Button>
-                        </ButtonGroup>
-                        <br />
 
                         {#each team.teamMembers as team_member}
                             <div class="teamMember">
@@ -78,14 +98,21 @@
                                                 >{team_member.front_id}</Badge
                                             >
                                         {/if}
-                                        <p class="ml-2 font-bold text-gray-800">
-                                            {team_member.students.first_name}
-                                            {team_member.students.last_name}
-                                        </p>
+                                        <div class="ml-2">
+                                            <p
+                                                class="font-bold text-gray-800"
+                                            >
+                                                {team_member.students
+                                                    .first_name}
+                                                {team_member.students.last_name}
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600"
+                                            >
+                                                mrajupal@gmail.com
+                                            </p>
+                                        </div>
                                     </div>
-                                    <p class="text-sm text-gray-600 mt-1">
-                                        mrajupal@gmail.com
-                                    </p>
                                 </div>
 
                                 <div
@@ -107,16 +134,13 @@
                             </div>
                         {/each}
 
-                        <Indicator
-                            color="gray"
-                            border
-                            size="xl"
-                            placement="top-right"
+                        <div
+                            class="flex-shrink-0 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 inline-flex items-center justify-center absolute top-0 end-0 translate-x-1/3 rtl:-translate-x-1/3 -translate-y-1/3 px-1"
                         >
-                            <span class="text-xs font-bold"
+                            <span class="text-xs font-bold p-0 m-0y"
                                 >{team.front_id}</span
                             >
-                        </Indicator>
+                        </div>
                     </div>
                 {/each}
             </div>
@@ -147,5 +171,6 @@
         padding: 5px;
         margin-top: 10px;
         position: relative;
+        border-radius: 15px;
     }
 </style>
