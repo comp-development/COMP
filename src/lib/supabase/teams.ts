@@ -1,6 +1,4 @@
-import type { Tables } from "../../../db/database.types";
 import { supabase } from "../supabaseClient";
-import type { Merge } from "type-fest";
 
 export async function getTeam(team_id: string) {
   const { data: teamData, error: teamError } = await supabase
@@ -12,7 +10,7 @@ export async function getTeam(team_id: string) {
   if (teamError) throw teamError;
 
   const { data, error } = await supabase
-    .from("student_events_detailed")
+    .from("student_events")
     .select("*, students(*)")
     .eq("team_id", team_id)
     .order("front_id", { ascending: true });
@@ -40,5 +38,60 @@ export async function getTeamId(student_id: string, event_id: number) {
   } catch (error) {
     console.error("Error retrieving team ID:", error);
     throw error;
+  }
+}
+
+export async function updateStudentTeam(
+  student_event_id: number,
+  new_team_id: number,
+  new_org_id: number
+) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update({
+      team_id: new_team_id,
+      org_id: new_org_id
+    })
+    .eq("student_event_id", student_event_id)
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteStudentTeam(student_event_id: number) { 
+  const { error } = await supabase
+    .from("student_events")
+    .update({ team_id: null })
+    .eq("student_event_id", student_event_id);
+  if (error) throw error;
+}
+
+export async function changeTeam(team_name: string, event_id: number, org_id: number) {
+  const { data, error } = await supabase
+    .from("teams")
+    .upsert({
+      team_name,
+      event_id,
+      org_id,
+    })
+    .select();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTeam(team) {
+  const { error } = await supabase
+    .from("teams")
+    .delete()
+    .eq("team_id", team.team_id);
+  if (error) throw error;
+
+  for (const student of team.teamMembers) {
+    const { error } = await supabase
+      .from("student_events")
+      .update({ team_id: null })
+      .eq("student_event_id", student.student_event_id);
+    if (error) throw error;
   }
 }
