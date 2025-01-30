@@ -61,14 +61,15 @@
 		{/if}
 	</h1>
 	<ButtonGroup class="w-full">
+		<Input bind:value={email} type="email" placeholder="Email" />
 		<InputAddon>
 			<EnvelopeSolid class="w-4 h-4" />
 		</InputAddon>
-		<Input bind:value={email} type="email" placeholder="Email" />
 	</ButtonGroup>
 	<br /><br />
 	<div>
 		<ButtonGroup class="w-full">
+		  <Input id="show-password1" bind:value={password} type={show ? 'text' : 'password'} placeholder="Password" />
 		  <InputAddon>
 			<button onclick={() => (show = !show)}>
 			  {#if show}
@@ -78,23 +79,22 @@
 			  {/if}
 			</button>
 		  </InputAddon>
-		  <Input id="show-password1" bind:value={password} type={show ? 'text' : 'password'} placeholder="Password" />
 		</ButtonGroup>
 	</div>
 	<br />
 	{#if !logIn && password != ""}
 		<div>
 			<ButtonGroup class="w-full">
+			  <Input id="show-password1" bind:value={retypePassword} type={show ? 'text' : 'password'} placeholder="Retype Password" />
 			  <InputAddon>
 				<button onclick={() => (show1 = !show1)}>
 				  {#if show1}
-					<EyeOutline class="w-6 h-6" />
+					<EyeOutline class="w-4 h-4" />
 				  {:else}
-					<EyeSlashOutline class="w-6 h-6" />
+					<EyeSlashOutline class="w-4 h-4" />
 				  {/if}
 				</button>
 			  </InputAddon>
-			  <Input id="show-password1" bind:value={retypePassword} type={show ? 'text' : 'password'} placeholder="Retype Password" />
 			</ButtonGroup>
 		</div>
 		<br />
