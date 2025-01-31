@@ -20,7 +20,7 @@
     toastStatus: Writable<boolean>;
   } = $props();
 
-  const transition = (n: Element) => fade(n, {duration: 150});
+  const transition = (n: Element) => fade(n, {duration: 300});
 
 </script>
 

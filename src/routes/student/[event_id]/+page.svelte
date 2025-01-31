@@ -32,6 +32,9 @@
     // debug_log("bonjour", a(3), {woah: "no shot"});
 
     // Check if this student is registered in this event.
+    console.log("user3", $user)
+    student = await getStudent($user!.id);
+    student = {...student, ...$user}
     student_event = await getStudentEvent($user!.id, event_id);
     console.log("student_event", student_event);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);

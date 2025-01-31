@@ -77,6 +77,8 @@ export async function getAdmin(user_id: string) {
 	return data;
 }
 
+
+
 export async function getStudent(user_id: string) {
 	let { data, error } = await supabase
 		.from('students')

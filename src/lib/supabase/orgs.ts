@@ -37,3 +37,16 @@ export async function getOrganizationTeams(org_id: number) {
 
     return teamData;
 }
+
+export async function getOrgEventByJoinCode(event_id: number, join_code: string) {
+    const { data, error } = await supabase
+        .from("org_events")
+        .select("*")
+        .eq("event_id", event_id)
+        .eq("join_code", join_code)
+        .single();
+    if (error) throw error;
+
+    return data;
+}
+
