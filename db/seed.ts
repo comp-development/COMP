@@ -88,8 +88,12 @@ function chunks<T>(
 }
 
 async function main() {
+  const dryRun = false;
+  if (!dryRun) {
+    console.log("Clearing database tables ...");
+  }
   const seed = await createSeedClient({
-    dryRun: true,
+    dryRun,
     models: {
       users: {
         data: {
@@ -159,7 +163,7 @@ Participants will have access to **exclusive study materials**, including:
 3. The chance to win **prizes**, from scholarships to cool gadgets.
 
 Check out our [official guide](https://math-tournament.example.com) for preparation tips, and don't forget to register by **March 1st, 2025**! 🚀`,
-          logo: "https://www.mustangmath.com/logo.png"
+          logo: "https://www.mustangmath.com/logo.png",
         },
       },
       host_admins: {
@@ -208,7 +212,16 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
       },
     },
   });
-  await seed.$resetDatabase();
+
+  // Clear out database except for extension tables.
+  // (the postgres seed client has no permission over those tables and errors
+  // if trying to clear them out.)
+  await seed.$resetDatabase([
+    "!_realtime.*",
+    "!net.*",
+    "!pgsodium.*",
+    "!realtime.*",
+  ]);
 
   await create_user(
     seed,
@@ -263,12 +276,11 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
   const { hosts } = await seed.hosts((x) => x(3));
 
   const { host_admins } = await seed.host_admins(
-    admins.flatMap((a) => ([{ admin_id: a.admin_id }, { admin_id: a.admin_id }])),
+    admins.flatMap((a) => [{ admin_id: a.admin_id }, { admin_id: a.admin_id }]),
     {
       connect: { hosts },
     },
-  )
-
+  );
 
   const { events } = await seed.events(
     (x) =>
@@ -285,8 +297,7 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
     {
       connect: { orgs },
     },
-  )
-
+  );
 
   for (const [i, event] of events.entries()) {
     // Choose some organizations to join event.
@@ -302,10 +313,17 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
     );
 
     // Choose some students to join event.
-    const chosen_students = copycat.someOf([1, students.length], students)(["students", i]);
+    const chosen_students = copycat.someOf(
+      [1, students.length],
+      students,
+    )(["students", i]);
 
     // Permute and split the students to join with an organization or as individual teams.
-    const scrambled_students = permute(["permute", i], chosen_students, copycat.int);
+    const scrambled_students = permute(
+      ["permute", i],
+      chosen_students,
+      copycat.int,
+    );
     const split = <T,>(a: T[], i: number) => [a.slice(0, i), a.slice(i)];
     const [org_s, indiv_s] = split(
       scrambled_students,
@@ -400,6 +418,9 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
       { connect: { events: [event] } },
     );
     */
+  }
+  if (!dryRun) {
+    console.log("Successfully seeded database!");
   }
   process.exit();
 }

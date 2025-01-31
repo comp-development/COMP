@@ -26,11 +26,11 @@ See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getti
 
 Dev+Update Workflow:
 1. start supabase. run `supabase db reset` to get remote changes applied locally.
-2. fill out seed data with `npx @snaplet/seed sync`, `npx tsx seed.ts > supabase/seed.sql`, `supabase db reset`
+2. fill out seed data with `npx @snaplet/seed sync`, `npx tsx seed.ts`
 3. edit the db via UI or SQL commands
 4. run `supabase db diff --schema public`, put diff in new migration: `supabase migration new migration_name`
-5. sync the db `npx @snaplet/seed sync`, add new sample seed data to `seed.ts`,  `npx tsx seed.ts > supabase/seed.sql`
-6. run `supabase db reset` to test running the migrations and adding seed data
+5. sync the db `npx @snaplet/seed sync`, add new sample seed data to `seed.ts`, and reseed with `npx tsx seed.ts`
+6. run `supabase db reset` and `npx tsx seed.ts` to test running the migrations and adding seed data in sequence
 7. run `supabase gen types typescript --local --schema public,auth > database.types.ts` for DB types
 8. test against COMP
 9. TODO: add automated tests (UI mockup for each user action + DB assertions)
@@ -40,12 +40,12 @@ Dev+Update Workflow:
 One-time Admin Setup (only if the `db` folder doesn't already exist):
 1. download current schema via `supabase login`, `supabase init`, `supabase link`, `supabase db pull`, `supabase db pull --schema auth`, etc. make the start migration as minimal as possible
 2. prep seed data: `npx @snaplet/seed init` (choose node-postgres), `npx @snaplet/seed sync`, edit `seed.config.ts` and `seed.ts`
-3. run `npx tsx seed.ts > supabase/seed.sql` and `supabase db reset`
+3. run `npx tsx seed.ts`
 4. test against COMP and commit to VCS
 
 Admin Migration Workflow:
 1. get notified, pull latest
-2. start supabase. run `supabase db reset`
+2. start supabase. run `supabase db reset` and `npx tsx seed.ts`
 3. test against COMP
 4. maybe add more automated tests or seed data, then commit to VCS
 5. run `supabase link --project-ref <project-id>`
@@ -54,11 +54,14 @@ Admin Migration Workflow:
 
 # Known Errors
 
-If on Windows and using powershell, the value in `supabase/seed.sql` may be in
-UTF-16 encoding. VSCode makes it pretty convenient to switch back to UTF-8
-(there's a button in the bottom right to switch encodings).
+If on Windows, using powershell, and using the seed script with `dryRun: true`,
+the content of the `supabase/seed.sql` file may be in UTF-16 encoding. VSCode makes
+it pretty convenient to switch back to UTF-8 (there's a button in the bottom right
+to switch encodings).
 
-If there's errors saying there was an error using the `seed.sql` file, they may
+
+Again, if using the seed script with `dryRun: true` and saving in the `supabase/seed.sql`
+file, if there're errors saying there was an error using the `seed.sql` file, that may
 be because the database schema is mismatched with the seed script. A (somewhat)
 nuclear option is to delete the `supabase/seed.sql` file, run `supabase db reset`
 to get the schema in a good state, run `npx @snaplet/seed sync` to ensure the
@@ -83,8 +86,7 @@ student123
 To add a user account as seed data, bring up the DB locally. Then, start up the project.
 
 Sign up as a new user, then look in the `auth.users` table. Copy the encrypted password, and add a call to the
-`create_user` function (see `seed.ts`). Run `npx tsx seed.ts > supabase/seed.sql` and `supabase db reset`
-as described above in the dev+update workflow.
+`create_user` function (see `seed.ts`). Run `npx tsx seed.ts` as described above in the dev+update workflow.
 
 # TODO
 
