@@ -8,7 +8,6 @@
     import { Chart, registerables } from 'chart.js';
 	import ChartDataLabels from 'chartjs-plugin-datalabels'; // Import the data labels plugin
 	import ChartAnnotation from 'chartjs-plugin-annotation'; // Import the annotation plugin
-  import { Logger } from "sass";
     Chart.register(...registerables);
 
 	let { test } = $props();
