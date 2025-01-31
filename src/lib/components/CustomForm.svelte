@@ -13,6 +13,7 @@
     } from "flowbite-svelte";
 
     let { 
+        title,
         fields = [],
         custom_fields = [],
         initialResponses = $bindable(),
@@ -22,10 +23,10 @@
     } = $props();
     
 
-    (async () => {
+    $effect(() => {
         console.log("INITIAL RESPONSES", initialResponses)
         console.log("Fields", fields)
-        console.log("custom_fields", custom_fields)
+        console.log("custom_fields_form", custom_fields)
 
         for (var field of [...fields, ...custom_fields]) {
             console.log("FIELD", field)
@@ -35,9 +36,11 @@
         console.log("INITIAL RESPONSES", initialResponses)
         console.log("NEW RESPONSES", newResponses)
 
-    })();
+    });
 
     function validateInput(key, value, regex) {
+        console.log("custom_fields_form", custom_fields)
+        console.log()
         if (regex) {
           const pattern = new RegExp(regex);
           validationErrors[key] = !pattern.test(value)
@@ -51,6 +54,9 @@
 </script>
 
 <div class="registrationForm">
+    {#if title}
+        <h2>{title}</h2>
+    {/if}
     <form onsubmit={handleSubmit}>
         {#each [...fields, ...custom_fields] as field}
             {#if !field.hidden}

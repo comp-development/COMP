@@ -63,6 +63,7 @@ export async function getCustomFieldResponses(
   table_id: number,
   custom_field_table: "orgs" | "students" | "teams" = "students"
 ) {
+  console.log("getCustomFieldResponses", event_custom_fields, table_id, custom_field_table);
   // Determine the column to filter by based on the custom_field_table
   const tableColumn =
     custom_field_table === "students"
@@ -73,20 +74,26 @@ export async function getCustomFieldResponses(
 
   // Get the list of custom field IDs to fetch
   const customFieldIds = event_custom_fields.map((field: any) => field.custom_field_id);
-  let customFieldValues;
+  
+  // Declare customFieldValues outside the if block
+  let customFieldValues = [];
+  
   // Fetch all relevant custom field values in one query
   if (table_id) {
-    const { data: customFieldValues, error } = await supabase
-    .from("custom_field_values")
-    .select("custom_field_id, value")
-    .in("custom_field_id", customFieldIds)
-    .eq(tableColumn, table_id);
+    console.log("table_id", table_id)
+    const { data, error } = await supabase
+      .from("custom_field_values")
+      .select("custom_field_id, value")
+      .in("custom_field_id", customFieldIds)
+      .eq(tableColumn, table_id);
 
     if (error) {
       throw error;
     }
+    customFieldValues = data;
   }
   
+  console.log("customFieldValues", customFieldValues);
   // Create a mapping of custom_field_id to value for quick lookup
   const valueMap = (customFieldValues || []).reduce(
     (map, row) => ({
@@ -102,11 +109,14 @@ export async function getCustomFieldResponses(
     value: valueMap[field.custom_field_id] || null,
   }));
 
+
+  console.log("fieldsWithValues", fieldsWithValues);
+
   return fieldsWithValues ?? [];
 }
 
 export async function upsertCustomFieldResponses(
-  custom_field_dict: Record<number, any>, // Assuming keys are custom_field_ids and values are the corresponding values
+  custom_field_dict: Record<number, any>,
   table_id: number,
   custom_field_table: "orgs" | "students" | "teams" = "students"
 ) {
@@ -121,14 +131,16 @@ export async function upsertCustomFieldResponses(
   // Prepare the data for upsert
   const upsertData = Object.entries(custom_field_dict).map(([custom_field_id, value]) => ({
     [tableColumn]: table_id,
-    custom_field_id: custom_field_id,
+    custom_field_id: parseInt(custom_field_id),
     value: value,
   }));
 
   // Perform the upsert operation
   const { data, error } = await supabase
     .from("custom_field_values")
-    .upsert(upsertData);
+    .upsert(upsertData, {
+      onConflict: ["custom_field_id", "org_event_id", "student_event_id", "team_id"],
+    });
 
   if (error) {
     throw error;
@@ -137,10 +149,23 @@ export async function upsertCustomFieldResponses(
   return data;
 }
 
-export async function addStudentToEvent(student_id: string, event_id: number, team_id: number = null, org_id: number = null) {
+export async function addStudentToEvent(
+  student_id: string,
+  event_id: number,
+  options?: {
+    team_id?: number | null;
+    org_id?: number | null;
+  }
+) {
+  const insertData: any = { student_id, event_id };
+  if (options?.team_id !== undefined) insertData.team_id = options.team_id;
+  if (options?.org_id !== undefined) insertData.org_id = options.org_id;
+
   const { data, error } = await supabase
     .from("student_events")
-    .insert({ student_id, event_id, team_id, org_id })
+    .upsert(insertData, { 
+      onConflict: 'student_id,event_id'  // Specify the unique constraint
+    })
     .select()
     .single();
   if (error) throw error;
