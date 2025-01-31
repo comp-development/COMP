@@ -177,6 +177,25 @@ export async function getStudentHostEvents(student_id: string, host_id: number) 
   return data;
 }
 
+export async function getCoachHostEvents(coach_id: string, host_id: number) {
+  const { data: orgCoachData, error: orgCoachError } = await supabase
+    .from("org_coaches")
+    .select("org_id")
+    .eq("coach_id", coach_id);
+  if (orgCoachError) throw orgCoachError;
+
+  const orgIds = orgCoachData?.map((org) => org.org_id) || [];
+  if (orgIds.length === 0) return [];
+
+  const { data: orgEventsData, error: orgEventsError } = await supabase
+    .from("org_events")
+    .select("event:events!inner(*)")
+    .in("org_id", orgIds)
+    .eq("event.host_id", host_id);
+  if (orgEventsError) throw orgEventsError;
+
+  return orgEventsData;
+}
 
 export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
 
