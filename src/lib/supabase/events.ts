@@ -167,6 +167,17 @@ export async function getStudentEvents(student_id: string) {
   return data;
 }
 
+export async function getStudentHostEvents(student_id: string, host_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .select("*, event:events!inner(*)")
+    .eq("student_id", student_id)
+    .eq("event.host_id", host_id)
+  if (error) throw error;
+  return data;
+}
+
+
 export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
 
 export async function getStudentEvent(student_id: string, event_id: number) {
