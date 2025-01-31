@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { handleError } from "$lib/handleError";
 	import { createAccount, signIntoAccount } from "$lib/supabase";
-	import { Input, Button, ButtonGroup, InputAddon } from 'flowbite-svelte';
-  	import { EnvelopeSolid, EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
+	import { Input, Button, ButtonGroup, InputAddon } from "flowbite-svelte";
+	import {
+		EnvelopeSolid,
+		EyeOutline,
+		EyeSlashOutline,
+	} from "flowbite-svelte-icons";
 	import toast from "$lib/toast.svelte";
 
 	interface Props {
@@ -69,32 +73,48 @@
 	<br /><br />
 	<div>
 		<ButtonGroup class="w-full">
-		  <Input id="show-password1" bind:value={password} type={show ? 'text' : 'password'} placeholder="Password" />
-		  <InputAddon>
-			<button onclick={() => (show = !show)}>
-			  {#if show}
-				<EyeOutline class="w-4 h-4" />
-			  {:else}
-				<EyeSlashOutline class="w-4 h-4" />
-			  {/if}
-			</button>
-		  </InputAddon>
+			<Input
+				id="show-password1"
+				bind:value={password}
+				type={show ? "text" : "password"}
+				placeholder="Password"
+				on:keydown={(e) => {
+					if (e.key === "Enter") logIn ? handleLogin() : handleSignUp();
+				}}
+			/>
+			<InputAddon>
+				<button onclick={() => (show = !show)}>
+					{#if show}
+						<EyeOutline class="w-4 h-4" />
+					{:else}
+						<EyeSlashOutline class="w-4 h-4" />
+					{/if}
+				</button>
+			</InputAddon>
 		</ButtonGroup>
 	</div>
 	<br />
 	{#if !logIn && password != ""}
 		<div>
 			<ButtonGroup class="w-full">
-			  <Input id="show-password1" bind:value={retypePassword} type={show ? 'text' : 'password'} placeholder="Retype Password" />
-			  <InputAddon>
-				<button onclick={() => (show1 = !show1)}>
-				  {#if show1}
-					<EyeOutline class="w-4 h-4" />
-				  {:else}
-					<EyeSlashOutline class="w-4 h-4" />
-				  {/if}
-				</button>
-			  </InputAddon>
+				<Input
+					id="show-password1"
+					bind:value={retypePassword}
+					type={show ? "text" : "password"}
+					placeholder="Retype Password"
+					on:keydown={(e) => {
+						if (e.key === "Enter") logIn ? handleLogin() : handleSignUp();
+					}}
+				/>
+				<InputAddon>
+					<button onclick={() => (show1 = !show1)}>
+						{#if show1}
+							<EyeOutline class="w-4 h-4" />
+						{:else}
+							<EyeSlashOutline class="w-4 h-4" />
+						{/if}
+					</button>
+				</InputAddon>
 			</ButtonGroup>
 		</div>
 		<br />
