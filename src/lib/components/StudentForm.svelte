@@ -17,7 +17,7 @@
     import { getEventCustomFields, getCustomFieldResponses, upsertCustomFieldResponses, getStudentEvent, getOrgEventByJoinCode, addStudentToEvent } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
 
-    let { userType, user, event_id } = $props();
+    let { student_event = $bindable(null), userType, user, event_id } = $props();
 
     let token: string | null = null;
 
@@ -31,7 +31,6 @@
     let initialResponses = $state({});
     let validationErrors = $state({});
     let custom_fields = $state([]);
-    let student_event = $state(null);
     let org_event = $state(null);
 
     function purchase_ticket(options: {
@@ -73,7 +72,6 @@
     
     
     console.log("ORG_EVENT", org_event)
-    let student_event;
     try {
       student_event = await addStudentToEvent(user?.id, event_id, null, org_event.org_id);
     } catch (error) {
