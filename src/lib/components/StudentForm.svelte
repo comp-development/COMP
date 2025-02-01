@@ -155,15 +155,12 @@
         firstName = user?.first_name;
         lastName = user?.last_name;
         email = user?.email;
-        console.log("user", user)
-        student_event = await getStudentEvent(user!.id, event_id);
-        console.log("student_event", student_event);
 
         custom_fields = await getEventCustomFields(event_id);
         console.log("event_id", event_id);
         console.log("event_custom_fields", custom_fields);
 
-        custom_fields = await getCustomFieldResponses(custom_fields, student_event?.student_event_id)
+        custom_fields = await getCustomFieldResponses(custom_fields, team?.team_id, "teams")
         console.log("custom_fields", custom_fields);
         //token = data.session?.access_token ?? null;
     })();
