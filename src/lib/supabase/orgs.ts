@@ -1,6 +1,6 @@
 import { supabase } from "../supabaseClient";
 
-export async function getCoachOrganization(coach_id: string) {
+export async function getCoachOrganization(coach_id: string, event_id: number) {
     const { data, error } = await supabase
         .from('org_coaches')
         .select("org_id, orgs(*)")
@@ -10,6 +10,7 @@ export async function getCoachOrganization(coach_id: string) {
     for (let i = 0; i < data.length; i++) {
         const teams = await getOrganizationTeams(data[i].org_id);
         data[i]["teams"] = teams;
+        data[i]["event"] = await ifOrgEvent(data[i].org_id, event_id);
     }
 
     return data;
@@ -34,6 +35,18 @@ export async function getOrganizationTeams(org_id: number) {
     }
 
     return teamData;
+}
+
+export async function ifOrgEvent(event_id: number, org_id: number) {
+    const { data, error } = await supabase
+        .from("org_events")
+        .select("*")
+        .eq("event_id", event_id)
+        .eq("org_id", org_id)
+        .single();
+    if (error) throw error;
+
+    return data;
 }
 
 export async function getOrgEventByJoinCode(event_id: number, join_code: string) {
