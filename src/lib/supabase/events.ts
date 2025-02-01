@@ -166,7 +166,7 @@ export async function addStudentToEvent(
     .upsert(insertData, { 
       onConflict: 'student_id,event_id'  // Specify the unique constraint
     })
-    .select()
+    .select("*, teams(*, student_events(*, students(*))), org_events(*)")
     .single();
   if (error) throw error;
   console.log("addStudentToEvent", data);
