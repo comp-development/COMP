@@ -7,9 +7,10 @@
         getEventInformation,
         getCoachOrganization,
         updateStudentTeam,
+        getStudentsWithoutTeam,
         changeTeam,
         deleteTeam,
-        deleteStudentTeam
+        deleteStudentTeam,
     } from "$lib/supabase";
     import {
         Badge,
@@ -17,6 +18,12 @@
         ButtonGroup,
         Input,
         Label,
+        Table,
+        TableBody,
+        TableBodyCell,
+        TableBodyRow,
+        TableHead,
+        TableHeadCell,
         Modal,
     } from "flowbite-svelte";
     import type { Tables } from "../../../../../db/database.types";
@@ -29,6 +36,8 @@
     } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
+    import Error from "../../../+error.svelte";
+    import { derived } from 'svelte/store';
 
     let loading = $state(true);
     let coach: any = $state();
@@ -42,10 +51,15 @@
     let teamName = $state("");
     let editingTeamId: number | null = $state(null);
 
+    let studentModalOpenTeam = $state(null);
+    let isStudentModalOpen = $state(false);
+    let studentsWithoutTeams = [];
+
     (async () => {
         event_details = await getEventInformation(event_id);
         coach = await getCoach($user!.id);
         organizationDetails = await getCoachOrganization(coach.coach_id);
+
         loading = false;
     })();
 
@@ -151,18 +165,37 @@
         isModalOpen = true;
     }
 
+    async function openStudentModal(team_id) {
+        try {
+            studentsWithoutTeams = await getStudentsWithoutTeam(event_id);
+            studentModalOpenTeam = team_id;
+            isStudentModalOpen = true;
+        } catch (e) {
+            handleError(e);
+        }
+    }
+
     async function handleChangeTeam(e, org_id) {
         try {
             e.preventDefault();
 
-            const newTeamData = await changeTeam(teamName, event_id, org_id, editingTeamId);
+            const newTeamData = await changeTeam(
+                teamName,
+                event_id,
+                org_id,
+                editingTeamId,
+            );
 
             let newOrganizationDetails = [...organizationDetails];
-            const orgIndex = newOrganizationDetails.findIndex(org => org.org_id === org_id);
+            const orgIndex = newOrganizationDetails.findIndex(
+                (org) => org.org_id === org_id,
+            );
 
             if (editingTeamId) {
                 // Update the existing team
-                newOrganizationDetails[orgIndex].teams = newOrganizationDetails[orgIndex].teams.map(team => {
+                newOrganizationDetails[orgIndex].teams = newOrganizationDetails[
+                    orgIndex
+                ].teams.map((team) => {
                     if (team.team_id === editingTeamId) {
                         return { ...team, team_name: teamName };
                     }
@@ -184,8 +217,59 @@
             isModalOpen = false;
             teamName = "";
             editingTeamId = null;
-        } catch (e) {
-            handleError(e);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    async function selectStudent(e, student, org_id) {
+        try {
+            e.preventDefault();
+
+            if (!organizationDetails.length || organizationDetails.length == 0) return;
+            const org = organizationDetails.find((org) => org.org_id === org_id);
+            if (!org) { toast.error("Organization not found."); return; }
+            
+            const lastTeam = org.teams.find((team) => team.team_id === studentModalOpenTeam);
+            if (!lastTeam) { toast.error("No teams available to assign the student."); return; }
+
+            if (lastTeam.teamMembers.length >= (event_details?.max_team_size ?? 0)) {
+                toast.error("This team is already at maximum capacity. Add this student to another team.");
+                return;
+            }
+
+            const newStudent = await updateStudentTeam(
+                student.student_event_id,
+                lastTeam.team_id,
+                org_id,
+            );
+
+            organizationDetails = organizationDetails.map((org) => {
+                if (org.org_id === org_id) {
+                    return {
+                        ...org,
+                        teams: org.teams.map((team) => {
+                            if (team.team_id === lastTeam.team_id) {
+                                return {
+                                    ...team,
+                                    teamMembers: [...team.teamMembers, newStudent[0]],
+                                };
+                            }
+                            return team;
+                        }),
+                    };
+                }
+                return org;
+            });
+
+            toast.success(
+                `Student ${newStudent[0].students.first_name} added to team ${lastTeam.team_name}`,
+            );
+
+            studentModalOpenTeam = null;
+            isStudentModalOpen = false;
+        } catch (error) {
+            handleError(error);
         }
     }
 
@@ -194,24 +278,26 @@
             e.preventDefault();
 
             await deleteTeam(team);
-            
+
             organizationDetails = organizationDetails.map((org: any) => {
                 return {
                     ...org,
-                    teams: org.teams.filter((t: any) => t.team_id !== team.team_id),
+                    teams: org.teams.filter(
+                        (t: any) => t.team_id !== team.team_id,
+                    ),
                 };
             });
 
             toast.success("Team deleted successfully");
-        } catch (e) {
-            handleError(e);
+        } catch (error) {
+            handleError(error);
         }
     }
 
     async function handleDeleteStudentTeam(e, student) {
         try {
             e.preventDefault();
-            
+
             await deleteStudentTeam(student.student_event_id);
 
             organizationDetails = organizationDetails.map((org: any) => {
@@ -230,9 +316,9 @@
                 };
             });
 
-            toast.success("Team deleted successfully");
-        } catch (e) {
-            handleError(e);
+            toast.success("Student deleted successfully");
+        } catch (error) {
+            handleError(error);
         }
     }
 </script>
@@ -263,25 +349,9 @@
                         <CartSolid class="w-4 h-4 me-2" />
                         Pay
                     </Button>
-                    <Button
-                        pill
-                        outline
-                        color="primary"
-                        onclick={openAddModal}
-                    >
+                    <Button pill outline color="primary" onclick={openAddModal}>
                         <UsersGroupSolid class="w-4 h-4 me-2" />
                         Add Team
-                    </Button>
-                    <Button
-                        pill
-                        outline
-                        color="primary"
-                        onclick={() => {
-                            /*To be implemented*/
-                        }}
-                    >
-                        <UserAddSolid class="w-4 h-4 me-2" />
-                        Add Student
                     </Button>
                 </ButtonGroup>
             </div>
@@ -301,6 +371,13 @@
                             <h3>{team.team_name}</h3>
                             <div class="space-y-1">
                                 <button
+                                    class="hover:bg-green-100 rounded-lg"
+                                    aria-label="Add Student"
+                                    onclick={() => {openStudentModal(team.team_id)}}
+                                >
+                                    <UserAddSolid class="w-5 h-5" />
+                                </button>
+                                <button
                                     class="hover:bg-blue-100 rounded-lg"
                                     aria-label="Edit"
                                     onclick={() => openEditModal(team)}
@@ -310,7 +387,9 @@
                                 <button
                                     class="hover:bg-red-100 rounded-lg"
                                     aria-label="Delete"
-                                    onclick={(event) => {handleDeleteTeam(event, team)}}
+                                    onclick={(event) => {
+                                        handleDeleteTeam(event, team);
+                                    }}
                                 >
                                     <TrashBinSolid class="w-5 h-5" />
                                 </button>
@@ -360,7 +439,12 @@
                                     <button
                                         class="hover:bg-red-100 rounded-lg"
                                         aria-label="Delete"
-                                        onclick={(event) => { handleDeleteStudentTeam(event, team_member) }}
+                                        onclick={(event) => {
+                                            handleDeleteStudentTeam(
+                                                event,
+                                                team_member,
+                                            );
+                                        }}
                                     >
                                         <TrashBinSolid class="w-5 h-5" />
                                     </button>
@@ -411,6 +495,71 @@
                 </div>
             </form>
         </Modal>
+
+        <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
+            <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+                Select Student
+            </h3>
+            <div class="tableMaxHeight">
+                <Table
+                    items={studentsWithoutTeams}
+                    class="w-full"
+                    filter={(item, searchTerm) =>
+                        item.student.first_name
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase()) ||
+                        item.student.last_name
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase())}
+                >
+                    <TableHead>
+                        <TableHeadCell></TableHeadCell>
+                        <TableHeadCell
+                            sort={(a, b) =>
+                                a.student.first_name.localeCompare(
+                                    b.student.first_name,
+                                )}
+                            defaultSort>First Name</TableHeadCell
+                        >
+                        <TableHeadCell
+                            sort={(a, b) =>
+                                a.student.last_name.localeCompare(b.student.last_name)}
+                            >Last Name</TableHeadCell
+                        >
+                        <TableHeadCell
+                            sort={(a, b) =>
+                                a.student.grade.localeCompare(b.student.grade)}
+                            >Grade</TableHeadCell
+                        >
+                    </TableHead>
+                    <TableBody tableBodyClass="divide-y">
+                        <TableBodyRow slot="row" let:item>
+                            <TableBodyCell class="px-0 py-1 text-center">
+                                <button class="select_button" onclick={(e) => selectStudent(e, item, organization.org_id)}
+                                    >✅</button
+                                >
+                            </TableBodyCell>
+                            <TableBodyCell class="px-0 py-0 text-center"
+                                >{item.student.first_name}</TableBodyCell
+                            >
+                            <TableBodyCell class="px-0 py-0 text-center"
+                                >{item.student.last_name}</TableBodyCell
+                            >
+                            <TableBodyCell class="px-0 py-0 text-center"
+                                >{item.student.grade}</TableBodyCell
+                            >
+                        </TableBodyRow>
+                        {#if studentsWithoutTeams.length == 0}
+                            <TableBodyRow>
+                                <TableBodyCell colspan="4" class="text-center"
+                                    >No students available.</TableBodyCell
+                                >
+                            </TableBodyRow>
+                        {/if}
+                    </TableBody>
+                </Table>
+            </div>
+        </Modal>
     {/each}
 {/if}
 
@@ -445,5 +594,16 @@
 
     .teamMember:hover {
         transform: scale(1.01);
+    }
+
+    .tableMaxHeight {
+        max-height: 500px;
+        overflow-y: scroll;
+    }
+
+    .select_button {
+        background-color: none;
+        border: none;
+        outline: none;
     }
 </style>
