@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { Button, Badge } from "flowbite-svelte";
-  import Registration from "$lib/components/Registration.svelte";
+  import { Button, Badge, Tabs, TabItem} from "flowbite-svelte";
+  import StudentForm from "$lib/components/StudentForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
   import {
@@ -18,7 +18,7 @@
   const event_id = parseInt($page.params.event_id);
   let student_event: StudentEvent = null;
   let event_details: Tables<"events"> | null = $state(null);
-  
+  import CustomForm from "$lib/components/CustomForm.svelte";
   let team: Get<StudentEvent, "teams"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
   let in_team = $state(false);
@@ -26,6 +26,7 @@
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student = $state(null);
+  let selectedOption = $state("create_team");
 
   (async () => {
     // const a = (b: any) => b + 1;
@@ -71,8 +72,8 @@
   <br />
   <h1>{event_details?.event_name}</h1>
   <h2 style="font-weight: 500">{event_details?.event_date}</h2>
-
-  {#if !in_org && !in_team}
+  Add something about cost per student Here
+  {#if !student_event}
     {#if transaction_stored}
       <p>
         Payment found, but registration is not complete. Please fill out the
@@ -80,11 +81,11 @@
       </p>
       <br />
     {/if}
-    <Registration userType="student" user={student} event_id={event_id} />
-  {/if}
+    <StudentForm bind:student_event={student_event} userType="student" user={student} event_id={event_id} />
+  
 
   <!-- Additional conditions for team and org information -->
-  {#if in_team}
+  {:else if student_event?.teams != null}
     <br />
     <p style="text-align: center;">
       Welcome to this tournament! Below is the information for the team you are
@@ -95,7 +96,7 @@
     </p>
     <br />
     <div class="flex">
-      <Button href={"/student/" + event_id + "/tests"} pill>Take Tests</Button>
+      <Button href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`} pill>Take Tests</Button>
     </div>
     <br />
 
@@ -103,7 +104,6 @@
       <p style="font-weight: bold; font-size: 20px; align-items: left">
         {team?.team_name}
       </p>
-      {#if team?.division}<p>{team?.division} Division</p>{/if}
 
       {#each team?.student_events_detailed ?? [] as teamMember}
         <div style="display: flex; align-items: center;">
@@ -124,8 +124,55 @@
         </div>
       {/each}
     </div>
-  {:else if in_org}
-    <p>Not yet assigned team by org</p>
+  {:else if student_event?.org_events != null}
+    <p>Not yet assigned team by org. Contact your organization coach if you believe this is in error.</p>
+  {:else}
+    <div class="registrationForm">
+      <Tabs tabStyle="pill">
+        <TabItem
+          on:click={() => (selectedOption = "create_team")}
+          open={selectedOption === "create_team"}
+          title="Create Independent Team"
+        >
+          <h2>Create Independent Team</h2>
+          <p>Note that this is an independent team, not associated with an organization. If you are a student in a school or organization, then join a team/organization instead.</p>
+          <!--
+          <CustomForm title="Registration Form" fields={
+            [
+              {
+                  custom_field_id: "team_name", 
+                  label: "Team Name",
+                  required: true,
+                  regex: null,
+                  key: "team_name",
+                  placeholder: null,
+                  value: null,
+                  choices: null,
+                  editable: true,
+                  hidden: false
+              }
+            ]
+          } {custom_fields} bind:initialResponses bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>-->
+        </TabItem>
+        <TabItem
+          on:click={() => (selectedOption = "join_team")}
+          open={selectedOption === "join_team"}
+          title="Join Team"
+        >
+          <h2>Join Team</h2>
+          <p>Get the code from your coach if you're a part of an org, or an already registered team member for independent teams.</p>
+        </TabItem>
+        <TabItem
+          on:click={() => (selectedOption = "join_org")}
+          open={selectedOption === "join_org"}
+          title="Join Organization"
+        >
+          <h2>Join Organization</h2>
+          <p>Get your organization join code from your organization's coach.</p>
+        </TabItem>
+      </Tabs>
+      <br />
+    </div>
   {/if}
   {#if in_org}
     <!-- TODO: org info -->
@@ -150,9 +197,7 @@
     border-radius: 10px;
   }
 
-  .registrationForm {
-    padding: 30px;
-  }
+  
 
   form {
     border: 3px solid var(--primary-tint);

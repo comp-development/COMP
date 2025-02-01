@@ -76,7 +76,9 @@ export async function changeTeam(team_name: string, event_id: number, org_id: nu
 
   const { data, error } = await supabase
     .from("teams")
-    .upsert(teamData)
+    .upsert(teamData, {
+      onConflict: ["team_id"]
+    })
     .select();
   if (error) throw error;
 
