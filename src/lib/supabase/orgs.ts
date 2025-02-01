@@ -7,8 +7,6 @@ export async function getCoachOrganization(coach_id: string) {
         .eq('coach_id', coach_id);
     if (error) throw error;
 
-    //coach can own multiple organizations
-
     for (let i = 0; i < data.length; i++) {
         const teams = await getOrganizationTeams(data[i].org_id);
         data[i]["teams"] = teams;
