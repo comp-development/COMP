@@ -136,6 +136,7 @@
         >
           <h2>Create Independent Team</h2>
           <p>Note that this is an independent team, not associated with an organization. If you are a student in a school or organization, then join a team/organization instead.</p>
+          <!--
           <CustomForm title="Registration Form" fields={
             [
               {
@@ -151,7 +152,7 @@
                   hidden: false
               }
             ]
-          } {custom_fields} bind:initialResponses bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>
+          } {custom_fields} bind:initialResponses bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>-->
         </TabItem>
         <TabItem
           on:click={() => (selectedOption = "join_team")}
@@ -196,9 +197,7 @@
     border-radius: 10px;
   }
 
-  .registrationForm {
-    padding: 30px;
-  }
+  
 
   form {
     border: 3px solid var(--primary-tint);
