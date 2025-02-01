@@ -14,7 +14,7 @@
     import { EnvelopeSolid, InfoCircleSolid } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
     import CustomForm from "$lib/components/CustomForm.svelte";
-    import { getEventCustomFields, getCustomFieldResponses, upsertCustomFieldResponses, getStudentEvent, getOrgEventByJoinCode, addStudentToEvent } from "$lib/supabase";
+    import { getEventCustomFields, getCustomFieldResponses, upsertCustomFieldResponses, getStudentEvent, getOrgEventByJoinCode, upsertStudentEvent } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
 
     let { student_event = $bindable(null), userType, user, event_id } = $props();
@@ -73,7 +73,7 @@
     
     console.log("ORG_EVENT", org_event)
     try {
-      student_event = await addStudentToEvent(user?.id, event_id, null, org_event.org_id);
+      student_event = await upsertStudentEvent(user?.id, event_id, null, org_event.org_id);
     } catch (error) {
       error.message = `Error adding student to org in event: ${error.message}`
       handleError(error);
@@ -115,7 +115,7 @@
   async function handleSubmit(event) {
     let student_event;
     try {
-      student_event = await addStudentToEvent(user?.id, event_id);
+      student_event = await upsertStudentEvent(user?.id, event_id);
     } catch (error) {
       error.message = `Error adding student to org in event: ${error.message}`
       handleError(error);

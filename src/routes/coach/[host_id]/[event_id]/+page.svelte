@@ -8,7 +8,7 @@
         getCoachOrganization,
         updateStudentTeam,
         getStudentsWithoutTeam,
-        changeTeam,
+        upsertTeam,
         deleteTeam,
         deleteStudentTeam,
     } from "$lib/supabase";
@@ -177,12 +177,19 @@
         try {
             e.preventDefault();
 
-            const newTeamData = await changeTeam(
-                teamName,
-                event_id,
-                org_id,
-                editingTeamId,
-            );
+            let newTeamData;
+
+            if (!editingTeamId) {
+                newTeamData = await upsertTeam(event_id, {
+                    team_name: teamName,
+                    org_id,
+                });
+            } else {
+                newTeamData = await upsertTeam(event_id, {
+                    team_id: editingTeamId,
+                    team_name: teamName
+                });
+            }
 
             let newOrganizationDetails = [...organizationDetails];
             const orgIndex = newOrganizationDetails.findIndex(

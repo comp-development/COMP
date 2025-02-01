@@ -149,7 +149,19 @@ export async function upsertCustomFieldResponses(
   return data;
 }
 
-export async function addStudentToEvent(
+/**
+ * 
+ * @param student_id 
+ * @param event_id 
+ * @param options 
+ * @returns 
+ * 
+ * This function is used to upsert student events
+ * this is useful for initially creating student_events, 
+ * as well as modifying the teams/orgs of existing student_events
+ */
+
+export async function upsertStudentEvent(
   student_id: string,
   event_id: number,
   options?: {
@@ -157,19 +169,19 @@ export async function addStudentToEvent(
     org_id?: number | null;
   }
 ) {
-  const insertData: any = { student_id, event_id };
-  if (options?.team_id !== undefined) insertData.team_id = options.team_id;
-  if (options?.org_id !== undefined) insertData.org_id = options.org_id;
+  const upsertData: any = { student_id, event_id };
+  if (options?.team_id !== undefined) upsertData.team_id = options.team_id;
+  if (options?.org_id !== undefined) upsertData.org_id = options.org_id;
 
   const { data, error } = await supabase
     .from("student_events")
-    .upsert(insertData, { 
+    .upsert(upsertData, { 
       onConflict: 'student_id,event_id'  // Specify the unique constraint
     })
     .select("*, teams(*, student_events(*, students(*))), org_events(*)")
     .single();
   if (error) throw error;
-  console.log("addStudentToEvent", data);
+  console.log("upsertStudentEvent", data);
   return data;
 }
 	
