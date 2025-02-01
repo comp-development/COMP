@@ -81,10 +81,13 @@
                     class="mt-2"
                     required={field.required}
                     disabled={!field.editable && initialResponses[field.custom_field_id]}
-                    items={field.choices.map((choice) => ({
-                        value: choice,
-                        name: choice,
-                    }))}
+                    items={[
+                        ...(field.required ? [] : [{ value: null, name: "None" }]),
+                        ...field.choices.map((choice) => ({
+                            value: choice,
+                            name: choice,
+                        }))
+                    ]}
                     bind:value={newResponses[field.custom_field_id]}
                     />
                 {:else}

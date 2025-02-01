@@ -2,6 +2,7 @@
   import { page } from "$app/stores";
   import { Button, Badge, Tabs, TabItem} from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
+  import TeamForm from "$lib/components/TeamForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
   import {
@@ -134,25 +135,7 @@
           open={selectedOption === "create_team"}
           title="Create Independent Team"
         >
-          <h2>Create Independent Team</h2>
-          <p>Note that this is an independent team, not associated with an organization. If you are a student in a school or organization, then join a team/organization instead.</p>
-          <!--
-          <CustomForm title="Registration Form" fields={
-            [
-              {
-                  custom_field_id: "team_name", 
-                  label: "Team Name",
-                  required: true,
-                  regex: null,
-                  key: "team_name",
-                  placeholder: null,
-                  value: null,
-                  choices: null,
-                  editable: true,
-                  hidden: false
-              }
-            ]
-          } {custom_fields} bind:initialResponses bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>-->
+          <TeamForm bind:team={student_event.teams} title="Create Independent Team" userType="student" user={student} event_id={event_id} />
         </TabItem>
         <TabItem
           on:click={() => (selectedOption = "join_team")}
