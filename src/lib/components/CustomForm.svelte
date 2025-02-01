@@ -117,3 +117,17 @@
         <Button type="submit" pill>Submit</Button>
     </form>
 </div>
+
+<style>
+.registrationForm {
+    padding: 30px;
+}
+
+form {
+    border: 3px solid var(--primary-tint);
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: 20px;
+}
+</style>
