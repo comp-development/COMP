@@ -36,8 +36,6 @@
     } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
-    import Error from "../../../+error.svelte";
-    import { derived } from 'svelte/store';
 
     let loading = $state(true);
     let coach: any = $state();
@@ -58,7 +56,7 @@
     (async () => {
         event_details = await getEventInformation(event_id);
         coach = await getCoach($user!.id);
-        organizationDetails = await getCoachOrganization(coach.coach_id);
+        organizationDetails = await getCoachOrganization(coach.coach_id, event_id);
 
         loading = false;
     })();
