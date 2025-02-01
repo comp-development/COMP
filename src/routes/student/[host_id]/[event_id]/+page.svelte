@@ -27,6 +27,7 @@
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student = $state(null);
+  let purchase_ticket = $state(true);
   let selectedOption = $state("create_team");
 
   (async () => {

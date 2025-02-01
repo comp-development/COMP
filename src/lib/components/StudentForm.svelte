@@ -90,8 +90,6 @@
       handleError(error);
       return
     }
-
-    document.location.reload();
     
     /**
     let body = {
@@ -113,7 +111,6 @@
   }
 
   async function handleSubmit(event) {
-    let student_event;
     try {
       student_event = await upsertStudentEvent(user?.id, event_id);
     } catch (error) {
