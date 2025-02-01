@@ -53,13 +53,13 @@ export async function updateStudentTeam(
       org_id: new_org_id
     })
     .eq("student_event_id", student_event_id)
-    .select();
+    .select("*, students(*)");
 
   if (error) throw error;
   return data;
 }
 
-export async function deleteStudentTeam(student_event_id: number) { 
+export async function deleteStudentTeam(student_event_id: number) {
   const { error } = await supabase
     .from("student_events")
     .update({ team_id: null })
@@ -67,16 +67,32 @@ export async function deleteStudentTeam(student_event_id: number) {
   if (error) throw error;
 }
 
-export async function changeTeam(team_name: string, event_id: number, org_id: number) {
+export async function changeTeam(team_name: string, event_id: number, org_id: number, team_id: number | null) {
+  const teamData = { team_name, event_id, org_id };
+
+  if (team_id !== null) {
+    teamData.team_id = team_id;
+  }
+
   const { data, error } = await supabase
     .from("teams")
-    .upsert({
-      team_name,
-      event_id,
-      org_id,
+    .upsert(teamData, {
+      onConflict: ["team_id"]
     })
     .select();
   if (error) throw error;
+
+  return data;
+}
+
+export async function getStudentsWithoutTeam(event_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .select("*, student:students(*)")
+    .eq("event_id", event_id)
+    .is("team_id", null);
+  if (error) throw error;
+
   return data;
 }
 
