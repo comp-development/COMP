@@ -1,45 +1,44 @@
 <script lang="js">
-	
+	import { supabase } from "$lib/supabaseClient";
+	import { get } from "svelte/store";
 	import UserTable from "$lib/components/UserTable.svelte";
 	import Button from "$lib/components/Button.svelte";
-	
+	import { Checkbox, TextArea } from "carbon-components-svelte";
+	import { onMount } from "svelte";
 	import toast from "svelte-french-toast";
 	import { handleError } from "$lib/handleError";
 	
-	
-    import { getStudentEvents, getCustomFields } from "$lib/supabase";
-
-<<<<<<< HEAD
-	let pageSize = $state(25);
-	let page = $state(1);
-	let loading = $state(true);
-	let roles = $state([]);
-=======
-	import { page } from "$app/stores";
+	import { List, Schematics } from "carbon-icons-svelte";
     import { getStudents } from "$lib/supabase/students";
-    
-	let time_filtered_students = [];
+
 	
+
+	
+
+	
+	let students = [];
+
+
+	let time_filtered_students = [];
+	let studentCounts = [];
 	let width = 0;
 	let loaded = false;
-	
+	let user;
     let userRole;
-	let custom_fields = [];
-	let students = [];
-	let studentTableInfo = [];
-	let event_id = $page.params.event_id;
->>>>>>> juli-students-view
+
+	let openModal = false;
+	let values = ["Students", "Answers", "Solutions", "Comments"];
+	let group = values.slice(0, 1);
+
+	let scheme = {};
 
 
 	(async () => {
 		try {
-			students = await getStudentEvents(event_id);
-			studentTableInfo = await getStudents({});
-			custom_fields = await getCustomFields(event_id);
-			console.log("new custom!",custom_fields);			
-			console.log("student event and student");
-			console.log(students);
-			console.log(studentTableInfo);
+        
+			students = await getStudents({ });
+            sortStudents();
+			
 			console.log(time_filtered_students.length);
 
 			const topicsCount = students.reduce((count, { topics }) => {
@@ -57,6 +56,8 @@
 				return count;
 			}, {});
 			console.log(topicsCount);
+            // find the console log error, errpr pccired after this
+            //comment out lines after this
 			
 			loaded = true;
 		} catch (error) {
@@ -64,6 +65,7 @@
 			toast.error(error.message);
 		}
 	})();
+
 
 
     function sortStudents() {
@@ -121,61 +123,6 @@
 	<p>Loading students...</p>
 {/if}
 
-<<<<<<< HEAD
-{#if loading}
-	<p>Loading...</p>
-{:else}
-	<br />
-	<Button title="Change User Role" href="/admin/users/change" />
-	<br />
-	<br />
-	<div style="padding: 10px;">
-		<DataTable
-			sortable
-			size="compact"
-			headers={[
-				{ key: "edit", value: "", width: "20px"},
-				{ key: "first_name", value: "First Name" },
-				{ key: "last_name", value: "Last Name" },
-				{ key: "role", value: "Role" },
-				{ key: "id", value: "ID" },
-			]}
-			rows={roles}
-			{pageSize}
-			{page}
-		>
-			<Toolbar size="sm">
-				<ToolbarContent>
-					<ToolbarSearch persistent shouldFilterRows />
-				</ToolbarContent>
-			</Toolbar>
-
-			{#snippet cell({ row, cell, rowIndex })}
-					
-					<div>
-						{#if cell.key === "edit"}
-							<div class="pencil">
-								<Link class="link" href={"/admin/users/" + row.id}
-									><i class="ri-pencil-fill"></i></Link
-								>
-							</div>
-						{:else}
-							<div style="overflow: hidden;">
-								{cell.value == null || cell.value == "" ? "None" : cell.value}
-							</div>
-						{/if}
-					</div>
-				
-					{/snippet}
-		</DataTable>
-
-		<Pagination
-			bind:pageSize
-			bind:page
-			totalItems={roles.length}
-			pageSizeInputDisabled
-		/>
-=======
 <div style="margin-top: 10px;">
 	<Button title="Create a new student" href="/students/new" />
 </div>
@@ -187,7 +134,6 @@
 <br />
 <div class="flex">
 	<div class="stats">
->>>>>>> juli-students-view
 	</div>
 </div>
 <br>
@@ -195,10 +141,7 @@
 <div style="width:80%; margin: auto;margin-bottom: 20px;">
 	<UserTable 
         students={students} 
-		custom_fields={custom_fields}
-		
-        
-        />
+      />
 </div>
 
 <style>
