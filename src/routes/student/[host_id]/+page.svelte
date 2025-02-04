@@ -138,7 +138,7 @@
 					<div>
 						<Button
 							size="sm"
-							href={`./student/${event.event_id}`}
+							href={`./${host_id}/${event.event_id}`}
 							pill
 							>{my_event_ids.has(event.event_id.toString())
 								? "Go to Event"

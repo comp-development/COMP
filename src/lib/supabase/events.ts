@@ -48,14 +48,31 @@ export async function getEventTeams(event_id: number) {
   return data;
 }
 
-export async function getEventCustomFields(event_id:number, custom_field_table: "orgs" | "students" | "teams" = "students") {
+export async function getEventCustomFields(
+  event_id: number,
+  custom_field_table: "orgs" | "students" | "teams" = "students"
+) {
+  console.log("EVENT ID", event_id);
   const { data, error } = await supabase
-    .from("custom_fields")
-    .select("*")
+    .from("event_custom_fields")
+    .select("*, custom_fields(*)") // join the custom_fields table using the foreign key
     .eq("event_id", event_id)
-    .eq("custom_field_table", custom_field_table);
+    .order("ordering");
+    //.eq("custom_fields.custom_field_table", custom_field_table);
+
   if (error) throw error;
-  return data;
+  console.log("GET EVENT CUSTOM FIELDS", data);
+
+  const flattenedData = (data || []).map((record: any) => {
+    if (record.custom_fields) {
+      // Merge all properties from custom_fields into the parent record
+      record = { ...record, ...record.custom_fields };
+      delete record.custom_fields; // Remove the nested object
+    }
+    return record;
+  });
+
+  return flattenedData;
 }
 
 export async function getCustomFieldResponses(
@@ -63,6 +80,7 @@ export async function getCustomFieldResponses(
   table_id: number,
   custom_field_table: "orgs" | "students" | "teams" = "students"
 ) {
+  console.log("getCustomFieldResponses", event_custom_fields, table_id, custom_field_table);
   // Determine the column to filter by based on the custom_field_table
   const tableColumn =
     custom_field_table === "students"
@@ -72,26 +90,32 @@ export async function getCustomFieldResponses(
       : "org_event_id";
 
   // Get the list of custom field IDs to fetch
-  const customFieldIds = event_custom_fields.map((field: any) => field.custom_field_id);
-  let customFieldValues;
+  const eventCustomFieldIds = event_custom_fields.map((field: any) => field.event_custom_field_id);
+  
+  // Declare customFieldValues outside the if block
+  let customFieldValues = [];
+  
   // Fetch all relevant custom field values in one query
   if (table_id) {
-    const { data: customFieldValues, error } = await supabase
-    .from("custom_field_values")
-    .select("custom_field_id, value")
-    .in("custom_field_id", customFieldIds)
-    .eq(tableColumn, table_id);
+    console.log("table_id", table_id)
+    const { data, error } = await supabase
+      .from("custom_field_values")
+      .select("event_custom_field_id, value")
+      .in("event_custom_field_id", eventCustomFieldIds)
+      .eq(tableColumn, table_id);
 
     if (error) {
       throw error;
     }
+    customFieldValues = data;
   }
   
+  console.log("customFieldValues", customFieldValues);
   // Create a mapping of custom_field_id to value for quick lookup
   const valueMap = (customFieldValues || []).reduce(
     (map, row) => ({
       ...map,
-      [row.custom_field_id]: row.value,
+      [row.event_custom_field_id]: row.value,
     }),
     {}
   );
@@ -99,14 +123,17 @@ export async function getCustomFieldResponses(
   // Map the input fields with their corresponding values
   const fieldsWithValues = event_custom_fields.map((field: any) => ({
     ...field,
-    value: valueMap[field.custom_field_id] || null,
+    value: valueMap[field.event_custom_field_id] || null,
   }));
+
+
+  console.log("fieldsWithValues", fieldsWithValues);
 
   return fieldsWithValues ?? [];
 }
 
 export async function upsertCustomFieldResponses(
-  custom_field_dict: Record<number, any>, // Assuming keys are custom_field_ids and values are the corresponding values
+  custom_field_dict: Record<number, any>,
   table_id: number,
   custom_field_table: "orgs" | "students" | "teams" = "students"
 ) {
@@ -119,16 +146,18 @@ export async function upsertCustomFieldResponses(
       : "org_event_id";
 
   // Prepare the data for upsert
-  const upsertData = Object.entries(custom_field_dict).map(([custom_field_id, value]) => ({
+  const upsertData = Object.entries(custom_field_dict).map(([event_custom_field_id, value]) => ({
     [tableColumn]: table_id,
-    custom_field_id: custom_field_id,
+    event_custom_field_id: parseInt(event_custom_field_id),
     value: value,
   }));
 
   // Perform the upsert operation
   const { data, error } = await supabase
     .from("custom_field_values")
-    .upsert(upsertData);
+    .upsert(upsertData, {
+      onConflict: ["event_custom_field_id", tableColumn],
+    });
 
   if (error) {
     throw error;
@@ -137,14 +166,39 @@ export async function upsertCustomFieldResponses(
   return data;
 }
 
-export async function addStudentToEvent(student_id: string, event_id: number, team_id: number = null, org_id: number = null) {
+/**
+ * 
+ * @param student_id 
+ * @param event_id 
+ * @param options 
+ * @returns 
+ * 
+ * This function is used to upsert student events
+ * this is useful for initially creating student_events, 
+ * as well as modifying the teams/orgs of existing student_events
+ */
+
+export async function upsertStudentEvent(
+  student_id: string,
+  event_id: number,
+  options?: {
+    team_id?: number | null;
+    org_id?: number | null;
+  }
+) {
+  const upsertData: any = { student_id, event_id };
+  if (options?.team_id !== undefined) upsertData.team_id = options.team_id;
+  if (options?.org_id !== undefined) upsertData.org_id = options.org_id;
+
   const { data, error } = await supabase
     .from("student_events")
-    .insert({ student_id, event_id, team_id, org_id })
-    .select()
+    .upsert(upsertData, { 
+      onConflict: 'student_id,event_id'  // Specify the unique constraint
+    })
+    .select("*, teams(*, student_events(*, students(*))), org_events(*)")
     .single();
   if (error) throw error;
-  console.log("addStudentToEvent", data);
+  console.log("upsertStudentEvent", data);
   return data;
 }
 	
@@ -177,6 +231,25 @@ export async function getStudentHostEvents(student_id: string, host_id: number) 
   return data;
 }
 
+export async function getCoachHostEvents(coach_id: string, host_id: number) {
+  const { data: orgCoachData, error: orgCoachError } = await supabase
+    .from("org_coaches")
+    .select("org_id")
+    .eq("coach_id", coach_id);
+  if (orgCoachError) throw orgCoachError;
+
+  const orgIds = orgCoachData?.map((org) => org.org_id) || [];
+  if (orgIds.length === 0) return [];
+
+  const { data: orgEventsData, error: orgEventsError } = await supabase
+    .from("org_events")
+    .select("event:events!inner(*)")
+    .in("org_id", orgIds)
+    .eq("event.host_id", host_id);
+  if (orgEventsError) throw orgEventsError;
+
+  return orgEventsData;
+}
 
 export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
 
