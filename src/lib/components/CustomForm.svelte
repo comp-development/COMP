@@ -25,10 +25,9 @@
     let initialResponses = $state({});
 
     $effect(() => {
-
         for (var field of [...fields, ...custom_fields]) {
-            initialResponses[field?.custom_field_id] = field?.value;
-            newResponses[field?.custom_field_id] = field?.value;
+            initialResponses[field?.custom_field_id ?? field?.name] = field?.value;
+            newResponses[field?.custom_field_id ?? field?.name] = field?.value;
         }
     })
     const typePatterns = {
@@ -91,11 +90,11 @@
                                     name: choice,
                                 })),
                             ]}
-                            bind:value={newResponses[field.custom_field_id]}
+                            bind:value={newResponses[field.custom_field_id ?? field.name]}
                         />
                     {:else if field.custom_field_type === "date"}
                         <Datepicker
-                            bind:value={newResponses[field.custom_field_id]}
+                            bind:value={newResponses[field.custom_field_id ?? field.name]}
                             required={field.required}
                             disabled={!field.editable}
                             on:blur={() =>
@@ -107,7 +106,7 @@
                         />
                     {:else if field.custom_field_type === "paragraph"}
                         <Textarea
-                            bind:value={newResponses[field.custom_field_id]}
+                            bind:value={newResponses[field.custom_field_id ?? field.name]}
                             placeholder={field.placeholder}
                             required={field.required}
                             disabled={!field.editable}
@@ -118,7 +117,7 @@
                             type="email"
                             id={field.custom_field_id}
                             placeholder={field.placeholder}
-                            bind:value={newResponses[field.custom_field_id]}
+                            bind:value={newResponses[field.custom_field_id ?? field.name]}
                             required={field.required}
                             on:blur={() =>
                                 validateInput(
@@ -137,7 +136,7 @@
                             id={field.custom_field_id}
                             type="tel"
                             placeholder={field.placeholder}
-                            bind:value={newResponses[field.custom_field_id]}
+                            bind:value={newResponses[field.custom_field_id ?? field.name]}
                             required={field.required}
                             pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
                             on:blur={() =>
@@ -182,7 +181,7 @@
                     {:else}
                         <Input
                             id={field.custom_field_id}
-                            bind:value={newResponses[field.custom_field_id]}
+                            bind:value={newResponses[field.custom_field_id ?? field.name]}
                             type="text"
                             required={field.required}
                             disabled={!field.editable}
