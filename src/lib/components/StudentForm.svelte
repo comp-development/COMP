@@ -28,7 +28,6 @@
     let input_team_join_code = $state("");
     let input_org_join_code = $state("");
     let newResponses = $state({});
-    let initialResponses = $state({});
     let validationErrors = $state({});
     let custom_fields = $state([]);
     let org_event = $state(null);
@@ -157,7 +156,7 @@
         console.log("event_id", event_id);
         console.log("event_custom_fields", custom_fields);
 
-        custom_fields = await getCustomFieldResponses(custom_fields, team?.team_id, "teams")
+        custom_fields = await getCustomFieldResponses(custom_fields, student_event?.student_event_id, "students")
         console.log("custom_fields", custom_fields);
         //token = data.session?.access_token ?? null;
     })();
@@ -195,11 +194,11 @@
   <CustomForm title="Registration Form" fields={
     [
       {
-          custom_field_id: "first_name", 
+          event_custom_field_id: "first_name",
+          key: "first_name",
           label: "First Name",
           required: true,
           regex: null,
-          key: "first_name",
           placeholder: null,
           value: firstName,
           choices: null,
@@ -207,23 +206,24 @@
           hidden: false
       },
       {
-          custom_field_id: "last_name", 
+          event_custom_field_id: "last_name",
+          key: "last_name",
           label: "Last Name",
           required: true,
           regex: null,
-          key: "last_name",
           placeholder: null,
           value: lastName,
           choices: null,
           editable: false,
           hidden: false
       },
-      {
+      { 
+          event_custom_field_id: "email",
+          key: "email",
           custom_field_id: "email", 
           label: "Email Address",
           required: true,
           regex: null,
-          key: "email",
           placeholder: null,
           value: email,
           choices: null,
@@ -231,4 +231,4 @@
           hidden: false
       }
     ]
-  } {custom_fields} bind:initialResponses bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>
+  } {custom_fields} bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>

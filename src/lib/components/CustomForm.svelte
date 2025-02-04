@@ -16,31 +16,26 @@
         title,
         fields = [],
         custom_fields = [],
-        initialResponses = $bindable(),
+        
         validationErrors = $bindable(),
         newResponses = $bindable(),
         handleSubmit,
     } = $props();
 
+    let initialResponses = $state({});
+
+    $effect(() => {
+
+        for (var field of [...fields, ...custom_fields]) {
+            initialResponses[field?.custom_field_id] = field?.value;
+            newResponses[field?.custom_field_id] = field?.value;
+        }
+    })
     const typePatterns = {
         date: /^\d{4}-\d{2}-\d{2}$/,
         email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         tel: /^\d{3}-\d{3}-\d{4}$/,
     };
-
-    $effect(() => {
-        console.log("INITIAL RESPONSES", initialResponses);
-        console.log("Fields", fields);
-        console.log("custom_fields_form", custom_fields);
-
-        for (var field of [...fields, ...custom_fields]) {
-            console.log("FIELD", field);
-            initialResponses[field?.custom_field_id] = field?.value;
-            newResponses[field?.custom_field_id] = field?.value;
-        }
-        console.log("INITIAL RESPONSES", initialResponses);
-        console.log("NEW RESPONSES", newResponses);
-    });
 
     function validateInput(key, value, regex) {
         console.log("custom_fields_form", custom_fields);
