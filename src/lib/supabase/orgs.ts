@@ -61,3 +61,17 @@ export async function getOrgEventByJoinCode(event_id: number, join_code: string)
     return data;
 }
 
+export async function upsertOrgEvent(event_id: number, org_id: number) {
+    const upsertData: any = { event_id, org_id };
+
+    const { data, error } = await supabase
+        .from("org_events")
+        .upsert(upsertData, {
+            onConflict: 'event_id,org_id'
+        })
+        .select("*")
+        .single();
+    if (error) throw error;
+
+    return data;
+}

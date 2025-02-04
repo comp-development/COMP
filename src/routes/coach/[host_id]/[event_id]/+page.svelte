@@ -569,8 +569,7 @@
                 <h2>{organization.orgs.name}</h2>
                 <h4>{organization.orgs.address}</h4>
             </div>
-            <h3>Registration Form</h3>
-            <OrgForm org_id={organization.org_id} />
+            <OrgForm title="Registration Form" org={organization} event_id={event_id} org_id={organization.org_id} />
         {/if}
     {/each}
 {/if}
