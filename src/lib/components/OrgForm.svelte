@@ -75,7 +75,7 @@
   }
 
   (async () => {
-    custom_fields = await getEventCustomFields(event_id);
+    custom_fields = await getEventCustomFields(event_id, "orgs");
 
     custom_fields = await getCustomFieldResponses(
       custom_fields,
