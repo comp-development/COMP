@@ -1,12 +1,7 @@
 import { supabase } from "../supabaseClient";
 
 export async function getCoachOrganization(coach_id: string, event_id: number) {
-    const { data, error } = await supabase
-        .from('org_coaches')
-        .select("org_id, orgs(*)")
-        .eq('coach_id', coach_id);
-    if (error) throw error;
-
+    const data = getCoachOrganizations(coach_id);
     for (let i = 0; i < data.length; i++) {
         const teams = await getOrganizationTeams(data[i].org_id);
         data[i]["teams"] = teams;
@@ -14,6 +9,15 @@ export async function getCoachOrganization(coach_id: string, event_id: number) {
         data[i]["event"] = events;
     }
 
+    return data;
+}
+
+export async function getCoachOrganizations(coach_id: string) {
+    const { data, error } = await supabase
+        .from('org_coaches')
+        .select("org_id, orgs(*)")
+        .eq('coach_id', coach_id);
+    if (error) throw error;
     return data;
 }
 
@@ -74,4 +78,30 @@ export async function upsertOrgEvent(event_id: number, org_id: number) {
     if (error) throw error;
 
     return data;
+}
+
+export async function addOrganization(org: {}, coachId: string) {
+    const { data: orgData, error: orgError } = await supabase
+        .from("orgs")
+        .insert({
+            name: org.name,
+            address: org.address,
+            created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+    if (orgError) throw orgError;
+
+    const { data: orgCoachData, error: orgCoachError } = await supabase
+        .from("org_coaches")
+        .insert({
+            org_id: orgData.org_id,
+            coach_id: coachId,
+            created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+    if (orgCoachError) throw orgCoachError;
+
+    return { org: orgData, orgCoach: orgCoachData };
 }
