@@ -51,5 +51,25 @@ CREATE TRIGGER enforce_event_custom_fields_event_id BEFORE INSERT OR UPDATE ON p
 
 CREATE TRIGGER enforce_unique_event_custom_field_key BEFORE INSERT OR UPDATE ON public.event_custom_fields FOR EACH ROW EXECUTE FUNCTION check_unique_event_custom_field_key();
 
+drop index if exists "public"."unique_event_custom_field_org_event";
 
+drop index if exists "public"."unique_event_custom_field_student_event";
+
+drop index if exists "public"."unique_event_custom_field_team";
+
+CREATE UNIQUE INDEX unique_custom_field_event ON public.event_custom_fields USING btree (custom_field_id, event_id);      
+
+CREATE UNIQUE INDEX unique_event_custom_field_org_event ON public.custom_field_values USING btree (event_custom_field_id, org_event_id);
+
+CREATE UNIQUE INDEX unique_event_custom_field_student_event ON public.custom_field_values USING btree (event_custom_field_id, student_event_id);
+
+CREATE UNIQUE INDEX unique_event_custom_field_team ON public.custom_field_values USING btree (event_custom_field_id, team_id);
+
+alter table "public"."custom_field_values" add constraint "unique_event_custom_field_org_event" UNIQUE using index "unique_event_custom_field_org_event";
+
+alter table "public"."custom_field_values" add constraint "unique_event_custom_field_student_event" UNIQUE using index "unique_event_custom_field_student_event";
+
+alter table "public"."custom_field_values" add constraint "unique_event_custom_field_team" UNIQUE using index "unique_event_custom_field_team";
+
+alter table "public"."event_custom_fields" add constraint "unique_custom_field_event" UNIQUE using index "unique_custom_field_event";
 
