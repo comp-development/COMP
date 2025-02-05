@@ -38,6 +38,7 @@
     import { handleError } from "$lib/handleError";
     import OrgForm from "$lib/components/OrgForm.svelte";
     import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+    import TableName from "$lib/components/TableName.svelte";
 
     let loading = $state(true);
     let coach: any = $state();
@@ -504,63 +505,7 @@
                     Select Student
                 </h3>
                 <div class="tableMaxHeight">
-                    <Table
-                        items={studentsWithoutTeams}
-                        class="w-full"
-                        filter={(item, searchTerm) =>
-                            item.student.first_name
-                                .toLowerCase()
-                                .includes(searchTerm.toLowerCase()) ||
-                            item.student.last_name
-                                .toLowerCase()
-                                .includes(searchTerm.toLowerCase())}
-                    >
-                        <TableHead>
-                            <TableHeadCell></TableHeadCell>
-                            <TableHeadCell
-                                sort={(a, b) =>
-                                    a.student.first_name.localeCompare(
-                                        b.student.first_name,
-                                    )}
-                                defaultSort>First Name</TableHeadCell
-                            >
-                            <TableHeadCell
-                                sort={(a, b) =>
-                                    a.student.last_name.localeCompare(b.student.last_name)}
-                                >Last Name</TableHeadCell
-                            >
-                            <TableHeadCell
-                                sort={(a, b) =>
-                                    a.student.grade.localeCompare(b.student.grade)}
-                                >Grade</TableHeadCell
-                            >
-                        </TableHead>
-                        <TableBody tableBodyClass="divide-y">
-                            <TableBodyRow slot="row" let:item>
-                                <TableBodyCell class="px-0 py-1 text-center">
-                                    <button class="select_button" onclick={(e) => selectStudent(e, item, organization.org_id)}
-                                        >✅</button
-                                    >
-                                </TableBodyCell>
-                                <TableBodyCell class="px-0 py-0 text-center"
-                                    >{item.student.first_name}</TableBodyCell
-                                >
-                                <TableBodyCell class="px-0 py-0 text-center"
-                                    >{item.student.last_name}</TableBodyCell
-                                >
-                                <TableBodyCell class="px-0 py-0 text-center"
-                                    >{item.student.grade}</TableBodyCell
-                                >
-                            </TableBodyRow>
-                            {#if studentsWithoutTeams.length == 0}
-                                <TableBodyRow>
-                                    <TableBodyCell colspan="4" class="text-center"
-                                        >No students available.</TableBodyCell
-                                    >
-                                </TableBodyRow>
-                            {/if}
-                        </TableBody>
-                    </Table>
+                    <TableName actionType="select_student" items={studentsWithoutTeams} action={selectStudent} org_id={organization.org_id} />
                 </div>
             </Modal>
         {:else}
