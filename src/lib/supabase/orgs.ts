@@ -18,7 +18,7 @@ export async function getOrganization(org_id: number) {
 }
 
 export async function getCoachOrganization(coach_id: string, event_id: number) {
-    const data = getCoachOrganizations(coach_id);
+    const data = await getCoachOrganizations(coach_id);
     for (let i = 0; i < data.length; i++) {
         const teams = await getOrganizationTeams(data[i].org_id);
         data[i]["teams"] = teams;
@@ -67,7 +67,7 @@ export async function getOrganizationTeams(org_id: number) {
     for (let i = 0; i < teamData.length; i++) {
         const { data, error } = await supabase
             .from("student_events")
-            .select("*, students(*)")
+            .select("*, students (*)")
             .eq("team_id", teamData[i].team_id)
             .order("front_id", { ascending: true });
         if (error) throw error;
