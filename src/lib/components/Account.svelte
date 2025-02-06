@@ -98,9 +98,9 @@
 		<div>
 			<ButtonGroup class="w-full">
 				<Input
-					id="show-password1"
+					id="show-password2"
 					bind:value={retypePassword}
-					type={show ? "text" : "password"}
+					type={show1 ? "text" : "password"}
 					placeholder="Retype Password"
 					on:keydown={(e) => {
 						if (e.key === "Enter") logIn ? handleLogin() : handleSignUp();
