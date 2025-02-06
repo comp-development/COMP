@@ -16,9 +16,10 @@
     getTeamByJoinCode,
     type StudentEvent,
     getStudent,
-    updateStudentOrgEvent
+    updateStudentOrgEvent,
+    type Student
   } from "$lib/supabase";
-  import type { Tables } from "../../../../db/database.types";
+  import type { Tables } from "../../../../../db/database.types";
   import { supabase, type Get } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
 
@@ -31,23 +32,26 @@
   let ticket_order: Tables<"ticket_orders"> | null = null;
   let transaction_stored = $state(false);
   let loading = $state(true);
-  let student = $state(null);
+  let student: Student = $state(null);
   let purchase_ticket = $state(true);
-  let teamJoinFormResponses = $state({});
-  let teamJoinFormErrors = $state({});
-  let orgJoinFormResponses = $state({});
-  let orgJoinFormErrors = $state({});
+  let teamJoinFormResponses: any = $state({});
+  let teamJoinFormErrors: any = $state({});
+  let orgJoinFormResponses: any = $state({});
+  let orgJoinFormErrors: any = $state({});
   let selectedOption = $state("join_org");
 
   const afterTeamSubmit = async () => {
-    await updateStudentTeam(student_event.student_event_id, team.team_id, team.org_id);
-    student_event.team = team;
+    // If this callback is called, then the student must've been in the event => student_event is non-null. 
+    // Also, we assume the TeamForm component created a team => team is not null.
+    await updateStudentTeam(student_event!.student_event_id, team!.team_id, team!.org_id);
+    student_event!.team = team!;
   }
 
-  const teamJoinSubmit = async (event: Event) => {
+  const teamJoinSubmit = async (_: Event) => {
     try {
       team = await getTeamByJoinCode(event_id, teamJoinFormResponses.team_join_code.toUpperCase());
-    } catch (error) {
+    } catch (e) {
+      const error = e as any;
       if (error.code === "PGRST116") {
         teamJoinFormErrors["team_join_code"] = "No team with code";
         return
@@ -58,17 +62,18 @@
     }
     console.log("team", team)
     if (team) {
-      await updateStudentTeam(student_event.student_event_id, team.team_id, team.org_id);
-      student_event.team = team;
+      await updateStudentTeam(student_event!.student_event_id, team.team_id, team.org_id);
+      student_event!.team = team;
     } else {
       throw new Error("An unknown error has occurred. Please email the tournament organizers.");
     }
   }
 
-  const orgJoinSubmit = async (event: Event) => {
+  const orgJoinSubmit = async (_: Event) => {
     try {
       org_event = await getOrgEventByJoinCode(event_id, orgJoinFormResponses.org_join_code.toUpperCase());
-    } catch (error) {
+    } catch (e) {
+      const error: any = e;
       if (error.code === "PGRST116") {
         orgJoinFormErrors["org_join_code"] = "No organization with code";
         return
@@ -78,43 +83,33 @@
       }
     }
     if (org_event) {
-      await updateStudentOrgEvent(student_event.student_event_id, org_event.org_id);
-      student_event.org_event = org_event;
+      await updateStudentOrgEvent(student_event!.student_event_id, org_event.org_id);
+      student_event!.org_event = org_event;
     } else {
       throw new Error("An unknown error has occurred. Please email the tournament organizers.");
     }
-
   }
 
-  $effect(() => {
+
+  (async () => {
+    // Check if this student is registered in this event.
+    // NOTE: only student accounts can view this page (because of the student/layout.svelte)
+    // Therefore, getStudent always returns non-null.
+    student = await getStudent($user!.id)!;
+    student_event = await getStudentEvent($user!.id, event_id);
+    ticket_order = await getStudentTicketOrder($user!.id, event_id);
+    transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
-    team?.student_events.sort((a, b) => {
+    team?.student_event.sort((a, b) => {
       const aValues = [a?.front_id ?? "", a?.student?.first_name ?? "", a?.student?.last_name ?? ""];
       const bValues = [b?.front_id ?? "", b?.student?.first_name ?? "", b?.student?.last_name ?? ""];
       return aValues < bValues ? 1 : -1;
     });
-  });
-
-  (async () => {
-    // const a = (b: any) => b + 1;
-    // debug_log("bonjour", a(3), {woah: "no shot"});
-
-    // Check if this student is registered in this event.
-    student = await getStudent($user!.id);
-    student = {...student, ...$user}
-    student_event = await getStudentEvent($user!.id, event_id);
-    ticket_order = await getStudentTicketOrder($user!.id, event_id);
-    transaction_stored = ticket_order != null;
 
     console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
 
-    //What does this do?
-    const { data, error } = await supabase.auth.getSession();
-    if (error != null) {
-      handleError(error);
-    }
 
     loading = false;
   })();
@@ -176,9 +171,11 @@
                 {teamMember.student.first_name}
                 {teamMember.student.last_name}
               </p>
+              <!-- email field does not exist
               <p style="margin-left: 10px">
                 <em>{teamMember.student.email}</em>
               </p>
+              -->
             </div>
           </div>
         {/each}
@@ -263,7 +260,7 @@
     {/if}
     -->
   {/if}
-  <StudentForm title={student_event ? "Update Information" : "Register"} bind:student_event={student_event} userType="student" user={student} event_id={event_id} />
+  <StudentForm title={student_event ? "Update Information" : "Register"} bind:student_event={student_event} user={{...student, ...$user}} event_id={event_id} />
 {/if}
 
 <style>
