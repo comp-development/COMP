@@ -6,6 +6,8 @@ alter table "public"."org_coaches" disable row level security;
 
 alter table "public"."orgs" disable row level security;
 
+alter table "public"."org_events" disable row level security;
+
 create policy "enable read for all users"
 on "public"."admins"
 as permissive

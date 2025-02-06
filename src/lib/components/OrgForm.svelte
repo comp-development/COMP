@@ -209,7 +209,32 @@
 -->
 <CustomForm
   title="Registration Form"
-  fields={[]}
+  fields={[
+    {
+      event_custom_field_id: "org_name",
+      key: "org_name",
+      label: "Organization Name",
+      required: true,
+      regex: null,
+      placeholder: null,
+      value: org?.orgs.name ?? null,
+      choices: null,
+      editable: false,
+      hidden: false,
+    },
+    {
+      event_custom_field_id: "org_address",
+      key: "org_address",
+      label: "Organization Address",
+      required: true,
+      regex: null,
+      placeholder: null,
+      value: org?.orgs.address ?? null,
+      choices: null,
+      editable: false,
+      hidden: false,
+    }
+  ]}
   {custom_fields}
   bind:newResponses
   bind:validationErrors
