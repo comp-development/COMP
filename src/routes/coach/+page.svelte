@@ -22,7 +22,7 @@
     <h1 class="header">Welcome to the Coach Portal</h1>
     <h2>{coach.first_name} {coach.last_name}</h2>
 	<br />
-	<Button pill href="/coach/org">Create Organization</Button>
+	<Button pill href="/coach/create_org">Create Organization</Button>
 	<br /><br /><br />
 	<h3>Your Current Organizations</h3>
 	<br />
@@ -40,7 +40,7 @@
 					<div>
 						<Button
 							size="sm"
-							href={`/coach/org/${organization.org_id}`}
+							href={`/coach/${organization.org_id}`}
 							pill>Go to Organization</Button
 						>
 					</div>
@@ -49,35 +49,3 @@
 		{/each}
 	</div>
 {/if}
-
-<style>
-	.buttonContainer {
-		display: grid;
-		grid-template-columns: 32% 32% 32%;
-		row-gap: 20px;
-		column-gap: 20px;
-		margin: 0 auto;
-		width: 70%;
-	}
-
-	.problemContainer {
-		background-color: white;
-		border: 3px solid var(--primary-tint);
-		padding: 20px;
-		height: 100%;
-		border-radius: 20px;
-		font-weight: bold;
-		text-decoration: none;
-		color: var(--text-color-dark);
-		transition: all 0.3s ease;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		text-align: left;
-	}
-
-	.problemContainer h4 {
-		font-weight: bold;
-		margin-right: 5px;
-	}
-</style>

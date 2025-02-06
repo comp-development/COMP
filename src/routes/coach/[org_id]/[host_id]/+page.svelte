@@ -8,7 +8,7 @@
 		getHostEvents,
 		getCoachHostEvents,
 	} from "$lib/supabase";
-    import MarkdownRender from "$lib/components/MarkdownRender.svelte";
+    import EventDisplay from "$lib/components/EventDisplay.svelte";
 
 	let my_events: {
 		event_id: string;
@@ -23,19 +23,21 @@
 	}[] = $state([]);
 	let loading = $state(true);
 	let host: any = $state();
+
 	const host_id = parseInt($page.params.host_id);
+	const org_id = parseInt($page.params.org_id);
 
 	(async () => {
 		host = await getHostInformation(host_id);
 
-		my_events = (await getCoachHostEvents($user!.id, host_id)).map(
+		my_events = (await getCoachHostEvents($user!.id, host_id, org_id)).map(
 			(e) => ({
 				event_id: e.event.event_id.toString(),
 				event_name: e.event.event_name ?? "Unnamed Event",
 				event_date: e.event.event_date ?? "Missing Date",
 			}),
 		);
-        
+
 		my_events.sort((a, b) => (a.event_date < b.event_date ? -1 : 1));
 		for (const e of my_events) {
 			my_event_ids.add(e.event_id.toString());
@@ -50,42 +52,8 @@
 {#if loading}
 	<Loading />
 {:else}
-	<div class="container mx-auto p-6 space-y-6">
-		<h2 class="text-2xl font-bold text-gray-800 text-center">
-			Welcome to...
-		</h2>
-		<h1 class="text-4xl font-extrabold text-center">{host?.host_name}</h1>
+	<EventDisplay name={host?.host_name} logo={host?.logo} email={host?.email} markdown={host?.summary} />
 
-		{#if host?.logo}
-			<div class="flex justify-center">
-				<img
-					src={host.logo}
-					alt="{host.host_name} logo"
-					class="w-32 h-32 rounded-full shadow-lg"
-				/>
-			</div>
-		{/if}
-
-		{#if host?.email}
-			<div class="text-center">
-				<p class="text-lg text-gray-600">Contact us at:</p>
-				<a
-					href="mailto:{host.email}"
-					class="text-lg text-blue-500 hover:underline"
-					>{host.email}</a
-				>
-			</div>
-		{/if}
-
-		{#if host?.summary}
-			<div class="summary">
-				<h2>Summary</h2>
-				<br />
-				<MarkdownRender source={host.summary} />
-			</div>
-		{/if}
-	</div>
-	<br />
 	<h2 style="text-align: center;">My Events</h2>
 	<br />
 
@@ -116,7 +84,7 @@
 	{/if}
 	<br />
 	<br />
-	<h2 style="text-align: center;">All Events</h2>
+	<h2 style="text-align: center;">Other Events</h2>
 	<br />
 
 	<div class="buttonContainer">
@@ -150,46 +118,3 @@
 	</div>
 	<br />
 {/if}
-
-<style>
-	.container {
-        max-width: 768px;
-    }
-
-	.summary {
-        border: 3px solid var(--primary-tint);
-        padding: 10px;
-        margin: 10px;
-        border-radius: 15px;
-    }
-	
-	.problemContainer {
-		background-color: white;
-		border: 3px solid var(--primary-tint);
-		padding: 20px;
-		height: 100%;
-		border-radius: 20px;
-		font-weight: bold;
-		text-decoration: none;
-		color: var(--text-color-dark);
-		transition: all 0.3s ease;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-		text-align: left;
-	}
-
-	.problemContainer h4 {
-		font-weight: bold;
-		margin-right: 5px;
-	}
-
-	.buttonContainer {
-		display: grid;
-		grid-template-columns: 32% 32% 32%;
-		row-gap: 20px;
-		column-gap: 20px;
-		margin: 0 auto;
-		width: 70%;
-	}
-</style>
