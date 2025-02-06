@@ -17,7 +17,7 @@
     import { getEventCustomFields, getCustomFieldResponses, upsertCustomFieldResponses, upsertTeam } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
 
-    let { team = $bindable(null), event_id, title = null, org_id = null } = $props();
+    let { team = $bindable(), event_id, title = null, org_id = null, afterSubmit = async () => {} } = $props();
 
     let token: string | null = null;
 
@@ -25,33 +25,6 @@
     let initialResponses = $state({});
     let validationErrors = $state({});
     let custom_fields = $state([]);
-
-    function purchase_ticket(options: {
-    creating_team?: boolean;
-    joining_team_code?: string;
-    }) {
-      return async () => {
-        let body = {
-          event_id,
-          token,
-          quantity: 1,
-          creating_team: options.creating_team ?? false,
-          joining_team_code: options.joining_team_code ?? null,
-          is_coach: false,
-        };
-        const response = await fetch("/api/purchase-ticket", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const text = await response.text();
-        if (response.ok) {
-          document.location.assign(text);
-        } else {
-          handleError(new Error(text));
-        }
-      };
-    }
 
   async function handleSubmit(event) {
     try {
@@ -67,10 +40,16 @@
         });
       }
     } catch (error) {
-      error.message = `Error adding student to org in event: ${error.message}`
-      handleError(error);
+      console.log("TeamSubmitError", error)
+      if (error.code === "23505") {
+        validationErrors["team_name"] = "Team name already exists.";
+        return
+      } else {
+        error.message = `Error upserting team: ${error.message}`
+        handleError(error);
+      }
     }
-
+    console.log("team", team)
     const customFieldResponses = Object.fromEntries(
         Object.entries(newResponses).filter(([key]) => !isNaN(Number(key)))
     );
@@ -78,10 +57,12 @@
     try {
       await upsertCustomFieldResponses(customFieldResponses, team.team_id, 'teams');
     } catch (error) {
-      error.message = `Error saving student custom field responses: ${error.message}`
+      error.message = `Error saving team custom field responses: ${error.message}`
       handleError(error);
       return
     }
+    await afterSubmit(team);
+    //document.location.reload();
     return
   }
 
@@ -95,16 +76,16 @@
 <CustomForm {title} fields={
   [
     {
-        custom_field_id: "team_name", 
+        event_custom_field_id: "team_name", 
+        key: "team_name",
         label: "Team Name",
         required: true,
         regex: null,
-        key: "team_name",
         placeholder: null,
-        value: null,
+        value: team?.team_name ?? null,
         choices: null,
         editable: true,
         hidden: false
     }
   ]
-} {custom_fields} bind:initialResponses bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>
+} {custom_fields} bind:newResponses bind:validationErrors handleSubmit={handleSubmit}/>

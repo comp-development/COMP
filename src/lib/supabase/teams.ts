@@ -22,6 +22,18 @@ export async function getTeam(team_id: string) {
   };
 }
 
+export async function getTeamByJoinCode(event_id: number, join_code: string) {
+  const { data, error } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("event_id", event_id)
+      .eq("join_code", join_code)
+      .single();
+  if (error) throw error;
+
+  return data;
+}
+
 export async function getTeamId(student_id: string, event_id: number) {
   try {
     // First, get the team_id for the given student_id
@@ -53,7 +65,8 @@ export async function updateStudentTeam(
       org_id: new_org_id
     })
     .eq("student_event_id", student_event_id)
-    .select("*, students(*)");
+    .select("*, students(*)")
+    .single();
 
   if (error) throw error;
   return data;
@@ -82,7 +95,8 @@ export async function upsertTeam(event_id: number, teamData?: {
     .upsert(upsertData, {
       onConflict: "team_id"
     })
-    .select();
+    .select()
+    .single();
   if (error) throw error;
 
   return data;
