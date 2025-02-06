@@ -163,37 +163,4 @@
         margin: 10px;
         border-radius: 15px;
     }
-	
-	.problemContainer {
-		background-color: white;
-		border: 3px solid var(--primary-tint);
-		padding: 20px;
-		height: 100%;
-		border-radius: 20px;
-		font-weight: bold;
-		text-decoration: none;
-		color: var(--text-color-dark);
-		transition: all 0.3s ease;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-between;
-	}
-
-	.problemContainer h4 {
-		font-weight: bold;
-		margin-right: 5px;
-	}
-
-	.problemContainer {
-		text-align: left;
-	}
-
-	.buttonContainer {
-		display: grid;
-		grid-template-columns: 32% 32% 32%;
-		row-gap: 20px;
-		column-gap: 20px;
-		margin: 0 auto;
-		width: 70%;
-	}
 </style>

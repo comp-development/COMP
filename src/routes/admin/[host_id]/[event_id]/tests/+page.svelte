@@ -297,30 +297,6 @@
 </div>
 
 <style>
-	.problemContainer {
-		background-color: white;
-		border: 3px solid var(--primary-tint);
-		padding: 20px;
-		margin: 10px;
-		border-radius: 20px;
-		font-weight: bold;
-		text-decoration: none;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		color: var(--text-color-dark);
-		transition: all 0.3s ease; /* Add transition for smooth hover effect */
-	}
-
-	.problemContainer h4 {
-		font-weight: bold;
-		margin-right: 5px;
-	}
-
-	.problemContainer button {
-		border: none;
-	}
-
 	.test-button {
 		border-radius: 10px;
 		border: 1px solid #a7f0ba;
@@ -352,15 +328,5 @@
 
 	.empty:not([disabled]):hover {
 		border: 2px solid #494949;
-	}
-
-	
-
-	.buttonContainer {
-		flex-direction: column; /* Align children vertically */
-		align-items: center; /* Center children horizontally */
-		justify-content: center; /* Center children vertically */
-		margin: 0 auto; /* Center the container horizontally on the page */
-		width: 70%;
 	}
 </style>

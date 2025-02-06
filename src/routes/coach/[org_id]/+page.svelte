@@ -5,14 +5,11 @@
     import {
         addCoachToOrganization,
         getAllCoachesOutsideOrg,
+        getAllHosts,
         getOrganization,
         removeCoachFromOrganization,
     } from "$lib/supabase";
-    import {
-        Button,
-        ButtonGroup,
-        Modal
-    } from "flowbite-svelte";
+    import { Button, ButtonGroup, Modal } from "flowbite-svelte";
     import { CirclePlusSolid, PenSolid } from "flowbite-svelte-icons";
     import { handleError } from "$lib/handleError";
     import toast from "$lib/toast.svelte";
@@ -22,6 +19,7 @@
     let loading = $state(true);
     const org_id = parseInt($page.params.org_id);
     let organization = $state({});
+    let hosts = $state([]);
 
     let isCoachModalOpen = $state(false);
     let editOrganizationModalOpen = $state(false);
@@ -41,11 +39,14 @@
         try {
             e.preventDefault();
 
-            const coachPerson = await addCoachToOrganization(coach.person.coach_id, org_id);
-            organization = {
-                ...organization,
-                coaches: [...organization.coaches, coachPerson],
-            };
+            const coachPerson = await addCoachToOrganization(
+                coach.person.coach_id,
+                org_id,
+            );
+
+            const newOrganization = { ...organization };
+            newOrganization.coaches = [...organization.coaches, coachPerson];
+            organization = newOrganization;
 
             toast.success("Added coach to this organization.");
             isCoachModalOpen = false;
@@ -92,6 +93,8 @@
             return;
         }
 
+        hosts = await getAllHosts();
+
         loading = false;
     })();
 </script>
@@ -108,26 +111,51 @@
             outline
             pill
             color="primary"
-            onclick={() => { editOrganizationModalOpen = true; }}
+            onclick={() => {
+                editOrganizationModalOpen = true;
+            }}
         >
             <PenSolid class="w-4 h-4 me-2" />
             Edit
         </Button>
-        <Button
-            outline
-            pill
-            color="primary"
-            onclick={openStudentModal}
-        >
+        <Button outline pill color="primary" onclick={openStudentModal}>
             <CirclePlusSolid class="w-4 h-4 me-2" />
             Add Coach
         </Button>
     </ButtonGroup>
     <br /><br />
 
+    <h3 class="text-xl font-medium text-gray-900 dark:text-white">Hosts</h3>
+    <br />
+    <div class="buttonContainer">
+        {#each hosts as host}
+            <div>
+                <div class="problemContainer">
+                    <div style="align-items: left">
+                        <h4>{host.host_name}</h4>
+                        <p style="overflow-wrap: anywhere;"><a href={`mailto:${host.email}`}>{host.email}</a></p>
+                    </div>
+                    <br />
+                    <div>
+                        <Button
+                            size="sm"
+                            href={`/coach/${org_id}/${host.host_id}`}
+                            pill>Go to Organization</Button
+                        >
+                    </div>
+                </div>
+            </div>
+        {/each}
+    </div>
+
+    <br /><br />
     <h3 class="text-xl font-medium text-gray-900 dark:text-white">Coaches</h3>
     <div class="tableMax">
-        <TableName actionType="delete" items={organization.coaches} action={handleDeleteCoach} />
+        <TableName
+            actionType="delete"
+            items={organization.coaches}
+            action={handleDeleteCoach}
+        />
     </div>
 {/if}
 
@@ -136,7 +164,11 @@
         Select Coach
     </h3>
     <div class="tableMaxHeight">
-        <TableName actionType="select_coach" items={allCoaches} action={selectCoach} />
+        <TableName
+            actionType="select_coach"
+            items={allCoaches}
+            action={selectCoach}
+        />
     </div>
 </Modal>
 
@@ -146,7 +178,11 @@
             Edit Organization
         </h3>
         <div class="tableMaxHeight">
-            <CreateOrgForm initial={initialResponses} org_id={org_id} />
+            <CreateOrgForm
+                initial={initialResponses}
+                {org_id}
+                typeOrgForm="edit"
+            />
         </div>
     </Modal>
 </div>

@@ -102,11 +102,12 @@ export async function upsertTeam(event_id: number, teamData?: {
   return data;
 }
 
-export async function getStudentsWithoutTeam(event_id: number) {
+export async function getStudentsWithoutTeam(event_id: number, org_id: number) {
   const { data, error } = await supabase
     .from("student_events")
     .select("*, person:students(*)")
     .eq("event_id", event_id)
+    .eq("org_id", org_id)
     .is("team_id", null);
   if (error) throw error;
 
