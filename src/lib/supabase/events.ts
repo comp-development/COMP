@@ -259,7 +259,7 @@ export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
 export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
-    .select("*, team:teams(*), org_event:org_events(*)")
+    .select("*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))")
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();

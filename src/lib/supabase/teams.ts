@@ -25,7 +25,7 @@ export async function getTeam(team_id: string) {
 export async function getTeamByJoinCode(event_id: number, join_code: string) {
   const { data, error } = await supabase
       .from("teams")
-      .select("*")
+      .select("*, student_event:student_events(*, student:students(*))")
       .eq("event_id", event_id)
       .eq("join_code", join_code)
       .single();

@@ -92,7 +92,7 @@ export async function ifOrgEvent(event_id: number, org_id: number) {
 export async function getOrgEventByJoinCode(event_id: number, join_code: string) {
     const { data, error } = await supabase
         .from("org_events")
-        .select("*")
+        .select("*, org:orgs(*)")
         .eq("event_id", event_id)
         .eq("join_code", join_code)
         .single();
