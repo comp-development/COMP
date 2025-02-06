@@ -128,8 +128,7 @@
       handleError(error);
       return
     }
-
-    document.location.reload();
+    //document.location.reload();
     return
     event.preventDefault();
 

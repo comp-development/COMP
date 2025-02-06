@@ -214,7 +214,7 @@
             } else {
                 // Add a new team
                 newOrganizationDetails[orgIndex].teams.push({
-                    ...newTeamData[0],
+                    ...newTeamData,
                     teamMembers: [],
                 });
                 toast.success("Team added successfully");
