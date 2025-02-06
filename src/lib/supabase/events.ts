@@ -146,13 +146,14 @@ export async function upsertCustomFieldResponses(
       : "org_event_id";
 
   // Prepare the data for upsert
+  console.log("customFieldDict", custom_field_dict)
   const upsertData = Object.entries(custom_field_dict).map(([event_custom_field_id, value]) => ({
     [tableColumn]: table_id,
     event_custom_field_id: parseInt(event_custom_field_id),
     value: value,
   }));
 
-  console.log(upsertData);
+  console.log("upsertData", upsertData);
 
   // Perform the upsert operation
   const { data, error } = await supabase
@@ -258,10 +259,11 @@ export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
 export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
-    .select("*, teams(*, student_events(*, students(*))), org_events(*)")
+    .select("*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))")
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();
+  console.log("getStudentEvent", data);
   if (error) throw error;
   return data;
 }

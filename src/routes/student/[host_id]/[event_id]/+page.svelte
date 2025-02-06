@@ -4,61 +4,113 @@
   import StudentForm from "$lib/components/StudentForm.svelte";
   import TeamForm from "$lib/components/TeamForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
+  import { Alert } from 'flowbite-svelte';
+  import { InfoCircleSolid } from 'flowbite-svelte-icons';
   import { user } from "$lib/sessionStore";
   import {
     getEventInformation,
     getStudentEvent,
     getStudentTicketOrder,
+    updateStudentTeam,
+    getOrgEventByJoinCode,
+    getTeamByJoinCode,
     type StudentEvent,
     getStudent,
+    updateStudentOrgEvent
   } from "$lib/supabase";
   import type { Tables } from "../../../../db/database.types";
   import { supabase, type Get } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
-  let student_event: StudentEvent = null;
+  let student_event: StudentEvent = $state(null);
   let event_details: Tables<"events"> | null = $state(null);
   import CustomForm from "$lib/components/CustomForm.svelte";
-  let team: Get<StudentEvent, "teams"> | undefined = $state(null);
+  let team: Get<StudentEvent, "team"> | undefined = $state(null);
+  let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
-  let in_team = $state(false);
-  let in_org = $state(false);
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student = $state(null);
   let purchase_ticket = $state(true);
-  let selectedOption = $state("create_team");
+  let teamJoinFormResponses = $state({});
+  let teamJoinFormErrors = $state({});
+  let orgJoinFormResponses = $state({});
+  let orgJoinFormErrors = $state({});
+  let selectedOption = $state("join_org");
+
+  const afterTeamSubmit = async () => {
+    await updateStudentTeam(student_event.student_event_id, team.team_id, team.org_id);
+    student_event.team = team;
+  }
+
+  const teamJoinSubmit = async (event: Event) => {
+    try {
+      team = await getTeamByJoinCode(event_id, teamJoinFormResponses.team_join_code.toUpperCase());
+    } catch (error) {
+      if (error.code === "PGRST116") {
+        teamJoinFormErrors["team_join_code"] = "No team with code";
+        return
+      } else {
+        error.message = `Error getting team: ${error.message}`
+        handleError(error);
+      }
+    }
+    console.log("team", team)
+    if (team) {
+      await updateStudentTeam(student_event.student_event_id, team.team_id, team.org_id);
+      student_event.team = team;
+    } else {
+      throw new Error("An unknown error has occurred. Please email the tournament organizers.");
+    }
+  }
+
+  const orgJoinSubmit = async (event: Event) => {
+    try {
+      org_event = await getOrgEventByJoinCode(event_id, orgJoinFormResponses.org_join_code.toUpperCase());
+    } catch (error) {
+      if (error.code === "PGRST116") {
+        orgJoinFormErrors["org_join_code"] = "No organization with code";
+        return
+      } else {
+        error.message = `Error getting org: ${error.message}`
+        handleError(error);
+      }
+    }
+    if (org_event) {
+      await updateStudentOrgEvent(student_event.student_event_id, org_event.org_id);
+      student_event.org_event = org_event;
+    } else {
+      throw new Error("An unknown error has occurred. Please email the tournament organizers.");
+    }
+
+  }
+
+  $effect(() => {
+    team = student_event?.team;
+    org_event = student_event?.org_event;
+    team?.student_events.sort((a, b) => {
+      const aValues = [a?.front_id ?? "", a?.student?.first_name ?? "", a?.student?.last_name ?? ""];
+      const bValues = [b?.front_id ?? "", b?.student?.first_name ?? "", b?.student?.last_name ?? ""];
+      return aValues < bValues ? 1 : -1;
+    });
+  });
 
   (async () => {
     // const a = (b: any) => b + 1;
     // debug_log("bonjour", a(3), {woah: "no shot"});
 
     // Check if this student is registered in this event.
-    console.log("user3", $user)
     student = await getStudent($user!.id);
     student = {...student, ...$user}
     student_event = await getStudentEvent($user!.id, event_id);
-    console.log("student_event", student_event);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
-    in_team = student_event?.teams != null;
-    in_org = student_event?.org_events != null;
-    console.log($user!.id)
-    console.log("Ticket order", ticket_order)
     transaction_stored = ticket_order != null;
-
-
-    team = student_event?.teams;
-    // Sort team members by front_id (alphabetical descending).
-    team?.student_events.sort((a, b) => {
-      const aValues = [a?.front_id ?? "", a?.students?.first_name ?? "", a?.students?.last_name ?? ""];
-      const bValues = [b?.front_id ?? "", b?.students?.first_name ?? "", b?.students?.last_name ?? ""];
-      return aValues < bValues ? 1 : -1;
-    });
 
     console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
 
+    //What does this do?
     const { data, error } = await supabase.auth.getSession();
     if (error != null) {
       handleError(error);
@@ -74,8 +126,8 @@
   <br />
   <h1>{event_details?.event_name}</h1>
   <h2 style="font-weight: 500">{event_details?.event_date}</h2>
-  Add something about cost per student Here
-  {#if !student_event || true}
+  <!-- Add something about cost per student Here -->
+  {#if !student_event}
     {#if transaction_stored}
       <p>
         Payment found, but registration is not complete. Please fill out the
@@ -83,90 +135,135 @@
       </p>
       <br />
     {/if}
-    <StudentForm bind:student_event={student_event} userType="student" user={student} event_id={event_id} />
-  
+  {/if}
+    
 
   <!-- Additional conditions for team and org information -->
-  {:else if student_event?.teams != null}
-    <br />
-    <p style="text-align: center;">
-      Welcome to this tournament! Below is the information for the team you are
-      registered in. If there is an issue, update the team information on
-      ContestDojo or email <a href="mailto:tournament@mustangmath.com"
-        >tournament@mustangmath.com</a
-      >
-    </p>
-    <br />
-    <div class="flex">
-      <Button href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`} pill>Take Tests</Button>
-    </div>
-    <br />
-
-    <div class="team_info">
-      <p style="font-weight: bold; font-size: 20px; align-items: left">
-        {team?.team_name}
-      </p>
-
-      {#each team?.student_events_detailed ?? [] as teamMember}
-        <div style="display: flex; align-items: center;">
-          {#if teamMember.front_id}
-            <Badge color={teamMember.student_id == $user?.id ? "green" : "dark"}
-              >{teamMember.front_id}</Badge
-            >
+  {#if student_event}
+    <!-- EESHA PLEASE HELP
+     MAKE THIS PRETTIER
+     MAKE IT MATCH THE WAY YOU SET UP ORGS
+     IF !org_event, make it so the student can edit the team with a popup modal
+     Thank you <3
+    -->
+    {#if team || org_event}
+      <div class="team_info">
+        <p style="font-weight: bold; font-size: 20px; align-items: left">
+          {#if team?.front_id}
+              <Badge color={"green"}>
+                {team.front_id}
+              </Badge>&nbsp
           {/if}
-          <div style="display:flex">
-            <p>
-              {teamMember.first_name}
-              {teamMember.last_name}
-            </p>
-            <p style="margin-left: 10px">
-              <em>{teamMember.email}</em>
-            </p>
+          {team?.team_name}
+        </p>
+        <p style="font-weight: bold; font-size: 16px; align-items: left">
+          {#if org_event}
+            {org_event.org.name}
+          {:else}
+            Join Code: {team?.join_code}
+          {/if}
+        </p>
+        {#each team?.student_event ?? [] as teamMember}
+          <!--EESHA PLEASE MAKE THIS PRETTIER I BEG YOU TYY-->
+          <div style="display: flex; align-items: center;">
+            {#if teamMember.front_id}
+              <Badge color={teamMember.student_id == $user?.id ? "green" : "dark"}
+                >{teamMember.front_id}</Badge
+              >&nbsp
+            {/if}
+            <div style="display:flex">
+              <p>
+                {teamMember.student.first_name}
+                {teamMember.student.last_name}
+              </p>
+              <p style="margin-left: 10px">
+                <em>{teamMember.student.email}</em>
+              </p>
+            </div>
           </div>
-        </div>
-      {/each}
-    </div>
-  {:else if student_event?.org_events != null}
-    <p>Not yet assigned team by org. Contact your organization coach if you believe this is in error.</p>
-  {:else}
-    <div class="registrationForm">
-      <Tabs tabStyle="pill">
-        <TabItem
-          on:click={() => (selectedOption = "create_team")}
-          open={selectedOption === "create_team"}
-          title="Create Independent Team"
-        >
-          <TeamForm bind:team={student_event.teams} title="Create Independent Team" userType="student" user={student} event_id={event_id} />
-        </TabItem>
-        <TabItem
-          on:click={() => (selectedOption = "join_team")}
-          open={selectedOption === "join_team"}
-          title="Join Team"
-        >
-          <h2>Join Team</h2>
-          <p>Get the code from your coach if you're a part of an org, or an already registered team member for independent teams.</p>
-        </TabItem>
-        <TabItem
-          on:click={() => (selectedOption = "join_org")}
-          open={selectedOption === "join_org"}
-          title="Join Organization"
-        >
-          <h2>Join Organization</h2>
-          <p>Get your organization join code from your organization's coach.</p>
-        </TabItem>
-      </Tabs>
-      <br />
-    </div>
-  {/if}
-  {#if in_org}
-    <!-- TODO: org info -->
-    {#if !purchase_ticket}
-      <button onclick={purchase_ticket({})}
-        >Purchase Individual Ticket (check with your organization if you need to
-        do so)</button
-      >
+        {/each}
+        {#if !team}
+          <Alert border color="red">
+            <InfoCircleSolid slot="icon" class="w-5 h-5" />
+            <span class="font-medium">Not assigned to a team!</span>
+            You cannot take tests until you are assigned to a team - reach out to your coach if you believe this is in error.
+          </Alert>
+        {:else}
+          <div class="flex">
+            <Button href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`} pill>Take Tests</Button>
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <div class="registrationForm">
+        <Tabs tabStyle="pill">
+          <TabItem
+            on:click={() => (selectedOption = "join_org")}
+            open={selectedOption === "join_org"}
+            title="Join Organization"
+          >
+            <h2>Join Organization</h2>
+            <p>Get your organization join code from your organization's coach.</p>
+            <CustomForm fields={[
+              {
+                event_custom_field_id: "org_join_code",
+                key: "org_join_code",
+                label: "Organization Join Code",
+                required: true,
+                regex: /^[A-Za-z0-9]{6}$/,
+                placeholder: "ABC123",
+                value: null,
+                choices: null,
+                editable: true,
+                hidden: false
+              }
+            ]} custom_fields={[]} bind:newResponses={orgJoinFormResponses} bind:validationErrors={orgJoinFormErrors} handleSubmit={orgJoinSubmit}/>
+          </TabItem>
+          <TabItem
+            on:click={() => (selectedOption = "join_team")}
+            open={selectedOption === "join_team"}
+            title="Join Team"
+          >
+            <h2>Join Team</h2>
+            <p>Get the code from your coach if you're a part of an org, or an already registered team member for independent teams.</p>
+            <CustomForm fields={[
+              {
+                event_custom_field_id: "team_join_code",
+                key: "team_join_code",
+                label: "Team Join Code",
+                required: true,
+                regex: /^[A-Za-z0-9]{6}$/,
+                placeholder: "ABC123",
+                value: null,
+                choices: null,
+                editable: true,
+                hidden: false
+              }
+            ]} custom_fields={[]} bind:newResponses={teamJoinFormResponses} bind:validationErrors={teamJoinFormErrors} handleSubmit={teamJoinSubmit}/>
+          </TabItem>
+          <TabItem
+            on:click={() => (selectedOption = "create_team")}
+            open={selectedOption === "create_team"}
+            title="Create Independent Team"
+          >
+            <TeamForm bind:team={team} title="Create Independent Team" userType="student" user={student} event_id={event_id} afterSubmit={afterTeamSubmit} />
+          </TabItem>
+        </Tabs>
+        <br />
+      </div>
     {/if}
+    <!--
+    {#if org_event != null}
+      {#if !purchase_ticket}
+        <button onclick={purchase_ticket({})}
+          >Purchase Individual Ticket (check with your organization if you need to
+          do so)</button
+        >
+      {/if}
+    {/if}
+    -->
   {/if}
+  <StudentForm title={student_event ? "Update Information" : "Register"} bind:student_event={student_event} userType="student" user={student} event_id={event_id} />
 {/if}
 
 <style>

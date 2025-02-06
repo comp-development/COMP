@@ -92,7 +92,7 @@ export async function ifOrgEvent(event_id: number, org_id: number) {
 export async function getOrgEventByJoinCode(event_id: number, join_code: string) {
     const { data, error } = await supabase
         .from("org_events")
-        .select("*")
+        .select("*, org:orgs(*)")
         .eq("event_id", event_id)
         .eq("join_code", join_code)
         .single();
@@ -115,6 +115,23 @@ export async function upsertOrgEvent(event_id: number, org_id: number) {
 
     return data;
 }
+
+export async function updateStudentOrgEvent(
+    student_event_id: number,
+    new_org_id: number
+  ) {
+    const { data, error } = await supabase
+      .from("student_events")
+      .update({
+        org_id: new_org_id
+      })
+      .eq("student_event_id", student_event_id)
+      .select("*, students(*)")
+      .single();
+  
+    if (error) throw error;
+    return data;
+  }
 
 export async function editOrganization(org: {}, org_id: number) {  
     const { data, error } = await supabase

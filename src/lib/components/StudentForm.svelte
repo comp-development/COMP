@@ -17,7 +17,7 @@
     import { getEventCustomFields, getCustomFieldResponses, upsertCustomFieldResponses, getStudentEvent, getOrgEventByJoinCode, upsertStudentEvent } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
 
-    let { student_event = $bindable(null), userType, user, event_id } = $props();
+    let { title = "Registration Form", student_event = $bindable(null), userType, user, event_id } = $props();
 
     let token: string | null = null;
 
@@ -128,8 +128,7 @@
       handleError(error);
       return
     }
-
-    document.location.reload();
+    //document.location.reload();
     return
     event.preventDefault();
 
@@ -191,7 +190,7 @@
     <br />
   </div>
 -->
-  <CustomForm title="Registration Form" fields={
+  <CustomForm {title} fields={
     [
       {
           event_custom_field_id: "first_name",

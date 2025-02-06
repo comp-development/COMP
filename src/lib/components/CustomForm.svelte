@@ -11,14 +11,15 @@
         Checkbox,
     } from "flowbite-svelte";
     import { EnvelopeSolid, PhoneSolid } from "flowbite-svelte-icons";
+    import toast from "$lib/toast.svelte";
 
     let {
-        title,
+        title = null,
         fields = [],
         custom_fields = [],
 
-        validationErrors = $bindable(),
-        newResponses = $bindable(),
+        validationErrors = $bindable({}),
+        newResponses = $bindable({}),
         handleSubmit,
     } = $props();
 
@@ -26,9 +27,10 @@
 
     $effect(() => {
         for (var field of [...fields, ...custom_fields]) {
-            initialResponses[field?.event_custom_field_id ?? field?.name] =
+            const key = field.event_custom_field_id ?? field.name;
+            initialResponses[key] =
                 field?.value;
-            newResponses[field?.event_custom_field_id ?? field?.name] = field?.value;
+            newResponses[key] = field?.value;
         }
     });
     const typePatterns = {
@@ -38,9 +40,7 @@
     };
 
     function validateInput(key, value, regex) {
-        console.log("custom_fields_form", custom_fields);
-        console.log();
-        if (regex) {
+        if (regex && value) {
             const pattern = new RegExp(regex);
             validationErrors[key] = !pattern.test(value)
                 ? `Please follow the format: ${regex}`
@@ -51,8 +51,6 @@
     }
 
     function validateForm() {
-        let isValid = true;
-
         for (let field of [...fields, ...custom_fields]) {
             const key = field.event_custom_field_id ?? field.name;
 
@@ -60,14 +58,12 @@
                 if (field.custom_field_type === "checkboxes") {
                     if (!newResponses[key] || newResponses[key].length === 0) {
                         validationErrors[key] = `Please select at least one option for "${field.label}"`;
-                        isValid = false;
                     } else {
                         validationErrors[key] = null;
                     }
                 } else if (field.custom_field_type === "multiple_choice") {
                     if (!newResponses[key]) {
                         validationErrors[key] = `Please select an option for "${field.label}"`;
-                        isValid = false;
                     } else {
                         validationErrors[key] = null;
                     }
@@ -75,14 +71,15 @@
             }
         }
 
-        return isValid;
+        return !Object.values(validationErrors).some(error => error !== null);
     }
 
-    function handleFormSubmit(event) {
+    async function handleFormSubmit(event) {
         event.preventDefault();
 
         if (validateForm()) {
-            handleSubmit();
+            await handleSubmit(event);
+            toast.success("Submitted!");
         }
     }
 
@@ -107,12 +104,13 @@
     {/if}
     <form onsubmit={handleFormSubmit}>
         {#each [...fields, ...custom_fields] as field}
+            {@const key = field.event_custom_field_id ?? field.name}
             {#if !field.hidden}
                 <div class="text-left mb-6">
                     <Label
-                        for={field.event_custom_field_id}
+                        for={key}
                         class="block mb-2"
-                        color={validationErrors[field.event_custom_field_id]
+                        color={validationErrors[key]
                             ? "red"
                             : "base"}
                     >
@@ -131,7 +129,7 @@
                             class="mt-2"
                             required={field.required}
                             disabled={!field.editable &&
-                                initialResponses[field.event_custom_field_id]}
+                                initialResponses[key] !== null}
                             items={[
                                 ...(field.required
                                     ? []
@@ -141,47 +139,32 @@
                                     name: choice,
                                 })),
                             ]}
-                            bind:value={newResponses[
-                                field.event_custom_field_id ?? field.name
-                            ]}
+                            bind:value={newResponses[key]}
                         />
                     {:else if field.custom_field_type === "date"}
                         <Datepicker
-                            bind:value={newResponses[
-                                field.event_custom_field_id ?? field.name
-                            ]}
+                            bind:value={newResponses[key]}
                             required={field.required}
                             disabled={!field.editable}
                             on:blur={() =>
                                 validateInput(
-                                    field.event_custom_field_id,
-                                    newResponses[field.event_custom_field_id],
+                                    key,
+                                    newResponses[key],
                                     typePatterns.date,
                                 )}
                         />
-                    {:else if field.custom_field_type === "paragraph"}
-                        <Textarea
-                            bind:value={newResponses[
-                                field.event_custom_field_id ?? field.name
-                            ]}
-                            placeholder={field.placeholder}
-                            required={field.required}
-                            disabled={!field.editable}
-                            rows={5}
-                        />
+                    
                     {:else if field.custom_field_type === "email"}
                         <Input
                             type="email"
-                            id={field.event_custom_field_id}
+                            id={key}
                             placeholder={field.placeholder}
-                            bind:value={newResponses[
-                                field.event_custom_field_id ?? field.name
-                            ]}
+                            bind:value={newResponses[key]}
                             required={field.required}
                             on:blur={() =>
                                 validateInput(
-                                    field.event_custom_field_id,
-                                    newResponses[field.event_custom_field_id],
+                                    key,
+                                    newResponses[key],
                                     typePatterns.email,
                                 )}
                         >
@@ -192,18 +175,16 @@
                         </Input>
                     {:else if field.custom_field_type === "phone"}
                         <Input
-                            id={field.event_custom_field_id}
+                            id={key}
                             type="tel"
                             placeholder={field.placeholder}
-                            bind:value={newResponses[
-                                field.event_custom_field_id ?? field.name
-                            ]}
+                            bind:value={newResponses[key]}
                             required={field.required}
                             pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
                             on:blur={() =>
                                 validateInput(
-                                    field.event_custom_field_id,
-                                    newResponses[field.event_custom_field_id],
+                                    key,
+                                    newResponses[key],
                                     typePatterns.tel,
                                 )}
                         >
@@ -216,7 +197,7 @@
                         {#each field.choices as choice}
                             <div style="display: flex; align-items: left">
                                 <Radio
-                                    bind:group={newResponses[field.event_custom_field_id]}
+                                    bind:group={newResponses[key]}
                                     value={choice}
                                     label={choice}>{choice}</Radio
                                 >
@@ -226,38 +207,44 @@
                         {#each field.choices as choice}
                             <div style="display: flex; align-items: left">
                                 <Checkbox
-                                    checked={(newResponses[field.event_custom_field_id] || "").split(",").includes(choice)}
-                                    on:change={() => handleCheckboxChange(field.event_custom_field_id, choice)}
+                                    checked={(newResponses[key] || "").split(",").includes(choice)}
+                                    on:change={() => handleCheckboxChange(key, choice)}
                                 >
                                     {choice}
                                 </Checkbox>
                             </div>
                         {/each}
+                    {:else if field.custom_field_type === "paragraph"}
+                        <Textarea
+                            bind:value={newResponses[key]}
+                            placeholder={field.placeholder}
+                            required={field.required}
+                            disabled={!field.editable}
+                            rows={5}
+                        />
                     {:else}
                         <Input
-                            id={field.event_custom_field_id}
-                            bind:value={newResponses[
-                                field.event_custom_field_id ?? field.name
-                            ]}
+                            id={key}
+                            bind:value={newResponses[key]}
                             type="text"
                             required={field.required}
                             disabled={!field.editable}
                             placeholder={field.placeholder}
-                            color={validationErrors[field.event_custom_field_id]
-                                ? "red"
-                                : "base"}
-                            on:blur={() =>
+                            color={validationErrors[key] ? "red" : "base"}
+                            on:blur={() => {
+                                newResponses[key] = newResponses[key] ? newResponses[key].trim() : newResponses[key];
                                 validateInput(
-                                    field.event_custom_field_id,
-                                    newResponses[field.event_custom_field_id],
+                                    key,
+                                    newResponses[key],
                                     field.regex,
-                                )}
+                                );
+                            }}
                         />
                     {/if}
 
-                    {#if validationErrors[field.event_custom_field_id]}
+                    {#if validationErrors[key]}
                         <Helper class="mb-3" color="red">
-                            Error: {validationErrors[field.event_custom_field_id]}
+                            Error: {validationErrors[key]}
                         </Helper>
                     {/if}
                 </div>
