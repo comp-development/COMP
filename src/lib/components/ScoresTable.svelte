@@ -78,7 +78,7 @@
                 ...Array.from({length: test.num_problems}, (_, i) => `"${String(testTaker[i + 1]?.answer_latex || "").replace(/"/g, '""')}"`),
 				...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.correct ? 1 : 0 || 0),
                 ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.points || 0),
-                ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.last_edited_time || ""),
+                ...Array.from({length: test.num_problems}, (_, i) => testTaker[i + 1]?.last_updated || ""),
 			];
 			if (testTaker.front_id == "MM12") {
 				console.log(row)

@@ -67,17 +67,20 @@ export async function deleteStudentTeam(student_event_id: number) {
   if (error) throw error;
 }
 
-export async function changeTeam(team_name: string, event_id: number, org_id: number, team_id: number | null) {
-  const teamData = { team_name, event_id, org_id };
-
-  if (team_id !== null) {
-    teamData.team_id = team_id;
-  }
-
+export async function upsertTeam(event_id: number, teamData?: {
+    team_name?: string | null;
+    team_id?: number | null;
+    org_id?: number | null;
+  }) {
+  const upsertData: any = {event_id};
+  if (teamData?.team_id !== undefined) upsertData.team_id = teamData.team_id;
+  if (teamData?.org_id !== undefined) upsertData.org_id = teamData.org_id;
+  if (teamData?.team_name !== undefined) upsertData.team_name = teamData.team_name;
+  console.log("upsertData", upsertData);
   const { data, error } = await supabase
     .from("teams")
-    .upsert(teamData, {
-      onConflict: ["team_id"]
+    .upsert(upsertData, {
+      onConflict: "team_id"
     })
     .select();
   if (error) throw error;
@@ -88,7 +91,7 @@ export async function changeTeam(team_name: string, event_id: number, org_id: nu
 export async function getStudentsWithoutTeam(event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
-    .select("*, student:students(*)")
+    .select("*, person:students(*)")
     .eq("event_id", event_id)
     .is("team_id", null);
   if (error) throw error;
@@ -97,17 +100,17 @@ export async function getStudentsWithoutTeam(event_id: number) {
 }
 
 export async function deleteTeam(team) {
-  const { error } = await supabase
+  // Delete the team record
+  const { error: deleteError } = await supabase
     .from("teams")
     .delete()
     .eq("team_id", team.team_id);
-  if (error) throw error;
+  if (deleteError) throw deleteError;
 
-  for (const student of team.teamMembers) {
-    const { error } = await supabase
-      .from("student_events")
-      .update({ team_id: null })
-      .eq("student_event_id", student.student_event_id);
-    if (error) throw error;
-  }
+  // Update all team members in a single query
+  const { error: updateError } = await supabase
+    .from("student_events")
+    .update({ team_id: null })
+    .eq("team_id", team.team_id);
+  if (updateError) throw updateError;
 }

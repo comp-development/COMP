@@ -176,15 +176,12 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
+		text-align: left;
 	}
 
 	.problemContainer h4 {
 		font-weight: bold;
 		margin-right: 5px;
-	}
-
-	.problemContainer {
-		text-align: left;
 	}
 
 	.buttonContainer {

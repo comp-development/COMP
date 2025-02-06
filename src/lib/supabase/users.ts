@@ -101,6 +101,34 @@ export async function getCoach(user_id: string) {
 	return data;
 }
 
+export async function getAllCoaches() {
+	let { data, error } = await supabase
+		.from('coaches')
+		.select('*');
+	if (error) throw error;
+	return data;
+}
+
+export async function getAllCoachesOutsideOrg(org_id: number) {
+    const { data: existingCoaches, error: existingError } = await supabase
+        .from('org_coaches')
+        .select('coach_id')
+        .eq('org_id', org_id);
+
+    if (existingError) throw existingError;
+
+    const excludedCoachIds = existingCoaches.map((coach) => coach.coach_id);
+
+    const { data, error } = await supabase
+        .from('coaches')
+        .select('*')
+        .not('coach_id', 'in', `(${excludedCoachIds.join(',')})`);
+
+    if (error) throw error;
+
+    return data?.map((coach) => ({ person: coach })) || [];
+}
+
 /**
  * Check if user is a certain type
  * 

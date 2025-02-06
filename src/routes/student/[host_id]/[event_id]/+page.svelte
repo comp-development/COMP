@@ -27,6 +27,7 @@
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student = $state(null);
+  let purchase_ticket = $state(true);
   let selectedOption = $state("create_team");
 
   (async () => {
@@ -74,7 +75,7 @@
   <h1>{event_details?.event_name}</h1>
   <h2 style="font-weight: 500">{event_details?.event_date}</h2>
   Add something about cost per student Here
-  {#if !student_event}
+  {#if !student_event || true}
     {#if transaction_stored}
       <p>
         Payment found, but registration is not complete. Please fill out the
