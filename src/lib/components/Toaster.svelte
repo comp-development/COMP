@@ -18,7 +18,7 @@
 
 </script>
 
-<div style={`position: fixed; top: 10px; right: 10px;`}>
+<div style="position: fixed; top: 10px;">
 {#each messages.toReversed() as [_, data]}
     <Toast dismissable={true} {...data}></Toast>
 {/each}

@@ -11,6 +11,7 @@
         Checkbox,
     } from "flowbite-svelte";
     import { EnvelopeSolid, PhoneSolid } from "flowbite-svelte-icons";
+    import toast from "$lib/toast.svelte";
 
     let {
         title = null,
@@ -39,7 +40,7 @@
     };
 
     function validateInput(key, value, regex) {
-        if (regex) {
+        if (regex && value) {
             const pattern = new RegExp(regex);
             validationErrors[key] = !pattern.test(value)
                 ? `Please follow the format: ${regex}`
@@ -73,11 +74,12 @@
         return !Object.values(validationErrors).some(error => error !== null);
     }
 
-    function handleFormSubmit(event) {
+    async function handleFormSubmit(event) {
         event.preventDefault();
 
         if (validateForm()) {
-            handleSubmit(event);
+            await handleSubmit(event);
+            toast.success("Submitted!");
         }
     }
 
