@@ -152,6 +152,8 @@ export async function upsertCustomFieldResponses(
     value: value,
   }));
 
+  console.log(upsertData);
+
   // Perform the upsert operation
   const { data, error } = await supabase
     .from("custom_field_values")
