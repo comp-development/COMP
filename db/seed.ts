@@ -1,5 +1,5 @@
 import { SeedClient, createSeedClient } from "@snaplet/seed";
-import { copycat, Input } from "@snaplet/copycat";
+import { copycat, type Input } from "@snaplet/copycat";
 
 enum UserType {
   Superadmin = 1,
@@ -87,7 +87,7 @@ function chunks<T>(
   return output;
 }
 
-async function main() {
+async function reset_db() {
   const dryRun = false;
   if (!dryRun) {
     console.log("Clearing database tables ...");
@@ -422,7 +422,15 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
   if (!dryRun) {
     console.log("Successfully seeded database!");
   }
-  process.exit();
 }
 
-main();
+// If called from command line, execute once.
+if (require.main === module) {
+  (async () => {
+    await reset_db();
+    process.exit();
+  })();
+}
+
+export default reset_db;
+module.exports = reset_db;
