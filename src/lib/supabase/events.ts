@@ -52,7 +52,7 @@ export async function getEventTeams(event_id: number) {
 
 export async function getEventCustomFields(
   event_id: number,
-  custom_field_table: "orgs" | "students" | "teams" = "students"
+  custom_field_table: "orgs" | "students" | "teams" = "students",
 ) {
   console.log("EVENT ID", event_id);
   const { data, error } = await supabase
@@ -80,9 +80,14 @@ export async function getEventCustomFields(
 export async function getCustomFieldResponses(
   event_custom_fields: any,
   table_id: number,
-  custom_field_table: "orgs" | "students" | "teams" = "students"
+  custom_field_table: "orgs" | "students" | "teams" = "students",
 ) {
-  console.log("getCustomFieldResponses", event_custom_fields, table_id, custom_field_table);
+  console.log(
+    "getCustomFieldResponses",
+    event_custom_fields,
+    table_id,
+    custom_field_table,
+  );
   // Determine the column to filter by based on the custom_field_table
   const tableColumn =
     custom_field_table === "students"
@@ -92,14 +97,16 @@ export async function getCustomFieldResponses(
         : "org_event_id";
 
   // Get the list of custom field IDs to fetch
-  const eventCustomFieldIds = event_custom_fields.map((field: any) => field.event_custom_field_id);
+  const eventCustomFieldIds = event_custom_fields.map(
+    (field: any) => field.event_custom_field_id,
+  );
 
   // Declare customFieldValues outside the if block
   let customFieldValues = [];
 
   // Fetch all relevant custom field values in one query
   if (table_id) {
-    console.log("table_id", table_id)
+    console.log("table_id", table_id);
     const { data, error } = await supabase
       .from("custom_field_values")
       .select("event_custom_field_id, value")
@@ -119,7 +126,7 @@ export async function getCustomFieldResponses(
       ...map,
       [row.event_custom_field_id]: row.value,
     }),
-    {}
+    {},
   );
 
   // Map the input fields with their corresponding values
@@ -127,7 +134,6 @@ export async function getCustomFieldResponses(
     ...field,
     value: valueMap[field.event_custom_field_id] || null,
   }));
-
 
   console.log("fieldsWithValues", fieldsWithValues);
 
@@ -137,7 +143,7 @@ export async function getCustomFieldResponses(
 export async function upsertCustomFieldResponses(
   custom_field_dict: Record<number, any>,
   table_id: number,
-  custom_field_table: "orgs" | "students" | "teams" = "students"
+  custom_field_table: "orgs" | "students" | "teams" = "students",
 ) {
   // Determine the column to filter by based on the custom_field_table
   const tableColumn =
@@ -148,12 +154,14 @@ export async function upsertCustomFieldResponses(
         : "org_event_id";
 
   // Prepare the data for upsert
-  console.log("customFieldDict", custom_field_dict)
-  const upsertData = Object.entries(custom_field_dict).map(([event_custom_field_id, value]) => ({
-    [tableColumn]: table_id,
-    event_custom_field_id: parseInt(event_custom_field_id),
-    value: value,
-  }));
+  console.log("customFieldDict", custom_field_dict);
+  const upsertData = Object.entries(custom_field_dict).map(
+    ([event_custom_field_id, value]) => ({
+      [tableColumn]: table_id,
+      event_custom_field_id: parseInt(event_custom_field_id),
+      value: value,
+    }),
+  );
 
   console.log("upsertData", upsertData);
 
@@ -172,14 +180,14 @@ export async function upsertCustomFieldResponses(
 }
 
 /**
- * 
- * @param student_id 
- * @param event_id 
- * @param options 
- * @returns 
- * 
+ *
+ * @param student_id
+ * @param event_id
+ * @param options
+ * @returns
+ *
  * This function is used to upsert student events
- * this is useful for initially creating student_events, 
+ * this is useful for initially creating student_events,
  * as well as modifying the teams/orgs of existing student_events
  */
 
@@ -189,7 +197,7 @@ export async function upsertStudentEvent(
   options?: {
     team_id?: number | null;
     org_id?: number | null;
-  }
+  },
 ) {
   const upsertData: any = { student_id, event_id };
   if (options?.team_id !== undefined) upsertData.team_id = options.team_id;
@@ -198,7 +206,7 @@ export async function upsertStudentEvent(
   const { data, error } = await supabase
     .from("student_events")
     .upsert(upsertData, {
-      onConflict: 'student_id,event_id'  // Specify the unique constraint
+      onConflict: "student_id,event_id", // Specify the unique constraint
     })
     .select("*, teams(*, student_events(*, students(*))), org_events(*)")
     .single();
@@ -206,7 +214,6 @@ export async function upsertStudentEvent(
   console.log("upsertStudentEvent", data);
   return data;
 }
-
 
 export async function getStudentTeams(student_id: string) {
   const { data, error } = await supabase
@@ -226,17 +233,25 @@ export async function getStudentEvents(student_id: string) {
   return data;
 }
 
-export async function getStudentHostEvents(student_id: string, host_id: number) {
+export async function getStudentHostEvents(
+  student_id: string,
+  host_id: number,
+) {
   const { data, error } = await supabase
     .from("student_events")
     .select("*, event:events!inner(*)")
     .eq("student_id", student_id)
-    .eq("event.host_id", host_id)
+    .eq("event.host_id", host_id);
   if (error) throw error;
   return data;
 }
 
-export async function getCoachHostEvents(coach_id: string, host_id: number, org_id: number, published: boolean = true) {
+export async function getCoachHostEvents(
+  coach_id: string,
+  host_id: number,
+  org_id: number,
+  published: boolean = true,
+) {
   const { data: orgEventsData, error: orgEventsError } = await supabase
     .from("org_events")
     .select("event:events!inner(*)")
@@ -253,7 +268,9 @@ export type StudentEvent = AsyncReturnType<typeof getStudentEvent>;
 export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
-    .select("*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))")
+    .select(
+      "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+    )
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();

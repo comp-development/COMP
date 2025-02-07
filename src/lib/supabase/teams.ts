@@ -24,11 +24,11 @@ export async function getTeam(team_id: string) {
 
 export async function getTeamByJoinCode(event_id: number, join_code: string) {
   const { data, error } = await supabase
-      .from("teams")
-      .select("*, student_event:student_events(*, student:students(*))")
-      .eq("event_id", event_id)
-      .eq("join_code", join_code)
-      .single();
+    .from("teams")
+    .select("*, student_event:student_events(*, student:students(*))")
+    .eq("event_id", event_id)
+    .eq("join_code", join_code)
+    .single();
   if (error) throw error;
 
   return data;
@@ -56,13 +56,13 @@ export async function getTeamId(student_id: string, event_id: number) {
 export async function updateStudentTeam(
   student_event_id: number,
   new_team_id: number,
-  new_org_id: number
+  new_org_id: number | null,
 ) {
   const { data, error } = await supabase
     .from("student_events")
     .update({
       team_id: new_team_id,
-      org_id: new_org_id
+      org_id: new_org_id,
     })
     .eq("student_event_id", student_event_id)
     .select("*, person:students(*)")
@@ -80,21 +80,24 @@ export async function deleteStudentTeam(student_event_id: number) {
   if (error) throw error;
 }
 
-export async function upsertTeam(event_id: number, teamData?: {
+export async function upsertTeam(
+  event_id: number,
+  teamData?: {
     team_name?: string | null;
     team_id?: number | null;
     org_id?: number | null;
-  }) {
-  const upsertData: any = {event_id};
+  },
+) {
+  const upsertData: any = { event_id };
   if (teamData?.team_id !== undefined) upsertData.team_id = teamData.team_id;
   if (teamData?.org_id !== undefined) upsertData.org_id = teamData.org_id;
-  if (teamData?.team_name !== undefined) upsertData.team_name = teamData.team_name;
-  
+  if (teamData?.team_name !== undefined)
+    upsertData.team_name = teamData.team_name;
   console.log("upsertData", upsertData);
   const { data, error } = await supabase
     .from("teams")
     .upsert(upsertData, {
-      onConflict: "team_id"
+      onConflict: "team_id",
     })
     .select()
     .single();
