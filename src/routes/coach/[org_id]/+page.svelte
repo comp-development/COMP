@@ -132,6 +132,9 @@
             </div>
         {/each}
     </div>
+    {#if hosts.length == 0}
+        <p class="text-center">No hosts with public events found</p>
+    {/if}
 
     <br /><br />
     <h3 class="text-xl font-medium text-gray-900 dark:text-white">Coaches</h3>

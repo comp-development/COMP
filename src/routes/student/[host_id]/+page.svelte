@@ -42,7 +42,9 @@
 			my_event_ids.add(e.event_id.toString());
 		}
 
-		all_events = (await getHostEvents(host_id)) as any;
+		all_events = (await getHostEvents(host_id)).filter(
+			(event) => !my_event_ids.has(event.event_id.toString()),
+		);
 
 		loading = false;
 	})();
@@ -117,7 +119,7 @@
 	{/if}
 	<br />
 	<br />
-	<h2 style="text-align: center;">All Events</h2>
+	<h2 style="text-align: center;">Other Events</h2>
 	<br />
 
 	<div class="buttonContainer">
