@@ -106,22 +106,21 @@ async function reset_db() {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
-          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
+          email: (ctx) => copycat.email(ctx.seed),
         },
       },
       admins: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
-          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
+          email: (ctx) => copycat.email(ctx.seed),
         },
       },
       coaches: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
-          // Use the provided email if available, otherwise default to a generated one.
-          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
+          email: (ctx) => copycat.email(ctx.seed),
         },
       },
       events: {
