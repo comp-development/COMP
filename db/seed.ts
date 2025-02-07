@@ -35,13 +35,10 @@ async function create_user(
     },
     first_name,
     last_name,
+    email,
     ...other_fields,
   };
 
-  // For students and coaches, propagate the supplied email value
-  if (type === UserType.Coach || type === UserType.Student) {
-    data.email = email;
-  }
 
   if (type == UserType.Superadmin) {
     return await seed.superadmins([data]);
@@ -110,12 +107,14 @@ async function main() {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
+          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
         },
       },
       admins: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
+          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
         },
       },
       coaches: {
