@@ -14,6 +14,7 @@ import { adminSupabase } from "$lib/adminSupabaseClient";
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
   let event_id: number,
+    host_id: number,
     token: string,
     quantity: number,
     creating_team: boolean,
@@ -29,13 +30,16 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       return body[k];
     };
     event_id = r("event_id");
+    host_id = r("host_id");
     token = r("token");
     quantity = r("quantity");
     creating_team = r("creating_team");
     target_org_id = body.target_org_id;
     joining_team_code = body.joining_team_id;
   } catch (e: any) {
-    return new Response("missing or malformed body: " + e.message);
+    return new Response("missing or malformed body: " + e.message, {
+      status: 400,
+    });
   }
   const purchasing_org_ticket = target_org_id != null;
 
@@ -118,11 +122,11 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
     const stripe = new Stripe(stripeSecretKey);
     const redirect = creating_team
-      ? `${request.url.origin}/student/${event_id}/create-team`
+      ? `${request.url.origin}/student/${host_id}/${event_id}/create-team`
       : joining_team_code
-        ? `${request.url.origin}/student/${event_id}/join-team/${joining_team_code}`
+        ? `${request.url.origin}/student/${host_id}/${event_id}/join-team/${joining_team_code}`
         : target_org_id
-          ? `${request.url.origin}/coach/${event_id}`
+          ? `${request.url.origin}/coach/${host_id}/${event_id}`
           : // This case shouldn't be hit.
             (() => {
               throw Error("unexpected request state");

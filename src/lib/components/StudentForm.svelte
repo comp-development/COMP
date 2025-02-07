@@ -17,7 +17,7 @@
     import { getEventCustomFields, getCustomFieldResponses, upsertCustomFieldResponses, getStudentEvent, getOrgEventByJoinCode, upsertStudentEvent } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
 
-    let { title = "Registration Form", student_event = $bindable(null), userType = null, user, event_id } = $props();
+    let { title = "Registration Form", student_event = $bindable(null), user, event_id } = $props();
 
     let token: string | null = null;
 

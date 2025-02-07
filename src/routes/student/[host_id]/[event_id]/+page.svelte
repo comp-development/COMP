@@ -38,7 +38,7 @@
   let teamJoinFormErrors: any = $state({});
   let orgJoinFormResponses: any = $state({});
   let orgJoinFormErrors: any = $state({});
-  let selectedOption = $state("join_org");
+  let selectedOption: "join_org" | "join_team" | "create_team" = $state("join_org");
 
   const afterTeamSubmit = async () => {
     // If this callback is called, then the student must've been in the event => student_event is non-null.
@@ -291,14 +291,11 @@
             open={selectedOption === "create_team"}
             title="Create Independent Team"
           >
-            <TeamForm
-              bind:team
-              title="Create Independent Team"
-              userType="student"
-              user={student}
-              {event_id}
-              afterSubmit={afterTeamSubmit}
-            />
+            <div class="flex">
+              <Button href={`/student/${$page.params.host_id}/${$page.params.event_id}/create-team`} pill>
+                Create Team!
+              </Button>
+            </div>
           </TabItem>
         </Tabs>
         <br />

@@ -4,6 +4,7 @@
   import { handleError } from "$lib/handleError";
   import { Button } from 'flowbite-svelte';
     
+  const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
   const join_code = $page.params.joining_team_code;
 
@@ -33,7 +34,7 @@
       failure: { reason: string; stripe_url?: string } | null;
     } = await response.json();
     if (response.ok) {
-      document.location.assign(`/student/${event_id}/`);
+      document.location.assign(`/student/${host_id}/${event_id}/`);
     } else {
       handleError(new Error(json.failure?.reason));
       failure = json.failure!;

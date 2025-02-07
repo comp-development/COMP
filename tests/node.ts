@@ -1,30 +1,42 @@
 import puppeteer from "puppeteer";
 import reset_db from "../db/seed.js";
-import { setup_test, validate_student_team_constraints } from "./tests.js";
+import {
+  setup_test,
+  student_login,
+  student_register,
+  student_signup,
+  validate_student_team_constraints,
+} from "./tests.js";
 
+console.group("RUNNING DB TESTS");
+console.time("db-tests");
 await reset_db();
-const student = await setup_test();
-await validate_student_team_constraints(student);
+const ids = await setup_test();
+await validate_student_team_constraints(ids);
 
+console.groupEnd();
+console.timeEnd("db-tests");
+
+console.log();
+
+console.group("RUNNING BROWSER TESTS");
+console.time("browser-tests");
 // Launch the browser and open a new blank page
 const browser = await puppeteer.launch({
   headless: true,
 });
-const page = await browser.newPage();
 
-// Navigate the page to a URL.
-await page.goto("http://localhost:5173/");
+await student_signup(browser);
+const page = await student_login(browser);
+await student_register(page, ids);
 
-// Set screen size.
-await page.setViewport({ width: 1080, height: 1024 });
+// // Set screen size.
+// await page.setViewport({ width: 1080, height: 1024 });
 
-(await page.locator("text/Sign-Up").waitHandle())?.click();
+console.groupEnd();
+console.timeEnd("browser-tests");
 
-// Fill this first so that the puppeteer waits for all input elements to update.
-await page.locator("#show-password2").fill("example123");
-await page.locator("input[type=email]").fill("example@gmail.com");
-await page.locator("#show-password1").fill("example123");
-await page.locator(".profileButtons button").click();
+console.log();
 
 console.log("ALL TESTS PASSED");
 

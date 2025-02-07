@@ -10,7 +10,7 @@ import type { Tables } from "../../../../../../db/database.types";
 import { adminSupabase } from "$lib/adminSupabaseClient";
 import { get } from "svelte/store";
 import { page } from "$app/stores";
-import { getStudentEvent } from "$lib/supabase";
+import { generate_join_code } from "$lib/joinCode";
 
 const dbg = <T,>(x: T): T => {
   console.log(x);
@@ -83,9 +83,22 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     const user = user_response.data.user!;
 
     // Make sure user isn't already in a team.
-    const student_event_details = await getStudentEvent(user.id, event_id);
-    if (student_event_details?.teams != null) {
-      return construct_response({ failure: { reason: "already in team" } });
+    const { data: student_event_details, error: details_error } =
+      await adminSupabase
+        .from("student_events")
+        .select(
+          "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+        )
+        .eq("student_id", user.id)
+        .eq("event_id", event_id)
+        .maybeSingle();
+    wrap_supabase_error(
+      "fetching student event information",
+      student_event_details,
+      details_error,
+    );
+    if (student_event_details?.team != null) {
+      return construct_response({ failure: { reason: "already in a team" } });
     }
 
     // Validate that session is paid.
@@ -123,7 +136,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     }
 
     // Create team and return join code.
-    const join_code = "team-" + uuidv4();
+    const join_code = generate_join_code();
     const { data: t_data, error: t_error } = dbg(
       await adminSupabase
         .from("teams")

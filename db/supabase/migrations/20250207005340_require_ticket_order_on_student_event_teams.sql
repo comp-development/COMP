@@ -33,7 +33,7 @@ begin
   end if;
 
   -- if the student is on an org team, then they must have org_id in the student_events row
-  if not exists(select 1 from teams WHERE teams.org_id = in_org_id and teams.team_id = in_team_id) then
+  if v_associated_team_org_id is not null and not exists(select 1 from teams WHERE teams.org_id = in_org_id and teams.team_id = in_team_id) then
     raise 'No matching team with the same org id';
   end if;
 

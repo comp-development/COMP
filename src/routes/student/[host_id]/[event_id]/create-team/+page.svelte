@@ -8,6 +8,7 @@
   import { Button, Input } from 'flowbite-svelte';
 
   const event_id = parseInt($page.params.event_id);
+  const host_id = parseInt($page.params.host_id);
   let transaction_stored = false;
 
   let loading = $state(true);
@@ -29,6 +30,7 @@
     if (!transaction_stored) {
       let body = {
         event_id,
+        host_id,
         token,
         quantity: 1,
         creating_team: true,

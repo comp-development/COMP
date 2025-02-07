@@ -1,21 +1,7 @@
 const stripeSecretKey = import.meta.env.VITE_STRIPE_SECRET_API_KEY;
-import { v4 as uuidv4 } from "uuid";
-import {
-  redirect,
-  type RequestEvent,
-  type RequestHandler,
-} from "@sveltejs/kit";
+import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { Stripe } from "stripe";
-import type { Tables } from "../../../../../../../db/database.types";
 import { adminSupabase } from "$lib/adminSupabaseClient";
-import { get } from "svelte/store";
-import { page } from "$app/stores";
-import { getStudentEvent } from "$lib/supabase";
-
-const dbg = <T,>(x: T): T => {
-  console.log(x);
-  return x;
-};
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
@@ -65,7 +51,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     if (data == null || error != null) {
       let msg = ctx;
       if (error) {
-        msg += ` due to (${error.code}) ${error.message} ${error.details} ${error.hint}`;
+        msg += ` due to (${error.code}) ${error.message ?? ""} ${
+          error.details ?? ""
+        } ${error.hint ?? ""}`;
       }
       throw Error(msg);
     }
@@ -91,9 +79,23 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     const user = user_response.data.user!;
 
     // Make sure user isn't already in a team.
-    const student_event_details = await getStudentEvent(user.id, event_id);
-    if (student_event_details?.teams != null) {
-      return construct_response({ failure: { reason: "already in team" } });
+    const { data: student_event_details, error: details_error } =
+      await adminSupabase
+        .from("student_events")
+        .select(
+          "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+        )
+        .eq("student_id", user.id)
+        .eq("event_id", event_id)
+        .maybeSingle();
+    wrap_supabase_error(
+      "fetching student event information",
+      student_event_details,
+      details_error,
+    );
+
+    if (student_event_details?.team != null) {
+      return construct_response({ failure: { reason: "already in a team" } });
     }
 
     let { data: team_data, error: team_error } = await adminSupabase
@@ -106,25 +108,13 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     let joined_org = false;
     // If the join code is for an org team, add the student to the org.
     if (team_data!.org_id) {
-      // Fetch org_event id.
-      let { data: oe_data, error: oe_error } = await adminSupabase
-        .from("org_events")
-        .select("id")
-        .eq("org_id", team_data!.org_id)
-        .eq("event_id", event_id)
-        .single();
-      wrap_supabase_error("fetching org_event id", oe_data, oe_error);
       // Add student to org_event.
-      let { count, error } = await adminSupabase
-        .from("student_org_events")
-        .upsert(
-          {
-            org_event_id: oe_data!.id,
-            student_id: user.id,
-          },
-          { count: "exact" },
-        );
-      wrap_supabase_error("adding student to org", count, error);
+      let { error } = await adminSupabase.from("student_events").upsert({
+        event_id,
+        student_id: user.id,
+        org_id: team_data!.org_id,
+      });
+      wrap_supabase_error("adding student to org", 0, error);
       joined_org = true;
     }
 
@@ -180,19 +170,22 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
     // Add student to team.
     let { error: student_team_error } = await adminSupabase
-      .from("student_teams")
-      .insert({
-        student_id: user.id,
-        team_id: team_data!.team_id,
-        ticket_order_id: ticket_order.id,
-      });
+      .from("student_events")
+      .upsert(
+        {
+          student_id: user.id,
+          team_id: team_data!.team_id,
+          event_id,
+        },
+        { onConflict: "student_id, event_id" },
+      );
 
     // If using an org order, provide a nice error if there are
     // insufficient purchased tickets.
     if (using_org_order && joined_org && student_team_error) {
       const { count: used_quantity, error: st_error } = await adminSupabase
-        .from("student_teams")
-        .select("", { count: "exact" })
+        .from("student_events")
+        .select("*, teams!inner(*, student_events(*))", { count: "exact" })
         .eq("ticket_order_id", ticket_order.id);
       wrap_supabase_error(
         "counting uses of org id ticket",
@@ -206,11 +199,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         });
       }
     }
-    wrap_supabase_error(
-      "counting uses of org id ticket",
-      0,
-      student_team_error,
-    );
+    wrap_supabase_error("adding student to team", 0, student_team_error);
 
     return construct_response({ success: { team_join_code: join_code } });
   } catch (e: any) {
