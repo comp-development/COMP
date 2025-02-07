@@ -7,27 +7,22 @@
         getEventInformation,
         getCoachOrganization,
         updateStudentTeam,
-        getStudentsWithoutTeam,
         upsertTeam,
         deleteTeam,
         deleteStudentTeam,
         getHostInformation,
+        getStudentsWithoutTeam,
     } from "$lib/supabase";
-    import { Badge, Button, Input, Label, Modal } from "flowbite-svelte";
+    import { Button, Input, Label, Modal } from "flowbite-svelte";
     import type { Tables } from "../../../../../../db/database.types";
-    import {
-        PenSolid,
-        TrashBinSolid,
-        UserAddSolid,
-        UsersGroupSolid,
-    } from "flowbite-svelte-icons";
+    import { UsersGroupSolid } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
     import OrgForm from "$lib/components/OrgForm.svelte";
-    import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
-    import TableName from "$lib/components/TableName.svelte";
     import CopyText from "$lib/components/CopyText.svelte";
     import EventDisplay from "$lib/components/EventDisplay.svelte";
+    import StudentTeam from "$lib/components/StudentTeam.svelte";
+    import DraggableStudent from "$lib/components/DraggableStudent.svelte";
 
     let loading = $state(true);
     let coach: any = $state();
@@ -38,28 +33,26 @@
     let draggedMember: any = null;
     let sourceTeamId: number | null = null;
 
-    let showDeleteTeamConfirmation = $state(false);
+    let studentsWithoutTeams = $state([]);
     let isModalOpen = $state(false);
     let teamName = $state("");
     let editingTeamId: number | null = $state(null);
 
-    let studentModalOpenTeam = $state(null);
-    let isStudentModalOpen = $state(false);
-    let studentsWithoutTeams = $state([]);
-
     let host: any = $state();
-	const host_id = parseInt($page.params.host_id);
+    const host_id = parseInt($page.params.host_id);
 
     (async () => {
         host = await getHostInformation(host_id);
         event_details = await getEventInformation(event_id);
-        
+
         coach = await getCoach($user!.id);
         organizationDetails = await getCoachOrganization(
             coach.coach_id,
             event_id,
             org_id,
         );
+
+        studentsWithoutTeams = await getStudentsWithoutTeam(event_id, org_id);
 
         loading = false;
     })();
@@ -75,76 +68,106 @@
         }
     }
 
-    function handleDragOver(event: DragEvent) {
-        event.preventDefault();
-        if (event.currentTarget instanceof HTMLElement) {
-            event.currentTarget.style.backgroundColor =
-                "rgba(59, 130, 246, 0.1)";
-        }
-    }
-
-    function handleDragLeave(event: DragEvent) {
-        if (event.currentTarget instanceof HTMLElement) {
-            event.currentTarget.style.backgroundColor = "";
-        }
-    }
-
-    async function handleDrop(event: DragEvent, targetTeam: any) {
+    async function handleDrop(event: DragEvent, targetTeam: any | null) {
         try {
             event.preventDefault();
             if (event.currentTarget instanceof HTMLElement) {
                 event.currentTarget.style.backgroundColor = "";
             }
-            if (!draggedMember || draggedMember.team_id === targetTeam.team_id)
-                return;
 
-            // Update the database
-            await updateStudentTeam(
-                draggedMember.student_event_id,
-                targetTeam.team_id,
-                org_id,
-            );
+            // Early return if dragging to same team
+            if (sourceTeamId && targetTeam?.team_id === sourceTeamId) return;
+            if (!draggedMember) return;
 
-            // Update local state
-            organizationDetails = organizationDetails.map((org: any) => {
-                // Create a new organization object
-                return {
-                    ...org,
-                    teams: org.teams.map((team: any) => {
-                        // If this is the source team, remove the member
+            if (targetTeam === null) {
+                // Scenario A: Moving to unassigned category
+                await updateStudentTeam(draggedMember.student_event_id, null, org_id);
+
+                // Remove from current team
+                organizationDetails = {
+                    ...organizationDetails,
+                    teams: organizationDetails.teams.map((team: any) => {
                         if (team.team_id === sourceTeamId) {
                             return {
                                 ...team,
                                 teamMembers: team.teamMembers.filter(
-                                    (member: any) =>
-                                        member.student_event_id !==
-                                        draggedMember.student_event_id,
-                                ),
-                            };
-                        }
-                        // If this is the target team, add the member
-                        if (team.team_id === targetTeam.team_id) {
-                            const updatedMember = {
-                                ...draggedMember,
-                                team_id: targetTeam.team_id,
-                                org_id: org_id,
-                            };
-                            return {
-                                ...team,
-                                teamMembers: [
-                                    ...team.teamMembers,
-                                    updatedMember,
-                                ],
+                                    (member: any) => member.student_event_id !== draggedMember.student_event_id
+                                )
                             };
                         }
                         return team;
-                    }),
+                    })
                 };
-            });
 
-            toast.success(
-                `Moving member ${draggedMember.students.first_name} to team ${targetTeam.team_name}`,
-            );
+                // Add to unassigned students
+                studentsWithoutTeams = [...studentsWithoutTeams, draggedMember];
+                
+                toast.success(`Moving ${draggedMember.person.first_name} to unassigned students`);
+            } else if (sourceTeamId) {
+                // Scenario B: Moving between teams
+                await updateStudentTeam(draggedMember.student_event_id, targetTeam.team_id, org_id);
+
+                organizationDetails = {
+                    ...organizationDetails,
+                    teams: organizationDetails.teams.map((team: any) => {
+                        if (team.team_id === sourceTeamId) {
+                            // Remove from source team
+                            return {
+                                ...team,
+                                teamMembers: team.teamMembers.filter(
+                                    (member: any) => member.student_event_id !== draggedMember.student_event_id
+                                )
+                            };
+                        }
+                        if (team.team_id === targetTeam.team_id) {
+                            // Add to target team
+                            const updatedMember = {
+                                ...draggedMember,
+                                team_id: targetTeam.team_id
+                            };
+                            return {
+                                ...team,
+                                teamMembers: [...team.teamMembers, updatedMember]
+                            };
+                        }
+                        return team;
+                    })
+                };
+
+                toast.success(
+                    `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`
+                );
+            } else {
+                // Scenario C: Moving from unassigned to team
+                await updateStudentTeam(draggedMember.student_event_id, targetTeam.team_id, org_id);
+
+                // Remove from unassigned students
+                studentsWithoutTeams = studentsWithoutTeams.filter(
+                    (student) => student.student_event_id !== draggedMember.student_event_id
+                );
+
+                // Add to target team
+                organizationDetails = {
+                    ...organizationDetails,
+                    teams: organizationDetails.teams.map((team: any) => {
+                        if (team.team_id === targetTeam.team_id) {
+                            const updatedMember = {
+                                ...draggedMember,
+                                team_id: targetTeam.team_id
+                            };
+                            return {
+                                ...team,
+                                teamMembers: [...team.teamMembers, updatedMember]
+                            };
+                        }
+                        return team;
+                    })
+                };
+
+                toast.success(
+                    `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`
+                );
+            }
         } catch (e) {
             handleError(e);
         } finally {
@@ -166,23 +189,22 @@
         isModalOpen = true;
     }
 
-    async function openStudentModal(team_id) {
-        try {
-            studentsWithoutTeams = await getStudentsWithoutTeam(
-                event_id,
-                org_id,
-            );
-            studentModalOpenTeam = team_id;
-            isStudentModalOpen = true;
-        } catch (e) {
-            handleError(e);
+    function handleDragOver(event: DragEvent) {
+        event.preventDefault();
+        if (event.currentTarget instanceof HTMLElement) {
+            event.currentTarget.style.backgroundColor =
+                "rgba(59, 130, 246, 0.1)";
         }
     }
 
-    async function handleChangeTeam(e) {
-        try {
-            e.preventDefault();
+    function handleDragLeave(event: DragEvent) {
+        if (event.currentTarget instanceof HTMLElement) {
+            event.currentTarget.style.backgroundColor = "";
+        }
+    }
 
+    async function handleChangeTeam() {
+        try {
             let newTeamData;
 
             if (!editingTeamId) {
@@ -197,25 +219,32 @@
                 });
             }
 
-            let newOrganizationDetails = [...organizationDetails];
+            let newOrganizationDetails = { ...organizationDetails };
 
             if (editingTeamId) {
                 // Update the existing team
-                newOrganizationDetails.teams = newOrganizationDetails.teams.map(
-                    (team) => {
+                newOrganizationDetails = {
+                    ...newOrganizationDetails,
+                    teams: newOrganizationDetails.teams.map((team) => {
                         if (team.team_id === editingTeamId) {
                             return { ...team, team_name: teamName };
                         }
                         return team;
-                    },
-                );
+                    }),
+                };
                 toast.success("Team updated successfully");
             } else {
                 // Add a new team
-                newOrganizationDetails.teams.push({
-                    ...newTeamData,
-                    teamMembers: [],
-                });
+                newOrganizationDetails = {
+                    ...newOrganizationDetails,
+                    teams: [
+                        ...newOrganizationDetails.teams,
+                        {
+                            ...newTeamData,
+                            teamMembers: [],
+                        },
+                    ],
+                };
                 toast.success("Team added successfully");
             }
 
@@ -230,55 +259,6 @@
         }
     }
 
-    async function selectStudent(e, student) {
-        try {
-            e.preventDefault();
-
-            const lastTeam = organizationDetails.teams.find(
-                (team) => team.team_id === studentModalOpenTeam,
-            );
-            if (!lastTeam) {
-                toast.error("No teams available to assign the student.");
-                return;
-            }
-
-            if (
-                lastTeam.teamMembers.length >=
-                (event_details?.max_team_size ?? 0)
-            ) {
-                toast.error(
-                    "This team is already at maximum capacity. Add this student to another team.",
-                );
-                return;
-            }
-
-            const newStudent = await updateStudentTeam(
-                student.student_event_id,
-                lastTeam.team_id,
-                org_id,
-            );
-
-            organizationDetails = organizationDetails.teams.map((team) => {
-                if (team.team_id === lastTeam.team_id) {
-                    return {
-                        ...team,
-                        teamMembers: [...team.teamMembers, newStudent],
-                    };
-                }
-                return team;
-            });
-
-            toast.success(
-                `Student ${newStudent.students.first_name} added to team ${lastTeam.team_name}`,
-            );
-
-            studentModalOpenTeam = null;
-            isStudentModalOpen = false;
-        } catch (error) {
-            handleError(error);
-        }
-    }
-
     async function handleDeleteTeam(team) {
         try {
             await deleteTeam(team);
@@ -288,7 +268,6 @@
             );
 
             toast.success("Team deleted successfully");
-            showDeleteTeamConfirmation = false;
         } catch (error) {
             handleError(error);
         }
@@ -300,16 +279,23 @@
 
             await deleteStudentTeam(student.student_event_id);
 
-            organizationDetails = organizationDetails.teams.map((team: any) => {
-                return {
-                    ...team,
-                    teamMembers: team.teamMembers.filter(
-                        (member: any) =>
-                            member.student_event_id !==
-                            student.student_event_id,
-                    ),
-                };
-            });
+            let newOrganizationDetails = { ...organizationDetails };
+            newOrganizationDetails = {
+                ...newOrganizationDetails,
+                teams: newOrganizationDetails.teams.map((team: any) => {
+                    return {
+                        ...team,
+                        teamMembers: team.teamMembers.filter(
+                            (member: any) =>
+                                member.student_event_id !==
+                                student.student_event_id,
+                        ),
+                    };
+                }),
+            };
+            organizationDetails = newOrganizationDetails;
+
+            studentsWithoutTeams.push(student);
 
             toast.success("Student deleted successfully");
         } catch (error) {
@@ -324,14 +310,17 @@
     <EventDisplay
         name={event_details?.event_name}
         date={event_details?.event_date}
-        logo={event_details.logo ?? host.logo}
+        logo={event_details?.logo && event_details?.logo != "" ? event_details?.logo : host.logo}
         email={event_details?.email ?? host.email}
-        markdown={event_details?.markdown} />
+        markdown={event_details?.markdown}
+    />
 
-    {#if organizationDetails.event.length > 0}
+    {#if organizationDetails.event}
         <hr />
         <div class="organization">
-            <CopyText text={organizationDetails.event.join_code} />
+            <div class="flex">
+                <CopyText text={organizationDetails.event.join_code} />
+            </div>
 
             <div style="margin: 10px 0;">
                 <Button pill outline color="primary" onclick={openAddModal}>
@@ -340,134 +329,46 @@
                 </Button>
             </div>
 
-            <div class="grid-thirds">
-                {#each organizationDetails.teams as team}
-                    <div
-                        class="team"
-                        ondragover={handleDragOver}
-                        ondragleave={handleDragLeave}
-                        ondrop={(e) => handleDrop(e, team)}
-                    >
-                        <div
-                            class="flex"
-                            style="justify-content: space-between"
-                        >
-                            <h3>{team.team_name}</h3>
-                            <div class="space-y-1">
-                                <button
-                                    class="hover:bg-green-100 rounded-lg"
-                                    aria-label="Add Student"
-                                    onclick={() => {
-                                        openStudentModal(team.team_id);
-                                    }}
-                                >
-                                    <UserAddSolid class="w-5 h-5" />
-                                </button>
-                                <button
-                                    class="hover:bg-blue-100 rounded-lg"
-                                    aria-label="Edit"
-                                    onclick={() => openEditModal(team)}
-                                >
-                                    <PenSolid class="w-5 h-5" />
-                                </button>
-                                <button
-                                    class="hover:bg-red-100 rounded-lg"
-                                    aria-label="Delete"
-                                    onclick={(e) => {
-                                        e.preventDefault();
-                                        showDeleteTeamConfirmation = true;
-                                    }}
-                                >
-                                    <TrashBinSolid class="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-
-                        <ConfirmationModal
-                            isShown={showDeleteTeamConfirmation}
-                            actionName="delete this team"
-                            onCancel={() => {
-                                showDeleteTeamConfirmation = false;
-                            }}
-                            onConfirm={() => {
-                                handleDeleteTeam(team);
-                            }}
+            <div class="grid-container">
+                <div class="teams-grid">
+                    {#each organizationDetails.teams as team}
+                        <StudentTeam
+                            {event_id}
+                            {org_id}
+                            {team}
+                            onDrop={handleDrop}
+                            onDeleteTeam={handleDeleteTeam}
+                            onDragStart={handleDragStart}
+                            onDeleteStudent={handleDeleteStudentTeam}
+                            {openEditModal}
+                            {handleDragOver}
+                            {handleDragLeave}
+                            maxTeamSize={event_details?.max_team_size}
+                            bind:organizationDetails
+                            bind:studentsWithoutTeams
                         />
-
-                        <CopyText text={team.join_code} />
-
-                        {#each team.teamMembers as team_member}
-                            <div
-                                class="teamMember"
-                                draggable="true"
-                                ondragstart={(e) =>
-                                    handleDragStart(e, team_member)}
-                            >
-                                <div class="ml-2">
-                                    <div class="flex">
-                                        {#if team_member.front_id}
-                                            <Badge rounded large color="dark"
-                                                >{team_member.front_id}</Badge
-                                            >
-                                        {/if}
-                                        <div class="ml-2">
-                                            <p class="font-bold text-gray-800">
-                                                {team_member.students
-                                                    .first_name}
-                                                {team_member.students.last_name}
-                                            </p>
-                                            <p class="text-sm text-gray-600">
-                                                mrajupal@gmail.com
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div
-                                    class="flex flex-col items-center space-y-1"
-                                >
-                                    <button
-                                        class="hover:bg-blue-100 rounded-lg"
-                                        aria-label="Edit"
-                                        onclick={() => {
-                                            /*To be implemented*/
-                                        }}
-                                    >
-                                        <PenSolid class="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        class="hover:bg-red-100 rounded-lg"
-                                        aria-label="Delete"
-                                        onclick={(event) => {
-                                            handleDeleteStudentTeam(
-                                                event,
-                                                team_member,
-                                            );
-                                        }}
-                                    >
-                                        <TrashBinSolid class="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        {/each}
-
-                        <div
-                            class="flex-shrink-0 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 inline-flex items-center justify-center absolute top-0 end-0 translate-x-1/3 rtl:-translate-x-1/3 -translate-y-1/3 px-1"
-                        >
-                            <span class="text-xs font-bold p-0 m-0y"
-                                >{team.front_id}</span
-                            >
-                        </div>
-                    </div>
-                {/each}
+                    {/each}
+                </div>
+                <div 
+                    class="unassigned-students"
+                    ondragover={handleDragOver}
+                    ondragleave={handleDragLeave}
+                    ondrop={(e) => handleDrop(e, null)}
+                >
+                    <h3 class="text-xl font-semibold mb-4">Unassigned Students</h3>
+                    {#each studentsWithoutTeams as student}
+                        <DraggableStudent
+                            team_member={student}
+                            onDragStart={handleDragStart}
+                            onDeleteStudent={() => { /*To be implemented - remove student from organization*/ }}
+                        />
+                    {/each}
+                </div>
             </div>
         </div>
 
         <Modal bind:open={isModalOpen} size="md" autoclose={false}>
-            <form
-                class="flex flex-col space-y-6"
-                onsubmit={(e) => handleChangeTeam(e, organization.org_id)}
-            >
+            <form class="flex flex-col space-y-6" onsubmit={handleChangeTeam}>
                 <h3 class="text-xl font-medium text-gray-900 dark:text-white">
                     {editingTeamId ? "Edit Team" : "Add a New Team"}
                 </h3>
@@ -494,20 +395,6 @@
                 </div>
             </form>
         </Modal>
-
-        <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
-            <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-                Select Student
-            </h3>
-            <div class="tableMaxHeight">
-                <TableName
-                    actionType="select_student"
-                    items={studentsWithoutTeams}
-                    action={selectStudent}
-                    org_id={organization.org_id}
-                />
-            </div>
-        </Modal>
     {:else}
         <OrgForm
             title="Registration Form"
@@ -524,41 +411,22 @@
         border-radius: 20px;
     }
 
-    .team {
-        border: 3px solid var(--primary-tint);
-        padding: 10px;
-        margin: 10px;
+    .grid-container {
+        display: grid;
+        grid-template-columns: 3fr 1fr;
+        gap: 20px;
+        margin: 20px;
+    }
+
+    .teams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .unassigned-students {
+        padding: 20px;
         border-radius: 15px;
-        position: relative;
-        text-align: left;
-        transition: background-color 0.2s ease;
-    }
-
-    .teamMember {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border: 1px solid black;
-        padding: 5px;
-        margin-top: 10px;
-        position: relative;
-        border-radius: 15px;
-        cursor: move;
-        transition: transform 0.2s ease;
-    }
-
-    .teamMember:hover {
-        transform: scale(1.01);
-    }
-
-    .tableMaxHeight {
-        max-height: 500px;
-        overflow-y: scroll;
-    }
-
-    .select_button {
-        background-color: none;
-        border: none;
-        outline: none;
+        border: 2px solid var(--primary-tint);
     }
 </style>

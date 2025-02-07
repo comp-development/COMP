@@ -140,7 +140,7 @@
                         <Button
                             size="sm"
                             href={`/coach/${org_id}/${host.host_id}`}
-                            pill>Go to Organization</Button
+                            pill>Go to Host</Button
                         >
                     </div>
                 </div>
