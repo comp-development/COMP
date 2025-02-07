@@ -17,7 +17,7 @@ async function create_user(
   encrypted_password: string,
   other_fields: Object = {},
 ) {
-  const data = {
+  const data: any = {
     users: {
       instance_id: "00000000-0000-0000-0000-000000000000",
       aud: "authenticated",
@@ -35,8 +35,11 @@ async function create_user(
     },
     first_name,
     last_name,
+    email,
     ...other_fields,
   };
+
+
   if (type == UserType.Superadmin) {
     return await seed.superadmins([data]);
   } else if (type == UserType.Admin) {
@@ -104,18 +107,22 @@ async function reset_db() {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
+          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
         },
       },
       admins: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
+          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
         },
       },
       coaches: {
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
+          // Use the provided email if available, otherwise default to a generated one.
+          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
         },
       },
       events: {
@@ -186,6 +193,8 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
         data: {
           first_name: (ctx) => copycat.firstName(ctx.seed),
           last_name: (ctx) => copycat.lastName(ctx.seed),
+          // Use the provided email if available, otherwise default to a generated email.
+          email: (ctx) => ctx.data?.email || copycat.email(ctx.seed),
           grade: (ctx) =>
             "Grade " + copycat.int(ctx.seed, { min: 6, max: 12 }).toString(),
         },
