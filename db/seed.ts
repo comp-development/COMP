@@ -39,7 +39,6 @@ async function create_user(
     ...other_fields,
   };
 
-
   if (type == UserType.Superadmin) {
     return await seed.superadmins([data]);
   } else if (type == UserType.Admin) {
@@ -273,14 +272,32 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
   const debug_admin = seed.$store.admins[0];
   const debug_superadmin = seed.$store.superadmins[0];
 
-  let { students } = await seed.students((x) => x(30));
+  let { students } = await seed.students((x) =>
+    x(30, ({ seed }) => {
+      const email = copycat.email(seed);
+      return {
+        email,
+        users: {
+          email,
+        },
+      };
+    }),
+  );
   students.push(debug_student);
 
   const { superadmins } = await seed.superadmins((x) => x(10));
   superadmins.push(debug_superadmin);
   const { admins } = await seed.admins((x) => x(10));
   admins.push(debug_admin);
-  const { coaches } = await seed.coaches((x) => x(10));
+  const { coaches } = await seed.coaches((x) =>
+    x(10, ({ seed }) => {
+      const email = copycat.email(seed);
+      return {
+        email,
+        users: { email },
+      };
+    }),
+  );
   coaches.push(debug_coach);
   const { hosts } = await seed.hosts((x) => x(3));
 
