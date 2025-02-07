@@ -1,13 +1,14 @@
 import puppeteer from "puppeteer";
 import reset_db from "../db/seed.js";
-import setup_test from "./tests.js";
+import { setup_test, validate_student_team_constraints } from "./tests.js";
 
 await reset_db();
-await setup_test();
+const student = await setup_test();
+await validate_student_team_constraints(student);
 
 // Launch the browser and open a new blank page
 const browser = await puppeteer.launch({
-  headless: false,
+  headless: true,
 });
 const page = await browser.newPage();
 

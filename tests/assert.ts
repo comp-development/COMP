@@ -50,17 +50,46 @@ export function assert(
   }
 }
 
-export function assert_eq<T>(a: T, b: T, msg: string = "") {
+export function assert_eq<T>(a: T, b: T, msg: string = "", level: number = 1) {
   const a_json = JSON.stringify(a);
   const b_json = JSON.stringify(b);
-  const limit = 20;
+  const limit = 80;
   let a_trimmed =
-    a_json.length > limit ? a_json.substring(0, limit) + "..." : a_json;
+    a_json.length > limit ? a_json.substring(0, limit) + " ..." : a_json;
   let b_trimmed =
-    b_json.length > limit ? b_json.substring(0, limit) + "..." : b_json;
+    b_json.length > limit ? b_json.substring(0, limit) + " ..." : b_json;
   assert(
     a_json == b_json,
-    `${a_trimmed} and ${b_trimmed} are not equal. ` + msg,
-    2,
+    `\n\t${a_trimmed} and ${b_trimmed} are not equal. \n\t` + msg,
+    level + 1,
   );
+}
+
+type Diff<T, S> = T extends S ? never : T;
+type UnwrapData<T> = T extends { data: infer T | null } ? T : never;
+type UnwrapError<T> = T extends { error: infer T | null } ? T : never;
+
+// Unwrap a data value
+export function unwrap_data<
+  T,
+  E,
+  R extends { data: T | null; error: E | null },
+>(result: R): Diff<UnwrapData<R>, null | undefined> {
+  assert_eq(result.error, null, "Expected error to be null", 2);
+  assert(result.data != null, "Expected data to be non-null", 2);
+  assert(result.data != undefined, "Expected data to be non-undefined", 2);
+  return result.data as Diff<UnwrapData<R>, null | undefined>;
+}
+
+export function unwrap<E, R extends { error: E | null }>(result: R) {
+  assert_eq(result.error, null, "Expected error to be null", 2);
+  return;
+}
+
+// Unwrap an error value.
+export function unwrap_error<E, R extends { error: E | null }>(
+  result: R,
+): Diff<UnwrapError<R>, null | undefined> {
+  assert(result.error != null, "Expected error to be non-null", 2);
+  return result.error as Diff<UnwrapError<R>, undefined | null>;
 }
