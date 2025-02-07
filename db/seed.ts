@@ -130,6 +130,9 @@ async function reset_db() {
             copycat.words(ctx.seed, { min: 1, max: 2, capitalize: "all" }),
           ticket_price_cents: (ctx) =>
             copycat.int(ctx.seed, { min: 5, max: 20 }) * 100,
+          // See https://picsum.photos/ (image generator)
+          logo: (ctx) =>
+            `https://picsum.photos/seed/${copycat.word(ctx.seed)}/200`,
         },
       },
       hosts: {
@@ -309,8 +312,10 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
 
   const { events } = await seed.events(
     (x) =>
-      x(hosts.length * 4, () => ({
+      x(hosts.length * 4, ({ seed }) => ({
         tests: (x) => x(3),
+        // Make most published.
+        published: copycat.int(seed, { min: 0, max: 9 }) < 9,
       })),
     {
       connect: { hosts },
@@ -325,6 +330,9 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
   );
 
   for (const [i, event] of events.entries()) {
+    // No one could have joined if event weren't published.
+    if (!event.published) continue;
+
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(
       [1, orgs.length],
