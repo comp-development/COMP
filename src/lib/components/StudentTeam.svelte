@@ -1,28 +1,34 @@
 <script lang="ts">
-    import { PenSolid, TrashBinSolid, UserAddSolid } from "flowbite-svelte-icons";
+    import {
+        PenSolid,
+        TrashBinSolid,
+        UserAddSolid,
+    } from "flowbite-svelte-icons";
     import DraggableStudent from "./DraggableStudent.svelte";
     import CopyText from "./CopyText.svelte";
-    import ConfirmationModal from "./ConfirmationModal.svelte";
-    import {  updateStudentTeam } from "$lib/supabase";
+    import { updateStudentTeam } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
     import toast from "$lib/toast.svelte";
     import { Modal } from "flowbite-svelte";
     import TableName from "$lib/components/TableName.svelte";
+    import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
 
     let {
-        event_id, 
+        event_id,
         org_id,
         team,
         onDrop,
-        onDeleteTeam,
         onDragStart,
         onDeleteStudent,
         openEditModal,
         handleDragOver,
         handleDragLeave,
-        studentsWithoutTeams=$bindable(),
+        studentsWithoutTeams = $bindable(),
         maxTeamSize,
-        organizationDetails=$bindable()
+        handleDeleteTeam,
+        showDeleteTeamConfirmation = $bindable(),
+        deleteTeamId = $bindable(),
+        organizationDetails = $bindable(),
     } = $props();
 
     let isStudentModalOpen = $state(false);
@@ -45,10 +51,7 @@
                 return;
             }
 
-            if (
-                lastTeam.teamMembers.length >=
-                (maxTeamSize ?? 0)
-            ) {
+            if (lastTeam.teamMembers.length >= (maxTeamSize ?? 0)) {
                 toast.error(
                     "This team is already at maximum capacity. Add this student to another team.",
                 );
@@ -73,7 +76,7 @@
             organizationDetails.teams = updatedTeams;
 
             studentsWithoutTeams = studentsWithoutTeams.filter(
-                (s) => s.student_event_id !== student.student_event_id
+                (s) => s.student_event_id !== student.student_event_id,
             );
 
             toast.success(
@@ -86,8 +89,6 @@
             handleError(error);
         }
     }
-
-    let showDeleteTeamConfirmation = $state(false);
 </script>
 
 <div
@@ -119,6 +120,7 @@
                 on:click={(e) => {
                     e.preventDefault();
                     showDeleteTeamConfirmation = true;
+                    deleteTeamId = team.team_id;
                 }}
             >
                 <TrashBinSolid class="w-5 h-5" />
@@ -126,25 +128,10 @@
         </div>
     </div>
 
-    <ConfirmationModal
-        isShown={showDeleteTeamConfirmation}
-        actionName="delete this team"
-        onCancel={() => {
-            showDeleteTeamConfirmation = false;
-        }}
-        onConfirm={() => {
-            onDeleteTeam(team);
-        }}
-    />
-
     <CopyText text={team.join_code} />
 
     {#each team.teamMembers as team_member}
-        <DraggableStudent
-            {team_member}
-            {onDragStart}
-            onDeleteStudent={onDeleteStudent}
-        />
+        <DraggableStudent {team_member} {onDragStart} {onDeleteStudent} />
     {/each}
 
     <div
@@ -153,6 +140,16 @@
         <span class="text-xs font-bold p-0 m-0y">{team.front_id}</span>
     </div>
 </div>
+
+<ConfirmationModal
+    isShown={showDeleteTeamConfirmation}
+    actionName="delete this team"
+    onCancel={() => {
+        showDeleteTeamConfirmation = false;
+        deleteTeamId = false;
+    }}
+    onConfirm={handleDeleteTeam}
+/>
 
 <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
     <h3 class="text-xl font-medium text-gray-900 dark:text-white">
@@ -163,7 +160,7 @@
             actionType="select_student"
             items={studentsWithoutTeams}
             action={selectStudent}
-            org_id={org_id}
+            {org_id}
         />
     </div>
 </Modal>
@@ -176,5 +173,6 @@
         position: relative;
         text-align: left;
         transition: background-color 0.2s ease;
+        z-index: 2;
     }
 </style>

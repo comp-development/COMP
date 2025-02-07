@@ -1,32 +1,21 @@
-<script>
+<script lang="ts">
+    import { Modal, Button } from "flowbite-svelte";
+
     export let isShown = false;
     export let actionName = "this action";
     export let onCancel = () => {};
     export let onConfirm = () => {};
 </script>
 
-{#if isShown}
-    <div
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-    >
-        <div class="bg-white p-6 rounded-lg shadow-xl">
-            <h2 class="text-lg font-semibold mb-4">
-                Do you want to confirm "{actionName}"?
-            </h2>
-            <div class="flex justify-end space-x-4">
-                <button
-                    on:click={onCancel}
-                    class="px-4 py-2 text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
-                >
-                    Cancel
-                </button>
-                <button
-                    on:click={onConfirm}
-                    class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700"
-                >
-                    Confirm
-                </button>
-            </div>
+<Modal bind:open={isShown} size="sm" autoclose={false}>
+    <div class="text-center">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">
+            Do you want to confirm "{actionName}"?
+        </h3>
+        <br />
+        <div class="flex justify-center gap-4">
+            <Button color="alternative" on:click={onCancel}>Cancel</Button>
+            <Button color="green" on:click={onConfirm}>Confirm</Button>
         </div>
     </div>
-{/if}
+</Modal>

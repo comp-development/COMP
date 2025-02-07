@@ -12,6 +12,7 @@
         deleteStudentTeam,
         getHostInformation,
         getStudentsWithoutTeam,
+        removeStudentFromOrganization,
     } from "$lib/supabase";
     import { Button, Input, Label, Modal } from "flowbite-svelte";
     import type { Tables } from "../../../../../../db/database.types";
@@ -23,6 +24,8 @@
     import EventDisplay from "$lib/components/EventDisplay.svelte";
     import StudentTeam from "$lib/components/StudentTeam.svelte";
     import DraggableStudent from "$lib/components/DraggableStudent.svelte";
+    import TeamForm from "$lib/components/TeamForm.svelte";
+    import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
 
     let loading = $state(true);
     let coach: any = $state();
@@ -37,6 +40,9 @@
     let isModalOpen = $state(false);
     let teamName = $state("");
     let editingTeamId: number | null = $state(null);
+
+    let showDeleteTeamConfirmation = $state(false);
+    let deleteTeamId = $state(null);
 
     let host: any = $state();
     const host_id = parseInt($page.params.host_id);
@@ -81,7 +87,11 @@
 
             if (targetTeam === null) {
                 // Scenario A: Moving to unassigned category
-                await updateStudentTeam(draggedMember.student_event_id, null, org_id);
+                await updateStudentTeam(
+                    draggedMember.student_event_id,
+                    null,
+                    org_id,
+                );
 
                 // Remove from current team
                 organizationDetails = {
@@ -91,21 +101,29 @@
                             return {
                                 ...team,
                                 teamMembers: team.teamMembers.filter(
-                                    (member: any) => member.student_event_id !== draggedMember.student_event_id
-                                )
+                                    (member: any) =>
+                                        member.student_event_id !==
+                                        draggedMember.student_event_id,
+                                ),
                             };
                         }
                         return team;
-                    })
+                    }),
                 };
 
                 // Add to unassigned students
                 studentsWithoutTeams = [...studentsWithoutTeams, draggedMember];
-                
-                toast.success(`Moving ${draggedMember.person.first_name} to unassigned students`);
+
+                toast.success(
+                    `Moving ${draggedMember.person.first_name} to unassigned students`,
+                );
             } else if (sourceTeamId) {
                 // Scenario B: Moving between teams
-                await updateStudentTeam(draggedMember.student_event_id, targetTeam.team_id, org_id);
+                await updateStudentTeam(
+                    draggedMember.student_event_id,
+                    targetTeam.team_id,
+                    org_id,
+                );
 
                 organizationDetails = {
                     ...organizationDetails,
@@ -115,35 +133,46 @@
                             return {
                                 ...team,
                                 teamMembers: team.teamMembers.filter(
-                                    (member: any) => member.student_event_id !== draggedMember.student_event_id
-                                )
+                                    (member: any) =>
+                                        member.student_event_id !==
+                                        draggedMember.student_event_id,
+                                ),
                             };
                         }
                         if (team.team_id === targetTeam.team_id) {
                             // Add to target team
                             const updatedMember = {
                                 ...draggedMember,
-                                team_id: targetTeam.team_id
+                                team_id: targetTeam.team_id,
                             };
                             return {
                                 ...team,
-                                teamMembers: [...team.teamMembers, updatedMember]
+                                teamMembers: [
+                                    ...team.teamMembers,
+                                    updatedMember,
+                                ],
                             };
                         }
                         return team;
-                    })
+                    }),
                 };
 
                 toast.success(
-                    `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`
+                    `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`,
                 );
             } else {
                 // Scenario C: Moving from unassigned to team
-                await updateStudentTeam(draggedMember.student_event_id, targetTeam.team_id, org_id);
+                await updateStudentTeam(
+                    draggedMember.student_event_id,
+                    targetTeam.team_id,
+                    org_id,
+                );
 
                 // Remove from unassigned students
                 studentsWithoutTeams = studentsWithoutTeams.filter(
-                    (student) => student.student_event_id !== draggedMember.student_event_id
+                    (student) =>
+                        student.student_event_id !==
+                        draggedMember.student_event_id,
                 );
 
                 // Add to target team
@@ -153,19 +182,22 @@
                         if (team.team_id === targetTeam.team_id) {
                             const updatedMember = {
                                 ...draggedMember,
-                                team_id: targetTeam.team_id
+                                team_id: targetTeam.team_id,
                             };
                             return {
                                 ...team,
-                                teamMembers: [...team.teamMembers, updatedMember]
+                                teamMembers: [
+                                    ...team.teamMembers,
+                                    updatedMember,
+                                ],
                             };
                         }
                         return team;
-                    })
+                    }),
                 };
 
                 toast.success(
-                    `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`
+                    `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`,
                 );
             }
         } catch (e) {
@@ -203,22 +235,8 @@
         }
     }
 
-    async function handleChangeTeam() {
+    async function handleChangeTeam(newTeamData) {
         try {
-            let newTeamData;
-
-            if (!editingTeamId) {
-                newTeamData = await upsertTeam(event_id, {
-                    team_name: teamName,
-                    org_id,
-                });
-            } else {
-                newTeamData = await upsertTeam(event_id, {
-                    team_id: editingTeamId,
-                    team_name: teamName,
-                });
-            }
-
             let newOrganizationDetails = { ...organizationDetails };
 
             if (editingTeamId) {
@@ -226,8 +244,8 @@
                 newOrganizationDetails = {
                     ...newOrganizationDetails,
                     teams: newOrganizationDetails.teams.map((team) => {
-                        if (team.team_id === editingTeamId) {
-                            return { ...team, team_name: teamName };
+                        if (team.team_id === newTeamData.team_id) {
+                            return { ...team, team_name: newTeamData.team_name };
                         }
                         return team;
                     }),
@@ -259,15 +277,47 @@
         }
     }
 
-    async function handleDeleteTeam(team) {
+    async function handleDeletingStudent(student) {
         try {
-            await deleteTeam(team);
+            await removeStudentFromOrganization(student.student_event_id);
 
-            organizationDetails.teams.filter(
-                (t: any) => t.team_id !== team.team_id,
+            studentsWithoutTeams = studentsWithoutTeams.filter(
+                (s) => s.student_event_id !== student.student_event_id,
             );
 
+            toast.success(
+                `${student.person.first_name} has been removed from the organization`,
+            );
+        } catch (e) {
+            handleError(e);
+        }
+    }
+
+    async function handleDeleteTeam() {
+        try {
+            const teamToDelete = organizationDetails.teams.find(
+                (t) => t.team_id === deleteTeamId
+            );
+
+            if (teamToDelete?.teamMembers && teamToDelete.teamMembers.length > 0) {
+                studentsWithoutTeams = [
+                    ...studentsWithoutTeams,
+                    ...teamToDelete.teamMembers
+                ];
+            }
+
+            await deleteTeam(deleteTeamId);
+
+            organizationDetails = {
+                ...organizationDetails,
+                teams: organizationDetails.teams.filter(
+                    (t: any) => t.team_id !== deleteTeamId
+                )
+            };
+
             toast.success("Team deleted successfully");
+            showDeleteTeamConfirmation = false;
+            deleteTeamId = null;
         } catch (error) {
             handleError(error);
         }
@@ -310,7 +360,9 @@
     <EventDisplay
         name={event_details?.event_name}
         date={event_details?.event_date}
-        logo={event_details?.logo && event_details?.logo != "" ? event_details?.logo : host.logo}
+        logo={event_details?.logo && event_details?.logo != ""
+            ? event_details?.logo
+            : host.logo}
         email={event_details?.email ?? host.email}
         markdown={event_details?.markdown}
     />
@@ -337,64 +389,41 @@
                             {org_id}
                             {team}
                             onDrop={handleDrop}
-                            onDeleteTeam={handleDeleteTeam}
                             onDragStart={handleDragStart}
                             onDeleteStudent={handleDeleteStudentTeam}
                             {openEditModal}
+                            {handleDeleteTeam}
                             {handleDragOver}
                             {handleDragLeave}
                             maxTeamSize={event_details?.max_team_size}
                             bind:organizationDetails
                             bind:studentsWithoutTeams
+                            bind:showDeleteTeamConfirmation
+                            bind:deleteTeamId
                         />
                     {/each}
                 </div>
-                <div 
+                <div
                     class="unassigned-students"
                     ondragover={handleDragOver}
                     ondragleave={handleDragLeave}
                     ondrop={(e) => handleDrop(e, null)}
                 >
-                    <h3 class="text-xl font-semibold mb-4">Unassigned Students</h3>
+                    <h3 class="text-xl font-semibold mb-4">
+                        Unassigned Students
+                    </h3>
                     {#each studentsWithoutTeams as student}
                         <DraggableStudent
                             team_member={student}
                             onDragStart={handleDragStart}
-                            onDeleteStudent={() => { /*To be implemented - remove student from organization*/ }}
+                            onDeleteStudent={() => {
+                                handleDeletingStudent(student);
+                            }}
                         />
                     {/each}
                 </div>
             </div>
         </div>
-
-        <Modal bind:open={isModalOpen} size="md" autoclose={false}>
-            <form class="flex flex-col space-y-6" onsubmit={handleChangeTeam}>
-                <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-                    {editingTeamId ? "Edit Team" : "Add a New Team"}
-                </h3>
-                <Label class="space-y-2">
-                    <span>Name</span>
-                    <Input
-                        type="text"
-                        bind:value={teamName}
-                        placeholder="Enter team name"
-                        required
-                    />
-                </Label>
-                <div class="flex justify-end space-x-4">
-                    <Button
-                        color="gray"
-                        outline
-                        on:click={() => (isModalOpen = false)}
-                    >
-                        Cancel
-                    </Button>
-                    <Button type="submit" class="w-full">
-                        {editingTeamId ? "Save Changes" : "Submit"}
-                    </Button>
-                </div>
-            </form>
-        </Modal>
     {:else}
         <OrgForm
             title="Registration Form"
@@ -404,6 +433,27 @@
         />
     {/if}
 {/if}
+
+<div class="modalExterior">
+    <Modal bind:open={isModalOpen} size="md" autoclose={false}>
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+            {editingTeamId ? "Edit Team" : "Add a New Team"}
+        </h3>
+        <TeamForm
+            title=""
+            {event_id}
+            {org_id}
+            team={editingTeamId
+                ? organizationDetails.teams.find(
+                      (t) => t.team_id === editingTeamId,
+                  )
+                : null}
+            afterSubmit={async (team) => {
+                await handleChangeTeam(team);
+            }}
+        />
+    </Modal>
+</div>
 
 <style>
     .organization {
@@ -421,6 +471,7 @@
     .teams-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-auto-rows: min-content;
         gap: 20px;
     }
 

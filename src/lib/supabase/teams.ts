@@ -115,18 +115,18 @@ export async function getStudentsWithoutTeam(event_id: number, org_id: number) {
   return data;
 }
 
-export async function deleteTeam(team) {
+export async function deleteTeam(team_id: number) {
   // Delete the team record
   const { error: deleteError } = await supabase
     .from("teams")
     .delete()
-    .eq("team_id", team.team_id);
+    .eq("team_id", team_id);
   if (deleteError) throw deleteError;
 
   // Update all team members in a single query
   const { error: updateError } = await supabase
     .from("student_events")
     .update({ team_id: null })
-    .eq("team_id", team.team_id);
+    .eq("team_id", team_id);
   if (updateError) throw updateError;
 }

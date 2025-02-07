@@ -2,12 +2,8 @@
     import { Badge, Modal } from "flowbite-svelte";
     import { PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
     import StudentForm from "./StudentForm.svelte";
-    
-    const {
-        team_member,
-        onDragStart,
-        onDeleteStudent
-    } = $props();
+
+    const { team_member, onDragStart, onDeleteStudent } = $props();
 
     let isEditModalOpen = $state(false);
 
@@ -35,8 +31,11 @@
                     {team_member.person.first_name}
                     {team_member.person.last_name}
                 </p>
-                <p class="text-sm text-gray-600">
-                    {team_member.person.email ?? "email to be inserted"}
+                <p
+                    class="text-sm text-gray-600"
+                    style="overflow-wrap: anywhere;"
+                >
+                    {team_member.person.email ?? "No associated email."}
                 </p>
             </div>
         </div>
@@ -62,13 +61,15 @@
 
 <div class="modalExterior">
     <Modal bind:open={isEditModalOpen} size="md" autoclose={false}>
-        <h3 class="text-xl font-medium text-gray-900 dark:text-white">Edit Student</h3>
-            <StudentForm
-                title=""
-                student_event={team_member}
-                user={team_member.person}
-                event_id={team_member.event_id}
-            />
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+            Edit Student
+        </h3>
+        <StudentForm
+            title=""
+            student_event={team_member}
+            user={team_member.person}
+            event_id={team_member.event_id}
+        />
     </Modal>
 </div>
 
@@ -88,9 +89,5 @@
 
     .teamMember:hover {
         transform: scale(1.01);
-    }
-
-    :global(.modalExterior div) {
-        width: 100%;
     }
 </style>

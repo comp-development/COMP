@@ -1,22 +1,21 @@
 <script lang="ts">
     import { page } from "$app/stores";
-    import { redirect } from "@sveltejs/kit";
-    import { isEventPublished } from "$lib/supabase";
+    import { getHostInformation } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
 
-    const event_id = parseInt($page.params.event_id);
+    const host_id = parseInt($page.params.host_id);
     let loading = $state(true);
     let error = $state<string | null>(null);
 
     (async () => {
         try {
-            const published = await isEventPublished(event_id);
+            const host = await getHostInformation(host_id);
             
-            if (!published) {
-                error = "This event has not been published yet.";
+            if (!host) {
+                error = "This host organization doesn't exist.";
             }
         } catch (e) {
-            error = "Error checking event status. Please try again later.";
+            error = "Error checking host access. Please try again later.";
             console.error(e);
         } finally {
             console.log(error);

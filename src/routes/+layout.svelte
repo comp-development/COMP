@@ -224,6 +224,16 @@
 		margin-right: 5px;
 	}
 
+	:global(.modalExterior div) {
+        width: 100%;
+        z-index: 9999;
+    }
+
+    :global(.modalExterior) {
+        position: relative;
+        z-index: 9999;
+    }
+
 	/* Different grid types */
 	:global(.row) {
 		display: grid;

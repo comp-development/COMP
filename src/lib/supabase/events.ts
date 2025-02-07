@@ -282,7 +282,7 @@ export async function isEventPublished(event_id: number) {
     .select("published")
     .eq("event_id", event_id)
     .single();
-
   if (error) throw error;
+
   return data?.published ?? false;
 }

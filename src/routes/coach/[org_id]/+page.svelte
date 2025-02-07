@@ -5,7 +5,7 @@
     import {
         addCoachToOrganization,
         getAllCoachesOutsideOrg,
-        getAllHosts,
+        getAllPublicHosts,
         getOrganization,
         removeCoachFromOrganization,
     } from "$lib/supabase";
@@ -72,28 +72,13 @@
     }
 
     (async () => {
-        try {
-            organization = await getOrganization(org_id);
-        } catch (e) {
-            toast.error("Organization doesn't exist");
-            window.location.href = "/coach";
-            return;
-        }
+        organization = await getOrganization(org_id);
+        hosts = await getAllPublicHosts();
 
         initialResponses = {
             name: organization.name,
             address: organization.address,
         };
-
-        if (
-            !organization.coaches.some((coach) => coach.coach_id === $user?.id)
-        ) {
-            toast.error("You are not a part of this organization.");
-            window.location.href = "/coach";
-            return;
-        }
-
-        hosts = await getAllHosts();
 
         loading = false;
     })();
@@ -158,6 +143,8 @@
         />
     </div>
 {/if}
+<br />
+<br />
 
 <Modal bind:open={isCoachModalOpen} size="md" autoclose={false}>
     <h3 class="text-xl font-medium text-gray-900 dark:text-white">
@@ -196,10 +183,6 @@
     .tableMaxHeight {
         max-height: 500px;
         overflow-y: scroll;
-    }
-
-    :global(.modalExterior div) {
-        width: 100%;
     }
 
     :global(.center-text button) {

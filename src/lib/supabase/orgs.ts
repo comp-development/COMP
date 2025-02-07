@@ -90,7 +90,7 @@ export async function ifOrgEvent(event_id: number, org_id: number) {
         .select("*")
         .eq("event_id", event_id)
         .eq("org_id", org_id)
-        .single();
+        .maybeSingle();
     if (error) throw error;
 
     return data;
@@ -177,4 +177,15 @@ export async function addOrganization(org: {}, coachId: string) {
     if (orgCoachError) throw orgCoachError;
 
     return { org: orgData, orgCoach: orgCoachData };
+}
+
+export async function removeStudentFromOrganization(student_event_id: number) {
+    const { error } = await supabase
+        .from('student_events')
+        .update({ 
+            org_id: null,
+            team_id: null
+        })
+        .eq('student_event_id', student_event_id);
+    if (error) throw error;
 }
