@@ -87,11 +87,11 @@
 								id="switchScreen"
 								onclick={() => {
 									hasAccount = false;
-								}}>Sign-Up</button
+								}}><u>Sign-Up</u></button
 							>
 							<button size="lg" class="link" id="forgotPassword"
 								><a href="/password-reset" style="color: black;"
-									>Forgot Password</a
+									><u>Forgot Password</u></a
 								></button
 							>
 						</div>
@@ -118,11 +118,11 @@
 									hasAccount = true;
 								}}
 							>
-								Log-In
+								<u>Log-In</u>
 							</button>
 							<button size="lg" class="link" id="forgotPassword"
 								><a href="/password-reset" style="color: black;"
-									>Forgot Password</a
+									><u>Forgot Password</u></a
 								></button
 							>
 						</div>
