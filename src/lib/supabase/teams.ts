@@ -65,7 +65,7 @@ export async function updateStudentTeam(
       org_id: new_org_id
     })
     .eq("student_event_id", student_event_id)
-    .select("*, students(*)")
+    .select("*, person:students(*)")
     .single();
 
   if (error) throw error;
@@ -89,6 +89,7 @@ export async function upsertTeam(event_id: number, teamData?: {
   if (teamData?.team_id !== undefined) upsertData.team_id = teamData.team_id;
   if (teamData?.org_id !== undefined) upsertData.org_id = teamData.org_id;
   if (teamData?.team_name !== undefined) upsertData.team_name = teamData.team_name;
+  
   console.log("upsertData", upsertData);
   const { data, error } = await supabase
     .from("teams")
@@ -114,18 +115,18 @@ export async function getStudentsWithoutTeam(event_id: number, org_id: number) {
   return data;
 }
 
-export async function deleteTeam(team) {
+export async function deleteTeam(team_id: number) {
   // Delete the team record
   const { error: deleteError } = await supabase
     .from("teams")
     .delete()
-    .eq("team_id", team.team_id);
+    .eq("team_id", team_id);
   if (deleteError) throw deleteError;
 
   // Update all team members in a single query
   const { error: updateError } = await supabase
     .from("student_events")
     .update({ team_id: null })
-    .eq("team_id", team.team_id);
+    .eq("team_id", team_id);
   if (updateError) throw updateError;
 }

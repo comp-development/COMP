@@ -9,12 +9,14 @@ export async function getAllEvents(select: string = "*") {
 
 export async function getHostEvents(
   host_id: number,
+  published: boolean = true,
   customSelect: string = "*",
 ) {
   const { data, error } = await supabase
     .from("events")
     .select(customSelect)
-    .eq("host_id", host_id);
+    .eq("host_id", host_id)
+    .eq("published", published);
   if (error) throw error;
   return data;
 }
@@ -58,7 +60,7 @@ export async function getEventCustomFields(
     .select("*, custom_fields(*)") // join the custom_fields table using the foreign key
     .eq("event_id", event_id)
     .order("ordering");
-    //.eq("custom_fields.custom_field_table", custom_field_table);
+  //.eq("custom_fields.custom_field_table", custom_field_table);
 
   if (error) throw error;
   console.log("GET EVENT CUSTOM FIELDS", data);
@@ -86,15 +88,15 @@ export async function getCustomFieldResponses(
     custom_field_table === "students"
       ? "student_event_id"
       : custom_field_table === "teams"
-      ? "team_id"
-      : "org_event_id";
+        ? "team_id"
+        : "org_event_id";
 
   // Get the list of custom field IDs to fetch
   const eventCustomFieldIds = event_custom_fields.map((field: any) => field.event_custom_field_id);
-  
+
   // Declare customFieldValues outside the if block
   let customFieldValues = [];
-  
+
   // Fetch all relevant custom field values in one query
   if (table_id) {
     console.log("table_id", table_id)
@@ -109,7 +111,7 @@ export async function getCustomFieldResponses(
     }
     customFieldValues = data;
   }
-  
+
   console.log("customFieldValues", customFieldValues);
   // Create a mapping of custom_field_id to value for quick lookup
   const valueMap = (customFieldValues || []).reduce(
@@ -142,8 +144,8 @@ export async function upsertCustomFieldResponses(
     custom_field_table === "students"
       ? "student_event_id"
       : custom_field_table === "teams"
-      ? "team_id"
-      : "org_event_id";
+        ? "team_id"
+        : "org_event_id";
 
   // Prepare the data for upsert
   console.log("customFieldDict", custom_field_dict)
@@ -195,7 +197,7 @@ export async function upsertStudentEvent(
 
   const { data, error } = await supabase
     .from("student_events")
-    .upsert(upsertData, { 
+    .upsert(upsertData, {
       onConflict: 'student_id,event_id'  // Specify the unique constraint
     })
     .select("*, teams(*, student_events(*, students(*))), org_events(*)")
@@ -204,7 +206,7 @@ export async function upsertStudentEvent(
   console.log("upsertStudentEvent", data);
   return data;
 }
-	
+
 
 export async function getStudentTeams(student_id: string) {
   const { data, error } = await supabase
@@ -234,12 +236,13 @@ export async function getStudentHostEvents(student_id: string, host_id: number) 
   return data;
 }
 
-export async function getCoachHostEvents(coach_id: string, host_id: number, org_id: number) {
+export async function getCoachHostEvents(coach_id: string, host_id: number, org_id: number, published: boolean = true) {
   const { data: orgEventsData, error: orgEventsError } = await supabase
     .from("org_events")
     .select("event:events!inner(*)")
     .eq("org_id", org_id)
-    .eq("event.host_id", host_id);
+    .eq("event.host_id", host_id)
+    .eq("event.published", published);
   if (orgEventsError) throw orgEventsError;
 
   return orgEventsData;
@@ -273,4 +276,13 @@ export async function getStudentTicketOrder(
   return data;
 }
 
+export async function isEventPublished(event_id: number) {
+  const { data, error } = await supabase
+    .from("events")
+    .select("published")
+    .eq("event_id", event_id)
+    .single();
+  if (error) throw error;
 
+  return data?.published ?? false;
+}

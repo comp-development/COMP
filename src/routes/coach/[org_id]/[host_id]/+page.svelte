@@ -8,7 +8,7 @@
 		getHostEvents,
 		getCoachHostEvents,
 	} from "$lib/supabase";
-    import EventDisplay from "$lib/components/EventDisplay.svelte";
+	import EventDisplay from "$lib/components/EventDisplay.svelte";
 
 	let my_events: {
 		event_id: string;
@@ -43,7 +43,9 @@
 			my_event_ids.add(e.event_id.toString());
 		}
 
-		all_events = (await getHostEvents(host_id)) as any;
+		all_events = (await getHostEvents(host_id)).filter(
+			(event) => !my_event_ids.has(event.event_id.toString()),
+		);
 
 		loading = false;
 	})();
@@ -52,7 +54,12 @@
 {#if loading}
 	<Loading />
 {:else}
-	<EventDisplay name={host?.host_name} logo={host?.logo} email={host?.email} markdown={host?.summary} />
+	<EventDisplay
+		name={host?.host_name}
+		logo={host?.logo}
+		email={host?.email}
+		markdown={host?.summary}
+	/>
 
 	<h2 style="text-align: center;">My Events</h2>
 	<br />
@@ -116,5 +123,8 @@
 			</div>
 		{/each}
 	</div>
+	{#if all_events.length == 0}
+		<p style="text-align: center;">No events found</p>
+	{/if}
 	<br />
 {/if}
