@@ -15,6 +15,7 @@
     import toast from "$lib/toast.svelte";
     import TableName from "$lib/components/TableName.svelte";
     import CreateOrgForm from "$lib/components/CreateOrgForm.svelte";
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
 
     let loading = $state(true);
     const org_id = parseInt($page.params.org_id);
@@ -101,16 +102,20 @@
             }}
         >
             <PenSolid class="w-4 h-4 me-2" />
-            Edit
+            Edit Organizations
         </Button>
-        <Button outline pill color="primary" onclick={openStudentModal}>
+        <!--<Button outline pill color="primary" onclick={openStudentModal}>
             <CirclePlusSolid class="w-4 h-4 me-2" />
             Add Coach
-        </Button>
+        </Button>-->
     </ButtonGroup>
     <br /><br />
 
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">Hosts</h3>
+    <h3 class="text-xl font-medium text-gray-900 dark:text-white flex">
+        <InfoToolTip
+            text="Hosts are the people who organize the events. The hosts below have events you are registered or can register for"
+        />Hosts
+    </h3>
     <br />
     <div class="buttonContainer">
         {#each hosts as host}
@@ -118,7 +123,9 @@
                 <div class="problemContainer">
                     <div style="align-items: left">
                         <h4>{host.host_name}</h4>
-                        <p style="overflow-wrap: anywhere;"><a href={`mailto:${host.email}`}>{host.email}</a></p>
+                        <p style="overflow-wrap: anywhere;">
+                            <a href={`mailto:${host.email}`}>{host.email}</a>
+                        </p>
                     </div>
                     <br />
                     <div>
@@ -146,8 +153,6 @@
         />
     </div>-->
 {/if}
-<br />
-<br />
 
 <Modal bind:open={isCoachModalOpen} size="md" autoclose={false}>
     <h3 class="text-xl font-medium text-gray-900 dark:text-white">

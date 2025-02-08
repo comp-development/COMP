@@ -4,6 +4,7 @@
 	import Loading from "$lib/components/Loading.svelte";
     import { handleError } from "$lib/handleError";
     import { Button } from "flowbite-svelte";
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
 
 	let student: any = $state();
 	let hosts = $state([]);
@@ -27,7 +28,11 @@
 	<h1>Welcome, {student.first_name} {student.last_name}</h1>
 	<h2 style="font-weight: 500">{$user?.email}</h2>
 	<br /><br />
-	<h3 class="text-xl font-medium text-gray-900 dark:text-white">Hosts</h3>
+	<h3 class="text-xl font-medium text-gray-900 dark:text-white flex">
+        <InfoToolTip
+            text="Hosts are the people who organize the events. The hosts below have events you are registered or can register for"
+        />Hosts
+    </h3>
     <br />
     <div class="buttonContainer">
         {#each hosts as host}

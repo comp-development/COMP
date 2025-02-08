@@ -9,8 +9,15 @@
         Textarea,
         Radio,
         Checkbox,
+        ButtonGroup,
+        InputAddon,
     } from "flowbite-svelte";
-    import { EnvelopeSolid, PhoneSolid } from "flowbite-svelte-icons";
+    import {
+        EnvelopeSolid,
+        EyeOutline,
+        EyeSlashOutline,
+        PhoneSolid,
+    } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
 
     let {
@@ -24,12 +31,12 @@
     } = $props();
 
     let initialResponses = $state({});
+    let show = $state(false);
 
     $effect(() => {
         for (var field of [...fields, ...custom_fields]) {
             const key = field.event_custom_field_id ?? field.name;
-            initialResponses[key] =
-                field?.value;
+            initialResponses[key] = field?.value;
             newResponses[key] = field?.value;
         }
     });
@@ -57,13 +64,15 @@
             if (field.required) {
                 if (field.custom_field_type === "checkboxes") {
                     if (!newResponses[key] || newResponses[key].length === 0) {
-                        validationErrors[key] = `Please select at least one option for "${field.label}"`;
+                        validationErrors[key] =
+                            `Please select at least one option for "${field.label}"`;
                     } else {
                         validationErrors[key] = null;
                     }
                 } else if (field.custom_field_type === "multiple_choice") {
                     if (!newResponses[key]) {
-                        validationErrors[key] = `Please select an option for "${field.label}"`;
+                        validationErrors[key] =
+                            `Please select an option for "${field.label}"`;
                     } else {
                         validationErrors[key] = null;
                     }
@@ -71,7 +80,7 @@
             }
         }
 
-        return !Object.values(validationErrors).some(error => error !== null);
+        return !Object.values(validationErrors).some((error) => error !== null);
     }
 
     async function handleFormSubmit(event) {
@@ -84,17 +93,21 @@
     }
 
     function handleCheckboxChange(key, value) {
-        let selectedValues = (newResponses[key] || "").split(",").map(v => v.trim()).filter(v => v);
-        
+        let selectedValues = (newResponses[key] || "")
+            .split(",")
+            .map((v) => v.trim())
+            .filter((v) => v);
+
         if (selectedValues.includes(value)) {
-            selectedValues = selectedValues.filter(v => v !== value);
+            selectedValues = selectedValues.filter((v) => v !== value);
         } else {
             selectedValues.push(value);
         }
 
-        newResponses[key] = selectedValues.length === 1 
-            ? selectedValues[0] 
-            : selectedValues.join(", ");
+        newResponses[key] =
+            selectedValues.length === 1
+                ? selectedValues[0]
+                : selectedValues.join(", ");
     }
 </script>
 
@@ -111,9 +124,7 @@
                     <Label
                         for={key}
                         class="block mb-2"
-                        color={validationErrors[key]
-                            ? "red"
-                            : "base"}
+                        color={validationErrors[key] ? "red" : "base"}
                     >
                         {field.label}
                         {#if field.required}
@@ -154,7 +165,6 @@
                                     typePatterns.date,
                                 )}
                         />
-                    
                     {:else if field.custom_field_type === "email"}
                         <Input
                             type="email"
@@ -194,6 +204,24 @@
                                 class="w-5 h-5 text-gray-500 dark:text-gray-400"
                             />
                         </Input>
+                    {:else if field.custom_field_type === "password"}
+                        <ButtonGroup class="w-full">
+                            <Input
+                                id="show-password1"
+                                bind:value={newResponses[key]}
+                                type={show ? "text" : "password"}
+                                placeholder="Password"
+                            />
+                            <InputAddon>
+                                <button onclick={() => (show = !show)}>
+                                    {#if show}
+                                        <EyeOutline class="w-4 h-4" />
+                                    {:else}
+                                        <EyeSlashOutline class="w-4 h-4" />
+                                    {/if}
+                                </button>
+                            </InputAddon>
+                        </ButtonGroup>
                     {:else if field.custom_field_type === "multiple_choice"}
                         {#each field.choices as choice}
                             <div style="display: flex; align-items: left">
@@ -208,8 +236,11 @@
                         {#each field.choices as choice}
                             <div style="display: flex; align-items: left">
                                 <Checkbox
-                                    checked={(newResponses[key] || "").split(",").includes(choice)}
-                                    on:change={() => handleCheckboxChange(key, choice)}
+                                    checked={(newResponses[key] || "")
+                                        .split(",")
+                                        .includes(choice)}
+                                    on:change={() =>
+                                        handleCheckboxChange(key, choice)}
                                 >
                                     {choice}
                                 </Checkbox>
@@ -233,7 +264,9 @@
                             placeholder={field.placeholder}
                             color={validationErrors[key] ? "red" : "base"}
                             on:blur={() => {
-                                newResponses[key] = newResponses[key] ? newResponses[key].trim() : newResponses[key];
+                                newResponses[key] = newResponses[key]
+                                    ? newResponses[key].trim()
+                                    : newResponses[key];
                                 validateInput(
                                     key,
                                     newResponses[key],
