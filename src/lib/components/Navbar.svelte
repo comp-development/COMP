@@ -131,8 +131,7 @@
                     <BuildingSolid
                         class="h-6 text-primary-800 dark:text-white inline"
                     />
-                    {#if selectedOrg}{selectedOrg.name}{:else}Choose
-                        Organization{/if}
+                    {#if selectedOrg}{selectedOrg.name}{:else}Choose Organization{/if}
                     <ChevronDownOutline
                         class="w-6 h-6 m-0 p-0 text-primary-800 dark:text-white inline"
                     />

@@ -136,7 +136,7 @@
         <p class="text-center">No hosts with public events found</p>
     {/if}
 
-    <br /><br />
+    <!--<br /><br />
     <h3 class="text-xl font-medium text-gray-900 dark:text-white">Coaches</h3>
     <div class="tableMax">
         <TableName
@@ -144,7 +144,7 @@
             items={organization.coaches}
             action={handleDeleteCoach}
         />
-    </div>
+    </div>-->
 {/if}
 <br />
 <br />

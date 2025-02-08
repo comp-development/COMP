@@ -2,7 +2,6 @@
   import { page } from "$app/stores";
   import { Button, Badge, Tabs, TabItem } from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
-  import TeamForm from "$lib/components/TeamForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { Alert } from "flowbite-svelte";
   import { InfoCircleSolid } from "flowbite-svelte-icons";
@@ -27,6 +26,9 @@
   let student_event: StudentEvent = $state(null);
   let event_details: Tables<"events"> | null = $state(null);
   import CustomForm from "$lib/components/CustomForm.svelte";
+  import EventDisplay from "$lib/components/EventDisplay.svelte";
+  import CopyText from "$lib/components/CopyText.svelte";
+  import StudentTeam from "$lib/components/StudentTeam.svelte";
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
@@ -38,7 +40,8 @@
   let teamJoinFormErrors: any = $state({});
   let orgJoinFormResponses: any = $state({});
   let orgJoinFormErrors: any = $state({});
-  let selectedOption: "join_org" | "join_team" | "create_team" = $state("join_org");
+  let selectedOption: "join_org" | "join_team" | "create_team" =
+    $state("join_org");
 
   const afterTeamSubmit = async () => {
     // If this callback is called, then the student must've been in the event => student_event is non-null.
@@ -145,10 +148,15 @@
 {#if loading}
   <Loading />
 {:else}
-  <br />
-  <h1>{event_details?.event_name}</h1>
-  <h2 style="font-weight: 500">{event_details?.event_date}</h2>
-  <!-- Add something about cost per student Here -->
+  <EventDisplay
+    name={event_details?.event_name}
+    date={event_details?.event_date}
+    logo={event_details?.logo && event_details?.logo != ""
+      ? event_details?.logo
+      : host.logo}
+    email={event_details?.email ?? host.email}
+    markdown={event_details?.markdown}
+  />
   {#if !student_event}
     {#if transaction_stored}
       <p>
@@ -159,53 +167,16 @@
     {/if}
   {/if}
 
-  <!-- Additional conditions for team and org information -->
   {#if student_event}
-    <!-- EESHA PLEASE HELP
-     MAKE THIS PRETTIER
-     MAKE IT MATCH THE WAY YOU SET UP ORGS
-     IF !org_event, make it so the student can edit the team with a popup modal
-     Thank you <3
-    -->
     {#if team || org_event}
       <div class="team_info">
-        <p style="font-weight: bold; font-size: 20px; align-items: left">
-          {#if team?.front_id}
-            <Badge color={"green"}>
-              {team.front_id}
-            </Badge>&nbsp
-          {/if}
-          {team?.team_name}
-        </p>
-        <p style="font-weight: bold; font-size: 16px; align-items: left">
-          {#if org_event}
-            {org_event.org.name}
-          {:else}
-            Join Code: {team?.join_code}
-          {/if}
-        </p>
-        {#each team?.student_event ?? [] as teamMember}
-          <!--EESHA PLEASE MAKE THIS PRETTIER I BEG YOU TYY-->
-          <div style="display: flex; align-items: center;">
-            {#if teamMember.front_id}
-              <Badge
-                color={teamMember.student_id == $user?.id ? "green" : "dark"}
-                >{teamMember.front_id}</Badge
-              >&nbsp
-            {/if}
-            <div style="display:flex">
-              <p>
-                {teamMember.student.first_name}
-                {teamMember.student.last_name}
-              </p>
-              <!-- email field does not exist
-              <p style="margin-left: 10px">
-                <em>{teamMember.student.email}</em>
-              </p>
-              -->
-            </div>
-          </div>
-        {/each}
+        {#if org_event}
+          <h2>{org_event.org.name}</h2>
+          <br />
+        {:else}
+          <CopyText text={team?.join_code} />
+        {/if}
+
         {#if !team}
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
@@ -220,7 +191,30 @@
               pill>Take Tests</Button
             >
           </div>
+          <br />
         {/if}
+
+        <div class="teamContainer">
+          <StudentTeam
+            {event_id}
+            org_id={team?.org_id}
+            team={{
+              ...team,
+              teamMembers: team?.student_event?.map((member) => ({
+                ...member,
+                person: member.student,
+              })),
+            }}
+            editableFeatures={false}
+            onDrop={() => {}}
+            onDragStart={() => {}}
+            onDeleteStudent={() => {}}
+            openEditModal={() => {}}
+            handleDragOver={() => {}}
+            handleDragLeave={() => {}}
+            maxTeamSize={event_details?.max_team_size}
+          />
+        </div>
       </div>
     {:else}
       <div class="registrationForm">
@@ -292,7 +286,10 @@
             title="Create Independent Team"
           >
             <div class="flex">
-              <Button href={`/student/${$page.params.host_id}/${$page.params.event_id}/create-team`} pill>
+              <Button
+                href={`/student/${$page.params.host_id}/${$page.params.event_id}/create-team`}
+                pill
+              >
                 Create Team!
               </Button>
             </div>
@@ -312,8 +309,11 @@
     {/if}
     -->
   {/if}
+
+  <hr />
+
   <StudentForm
-    title={student_event ? "Update Information" : "Register"}
+    title={student_event ? "Update Registration" : "Register"}
     bind:student_event
     user={{ ...student, ...$user }}
     {event_id}
@@ -321,22 +321,17 @@
 {/if}
 
 <style>
-  h1 {
-    text-align: center;
-  }
-
   .team_info {
     padding: 10px;
     margin: 20px;
-    border: 2px solid var(--primary-light);
-    border-radius: 10px;
   }
 
-  form {
-    border: 3px solid var(--primary-tint);
-    padding: 20px;
+  :global([role="tabpanel"]) {
+    background-color: transparent;
+  }
+
+  .teamContainer {
     max-width: 800px;
     margin: 0 auto;
-    border-radius: 20px;
   }
 </style>

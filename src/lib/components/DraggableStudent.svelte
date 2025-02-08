@@ -3,7 +3,12 @@
     import { PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
     import StudentForm from "./StudentForm.svelte";
 
-    const { team_member, onDragStart, onDeleteStudent } = $props();
+    const {
+        team_member,
+        onDragStart,
+        onDeleteStudent,
+        editableFeatures = true,
+    } = $props();
 
     let isEditModalOpen = $state(false);
 
@@ -41,22 +46,24 @@
         </div>
     </div>
 
-    <div class="flex flex-col items-center space-y-1">
-        <button
-            class="hover:bg-blue-100 rounded-lg"
-            aria-label="Edit"
-            on:click={openEditModal}
-        >
-            <PenSolid class="w-5 h-5" />
-        </button>
-        <button
-            class="hover:bg-red-100 rounded-lg"
-            aria-label="Delete"
-            on:click={(event) => onDeleteStudent(event, team_member)}
-        >
-            <TrashBinSolid class="w-5 h-5" />
-        </button>
-    </div>
+    {#if editableFeatures}
+        <div class="flex flex-col items-center space-y-1">
+            <button
+                class="hover:bg-blue-100 rounded-lg"
+                aria-label="Edit"
+                on:click={openEditModal}
+            >
+                <PenSolid class="w-5 h-5" />
+            </button>
+            <button
+                class="hover:bg-red-100 rounded-lg"
+                aria-label="Delete"
+                on:click={(event) => onDeleteStudent(event, team_member)}
+            >
+                <TrashBinSolid class="w-5 h-5" />
+            </button>
+        </div>
+    {/if}
 </div>
 
 <div class="modalExterior">

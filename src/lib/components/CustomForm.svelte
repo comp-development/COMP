@@ -102,6 +102,7 @@
     {#if title}
         <h2>{title}</h2>
     {/if}
+    <br />
     <form onsubmit={handleFormSubmit}>
         {#each [...fields, ...custom_fields] as field}
             {@const key = field.event_custom_field_id ?? field.name}

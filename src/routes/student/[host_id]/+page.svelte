@@ -8,7 +8,8 @@
 		getHostEvents,
 		getStudentHostEvents,
 	} from "$lib/supabase";
-    import MarkdownRender from "$lib/components/MarkdownRender.svelte";
+	import MarkdownRender from "$lib/components/MarkdownRender.svelte";
+    import EventDisplay from "$lib/components/EventDisplay.svelte";
 
 	let my_events: {
 		event_id: string;
@@ -53,41 +54,12 @@
 {#if loading}
 	<Loading />
 {:else}
-	<div class="container mx-auto p-6 space-y-6">
-		<h2 class="text-2xl font-bold text-gray-800 text-center">
-			Welcome to...
-		</h2>
-		<h1 class="text-4xl font-extrabold text-center">{host?.host_name}</h1>
-
-		{#if host?.logo}
-			<div class="flex justify-center">
-				<img
-					src={host.logo}
-					alt="{host.host_name} logo"
-					class="w-32 h-32 rounded-full shadow-lg"
-				/>
-			</div>
-		{/if}
-
-		{#if host?.email}
-			<div class="text-center">
-				<p class="text-lg text-gray-600">Contact us at:</p>
-				<a
-					href="mailto:{host.email}"
-					class="text-lg text-blue-500 hover:underline"
-					>{host.email}</a
-				>
-			</div>
-		{/if}
-
-		{#if host?.summary}
-			<div class="summary">
-				<h2>Summary</h2>
-				<br />
-				<MarkdownRender source={host.summary} />
-			</div>
-		{/if}
-	</div>
+	<EventDisplay
+		name={host?.host_name}
+		logo={host?.logo}
+		email={host?.email}
+		markdown={host?.summary}
+	/>
 	<br />
 	<h2 style="text-align: center;">My Events</h2>
 	<br />
@@ -121,7 +93,6 @@
 	<br />
 	<h2 style="text-align: center;">Other Events</h2>
 	<br />
-
 	<div class="buttonContainer">
 		{#each all_events as event}
 			<div>
@@ -151,18 +122,21 @@
 			</div>
 		{/each}
 	</div>
+	{#if all_events.length == 0}
+		<p style="text-align: center;">No events found</p>
+	{/if}
 	<br />
 {/if}
 
 <style>
 	.container {
-        max-width: 768px;
-    }
+		max-width: 768px;
+	}
 
 	.summary {
-        border: 3px solid var(--primary-tint);
-        padding: 10px;
-        margin: 10px;
-        border-radius: 15px;
-    }
+		border: 3px solid var(--primary-tint);
+		padding: 10px;
+		margin: 10px;
+		border-radius: 15px;
+	}
 </style>

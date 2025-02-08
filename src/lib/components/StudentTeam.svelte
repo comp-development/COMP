@@ -22,6 +22,7 @@
         onDeleteStudent,
         openEditModal,
         handleDragOver,
+        editableFeatures = true,
         handleDragLeave,
         studentsWithoutTeams = $bindable(),
         maxTeamSize,
@@ -99,39 +100,48 @@
 >
     <div class="flex" style="justify-content: space-between">
         <h3>{team.team_name}</h3>
-        <div class="space-y-1">
-            <button
-                class="hover:bg-green-100 rounded-lg"
-                aria-label="Add Student"
-                on:click={() => openStudentModal(team.team_id)}
-            >
-                <UserAddSolid class="w-5 h-5" />
-            </button>
-            <button
-                class="hover:bg-blue-100 rounded-lg"
-                aria-label="Edit"
-                on:click={() => openEditModal(team)}
-            >
-                <PenSolid class="w-5 h-5" />
-            </button>
-            <button
-                class="hover:bg-red-100 rounded-lg"
-                aria-label="Delete"
-                on:click={(e) => {
-                    e.preventDefault();
-                    showDeleteTeamConfirmation = true;
-                    deleteTeamId = team.team_id;
-                }}
-            >
-                <TrashBinSolid class="w-5 h-5" />
-            </button>
-        </div>
+        {#if editableFeatures}
+            <div class="space-y-1">
+                <button
+                    class="hover:bg-green-100 rounded-lg"
+                    aria-label="Add Student"
+                    on:click={() => openStudentModal(team.team_id)}
+                >
+                    <UserAddSolid class="w-5 h-5" />
+                </button>
+                <button
+                    class="hover:bg-blue-100 rounded-lg"
+                    aria-label="Edit"
+                    on:click={() => openEditModal(team)}
+                >
+                    <PenSolid class="w-5 h-5" />
+                </button>
+                <button
+                    class="hover:bg-red-100 rounded-lg"
+                    aria-label="Delete"
+                    on:click={(e) => {
+                        e.preventDefault();
+                        showDeleteTeamConfirmation = true;
+                        deleteTeamId = team.team_id;
+                    }}
+                >
+                    <TrashBinSolid class="w-5 h-5" />
+                </button>
+            </div>
+        {/if}
     </div>
 
-    <CopyText text={team.join_code} />
+    {#if editableFeatures}
+        <CopyText text={team.join_code} />
+    {/if}
 
     {#each team.teamMembers as team_member}
-        <DraggableStudent {team_member} {onDragStart} {onDeleteStudent} />
+        <DraggableStudent
+            {team_member}
+            {onDragStart}
+            {onDeleteStudent}
+            {editableFeatures}
+        />
     {/each}
 
     <div
