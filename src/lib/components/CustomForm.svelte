@@ -88,7 +88,7 @@
 
         if (validateForm()) {
             await handleSubmit(event);
-            toast.success("Submitted!");
+            //toast.success("Submitted!");
         }
     }
 
