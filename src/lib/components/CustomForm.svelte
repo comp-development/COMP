@@ -88,7 +88,6 @@
 
         if (validateForm()) {
             await handleSubmit(event);
-            toast.success("Submitted!");
         }
     }
 
@@ -213,7 +212,7 @@
                                 placeholder="Password"
                             />
                             <InputAddon>
-                                <button onclick={() => (show = !show)}>
+                                <button type="button" onclick={() => (show = !show)}>
                                     {#if show}
                                         <EyeOutline class="w-4 h-4" />
                                     {:else}

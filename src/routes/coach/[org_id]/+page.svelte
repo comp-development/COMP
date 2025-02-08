@@ -112,9 +112,10 @@
     <br /><br />
 
     <h3 class="text-xl font-medium text-gray-900 dark:text-white flex">
+        Hosts
         <InfoToolTip
-            text="Hosts are the people who organize the events. The hosts below have events you are registered or can register for"
-        />Hosts
+            text="Hosts are the organizers of events. The hosts below have events that you can register for."
+        />
     </h3>
     <br />
     <div class="buttonContainer">

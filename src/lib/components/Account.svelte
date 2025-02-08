@@ -16,17 +16,21 @@
 
 	const handleLogin = async () => {
 		try {
+			console.log(newResponses)
+			const email = newResponses.email.trim();
+			const password = newResponses.password.trim();
 			if (
-				!newResponses.email ||
-				!newResponses.password ||
-				newResponses.email == "" ||
-				newResponses.password == ""
+				!email ||
+				!password ||
+				email == "" ||
+				password == ""
 			) {
+				console.log("error")
 				throw new Error("Not all of the fields are complete");
 			}
 			await signIntoAccount(
-				newResponses.email.trim(),
-				newResponses.password.trim(),
+				email,
+				password,
 			);
 		} catch (error) {
 			handleError(error);
@@ -117,30 +121,7 @@
 		},
 	];
 
-	const studentSignupFields = [
-		...commonSignupFields.slice(0, 2), // First Name and Last Name
-		{
-			name: "grade",
-			label: "Grade",
-			required: true,
-			editable: true,
-			hidden: false,
-			custom_field_type: "dropdown",
-			choices: [
-				"4th",
-				"5th",
-				"6th",
-				"7th",
-				"8th",
-				"9th",
-				"10th",
-				"11th",
-				"12th",
-			],
-			placeholder: "Select Grade",
-		},
-		...commonSignupFields.slice(2), // Email, Password, and RetypePassword
-	];
+	const studentSignupFields = commonSignupFields;
 
 	const coachSignupFields = commonSignupFields;
 </script>
