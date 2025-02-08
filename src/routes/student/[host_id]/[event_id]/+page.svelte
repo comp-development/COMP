@@ -309,9 +309,7 @@
     {/if}
     -->
   {/if}
-
   <hr />
-
   <StudentForm
     title={student_event ? "Update Registration" : "Register"}
     bind:student_event

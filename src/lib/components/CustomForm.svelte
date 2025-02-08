@@ -291,7 +291,7 @@
 
 <style>
     .registrationForm {
-        padding: 300px;
+        padding: 30px;
     }
 
     form {
