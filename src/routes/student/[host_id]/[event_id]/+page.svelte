@@ -153,8 +153,8 @@
     date={event_details?.event_date}
     logo={event_details?.logo && event_details?.logo != ""
       ? event_details?.logo
-      : host.logo}
-    email={event_details?.email ?? host.email}
+      : event_details.host.logo}
+    email={event_details?.email ?? event_details.host.email}
     markdown={event_details?.markdown}
   />
   {#if !student_event}

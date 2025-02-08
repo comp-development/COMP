@@ -24,7 +24,7 @@ export async function getHostEvents(
 export async function getEventInformation(event_id: number) {
   const { data, error } = await supabase
     .from("events")
-    .select("*")
+    .select("*, host:hosts(*)")
     .eq("event_id", event_id)
     .single();
   if (error) throw error;

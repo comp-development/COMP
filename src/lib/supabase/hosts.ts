@@ -15,6 +15,7 @@ export async function getAllPublicHosts(select: string = "*") {
     if (error) throw error;
 
     const uniqueHosts = [...new Map(data.map(host => [host.host_id, host])).values()];
+    console.log("UNIQUE HOSTS", uniqueHosts)
     return uniqueHosts;
 }
 

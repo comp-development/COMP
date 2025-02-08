@@ -38,7 +38,7 @@ export async function getTeamId(student_id: string, event_id: number) {
   try {
     // First, get the team_id for the given student_id
     const { data, error: studentTeamError } = await supabase
-      .from("student_teams")
+      .from("student_events")
       .select("team_id, teams!inner(*)")
       .eq("teams.event_id", event_id)
       .eq("student_id", student_id)

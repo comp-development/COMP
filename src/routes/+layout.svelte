@@ -66,18 +66,13 @@
 		<Toaster></Toaster>
 	</div>
 	{#if !loaded}
-		<Banner />
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
 	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores") && $page.route.id != "/password-reset"}
-		{#if hasAccount}
-			<Banner />
-			<br />
-			<div class="flex">
-				<div
-					style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
-				>
+		<div class="center-vertical">
+			{#if hasAccount}
+				<div style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;">
 					<Account logIn={true} />
 					<br />
 					<div class="flex">
@@ -86,27 +81,17 @@
 								size="lg"
 								class="link"
 								id="switchScreen"
-								onclick={() => {
+								on:click={() => {
 									hasAccount = false;
-								}}>Sign-Up</button
-							>
-							<button size="lg" class="link" id="forgotPassword"
-								><a href="/password-reset" style="color: black;"
-									>Forgot Password</a
-								></button
-							>
+								}}>Sign-Up</button>
+							<button size="lg" class="link" id="forgotPassword">
+								<a href="/password-reset" style="color: black;">Forgot Password</a>
+							</button>
 						</div>
 					</div>
 				</div>
-			</div>
-			<br />
-		{:else}
-			<Banner />
-			<br />
-			<div class="flex">
-				<div
-					style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
-				>
+			{:else}
+				<div style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;">
 					<Account logIn={false} />
 					<br />
 					<div class="flex">
@@ -115,26 +100,18 @@
 								size="lg"
 								class="link"
 								id="switchScreen"
-								onclick={() => {
+								on:click={() => {
 									hasAccount = true;
-								}}
-							>
-								Log-In
+								}}>Log-In</button>
+							<button size="lg" class="link" id="forgotPassword">
+								<a href="/password-reset" style="color: black;">Forgot Password</a>
 							</button>
-							<button size="lg" class="link" id="forgotPassword"
-								><a href="/password-reset" style="color: black;"
-									>Forgot Password</a
-								></button
-							>
 						</div>
 					</div>
 				</div>
-			</div>
-			<br /><br />
-		{/if}
+			{/if}
+		</div>
 	{:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores" && $page.route.id != "/password-reset"}
-		<Banner />
-		<br />
 		<div class="flex-dir-col">
 			<div class="verify-email">
 				<h2>Verify Your Email</h2>
@@ -152,7 +129,6 @@
 			{@render children?.()}
 		</div>
 	{/if}
-	<br /><br />
 </main>
 
 <style>
@@ -597,5 +573,12 @@
 		.bottomSection {
 			width: 80vw;
 		}
+	}
+
+	.center-vertical {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 100vh;
 	}
 </style>
