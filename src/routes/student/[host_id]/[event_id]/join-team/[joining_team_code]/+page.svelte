@@ -2,8 +2,8 @@
   import { page } from "$app/stores";
   import { supabase } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
-  import { Button } from 'flowbite-svelte';
-    
+  import { Button } from "flowbite-svelte";
+
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
   const join_code = $page.params.joining_team_code;
@@ -38,36 +38,35 @@
     } else {
       handleError(new Error(json.failure?.reason));
       failure = json.failure!;
+      if (failure.reason == "missing payment session") {
+        await purchase_ticket();
+      }
     }
 
     loading = false;
   })();
 
-  function purchase_ticket(options: {
-    creating_team?: boolean;
-    joining_team_code?: string;
-  }) {
-    return async () => {
-      let body = {
-        event_id,
-        token,
-        quantity: 1,
-        creating_team: options.creating_team ?? false,
-        joining_team_code: options.joining_team_code ?? null,
-        is_coach: false,
-      };
-      const response = await fetch("/api/purchase-ticket", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const text = await response.text();
-      if (response.ok) {
-        document.location.assign(text);
-      } else {
-        handleError(new Error(text));
-      }
+  async function purchase_ticket() {
+    let body = {
+      event_id,
+      host_id,
+      token,
+      quantity: 1,
+      creating_team: false,
+      joining_team_code: join_code,
+      is_coach: false,
     };
+    const response = await fetch("/api/purchase-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    if (response.ok) {
+      document.location.assign(text);
+    } else {
+      handleError(new Error(text));
+    }
   }
 
   // /student/[event_id]/join-team/[join_code] page
@@ -90,22 +89,22 @@
 {:else}
   <br />
   {#if failure?.reason == "payment not complete"}
-    <p>Payment was not started but not completed.</p>
-    <a href={failure?.stripe_url}
-      >Click here to complete payment.</a
-    >
+    <p>Payment was started but not completed.</p>
+    <a href={failure?.stripe_url}>Click here to complete payment.</a>
   {/if}
   {#if failure?.reason == "joined org, insufficient org tickets"}
     <p>
       Successfully joined organization, but unable to join team due to
       organization lacking tickets.
     </p>
+    <!-- trying to avoid people paying when they shouldn't
     <button
       onclick={purchase_ticket({
         creating_team: false,
         joining_team_code: join_code,
       })}>Purchase an individual ticket.</button
     >
+    -->
   {/if}
   {#if failure?.reason == "payment expired"}
     <p>

@@ -54,37 +54,6 @@
     student_event!.team = team!;
   };
 
-  const teamJoinSubmit = async (_: Event) => {
-    try {
-      team = await getTeamByJoinCode(
-        event_id,
-        teamJoinFormResponses.team_join_code.toUpperCase(),
-      );
-    } catch (e) {
-      const error = e as any;
-      if (error.code === "PGRST116") {
-        teamJoinFormErrors["team_join_code"] = "No team with code";
-        return;
-      } else {
-        error.message = `Error getting team: ${error.message}`;
-        handleError(error);
-      }
-    }
-    console.log("team", team);
-    if (team) {
-      await updateStudentTeam(
-        student_event!.student_event_id,
-        team.team_id,
-        team.org_id,
-      );
-      student_event!.team = team;
-    } else {
-      throw new Error(
-        "An unknown error has occurred. Please email the tournament organizers.",
-      );
-    }
-  };
-
   const orgJoinSubmit = async (_: Event) => {
     try {
       org_event = await getOrgEventByJoinCode(
@@ -264,6 +233,7 @@
                 {
                   event_custom_field_id: "team_join_code",
                   key: "team_join_code",
+                  name: "team_join_code",
                   label: "Team Join Code",
                   required: true,
                   regex: /^[A-Za-z0-9]{6}$/,
@@ -277,7 +247,7 @@
               custom_fields={[]}
               bind:newResponses={teamJoinFormResponses}
               bind:validationErrors={teamJoinFormErrors}
-              handleSubmit={teamJoinSubmit}
+              handleSubmit={() => document.location.assign(`/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`)}
             />
           </TabItem>
           <TabItem

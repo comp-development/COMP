@@ -37,7 +37,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     quantity = r("quantity");
     creating_team = r("creating_team");
     target_org_id = body.target_org_id;
-    joining_team_code = body.joining_team_id;
+    joining_team_code = body.joining_team_code;
   } catch (e: any) {
     return new Response("missing or malformed body: " + e.message, {
       status: 400,
@@ -126,11 +126,12 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     const redirect = creating_team
       ? `${request.url.origin}/student/${host_id}/${event_id}/create-team`
       : joining_team_code
-        ? `${request.url.origin}/student/${host_id}/${event_id}/join-team/${joining_team_code}`
+        ? `${request.url.origin}/student/${host_id}/${event_id}/join-team/${joining_team_code}`,
         : target_org_id
           ? `${request.url.origin}/coach/${target_org_id}/${host_id}/${event_id}`
           : // This case shouldn't be hit.
             (() => {
+              console.error("unexpected request state", body);
               throw Error("unexpected request state");
             })();
     const cancel_url =
