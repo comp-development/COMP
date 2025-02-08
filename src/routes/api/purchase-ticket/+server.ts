@@ -126,7 +126,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     const redirect = creating_team
       ? `${request.url.origin}/student/${host_id}/${event_id}/create-team`
       : joining_team_code
-        ? `${request.url.origin}/student/${host_id}/${event_id}/join-team/${joining_team_code}`,
+        ? `${request.url.origin}/student/${host_id}/${event_id}/join-team/${joining_team_code}`
         : target_org_id
           ? `${request.url.origin}/coach/${target_org_id}/${host_id}/${event_id}`
           : // This case shouldn't be hit.
