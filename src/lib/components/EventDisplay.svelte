@@ -38,16 +38,13 @@
             {/if}
         </div>
     </div>
-
-    <div>
-        <div class="summary">
-            {#if markdown}
+    {#if markdown}
+        <div class="flex">
+            <div class="summary">
                 <MarkdownRender source={markdown} />
-            {:else}
-                <p>No information yet.</p>
-            {/if}
+            </div>
         </div>
-    </div>
+    {/if}
 </div>
 
 <style>
@@ -57,10 +54,11 @@
         margin: 10px;
         margin-top: 0px;
         border-radius: 15px;
-        text-align: left;
+        text-align: center;
     }
 
     .grid {
+        
         grid-template-columns: 35% auto;
         column-gap: 40px;
         width: 100%;

@@ -169,7 +169,7 @@
                         <Input
                             type="email"
                             id={key}
-                            placeholder={field.placeholder}
+                            placeholder={field.placeholder ?? "handle@domain.com"}
                             bind:value={newResponses[key]}
                             required={field.required}
                             on:blur={() =>
@@ -188,10 +188,9 @@
                         <Input
                             id={key}
                             type="tel"
-                            placeholder={field.placeholder}
+                            placeholder={field.placeholder ?? "123-456-7890"}
                             bind:value={newResponses[key]}
                             required={field.required}
-                            pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}"
                             on:blur={() =>
                                 validateInput(
                                     key,

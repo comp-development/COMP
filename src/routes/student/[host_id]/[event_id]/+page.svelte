@@ -155,7 +155,7 @@
       ? event_details?.logo
       : event_details.host.logo}
     email={event_details?.email ?? event_details.host.email}
-    markdown={event_details?.markdown}
+    markdown={event_details?.summary}
   />
   {#if !student_event}
     {#if transaction_stored}
