@@ -142,6 +142,7 @@
 				bind:newResponses
 				bind:validationErrors
 				handleSubmit={handleLogin}
+				showBorder={false}
 			/>
 		</div>
 	{:else}
@@ -159,6 +160,7 @@
 							bind:newResponses
 							bind:validationErrors
 							handleSubmit={handleSignUp}
+							showBorder={false}
 						/>
 					</div>
 				</TabItem>
@@ -173,6 +175,7 @@
 							bind:newResponses
 							bind:validationErrors
 							handleSubmit={handleSignUp}
+							showBorder={false}
 						/>
 					</div>
 				</TabItem>

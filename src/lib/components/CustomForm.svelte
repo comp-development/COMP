@@ -24,7 +24,7 @@
         title = null,
         fields = [],
         custom_fields = [],
-
+        showBorder = true,
         validationErrors = $bindable({}),
         newResponses = $bindable({}),
         handleSubmit,
@@ -88,6 +88,7 @@
 
         if (validateForm()) {
             await handleSubmit(event);
+            toast.success("Submitted!");
         }
     }
 
@@ -115,7 +116,7 @@
         <h2>{title}</h2>
     {/if}
     <br />
-    <form onsubmit={handleFormSubmit}>
+    <form onsubmit={handleFormSubmit} class:bordered={showBorder}>
         {#each [...fields, ...custom_fields] as field}
             {@const key = field.event_custom_field_id ?? field.name}
             {#if !field.hidden}
@@ -290,14 +291,18 @@
 
 <style>
     .registrationForm {
-        padding: 30px;
+        padding: 300px;
     }
 
     form {
-        border: 3px solid var(--primary-tint);
         padding: 20px;
         max-width: 800px;
         margin: 0 auto;
         border-radius: 20px;
+    }
+
+    /* Only apply the border when showBorder is true */
+    form.bordered {
+        border: 3px solid var(--primary-tint);
     }
 </style>

@@ -82,9 +82,9 @@
 								id="switchScreen"
 								on:click={() => {
 									hasAccount = false;
-								}}>Sign-Up</button>
+								}}><u>Sign-Up</u></button>
 							<button size="lg" class="link" id="forgotPassword">
-								<a href="/password-reset" style="color: black;">Forgot Password</a>
+								<a href="/password-reset" style="color: black;"><u>Forgot Password</u></a>
 							</button>
 						</div>
 					</div>
@@ -101,9 +101,9 @@
 								id="switchScreen"
 								on:click={() => {
 									hasAccount = true;
-								}}>Log-In</button>
+								}}><u>Log-In</u></button>
 							<button size="lg" class="link" id="forgotPassword">
-								<a href="/password-reset" style="color: black;">Forgot Password</a>
+								<a href="/password-reset" style="color: black;"><u>Forgot Password</u></a>
 							</button>
 						</div>
 					</div>
