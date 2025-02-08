@@ -37,6 +37,7 @@
         for (var field of [...fields, ...custom_fields]) {
             const key = field.event_custom_field_id ?? field.name;
             initialResponses[key] = field?.value;
+            field.disabled = !field.editable && field?.value !== null;
             newResponses[key] = field?.value;
         }
     });
@@ -124,7 +125,7 @@
                     <Label
                         for={key}
                         class="block mb-2"
-                        color={validationErrors[key] ? "red" : "base"}
+                        color={validationErrors[key] ? "red" : field.disabled ? "disabled" : "base"}
                     >
                         {field.label}
                         {#if field.required}
@@ -140,8 +141,7 @@
                         <Select
                             class="mt-2"
                             required={field.required}
-                            disabled={!field.editable &&
-                                initialResponses[key] !== null}
+                            disabled={field.disabled}
                             items={[
                                 ...(field.required
                                     ? []
@@ -157,7 +157,7 @@
                         <Datepicker
                             bind:value={newResponses[key]}
                             required={field.required}
-                            disabled={!field.editable}
+                            disabled={field.disabled}
                             on:blur={() =>
                                 validateInput(
                                     key,
@@ -235,6 +235,7 @@
                         {#each field.choices as choice}
                             <div style="display: flex; align-items: left">
                                 <Checkbox
+                                    disabled={field.disabled}
                                     checked={(newResponses[key] || "")
                                         .split(",")
                                         .includes(choice)}
@@ -250,7 +251,7 @@
                             bind:value={newResponses[key]}
                             placeholder={field.placeholder}
                             required={field.required}
-                            disabled={!field.editable}
+                            disabled={field.disabled}
                             rows={5}
                         />
                     {:else}
@@ -259,7 +260,7 @@
                             bind:value={newResponses[key]}
                             type="text"
                             required={field.required}
-                            disabled={!field.editable}
+                            disabled={field.disabled}
                             placeholder={field.placeholder}
                             color={validationErrors[key] ? "red" : "base"}
                             on:blur={() => {

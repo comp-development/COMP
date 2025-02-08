@@ -123,6 +123,8 @@
 
     try {
       await upsertCustomFieldResponses(customFieldResponses, student_event.student_event_id, 'students');
+      toast.success("Submitted!");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       error.message = `Error saving student custom field responses: ${error.message}`
       handleError(error);
@@ -130,19 +132,6 @@
     }
     //document.location.reload();
     return
-    event.preventDefault();
-
-    if (selectedOption === "create_team") {
-      if (!transaction_stored) {
-        purchase_ticket({ creating_team: true });
-      } else {
-        /*LOGIC NEEDS TO BE IMPLEMENTED*/
-      }
-    } else if (selectedOption === "join_team") {
-      purchase_ticket({ joining_team_code: input_team_join_code });
-    } else if (selectedOption === "join_org") {
-      join_org();
-    }
   }
 
     (async () => {
