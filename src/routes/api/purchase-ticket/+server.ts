@@ -126,13 +126,17 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       : joining_team_code
         ? `${request.url.origin}/student/${host_id}/${event_id}/join-team/${joining_team_code}`
         : target_org_id
-          ? `${request.url.origin}/coach/${host_id}/${event_id}`
+          ? `${request.url.origin}/coach/${target_org_id}/${host_id}/${event_id}`
           : // This case shouldn't be hit.
             (() => {
               throw Error("unexpected request state");
             })();
     const cancel_url =
-      request.url.origin + (target_org_id ? "/coach/" : "/student/") + event_id;
+      request.url.origin +
+      (target_org_id
+        ? `/coach/${target_org_id}/${host_id}/`
+        : `/student/${host_id}/`) +
+      event_id;
     const session = await stripe.checkout.sessions.create({
       line_items: [
         {

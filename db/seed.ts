@@ -314,7 +314,7 @@ Check out our [official guide](https://math-tournament.example.com) for preparat
     (x) =>
       x(hosts.length * 4, ({ seed }) => ({
         tests: (x) => x(3),
-        // Make most published.
+        // Make most events published.
         published: copycat.int(seed, { min: 0, max: 9 }) < 9,
       })),
     {

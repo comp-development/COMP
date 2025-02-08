@@ -26,6 +26,8 @@
     import DraggableStudent from "$lib/components/DraggableStudent.svelte";
     import TeamForm from "$lib/components/TeamForm.svelte";
     import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+    import CustomForm from "$lib/components/CustomForm.svelte";
+    import { supabase } from "$lib/supabaseClient";
 
     let loading = $state(true);
     let coach: any = $state();
@@ -37,9 +39,13 @@
     let sourceTeamId: number | null = null;
 
     let studentsWithoutTeams = $state([]);
-    let isModalOpen = $state(false);
+    let isTeamModalOpen = $state(false);
     let teamName = $state("");
     let editingTeamId: number | null = $state(null);
+
+    let isPurchaseModalOpen = $state(false);
+    let ticketQuantity = $state(0);
+    let newResponses = $state({});
 
     let showDeleteTeamConfirmation = $state(false);
     let deleteTeamId = $state(null);
@@ -212,13 +218,17 @@
     function openEditModal(team: any) {
         teamName = team.team_name;
         editingTeamId = team.team_id;
-        isModalOpen = true;
+        isTeamModalOpen = true;
     }
 
     function openAddModal() {
         teamName = "";
         editingTeamId = null;
-        isModalOpen = true;
+        isTeamModalOpen = true;
+    }
+    function openPurchaseModal() {
+        ticketQuantity = 0;
+        isPurchaseModalOpen = true;
     }
 
     function handleDragOver(event: DragEvent) {
@@ -234,6 +244,37 @@
             event.currentTarget.style.backgroundColor = "";
         }
     }
+
+  async function purchase_ticket(quantity: number) {
+    console.log("bonjour")
+    const { data, error } = await supabase.auth.getSession();
+    if (error != null) {
+      handleError(error);
+    }
+    const token = data.session?.access_token ?? null;
+
+    let body = {
+      event_id,
+      token,
+      quantity,
+      creating_team: false,
+      joining_team_code: null,
+      target_org_id: org_id,
+      is_coach: true,
+      host_id,
+    };
+    const response = await fetch("/api/purchase-ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const text = await response.text();
+    if (response.ok) {
+      document.location.assign(text);
+    } else {
+      handleError(new Error(text));
+    }
+  }
 
     async function handleChangeTeam(newTeamData) {
         try {
@@ -269,7 +310,7 @@
             organizationDetails = newOrganizationDetails;
 
             // Close the modal and reset the input
-            isModalOpen = false;
+            isTeamModalOpen = false;
             teamName = "";
             editingTeamId = null;
         } catch (error) {
@@ -379,6 +420,10 @@
                     <UsersGroupSolid class="w-4 h-4 me-2" />
                     Add Team
                 </Button>
+                <Button pill outline color="primary" onclick={openPurchaseModal}>
+                    <UsersGroupSolid class="w-4 h-4 me-2" />
+                    Purchase Tickets
+                </Button>
             </div>
 
             <div class="grid-container">
@@ -435,7 +480,7 @@
 {/if}
 
 <div class="modalExterior">
-    <Modal bind:open={isModalOpen} size="md" autoclose={false}>
+    <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
         <h3 class="text-xl font-medium text-gray-900 dark:text-white">
             {editingTeamId ? "Edit Team" : "Add a New Team"}
         </h3>
@@ -450,6 +495,21 @@
                 : null}
             afterSubmit={async (team) => {
                 await handleChangeTeam(team);
+            }}
+        />
+    </Modal>
+</div>
+
+<div class="modalExterior">
+    <Modal bind:open={isPurchaseModalOpen} size="md" autoclose={false}>
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+            Purchase Tickets
+        </h3>
+        <CustomForm
+            fields={[{name: "quantity", label: "Quantity", required: true, regex: /^\d+$/, editable: true, value: 1}]}
+            bind:newResponses
+            handleSubmit={async (_: any) => {
+              await purchase_ticket((newResponses as any)["quantity"]);
             }}
         />
     </Modal>

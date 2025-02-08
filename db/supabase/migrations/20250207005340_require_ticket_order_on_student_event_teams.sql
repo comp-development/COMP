@@ -2,7 +2,7 @@ alter table "public"."ticket_orders" drop constraint "single_order_per_student_o
 
 drop index if exists "public"."single_order_per_student_or_org";
 
-CREATE UNIQUE INDEX single_order_per_student ON public.ticket_orders USING btree (event_id, student_id) NULLS NOT DISTINCT;
+CREATE UNIQUE INDEX single_order_per_student ON public.ticket_orders USING btree (event_id, student_id) NULLS DISTINCT;
 
 alter table "public"."ticket_orders" add constraint "single_order_per_student" UNIQUE using index "single_order_per_student";
 
