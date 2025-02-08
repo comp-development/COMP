@@ -110,7 +110,7 @@
     };
 </script>
 
-<div style="background-color: var(--primary-tint);">
+<div style="background-color: var(--primary-dark);">
     <Navbar rounded color="transparent">
         <NavBrand href="/">
             <img
@@ -239,7 +239,7 @@
                             </DropdownItem>
                         {/each}
                     </Dropdown>
-                    {#if eventId}
+                    {#if eventId && false}
                         <NavLi class="cursor-pointer {paths[3] === "tests" ? '' : 'non-active'}" href="/student/{hostId}/{eventId}/tests">Tests</NavLi>
                     {/if}
                 {/if}
@@ -325,8 +325,12 @@
     }
 
     .logo {
-        background-color: white;
+        background-color: black;
         border-radius: 50px;
     }
 
+    /* Override DropdownItem hover styles to use --primary-tint */
+    :global(.dropdown-item:hover) {
+         background-color: var(--primary-tint) !important;
+    }
 </style>

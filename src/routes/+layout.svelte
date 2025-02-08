@@ -32,7 +32,6 @@
 	onMount(async () => {
 		// Fetch style settings from the database
 		// Set CSS variables dynamically
-		scheme = await fetchSettings();
 		Object.entries(scheme.styles || {})
 			.concat(Object.entries(scheme.constants || {}))
 			.forEach(([key, value]) => {
