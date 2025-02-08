@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL!;
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
 
 // See https://github.com/orgs/supabase/discussions/21838.
 export type AsyncReturnType<T extends (...args: any) => Promise<any>> =

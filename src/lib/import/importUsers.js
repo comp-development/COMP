@@ -11,7 +11,7 @@ dotenv.config({ path: join(__dirname, '../../../.env') });
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

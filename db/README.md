@@ -19,7 +19,7 @@ Fill in the below variables in the `../.env` file using the output of `supabase 
 ```
 VITE_SUPABASE_URL= # API URL
 VITE_SUPABASE_ANON_KEY= # anon key
-VITE_SUPABASE_SERVICE_KEY= # service_role key
+SUPABASE_SERVICE_KEY= # service_role key
 ```
 
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.

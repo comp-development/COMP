@@ -49,7 +49,7 @@
                         await addCoach(user.id, newResponses);
                     }
 
-                    toast.success("Successfully signed up, check your email to confirm.");
+                    toast.success("Successfully signed up, check your email to confirm your account.");
                 } catch (error) {
                     throw error;
 				}
