@@ -1,7 +1,9 @@
-const stripeSecretKey = import.meta.env.VITE_STRIPE_SECRET_API_KEY;
 import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { Stripe } from "stripe";
 import { adminSupabase } from "$lib/adminSupabaseClient";
+import { env } from "$env/dynamic/private";
+
+const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;

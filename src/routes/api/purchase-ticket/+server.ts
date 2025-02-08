@@ -1,7 +1,6 @@
 // You may want to replace the above with a static private env variable
 // for dead-code elimination and build-time type-checking:
 
-const stripeSecretKey = import.meta.env.VITE_STRIPE_SECRET_API_KEY;
 import {
   redirect,
   type RequestEvent,
@@ -10,6 +9,9 @@ import {
 import { Stripe } from "stripe";
 import type { Tables } from "../../../../db/database.types";
 import { adminSupabase } from "$lib/adminSupabaseClient";
+import { env } from "$env/dynamic/private";
+
+const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
