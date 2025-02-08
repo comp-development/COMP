@@ -1,12 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../db/database.types";
+import { SUPABASE_SERVICE_KEY } from "$env/static/private";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-
 // Only for use in api routes.
 export const adminSupabase = createClient<Database>(
   supabaseUrl,
-  supabaseServiceKey!,
+  SUPABASE_SERVICE_KEY,
 );
