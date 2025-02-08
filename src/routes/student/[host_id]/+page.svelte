@@ -125,7 +125,6 @@
 	{#if all_events.length == 0}
 		<p style="text-align: center;">No events found</p>
 	{/if}
-	<br />
 {/if}
 
 <style>

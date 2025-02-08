@@ -8,11 +8,12 @@ import { supabase, type AsyncReturnType } from "../supabaseClient";
  * @param password string
  */
 export async function createAccount(email: string, password: string) {
-  const { user, session, error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: email,
     password: password,
   });
   if (error) throw error;
+  return data.user;
 }
 
 /**
@@ -47,6 +48,33 @@ export async function getThisUser() {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
+}
+
+export async function addStudent(user_id: string, data: any) {
+  const { error } = await supabase
+    .from('students')
+    .insert({
+      student_id: user_id,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      grade: data.grade,
+      email: data.email
+    });
+
+  if (error) throw error;
+}
+
+export async function addCoach(user_id: string, data: any) {
+  const { error } = await supabase
+    .from('coaches')
+    .insert({
+      coach_id: user_id,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      email: data.email
+    });
+
+  if (error) throw error;
 }
 
 /**

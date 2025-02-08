@@ -14,9 +14,9 @@
         getStudentsWithoutTeam,
         removeStudentFromOrganization,
     } from "$lib/supabase";
-    import { Button, Input, Label, Modal } from "flowbite-svelte";
+    import { Button, ButtonGroup, Input, Label, Modal } from "flowbite-svelte";
     import type { Tables } from "../../../../../../db/database.types";
-    import { UsersGroupSolid } from "flowbite-svelte-icons";
+    import { CartSolid, UsersGroupSolid } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
     import OrgForm from "$lib/components/OrgForm.svelte";
@@ -28,6 +28,7 @@
     import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
     import CustomForm from "$lib/components/CustomForm.svelte";
     import { supabase } from "$lib/supabaseClient";
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
 
     let loading = $state(true);
     let coach: any = $state();
@@ -412,18 +413,21 @@
         <hr />
         <div class="organization">
             <div class="flex">
+                <InfoToolTip text="Send this code to your students and they will be able to join this organization" />
                 <CopyText text={organizationDetails.event.join_code} />
             </div>
 
             <div style="margin: 10px 0;">
-                <Button pill outline color="primary" onclick={openAddModal}>
-                    <UsersGroupSolid class="w-4 h-4 me-2" />
-                    Add Team
-                </Button>
-                <Button pill outline color="primary" onclick={openPurchaseModal}>
-                    <UsersGroupSolid class="w-4 h-4 me-2" />
-                    Purchase Tickets
-                </Button>
+                <ButtonGroup>
+                    <Button pill outline color="primary" onclick={openAddModal}>
+                        <UsersGroupSolid class="w-4 h-4 me-2" />
+                        Add Team
+                    </Button>
+                    <Button pill outline color="primary" onclick={openPurchaseModal}>
+                        <CartSolid class="w-4 h-4 me-2" />
+                        Purchase Tickets
+                    </Button>
+                </ButtonGroup>
             </div>
 
             <div class="grid-container">
@@ -454,7 +458,8 @@
                     ondragleave={handleDragLeave}
                     ondrop={(e) => handleDrop(e, null)}
                 >
-                    <h3 class="text-xl font-semibold mb-4">
+                    <h3 class="text-xl font-semibold mb-4 flex">
+                        <InfoToolTip text="These students are a part of your organization but do not have a team. Drag over these students to one of them boxes to add them" />
                         Unassigned Students
                     </h3>
                     {#each studentsWithoutTeams as student}

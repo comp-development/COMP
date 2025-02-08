@@ -1,51 +1,53 @@
 <script lang="ts">
 	import { handleError } from "$lib/handleError";
-	import { createAccount, signIntoAccount } from "$lib/supabase";
-	import { Input, Button, ButtonGroup, InputAddon } from "flowbite-svelte";
-	import {
-		EnvelopeSolid,
-		EyeOutline,
-		EyeSlashOutline,
-	} from "flowbite-svelte-icons";
+	import { createAccount, signIntoAccount, addStudent, addCoach } from "$lib/supabase";
 	import toast from "$lib/toast.svelte";
+	import CustomForm from "$lib/components/CustomForm.svelte";
+	import { Tabs, TabItem } from "flowbite-svelte";
 
 	interface Props {
 		logIn: boolean;
 	}
 
-	let show = $state(false);
-	let show1 = $state(false);
 	let { logIn }: Props = $props();
-	let loading = false;
-	let email: string = $state();
-	let password: string = $state();
-	let retypePassword: string = $state();
+	let newResponses = $state({});
+	let validationErrors = $state({});
+	let selectedOption = $state("student");
 
 	const handleLogin = async () => {
 		try {
-			if (!email || !password || email == "" || password == "") {
+			if (
+				!newResponses.email ||
+				!newResponses.password ||
+				newResponses.email == "" ||
+				newResponses.password == ""
+			) {
 				throw new Error("Not all of the fields are complete");
 			}
-			loading = true;
-			await signIntoAccount(email.trim(), password.trim());
+			await signIntoAccount(
+				newResponses.email.trim(),
+				newResponses.password.trim(),
+			);
 		} catch (error) {
 			handleError(error);
-		} finally {
-			loading = false;
 		}
 	};
 
 	const handleSignUp = async () => {
 		try {
-			if (password == retypePassword) {
+			if (newResponses.password === newResponses.retypePassword) {
 				try {
-					loading = true;
-					await createAccount(email, password);
-					toast.success("Successfully signed up, check your email to confirm.");
-				} catch (error) {
-					throw error;
-				} finally {
-					loading = false;
+                    const user = await createAccount(newResponses.email, newResponses.password);
+
+                    if (selectedOption === 'student') {
+                        await addStudent(user.id, newResponses);
+                    } else {
+                        await addCoach(user.id, newResponses);
+                    }
+
+                    toast.success("Successfully signed up, check your email to confirm.");
+                } catch (error) {
+                    throw error;
 				}
 			} else {
 				throw new Error("Passwords do not match");
@@ -54,6 +56,93 @@
 			handleError(error);
 		}
 	};
+
+	const loginFields = [
+		{
+			name: "email",
+			label: "Email",
+			required: true,
+			custom_field_type: "email",
+			placeholder: "Email",
+		},
+		{
+			name: "password",
+			label: "Password",
+			required: true,
+			custom_field_type: "password",
+			placeholder: "Password",
+		},
+	];
+
+	const commonSignupFields = [
+		{
+			name: "first_name",
+			label: "First Name",
+			required: true,
+			editable: true,
+			hidden: false,
+			custom_field_type: "text",
+			placeholder: "First Name",
+
+		},
+		{
+			name: "last_name",
+			label: "Last Name",
+			required: true,
+			editable: true,
+			hidden: false,
+			custom_field_type: "text",
+			placeholder: "Last Name",
+		},
+		{
+			name: "email",
+			label: "Email",
+			required: true,
+			custom_field_type: "email",
+			placeholder: "Email",
+		},
+		{
+			name: "password",
+			label: "Password",
+			required: true,
+			custom_field_type: "password",
+			placeholder: "Password",
+		},
+		{
+			name: "retypePassword",
+			label: "Retype Password",
+			required: true,
+			custom_field_type: "password",
+			placeholder: "Retype Password",
+		},
+	];
+
+	const studentSignupFields = [
+		...commonSignupFields.slice(0, 2), // First Name and Last Name
+		{
+			name: "grade",
+			label: "Grade",
+			required: true,
+			editable: true,
+			hidden: false,
+			custom_field_type: "dropdown",
+			choices: [
+				"4th",
+				"5th",
+				"6th",
+				"7th",
+				"8th",
+				"9th",
+				"10th",
+				"11th",
+				"12th",
+			],
+			placeholder: "Select Grade",
+		},
+		...commonSignupFields.slice(2), // Email, Password, and RetypePassword
+	];
+
+	const coachSignupFields = commonSignupFields;
 </script>
 
 <div>
@@ -64,73 +153,65 @@
 			Sign Up
 		{/if}
 	</h1>
-	<ButtonGroup class="w-full">
-		<Input bind:value={email} type="email" placeholder="Email" />
-		<InputAddon>
-			<EnvelopeSolid class="w-4 h-4" />
-		</InputAddon>
-	</ButtonGroup>
-	<br /><br />
-	<div>
-		<ButtonGroup class="w-full">
-			<Input
-				id="show-password1"
-				bind:value={password}
-				type={show ? "text" : "password"}
-				placeholder="Password"
-				on:keydown={(e) => {
-					if (e.key === "Enter") logIn ? handleLogin() : handleSignUp();
-				}}
+
+	{#if logIn}
+		<div class="no-padding">
+			<CustomForm
+				fields={loginFields}
+				bind:newResponses
+				bind:validationErrors
+				handleSubmit={handleLogin}
 			/>
-			<InputAddon>
-				<button onclick={() => (show = !show)}>
-					{#if show}
-						<EyeOutline class="w-4 h-4" />
-					{:else}
-						<EyeSlashOutline class="w-4 h-4" />
-					{/if}
-				</button>
-			</InputAddon>
-		</ButtonGroup>
-	</div>
-	<br />
-	{#if !logIn && password != ""}
-		<div>
-			<ButtonGroup class="w-full">
-				<Input
-					id="show-password2"
-					bind:value={retypePassword}
-					type={show1 ? "text" : "password"}
-					placeholder="Retype Password"
-					on:keydown={(e) => {
-						if (e.key === "Enter") logIn ? handleLogin() : handleSignUp();
-					}}
-				/>
-				<InputAddon>
-					<button onclick={() => (show1 = !show1)}>
-						{#if show1}
-							<EyeOutline class="w-4 h-4" />
-						{:else}
-							<EyeSlashOutline class="w-4 h-4" />
-						{/if}
-					</button>
-				</InputAddon>
-			</ButtonGroup>
 		</div>
+	{:else}
 		<br />
+		<div class="tabs">
+			<Tabs tabStyle="pill">
+				<TabItem
+					on:click={() => (selectedOption = "student")}
+					open={selectedOption === "student"}
+					title="Student"
+				>
+					<div class="no-padding">
+						<CustomForm
+							fields={studentSignupFields}
+							bind:newResponses
+							bind:validationErrors
+							handleSubmit={handleSignUp}
+						/>
+					</div>
+				</TabItem>
+				<TabItem
+					on:click={() => (selectedOption = "coach")}
+					open={selectedOption === "coach"}
+					title="Coach"
+				>
+					<div class="no-padding">
+						<CustomForm
+							fields={coachSignupFields}
+							bind:newResponses
+							bind:validationErrors
+							handleSubmit={handleSignUp}
+						/>
+					</div>
+				</TabItem>
+			</Tabs>
+		</div>
 	{/if}
-	<div class="profileButtons">
-		{#if logIn}
-			<Button onclick={handleLogin} pill>Submit</Button>
-		{:else}
-			<Button onclick={handleSignUp} pill>Submit</Button>
-		{/if}
-	</div>
 </div>
 
 <style>
 	#headerText {
 		font-size: 50px;
-		margin-bottom: 30px;
+	}
+
+	:global(.no-padding .registrationForm),
+	:global(.no-padding .registrationForm form) {
+		padding: 0px;
+	}
+
+	:global(.tabs [role="tabpanel"]) {
+		padding: 0px;
+		background: transparent;
 	}
 </style>

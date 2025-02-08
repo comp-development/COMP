@@ -1,5 +1,5 @@
 <script lang="ts">
-  	import "../app.css";
+	import "../app.css";
 	import "carbon-components-svelte/css/white.css";
 	import Toaster from "$lib/components/Toaster.svelte";
 	import { supabase } from "$lib/supabaseClient";
@@ -36,7 +36,10 @@
 		Object.entries(scheme.styles || {})
 			.concat(Object.entries(scheme.constants || {}))
 			.forEach(([key, value]) => {
-				document.documentElement.style.setProperty(`--${key}`, value as string);
+				document.documentElement.style.setProperty(
+					`--${key}`,
+					value as string,
+				);
 			});
 		user.set((await supabase.auth.getUser()).data.user);
 
@@ -77,7 +80,6 @@
 				>
 					<Account logIn={true} />
 					<br />
-					<br />
 					<div class="flex">
 						<div class="bottomSection" style="color: white;">
 							<button
@@ -97,6 +99,7 @@
 					</div>
 				</div>
 			</div>
+			<br />
 		{:else}
 			<Banner />
 			<br />
@@ -105,7 +108,6 @@
 					style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
 				>
 					<Account logIn={false} />
-					<br />
 					<br />
 					<div class="flex">
 						<div class="bottomSection" style="color: white;">
@@ -128,7 +130,21 @@
 					</div>
 				</div>
 			</div>
+			<br /><br />
 		{/if}
+	{:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores" && $page.route.id != "/password-reset"}
+		<Banner />
+		<br />
+		<div class="flex-dir-col">
+			<div class="verify-email">
+				<h2>Verify Your Email</h2>
+				<br />
+				<p>
+					Check your email for a verification link. You won't be able
+					to access the platform until your email is verified.
+				</p>
+			</div>
+		</div>
 	{:else}
 		<NavBar />
 		<br />
@@ -136,6 +152,7 @@
 			{@render children?.()}
 		</div>
 	{/if}
+	<br /><br />
 </main>
 
 <style>
@@ -223,14 +240,14 @@
 	}
 
 	:global(.modalExterior div) {
-        width: 100%;
-        z-index: 9999;
-    }
+		width: 100%;
+		z-index: 9999;
+	}
 
-    :global(.modalExterior) {
-        position: relative;
-        z-index: 9999;
-    }
+	:global(.modalExterior) {
+		position: relative;
+		z-index: 9999;
+	}
 
 	/* Different grid types */
 	:global(.row) {

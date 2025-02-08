@@ -3,6 +3,7 @@
 	import { getCoach, getCoachOrganizations } from "$lib/supabase";
 	import Loading from "$lib/components/Loading.svelte";
     import { Button } from "flowbite-svelte";
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
 
 	let coach: any = $state();
 	let loading = $state(true);
@@ -48,4 +49,11 @@
 			</div>
 		{/each}
 	</div>
+	{#if organizations.length === 0}
+		<br />
+		<div class="flex">
+			<InfoToolTip text="You need to be a part of an organization to create teams with students" />
+			<p>You are not a part of any organizations</p>
+		</div>
+	{/if}
 {/if}
