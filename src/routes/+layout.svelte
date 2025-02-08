@@ -5,12 +5,11 @@
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
 	import Banner from "$lib/components/Banner.svelte";
-	import Menu from "$lib/components/Menu.svelte";
+	import NavBar from "$lib/components/NavBar.svelte";
 	import Loading from "$lib/components/Loading.svelte";
 	import { user } from "$lib/sessionStore";
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
-	import { getThisUser } from "$lib/supabase";
 	import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
 	interface Props {
 		children?: import("svelte").Snippet;
@@ -131,11 +130,10 @@
 			</div>
 		{/if}
 	{:else}
-		<div class="menu-split">
-			<Menu />
-			<div>
-				{@render children?.()}
-			</div>
+		<NavBar />
+		<br />
+		<div>
+			{@render children?.()}
 		</div>
 	{/if}
 </main>

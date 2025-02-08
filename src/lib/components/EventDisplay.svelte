@@ -55,6 +55,7 @@
         border: 3px solid var(--primary-tint);
         padding: 20px;
         margin: 10px;
+        margin-top: 0px;
         border-radius: 15px;
         text-align: left;
     }
@@ -64,5 +65,6 @@
         column-gap: 40px;
         width: 100%;
         padding: 40px;
+        padding-top: 20px;
     }
 </style>

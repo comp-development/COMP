@@ -499,6 +499,8 @@
         />
     </Modal>
 </div>
+<br />
+<br />
 
 <div class="modalExterior">
     <Modal bind:open={isPurchaseModalOpen} size="md" autoclose={false}>
