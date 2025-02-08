@@ -57,10 +57,10 @@ export async function getEventCustomFields(
   console.log("EVENT ID", event_id);
   const { data, error } = await supabase
     .from("event_custom_fields")
-    .select("*, custom_fields(*)") // join the custom_fields table using the foreign key
+    .select("*, custom_fields!inner(*)") // join the custom_fields table using the foreign key
     .eq("event_id", event_id)
+    .eq("custom_fields.custom_field_table", custom_field_table)
     .order("ordering");
-  //.eq("custom_fields.custom_field_table", custom_field_table);
 
   if (error) throw error;
   console.log("GET EVENT CUSTOM FIELDS", data);
@@ -217,7 +217,7 @@ export async function upsertStudentEvent(
 
 export async function getStudentTeams(student_id: string) {
   const { data, error } = await supabase
-    .from("student_teams")
+    .from("student_events")
     .select("*, teams!inner(*, events!inner(*))")
     .eq("student_id", student_id);
   if (error) throw error;
