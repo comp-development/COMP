@@ -360,11 +360,11 @@
     <EventDisplay
         name={event_details?.event_name}
         date={event_details?.event_date}
-        logo={event_details?.logo && event_details?.logo != ""
+        logo={event_details?.logo != ""
             ? event_details?.logo
             : host.logo}
         email={event_details?.email ?? host.email}
-        markdown={event_details?.markdown}
+        markdown={event_details?.summary}
     />
 
     {#if organizationDetails.event}
