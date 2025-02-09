@@ -90,7 +90,6 @@ function chunks<T>(
 }
 
 async function reset_db() {
-  // TODO: take args for clear, dry run false, dry run true
   const dryRun = false;
   if (!dryRun) {
     console.log("Clearing database tables ...");
@@ -161,17 +160,17 @@ async function reset_db() {
             };
           },
           email: (ctx) => copycat.email(ctx.seed),
-          summary: `**Are you ready to test your skills in the ultimate _Math Tournament_?** Compete with **teams from all over the world** in events like: \n
-          - **Algebra Blitz**: Solve \(x^2 + 5x + 6 = 0\) faster than your opponents!
-          - _Geometry Dash_: Prove theorems and calculate areas of **complex polygons**.
-          - **Team Relays**: Work collaboratively to solve multi-step problems.
+          summary: `**Are you ready to test your skills in the ultimate _Math Tournament_?** Compete with **teams from all over the world** in events like:  
+- **Algebra Blitz**: Solve \(x^2 + 5x + 6 = 0\) faster than your opponents!  
+- _Geometry Dash_: Prove theorems and calculate areas of **complex polygons**.  
+- **Team Relays**: Work collaboratively to solve multi-step problems.
 
-          Participants will have access to **exclusive study materials**, including:
-          1. _Sample problems_ with solutions.
-          2. A **leaderboard** updated in real-time.
-          3. The chance to win **prizes**, from scholarships to cool gadgets.
+Participants will have access to **exclusive study materials**, including:  
+1. _Sample problems_ with solutions.  
+2. A **leaderboard** updated in real-time.  
+3. The chance to win **prizes**, from scholarships to cool gadgets.
 
-          Check out our [official guide](https://math-tournament.example.com) for preparation tips, and don't forget to register by **March 1st, 2025**! 🚀`,
+Check out our [official guide](https://math-tournament.example.com) for preparation tips, and don't forget to register by **March 1st, 2025**! 🚀`,
           logo: "https://www.mustangmath.com/logo.png",
         },
       },
@@ -304,7 +303,7 @@ async function reset_db() {
   coaches.push(debug_coach);
   const { hosts } = await seed.hosts((x) => x(3));
 
-  await seed.host_admins(
+  const { host_admins } = await seed.host_admins(
     admins.flatMap((a) => [{ admin_id: a.admin_id }, { admin_id: a.admin_id }]),
     {
       connect: { hosts },
@@ -323,7 +322,7 @@ async function reset_db() {
     },
   );
   const { orgs } = await seed.orgs((x) => x(3));
-  await seed.org_coaches(
+  const { org_coaches } = await seed.org_coaches(
     coaches.map((a) => ({ coach_id: a.coach_id })),
     {
       connect: { orgs },
@@ -367,18 +366,26 @@ async function reset_db() {
       }),
     );
 
+    /**
+    const { student_events } = await seed.student_events(
+      (x) =>
+        x(org_s.length, ({ index }) => ({
+          student_id: org_s[index].student_id,
+        })),
+      { connect: { org_events } },
+    );
+    
     let team_store = new Set();
     const team_letters = "ABCDE";
     // Have organizations purchase at least sufficient tickets for their students.
     // Map from org ids to student ids.
+    /**
     let org_to_s: Map<number, string[]> = new Map();
-    org_s.map((e) => {
-      const key = org_events.find((oe) => oe.event_id == event.event_id)!
-        .org_id!;
+    student_events.map((e) => {
+      const key = org_events.find((oe) => oe.event_id == e.event_id)!.org_id!;
       org_to_s.set(key, (org_to_s.get(key) ?? []).concat([e.student_id]));
     });
-    // Have orgs purchase sufficient tickets (greater or equal to assigned student count).
-    await seed.ticket_orders(
+    const { ticket_orders: org_ticket_orders } = await seed.ticket_orders(
       (x) =>
         x(
           org_to_s.size,
@@ -393,21 +400,13 @@ async function reset_db() {
         ),
       { connect: { events: [event] } },
     );
-
-    // Have individual students purchase their tickets.
-    await seed.ticket_orders(
-      indiv_s.map((s) => ({
-        student_id: s.student_id,
-        org_id: null,
-        quantity: 1,
-      })),
-      { connect: { events: [event] } },
-    );
+    
 
     // Group org students and indiv students into teams.
     // Note that the grouping implementation may result in anywhere from 1 to
     // max_group_size members in a team (for the final team).
-
+    
+    
     // TODO: don't use assign ALL students to a team. choose [0, 5 or so] to omit.
     await seed.teams(
       [...org_to_s.entries()]
@@ -417,55 +416,41 @@ async function reset_db() {
           ),
         )
         .map(([org_id, student_ids], t_i) => {
-          const team_id = (
-            copycat.unique(
-              ["org team #", i, t_i],
-              (i) => copycat.int(i, { max: 999 }),
-              team_store,
-            ) as number
-          )
-            .toString()
-            .padStart(3, "0");
+          const team_id = copycat.unique(
+            ["org team #", i, t_i],
+            (i) => copycat.int(i, { max: 999 }),
+            team_store,
+          ) as number;
           return {
             org_id,
-            event_id: event.event_id,
-            front_id: team_id,
             student_events: student_ids.map((student_id, s_i) => ({
               student_id,
-              front_id: team_id + team_letters[s_i],
-              event_id: event.event_id,
-              org_id,
+              front_id: team_id.toString().padStart(3, "0") + team_letters[s_i],
             })),
           };
         }),
       { connect: { events: [event] } },
     );
-
+    
     const indiv_teams_s = chunks(["indiv org", i], indiv_s, 2, 4, copycat.int);
     await seed.teams(
       indiv_teams_s.map((s, t_i) => {
-        const team_id = (
-          copycat.unique(
-            ["indiv team #", i, t_i],
-            (i) => copycat.int(i, { max: 999 }),
-            team_store,
-          ) as number
-        )
-          .toString()
-          .padStart(3, "0");
+        const team_id = copycat.unique(
+          ["indiv team #", i, t_i],
+          (i) => copycat.int(i, { max: 999 }),
+          team_store,
+        ) as number;
         return {
           org_id: null,
-          event_id: event.event_id,
-          front_id: team_id,
-          student_events: s.map((s, s_i) => ({
+          student_teams: s.map((s, s_i) => ({
             student_id: s.student_id,
-            event_id: event.event_id,
-            front_id: team_id + team_letters[s_i],
+            front_id: team_id.toString().padStart(3, "0") + team_letters[s_i],
           })),
         };
       }),
       { connect: { events: [event] } },
     );
+    */
   }
   if (!dryRun) {
     console.log("Successfully seeded database!");

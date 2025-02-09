@@ -171,6 +171,7 @@
                             id={key}
                             placeholder={field.placeholder ?? "handle@domain.com"}
                             bind:value={newResponses[key]}
+                            disabled={field.disabled}
                             required={field.required}
                             on:blur={() =>
                                 validateInput(
@@ -191,6 +192,7 @@
                             placeholder={field.placeholder ?? "123-456-7890"}
                             bind:value={newResponses[key]}
                             required={field.required}
+                            disabled={field.disabled}
                             on:blur={() =>
                                 validateInput(
                                     key,
@@ -207,6 +209,8 @@
                         <ButtonGroup class="w-full">
                             <Input
                                 id="show-password1"
+                                disabled={field.disabled}
+                                required={field.required}
                                 bind:value={newResponses[key]}
                                 type={show ? "text" : "password"}
                                 placeholder="Password"

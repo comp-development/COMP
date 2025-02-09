@@ -17,11 +17,11 @@
     } from "flowbite-svelte-icons";
     import { page } from "$app/stores";
     import {
-        getAllHosts,
         getHostEvents,
         getCoachOrganizations,
         signOut,
         getAllPublicHosts,
+        getAdminHosts,
     } from "$lib/supabase";
     import { user } from "$lib/sessionStore";
     import { handleError } from "$lib/handleError";
@@ -40,17 +40,16 @@
     let selectedEvent = null;
 
     const adminFeatures = [
-        { name: "Events", href: "/admin/events" },
+        { name: "Users", href: "/admin/users" },
         { name: "Import Problems", href: "/admin/import-problems" },
         { name: "New Problem", href: "/admin/problems/new" },
-        { name: "Registration", href: "/admin/registration" },
     ];
 
     async function initializeNavbar() {
         paths = $page.route.id?.split("/").filter(Boolean);
 
         if (paths[0] === "admin") {
-            hosts = await getAllHosts();
+            hosts = await getAdminHosts($user!.id);
         } else {
             hosts = await getAllPublicHosts();
         }
@@ -250,7 +249,7 @@
                             on:click={() => {
                                 window.location.href = feature.href;
                             }}
-                            class={$page.route.id === feature.href
+                            class={$page.route.id?.includes(feature.href)
                                 ? "active"
                                 : ""}
                         >
@@ -307,10 +306,6 @@
                         {/each}
                     </Dropdown>
                     {#if eventId}
-                        <NavLi
-                            class="cursor-pointer navli {$page.route.id?.includes("/teams") ? 'active' : ''}"
-                            href="/admin/{hostId}/{eventId}/teams">Teams</NavLi
-                        >
                         <NavLi
                             class="cursor-pointer navli {$page.route.id?.includes("/tests") ? 'active' : ''}"
                             href="/admin/{hostId}/{eventId}/tests">Tests</NavLi

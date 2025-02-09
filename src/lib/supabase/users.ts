@@ -196,6 +196,47 @@ export async function getAdminUsers(select: string = "*") {
   return data;
 }
 
+export async function getallUsers() {
+  let data = [];
+  let users = await getAdminUsers();
+  for (let user of users) {
+    data.push({
+      person: {
+        first_name: user.first_name,
+        last_name: user.last_name,
+      },
+      role: "Admin",
+      admin_id: user.admin_id
+    });
+  }
+
+  users = await getStudentUsers();
+  for (let user of users) {
+    data.push({
+      person: {
+        first_name: user.first_name,
+        last_name: user.last_name,
+      },
+      role: "Student",
+      student_id: user.student_id
+    });
+  }
+
+  users = await getAllCoaches();
+  for (let user of users) {
+    data.push({
+      person: {
+        first_name: user.first_name,
+        last_name: user.last_name,
+      },
+      role: "Coach",
+      coach_id: user.coach_id
+    });
+  }
+
+  return data;
+}
+
 /**
  * Get all student users
  *
@@ -212,47 +253,66 @@ export async function getStudentUsers(select: string = "*") {
  * Transfer user from student to admin or vise versa
  *
  * @param user_id string
- * @param to_admin boolean
+ * @param from_type "admin" | "student" | "coach"
+ * @param to_type "admin" | "student" | "coach"
  */
-export async function transferUser(user_id: string, to_admin: boolean) {
-  //delete user from previous table
+export async function transferUser(
+  user_id: string,
+  from_type: "admin" | "student" | "coach",
+  to_type: "admin" | "student" | "coach"
+) {
+  // Get the database table names
+  const fromDatabase = getUserTypeDatabase(from_type);
+  const toDatabase = getUserTypeDatabase(to_type);
+
+  // Get user data from current table
   const { data, error } = await supabase
-    .from(to_admin ? "students" : "admins")
+    .from(fromDatabase)
     .select("*")
-    .eq(to_admin ? "student_id" : "admin_id", user_id)
+    .eq(`${from_type}_id`, user_id)
     .single();
   if (error) throw error;
 
-  const { error: error2 } = await supabase
-    .from(to_admin ? "students" : "admins")
+  // Delete user from current table
+  const { error: deleteError } = await supabase
+    .from(fromDatabase)
     .delete()
-    .eq(to_admin ? "student_id" : "admin_id", user_id);
-  if (error2) throw error2;
+    .eq(`${from_type}_id`, user_id);
+  if (deleteError) throw deleteError;
 
-  //add user to new table
-  const original_data = to_admin
-    ? { admin_id: user_id }
-    : { student_id: user_id };
-  original_data.first_name = data.first_name;
-  original_data.last_name = data.last_name;
+  // Prepare data for new table
+  const transferData = {
+    [`${to_type}_id`]: user_id,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email
+  };
 
-  const { data2, error3 } = await supabase
-    .from(to_admin ? "admins" : "students")
-    .insert(original_data);
-  if (error3) throw error3;
+  // If transferring to student table, include grade if it exists
+  if (to_type === "student" && data.grade) {
+    transferData.grade = data.grade;
+  }
+
+  // Insert user into new table
+  const { error: insertError } = await supabase
+    .from(toDatabase)
+    .insert(transferData);
+  if (insertError) throw insertError;
 }
 
 export async function editUser(
   user_id: string,
-  isUserAdmin: boolean,
+  userType: "admin" | "student" | "coach",
   user: any,
 ) {
-  let database = isUserAdmin ? "admin" : "student";
+  let database = getUserTypeDatabase(userType);
+
+  const { userType: _, ...userDataToUpdate } = user;
 
   const { error } = await supabase
-    .from(database + "s")
-    .update(user)
-    .eq(database + "_id", user_id);
+    .from(database)
+    .update(userDataToUpdate)
+    .eq(userType + "_id", user_id);
 
   if (error) throw error;
 }

@@ -4,7 +4,6 @@
 	import Toaster from "$lib/components/Toaster.svelte";
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
-	import Banner from "$lib/components/Banner.svelte";
 	import NavBar from "$lib/components/Navbar.svelte";
 	import Loading from "$lib/components/Loading.svelte";
 	import { user } from "$lib/sessionStore";

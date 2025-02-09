@@ -106,6 +106,17 @@ export async function upsertTeam(
   return data;
 }
 
+export async function getAllStudentsWithoutTeam(event_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .select("*, person:students(*)")
+    .eq("event_id", event_id)
+    .is("team_id", null);
+  if (error) throw error;
+
+  return data;
+}
+
 export async function getStudentsWithoutTeam(event_id: number, org_id: number) {
   const { data, error } = await supabase
     .from("student_events")

@@ -1,39 +1,25 @@
 <script lang="ts">
-	import {
-		DataTable,
-		Link,
-		Toolbar,
-		ToolbarContent,
-		ToolbarSearch,
-		Pagination,
-	} from "carbon-components-svelte";
 	import { page } from "$app/stores";
-	import {
-		getEventInformation,
-		getEventTeams,
-		getEventTests,
-	} from "$lib/supabase";
+	import { getEventInformation, getEventTeams, getEventOrganizations } from "$lib/supabase";
 	import { handleError } from "$lib/handleError";
-	import Button from "$lib/components/Button.svelte";
+	import Loading from "$lib/components/Loading.svelte";
+	import EventDisplay from "$lib/components/EventDisplay.svelte";
+	import TableName from "$lib/components/TableName.svelte";
 
 	let hostId = $page.params.host_id;
 	let eventId = $page.params.event_id;
-	let pageSize = $state(25);
-	let pages = $state(1);
-	let pageSize2 = $state(25);
-	let pages2 = $state(1);
-	let tests = $state([]);
 	let teams = $state([]);
 	let event_information = $state({});
 	let loading = $state(true);
+	let organizations = $state([]);
 
 	async function loadInformation() {
 		try {
-			tests = await getEventTests(Number(eventId));
-			tests = tests.map(({ test_id: id, ...rest }) => ({ id, ...rest }));
 			teams = await getEventTeams(Number(eventId));
 			teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
 			event_information = await getEventInformation(Number(eventId));
+			organizations = await getEventOrganizations(Number(eventId));
+			console.log(organizations);
 			loading = false;
 		} catch (error) {
 			handleError(error);
@@ -44,134 +30,55 @@
 </script>
 
 {#if loading}
-	<p>Loading...</p>
+	<Loading />
 {:else}
-	<br />
-	<h1>{event_information.event_name}</h1>
-	<p>Event Id: {eventId}</p>
-	<p>Date: {event_information.event_date}</p>
-	<br />
+	<EventDisplay
+		id={eventId}
+		name={event_information.event_name}
+		date={event_information.event_date}
+		logo={event_information.logo != "" ? event_information.logo : host.logo}
+		email={event_information.email ?? host.email}
+		markdown={event_information.summary}
+		editable={true}
+	/>
 
-	<Button title="Update Tournament Information" />
-	<br /><br />
-	<Button title="Import Students into Event" />
-	<br /><br /><br />
-
-	<p style="font-weight: bold;">Tests</p>
-	<div style="margin-left: 10px; margin-right: 10px;">
-		{#if tests.length === 0}
-			<p>No tests</p>
-		{:else}
-			<DataTable
-				sortable
-				size="compact"
-				headers={[
-					{ key: "edit", value: "", width: "20px" },
-					{ key: "id", value: "ID" },
-					{ key: "test_name", value: "Name" },
-					{ key: "division", value: "Division" },
-					{ key: "opening_time", value: "Opening Time" },
-					{ key: "buffer_time", value: "Buffer Time" },
+	<div class="mt-8 p-4">
+		<h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
+		<div class="tableMax">
+			<TableName
+				actionType="edit"
+				items={organizations}
+				action={(e, org) => {
+					window.location.href = `/admin/${hostId}/${eventId}/${org.org_id}`;
+				}}
+				columns = {[
+					{
+						label: "Name",
+						value: (item) => item.org.name,
+						sortable: true,
+					},
+					{
+						label: "Name",
+						value: (item) => item.org.address,
+						sortable: true,
+					},
+					{
+						label: "Join Code",
+						value: (item) => item.join_code,
+						sortable: true,
+					},
 				]}
-				rows={tests}
-				{pageSize}
-				{pages}
-			>
-				<Toolbar size="sm">
-					<ToolbarContent>
-						<ToolbarSearch persistent shouldFilterRows />
-					</ToolbarContent>
-				</Toolbar>
-
-				{#snippet cell({ row, cell, rowIndex })}
-							
-						<div>
-							{#if cell.key === "edit"}
-								<div class="pencil">
-									<Link
-										class="link"
-										href={`/admin/${hostId}/${eventId}/tests/${row.id}`}
-										><i class="ri-pencil-fill"></i></Link
-									>
-								</div>
-							{:else}
-								<div style="overflow: hidden;">
-									{cell.value == null || cell.value == ""
-										? "None"
-										: cell.value}
-								</div>
-							{/if}
-						</div>
-					
-							{/snippet}
-			</DataTable>
-
-			<Pagination
-				bind:pageSize
-				bind:page={pages}
-				totalItems={tests.length}
-				pageSizeInputDisabled
 			/>
+		</div>
+		{#if organizations.length === 0}
+			<p class="text-center text-gray-500 mt-4">No organizations registered yet</p>
 		{/if}
 	</div>
-
-	<br />
-	<br />
-
-	<p style="font-weight: bold;">Teams</p>
-	<div style="margin-left: 10px; margin-right: 10px;">
-		{#if teams.length === 0}
-			<p>No teams</p>
-		{:else}
-			<DataTable
-				sortable
-				size="compact"
-				headers={[
-					{ key: "edit", value: "", width: "20px" },
-					{ key: "id", value: "ID" },
-					{ key: "team_name", value: "Name" },
-					{ key: "division", value: "Division" },
-				]}
-				rows={teams}
-				{pageSize2}
-				{pages2}
-			>
-				<Toolbar size="sm">
-					<ToolbarContent>
-						<ToolbarSearch persistent shouldFilterRows />
-					</ToolbarContent>
-				</Toolbar>
-
-				{#snippet cell({ row, cell, rowIndex })}
-							
-						<div>
-							{#if cell.key === "edit"}
-								<div class="pencil">
-									<Link
-										class="link"
-										href={`/admin/${hostId}/${eventId}/teams/${row.id}`}
-										><i class="ri-pencil-fill"></i></Link
-									>
-								</div>
-							{:else}
-								<div style="overflow: hidden;">
-									{cell.value == null || cell.value == ""
-										? "None"
-										: cell.value}
-								</div>
-							{/if}
-						</div>
-					
-							{/snippet}
-			</DataTable>
-
-			<Pagination
-				bind:pageSize2
-				bind:page={pages2}
-				totalItems={teams.length}
-				pageSizeInputDisabled
-			/>
-		{/if}
-	</div>
-	<br /><br />
 {/if}
+
+<style>
+	.tableMax {
+		max-width: 800px;
+		margin: 0 auto;
+	}
+</style>
