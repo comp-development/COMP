@@ -43,7 +43,7 @@ export async function getCoachOrganization(coach_id: string, event_id: number, o
         .single();
     if (error) throw error;
     
-    const teams = await getOrganizationTeams(org_id);
+    const teams = await getOrganizationTeams(org_id, event_id);
     data.teams = teams;
     const events = await ifOrgEvent(event_id, org_id);
     data.event = events;
@@ -80,11 +80,12 @@ export async function removeCoachFromOrganization(coach_id: string, org_id: numb
     if (error) throw error;
 }
 
-export async function getOrganizationTeams(org_id: number) {
+export async function getOrganizationTeams(org_id: number, event_id: number) {
     const { data: teamData, error: teamError } = await supabase
         .from("teams")
         .select("*")
-        .eq('org_id', org_id);
+        .eq('org_id', org_id)
+        .eq('event_id', event_id);
     if (teamError) throw teamError;
 
     for (let i = 0; i < teamData.length; i++) {

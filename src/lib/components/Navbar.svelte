@@ -22,6 +22,10 @@
         signOut,
         getAllPublicHosts,
         getAdminHosts,
+        getCoachHosts,
+        getStudentHosts,
+        getCoachHostEvents,
+        getStudentHostEvents,
     } from "$lib/supabase";
     import { user } from "$lib/sessionStore";
     import { handleError } from "$lib/handleError";
@@ -50,11 +54,9 @@
 
         if (paths[0] === "admin") {
             hosts = await getAdminHosts($user!.id);
-        } else {
-            hosts = await getAllPublicHosts();
-        }
-    
-        if (paths[0] === "coach") {
+        } else if (paths[0] === "student") {
+            hosts = await getStudentHosts($user!.id);
+        } else if (paths[0] === "coach") {
             organizations = await getCoachOrganizations($user.id);
 
             if ($page.params.org_id) {
@@ -62,13 +64,29 @@
                 selectedOrg = organizations.find(
                     (o) => o.org_id === orgId,
                 )?.orgs;
+
+                hosts = await getCoachHosts(orgId);
+            }
+
+            if ($page.params.host_id) {
+                hostId = parseInt($page.params.host_id);
+                selectedHost = hosts.find((h) => h.host_id === hostId);
+
+                let data = await getCoachHostEvents($user!.id, hostId, orgId);
+                events = data.map((e) => e.event);
             }
         }
+
 
         if ($page.params.host_id) {
             hostId = parseInt($page.params.host_id);
             selectedHost = hosts.find((h) => h.host_id === hostId);
-            events = await getHostEvents(hostId);
+
+            if (paths[0] === "student") {
+                events = await getStudentHostEvents($user!.id, hostId);
+            } else if (paths[0] === "admin") {
+                events = await getHostEvents(hostId);
+            }
         }
 
         if ($page.params.event_id) {
@@ -123,7 +141,6 @@
                             on:click={() => {
                                 window.location.href = `/coach/${org.org_id}`;
                             }}
-
                         >
                             {org.orgs.name}
                         </DropdownItem>
@@ -168,7 +185,9 @@
                         <Dropdown class="w-44 z-20">
                             {#each events as event}
                                 <DropdownItem
-                                    class={eventId === event.event_id ? "active" : ""}
+                                    class={eventId === event.event_id
+                                        ? "active"
+                                        : ""}
                                     on:click={() => {
                                         window.location.href = `/coach/${orgId}/${hostId}/${event.event_id}`;
                                     }}
@@ -216,11 +235,12 @@
                     <Dropdown class="w-44 z-20">
                         {#each events as event}
                             <DropdownItem
-                                class={eventId === event.event_id ? "active" : ""}
+                                class={eventId === event.event_id
+                                    ? "active"
+                                    : ""}
                                 on:click={() => {
                                     window.location.href = `/student/${hostId}/${event.event_id}`;
                                 }}
-
                             >
                                 {event.event_name}
                             </DropdownItem>
@@ -307,12 +327,21 @@
                     </Dropdown>
                     {#if eventId}
                         <NavLi
-                            class="cursor-pointer navli {$page.route.id?.includes("/tests") ? 'active' : ''}"
+                            class="cursor-pointer navli {$page.route.id?.includes(
+                                '/tests',
+                            )
+                                ? 'active'
+                                : ''}"
                             href="/admin/{hostId}/{eventId}/tests">Tests</NavLi
                         >
                         <NavLi
-                            class="cursor-pointer navli {$page.route.id?.includes("/registration") ? 'active' : ''}"
-                            href="/admin/{hostId}/{eventId}/registration">Registration</NavLi
+                            class="cursor-pointer navli {$page.route.id?.includes(
+                                '/registration',
+                            )
+                                ? 'active'
+                                : ''}"
+                            href="/admin/{hostId}/{eventId}/registration"
+                            >Registration</NavLi
                         >
                     {/if}
                 {/if}

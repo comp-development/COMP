@@ -11,12 +11,43 @@ export async function getAllPublicHosts(select: string = "*") {
         .from("hosts")
         .select(`${select}, events!inner(*)`)
         .eq('events.published', true);
-    
+
     if (error) throw error;
 
     const uniqueHosts = [...new Map(data.map(host => [host.host_id, host])).values()];
     console.log("UNIQUE HOSTS", uniqueHosts)
     return uniqueHosts;
+}
+
+export async function getCoachHosts(org_id: number) {
+    const { data, error } = await supabase
+        .from('org_events')
+        .select(`
+            event:events!inner (
+                host:hosts(*)
+            )
+        `)
+        .eq('org_id', org_id);
+
+    if (error) throw error;
+
+    const hosts = data?.map(org_event => org_event.event.host) ?? [];
+    return [...new Map(hosts.map(host => [host.host_id, host])).values()];
+}
+
+export async function getStudentHosts(user_id: string) {
+    const { data, error } = await supabase
+        .from('student_events')
+        .select(`*, event:events!left (
+                host:hosts!left(*)
+            )
+        `)
+        .eq('student_id', user_id);
+
+    if (error) throw error;
+
+    const hosts = data?.map(event => event.event.host) ?? [];
+    return [...new Map(hosts.map(host => [host.host_id, host])).values()];
 }
 
 export async function getHostInformation(host_id: number, select: string = "*") {
@@ -77,9 +108,9 @@ export async function getHostAdmins(host_id: number) {
             )
         `)
         .eq('host_id', host_id);
-    
+
     if (error) throw error;
-    
+
     return data.map(item => ({
         person: {
             first_name: item.admins.first_name,
@@ -96,18 +127,18 @@ export async function getAllAdminsOutsideHost(host_id: number) {
         .from('host_admins')
         .select('admin_id')
         .eq('host_id', host_id);
-    
+
     const excludedAdminIds = existingAdmins?.map(admin => admin.admin_id) || [];
-    
+
     // Get all admins not in the host
     const { data, error } = await supabase
         .from('admins')
         .select('*')
         .not('admin_id', 'in', `(${excludedAdminIds.join(',')})`)
         .order('first_name');
-    
+
     if (error) throw error;
-    
+
     return data.map(admin => ({
         person: {
             first_name: admin.first_name,

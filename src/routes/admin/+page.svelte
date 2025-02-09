@@ -30,7 +30,7 @@
 	<h3 class="text-xl font-medium text-gray-900 dark:text-white flex">
         Your Hosts
         <InfoToolTip
-            text="Hosts are the organizers of events."
+            text="Hosts are the organizers of events. To create a host, talk to the creators of COMP"
         />
     </h3>
     <br />
