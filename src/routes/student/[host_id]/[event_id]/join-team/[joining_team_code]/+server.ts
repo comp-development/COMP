@@ -1,7 +1,9 @@
-const stripeSecretKey = import.meta.env.VITE_STRIPE_SECRET_API_KEY;
 import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { Stripe } from "stripe";
 import { adminSupabase } from "$lib/adminSupabaseClient";
+import { env } from "$env/dynamic/private";
+
+const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
@@ -102,8 +104,12 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       .from("teams")
       .select("team_id, org_id")
       .eq("join_code", join_code)
-      .single();
-    wrap_supabase_error("fetching team id", team_data, team_error);
+      .maybeSingle();
+    wrap_supabase_error(
+      "fetching team id for join code. team may not exist",
+      team_data,
+      team_error,
+    );
 
     let joined_org = false;
     // If the join code is for an org team, add the student to the org.
@@ -125,7 +131,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       .eq("student_id", user.id)
       .eq("event_id", event_id)
       .maybeSingle();
-    wrap_supabase_error("fetching ticket order", ticket_order, error);
+    wrap_supabase_error("fetching ticket order", 0, error);
 
     let using_org_order = false;
     // Use org session if student's does not exist.
@@ -136,7 +142,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         .eq("student_id", user.id)
         .eq("event_id", event_id)
         .maybeSingle();
-      wrap_supabase_error("fetching ticket order", org_ticket_order, error);
+      wrap_supabase_error("fetching org ticket order", 0, error);
       ticket_order = org_ticket_order;
       using_org_order = true;
     }

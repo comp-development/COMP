@@ -15,20 +15,17 @@
         ChevronDownOutline,
         CodeForkSolid,
     } from "flowbite-svelte-icons";
-    import { page } from "$app/state";
-    import { onMount } from "svelte";
+    import { page } from "$app/stores";
     import {
         getAllHosts,
         getHostEvents,
         getCoachOrganizations,
-        getStudentHostEvents,
         signOut,
         getAllPublicHosts,
     } from "$lib/supabase";
     import { user } from "$lib/sessionStore";
     import { handleError } from "$lib/handleError";
 
-    const activeUrl = page.url.pathname;
     let hostId: number | null = null;
     let eventId: number | null = null;
     let orgId: number | null = null;
@@ -45,60 +42,43 @@
     const adminFeatures = [
         { name: "Events", href: "/admin/events" },
         { name: "Import Problems", href: "/admin/import-problems" },
-        { name: "Problems", href: "/admin/problems" },
         { name: "New Problem", href: "/admin/problems/new" },
         { name: "Registration", href: "/admin/registration" },
     ];
 
-
-    onMount(async () => {
-        paths = activeUrl.split("/").filter(Boolean);
+    async function initializeNavbar() {
+        paths = $page.route.id?.split("/").filter(Boolean);
 
         if (paths[0] === "admin") {
             hosts = await getAllHosts();
-            if (paths.length > 1) {
-                hostId = parseInt(paths[1]);
-                selectedHost = hosts.find((h) => h.host_id === hostId);
-                events = await getHostEvents(hostId);
-            }
-            if (paths.length > 2) {
-                eventId = parseInt(paths[2]);
-                selectedEvent = events.find((e) => e.event_id === eventId);
-            }
-        } else if (paths[0] === "coach") {
-            organizations = await getCoachOrganizations($user.id);
+        } else {
             hosts = await getAllPublicHosts();
+        }
+    
+        if (paths[0] === "coach") {
+            organizations = await getCoachOrganizations($user.id);
 
-            if (paths.length > 1) {
-                orgId = parseInt(paths[1]);
+            if ($page.params.org_id) {
+                orgId = parseInt($page.params.org_id);
                 selectedOrg = organizations.find(
                     (o) => o.org_id === orgId,
                 )?.orgs;
             }
-            if (paths.length > 2) {
-                hostId = parseInt(paths[2]);
-                selectedHost = hosts.find((h) => h.host_id === hostId);
-                if (orgId) {
-                    events = await getHostEvents(hostId);
-                }
-            }
-            if (paths.length > 3) {
-                eventId = parseInt(paths[3]);
-                selectedEvent = events.find((e) => e.event_id === eventId);
-            }
-        } else if (paths[0] === "student") {
-            hosts = await getAllPublicHosts();
-            if (paths.length > 1) {
-                hostId = parseInt(paths[1]);
-                selectedHost = hosts.find((h) => h.host_id === hostId);
-                events = await getHostEvents(hostId);
-            }
-            if (paths.length > 2) {
-                eventId = parseInt(paths[2]);
-                selectedEvent = events.find((e) => e.event_id === eventId);
-            }
         }
-    });
+
+        if ($page.params.host_id) {
+            hostId = parseInt($page.params.host_id);
+            selectedHost = hosts.find((h) => h.host_id === hostId);
+            events = await getHostEvents(hostId);
+        }
+
+        if ($page.params.event_id) {
+            eventId = parseInt($page.params.event_id);
+            selectedEvent = events.find((e) => e.event_id === eventId);
+        }
+    }
+
+    $: $page.route.id && initializeNavbar();
 
     const handleSignout = async (e) => {
         e.preventDefault();
@@ -125,13 +105,14 @@
             >
             <NavHamburger />
         </div>
-        <NavUl {activeUrl}>
-            {#if activeUrl.includes("/coach")}
+        <NavUl>
+            {#if $page.route.id?.includes("/coach")}
                 <NavLi class="cursor-pointer">
                     <BuildingSolid
                         class="h-6 text-primary-800 dark:text-white inline"
                     />
-                    {#if selectedOrg}{selectedOrg.name}{:else}Choose Organization{/if}
+                    {#if selectedOrg}{selectedOrg.name}{:else}Choose
+                        Organization{/if}
                     <ChevronDownOutline
                         class="w-6 h-6 m-0 p-0 text-primary-800 dark:text-white inline"
                     />
@@ -139,9 +120,11 @@
                 <Dropdown class="w-44 z-20">
                     {#each organizations as org}
                         <DropdownItem
+                            class={orgId === org.org_id ? "active" : ""}
                             on:click={() => {
                                 window.location.href = `/coach/${org.org_id}`;
                             }}
+
                         >
                             {org.orgs.name}
                         </DropdownItem>
@@ -162,6 +145,7 @@
                     <Dropdown class="w-44 z-20">
                         {#each hosts as host}
                             <DropdownItem
+                                class={hostId === host.host_id ? "active" : ""}
                                 on:click={() => {
                                     window.location.href = `/coach/${orgId}/${host.host_id}`;
                                 }}
@@ -185,6 +169,7 @@
                         <Dropdown class="w-44 z-20">
                             {#each events as event}
                                 <DropdownItem
+                                    class={eventId === event.event_id ? "active" : ""}
                                     on:click={() => {
                                         window.location.href = `/coach/${orgId}/${hostId}/${event.event_id}`;
                                     }}
@@ -195,7 +180,7 @@
                         </Dropdown>
                     {/if}
                 {/if}
-            {:else if activeUrl.includes("/student")}
+            {:else if $page.route.id?.includes("/student")}
                 <NavLi class="cursor-pointer">
                     <CodeForkSolid
                         class="h-6 text-primary-800 dark:text-white inline"
@@ -208,6 +193,7 @@
                 <Dropdown class="w-44 z-20">
                     {#each hosts as host}
                         <DropdownItem
+                            class={hostId === host.host_id ? "active" : ""}
                             on:click={() => {
                                 window.location.href = `/student/${host.host_id}`;
                             }}
@@ -231,31 +217,48 @@
                     <Dropdown class="w-44 z-20">
                         {#each events as event}
                             <DropdownItem
+                                class={eventId === event.event_id ? "active" : ""}
                                 on:click={() => {
                                     window.location.href = `/student/${hostId}/${event.event_id}`;
                                 }}
+
                             >
                                 {event.event_name}
                             </DropdownItem>
                         {/each}
                     </Dropdown>
                     {#if eventId && false}
-                        <NavLi class="cursor-pointer {paths[3] === "tests" ? '' : 'non-active'}" href="/student/{hostId}/{eventId}/tests">Tests</NavLi>
+                        <NavLi
+                            class="cursor-pointer {paths[3] === 'tests'
+                                ? ''
+                                : 'non-active'}"
+                            href="/student/{hostId}/{eventId}/tests"
+                            >Tests</NavLi
+                        >
                     {/if}
                 {/if}
             {:else}
                 <NavLi class="cursor-pointer">
                     Admin Features
-                    <ChevronDownOutline class="w-6 h-6 m-0 p-0 text-primary-800 dark:text-white inline"/>
+                    <ChevronDownOutline
+                        class="w-6 h-6 m-0 p-0 text-primary-800 dark:text-white inline"
+                    />
                 </NavLi>
                 <Dropdown class="w-44 z-20">
                     {#each adminFeatures as feature}
-                        <DropdownItem on:click={() => { window.location.href = feature.href; }}>
+                        <DropdownItem
+                            on:click={() => {
+                                window.location.href = feature.href;
+                            }}
+                            class={$page.route.id === feature.href
+                                ? "active"
+                                : ""}
+                        >
                             {feature.name}
                         </DropdownItem>
                     {/each}
                 </Dropdown>
-            
+
                 <NavLi class="cursor-pointer">
                     <CodeForkSolid
                         class="h-6 text-primary-800 dark:text-white inline"
@@ -268,6 +271,7 @@
                 <Dropdown class="w-44 z-20">
                     {#each hosts as host}
                         <DropdownItem
+                            class={hostId === host.host_id ? "active" : ""}
                             on:click={() => {
                                 window.location.href = `/admin/${host.host_id}`;
                             }}
@@ -291,6 +295,9 @@
                     <Dropdown class="w-44 z-20">
                         {#each events as event}
                             <DropdownItem
+                                class={eventId == event.event_id
+                                    ? "active"
+                                    : ""}
                                 on:click={() => {
                                     window.location.href = `/admin/${hostId}/${event.event_id}`;
                                 }}
@@ -300,9 +307,14 @@
                         {/each}
                     </Dropdown>
                     {#if eventId}
-                        <NavLi class="cursor-pointer {paths[3] === "students" ? '' : 'non-active'}"  href="/admin/{hostId}/{eventId}/students">Students</NavLi>
-                        <NavLi class="cursor-pointer {paths[3] === "teams" ? '' : 'non-active'}"  href="/admin/{hostId}/{eventId}/teams">Teams</NavLi>
-                        <NavLi class="cursor-pointer {paths[3] === "tests" ? '' : 'non-active'}"  href="/admin/{hostId}/{eventId}/tests">Tests</NavLi>
+                        <NavLi
+                            class="cursor-pointer navli {$page.route.id?.includes("/teams") ? 'active' : ''}"
+                            href="/admin/{hostId}/{eventId}/teams">Teams</NavLi
+                        >
+                        <NavLi
+                            class="cursor-pointer navli {$page.route.id?.includes("/tests") ? 'active' : ''}"
+                            href="/admin/{hostId}/{eventId}/tests">Tests</NavLi
+                        >
                     {/if}
                 {/if}
             {/if}
@@ -313,6 +325,8 @@
 <style>
     :global(nav div.flex) {
         justify-content: space-between;
+        margin: 0;
+        min-width: 100% !important;
     }
 
     :global(.cursor-pointer) {
@@ -320,17 +334,23 @@
         background-color: white;
     }
 
-    :global(.non-active) {
-        background-color: transparent;
-    }
-
     .logo {
         background-color: black;
         border-radius: 50px;
     }
 
-    /* Override DropdownItem hover styles to use --primary-tint */
-    :global(.dropdown-item:hover) {
-         background-color: var(--primary-tint) !important;
+    :global([role="link"]:hover) {
+        background-color: rgb(221, 221, 221) !important;
+    }
+
+    :global(.active) {
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 4px;
+    }
+
+    :global(.navli) {
+        background-color: transparent;
+        color: white;
     }
 </style>

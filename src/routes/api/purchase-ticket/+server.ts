@@ -1,7 +1,6 @@
 // You may want to replace the above with a static private env variable
 // for dead-code elimination and build-time type-checking:
 
-const stripeSecretKey = import.meta.env.VITE_STRIPE_SECRET_API_KEY;
 import {
   redirect,
   type RequestEvent,
@@ -10,6 +9,9 @@ import {
 import { Stripe } from "stripe";
 import type { Tables } from "../../../../db/database.types";
 import { adminSupabase } from "$lib/adminSupabaseClient";
+import { env } from "$env/dynamic/private";
+
+const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
@@ -35,7 +37,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     quantity = r("quantity");
     creating_team = r("creating_team");
     target_org_id = body.target_org_id;
-    joining_team_code = body.joining_team_id;
+    joining_team_code = body.joining_team_code;
   } catch (e: any) {
     return new Response("missing or malformed body: " + e.message, {
       status: 400,
@@ -129,6 +131,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           ? `${request.url.origin}/coach/${target_org_id}/${host_id}/${event_id}`
           : // This case shouldn't be hit.
             (() => {
+              console.error("unexpected request state", body);
               throw Error("unexpected request state");
             })();
     const cancel_url =

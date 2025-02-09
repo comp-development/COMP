@@ -1,4 +1,3 @@
-const stripeSecretKey = import.meta.env.VITE_STRIPE_SECRET_API_KEY;
 import { v4 as uuidv4 } from "uuid";
 import {
   redirect,
@@ -11,6 +10,9 @@ import { adminSupabase } from "$lib/adminSupabaseClient";
 import { get } from "svelte/store";
 import { page } from "$app/stores";
 import { generate_join_code } from "$lib/joinCode";
+import { env } from "$env/dynamic/private";
+
+const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
 const dbg = <T,>(x: T): T => {
   console.log(x);

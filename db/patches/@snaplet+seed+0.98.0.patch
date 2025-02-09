@@ -1,3 +1,19 @@
+diff --git a/node_modules/@snaplet/seed/dist/src/core/plan/plan.js b/node_modules/@snaplet/seed/dist/src/core/plan/plan.js
+index c43fc04..35082e3 100644
+--- a/node_modules/@snaplet/seed/dist/src/core/plan/plan.js
++++ b/node_modules/@snaplet/seed/dist/src/core/plan/plan.js
+@@ -109,7 +109,10 @@ export class Plan {
+                     inputsData[field.name] === undefined &&
+                     !userModels[field.type].connect) {
+                     for (const f of field.relationFromFields) {
+-                        modelData[f] = null;
++                        // check if user specified the field or not.
++                        if (inputsData[f] === undefined) {
++                            modelData[f] = null;
++                        }
+                     }
+                     continue;
+                 }
 diff --git a/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js b/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js
 index bede21f..3e3cb3b 100644
 --- a/node_modules/@snaplet/seed/dist/src/dialects/postgres/store.js
