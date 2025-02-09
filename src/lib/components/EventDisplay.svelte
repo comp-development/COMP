@@ -1,12 +1,15 @@
 <script lang="ts">
     import MarkdownRender from "$lib/components/MarkdownRender.svelte";
+    import { Button } from "flowbite-svelte";
 
     let {
+        id = null,
         name,
         date = null,
         logo = null,
         email = null,
         markdown = null,
+        editable = false
     } = $props();
 </script>
 
@@ -36,29 +39,23 @@
                     >
                 </div>
             {/if}
+
+            {#if editable}
+                <br />
+                <Button pill color="primary" href={`./${id}/edit`}>Edit Information</Button>
+            {/if}
         </div>
     </div>
+
     {#if markdown}
         <div class="flex">
-            <div class="summary">
-                <MarkdownRender source={markdown} />
-            </div>
+            <MarkdownRender source={markdown} />
         </div>
     {/if}
 </div>
 
 <style>
-    .summary {
-        border: 3px solid var(--primary-tint);
-        padding: 20px;
-        margin: 10px;
-        margin-top: 0px;
-        border-radius: 15px;
-        text-align: center;
-    }
-
     .grid {
-        
         grid-template-columns: 35% auto;
         column-gap: 40px;
         width: 100%;

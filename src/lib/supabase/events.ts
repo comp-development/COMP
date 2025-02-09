@@ -7,6 +7,18 @@ export async function getAllEvents(select: string = "*") {
   return data;
 }
 
+export async function getAllHostEvents(
+  host_id: number,
+  customSelect: string = "*",
+) {
+  const { data, error } = await supabase
+    .from("events")
+    .select(customSelect)
+    .eq("host_id", host_id);
+  if (error) throw error;
+  return data;
+}
+
 export async function getHostEvents(
   host_id: number,
   published: boolean = true,
@@ -303,4 +315,25 @@ export async function isEventPublished(event_id: number) {
   if (error) throw error;
 
   return data?.published ?? false;
+}
+
+export async function updateEvent(event_id: number, eventData: any) {
+  const { error } = await supabase
+    .from("events")
+    .update(eventData)
+    .eq("event_id", event_id);
+  if (error) throw error;
+}
+
+export async function getEventOrganizations(event_id: number) {
+  const { data, error } = await supabase
+    .from("org_events")
+    .select(`
+            *,
+            org:orgs(*)
+        `)
+    .eq("event_id", event_id);
+  if (error) throw error;
+
+  return data;
 }
