@@ -5,6 +5,7 @@
 	import Loading from "$lib/components/Loading.svelte";
 	import EventDisplay from "$lib/components/EventDisplay.svelte";
 	import TableName from "$lib/components/TableName.svelte";
+    import { Button } from "flowbite-svelte";
 
 	let hostId = $page.params.host_id;
 	let eventId = $page.params.event_id;
@@ -42,7 +43,11 @@
 		editable={true}
 	/>
 
-	<div class="mt-8 p-4">
+	<div class="flex">
+		<Button pill color="primary" href="./{eventId}/registration">Develop Event Registration</Button>
+	</div>
+
+	<div class="mt-4 mb-4 p-4">
 		<h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
 		<div class="tableMax">
 			<TableName

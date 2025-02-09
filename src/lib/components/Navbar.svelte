@@ -310,6 +310,10 @@
                             class="cursor-pointer navli {$page.route.id?.includes("/tests") ? 'active' : ''}"
                             href="/admin/{hostId}/{eventId}/tests">Tests</NavLi
                         >
+                        <NavLi
+                            class="cursor-pointer navli {$page.route.id?.includes("/registration") ? 'active' : ''}"
+                            href="/admin/{hostId}/{eventId}/registration">Registration</NavLi
+                        >
                     {/if}
                 {/if}
             {/if}
