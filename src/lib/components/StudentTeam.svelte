@@ -153,7 +153,7 @@
 
 <ConfirmationModal
     isShown={showDeleteTeamConfirmation}
-    actionName="delete this team"
+    text="Are you sure you want to delete this team? This action cannot be undone."
     onCancel={() => {
         showDeleteTeamConfirmation = false;
         deleteTeamId = false;

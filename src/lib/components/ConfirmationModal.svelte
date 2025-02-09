@@ -3,6 +3,7 @@
 
     export let isShown = false;
     export let actionName = "this action";
+    export let color = "red";
     export let onCancel = () => {};
     export let onConfirm = () => {};
 </script>
@@ -15,7 +16,7 @@
         <br />
         <div class="flex justify-center gap-4">
             <Button color="alternative" on:click={onCancel}>Cancel</Button>
-            <Button color="green" on:click={onConfirm}>Confirm</Button>
+            <Button color={color} on:click={onConfirm}>Confirm</Button>
         </div>
     </div>
 </Modal>
