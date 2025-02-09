@@ -6,12 +6,13 @@
     } from "flowbite-svelte-icons";
     import DraggableStudent from "./DraggableStudent.svelte";
     import CopyText from "./CopyText.svelte";
-    import { updateStudentTeam } from "$lib/supabase";
+    import { updateStudentTeam, type CoachEventOrg } from "$lib/supabase";
     import { handleError } from "$lib/handleError";
     import toast from "$lib/toast.svelte";
     import { Modal } from "flowbite-svelte";
     import TableName from "$lib/components/TableName.svelte";
     import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+    import type { Unpacked } from "$lib/supabaseClient";
 
     let {
         event_id,
@@ -30,7 +31,7 @@
         showDeleteTeamConfirmation = $bindable(),
         deleteTeamId = $bindable(),
         organizationDetails = $bindable(),
-    } = $props();
+    }: {team: Unpacked<CoachEventOrg["teams"]>} & Omit<any, "team">  = $props();
 
     let isStudentModalOpen = $state(false);
     let studentModalOpenTeam = $state(null);
@@ -135,8 +136,10 @@
         <CopyText text={team.join_code} />
     {/if}
 
-    {#each team.teamMembers as team_member}
+    {#each team.members as team_member}
         <DraggableStudent
+            team_id={team.team_id}
+            {event_id}
             {team_member}
             {onDragStart}
             {onDeleteStudent}

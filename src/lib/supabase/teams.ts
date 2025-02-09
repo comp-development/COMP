@@ -55,7 +55,7 @@ export async function getTeamId(student_id: string, event_id: number) {
 
 export async function updateStudentTeam(
   student_event_id: number,
-  new_team_id: number,
+  new_team_id: number | null,
   new_org_id: number | null,
 ) {
   const { data, error } = await supabase
@@ -67,6 +67,8 @@ export async function updateStudentTeam(
     .eq("student_event_id", student_event_id)
     .select("*, person:students(*)")
     .single();
+  // TODO: remove
+  console.log(data, error, student_event_id, new_org_id, new_team_id);
 
   if (error) throw error;
   return data;

@@ -2,13 +2,17 @@
     import { Badge, Modal } from "flowbite-svelte";
     import { PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
     import StudentForm from "./StudentForm.svelte";
+    import type { CoachEventOrg } from "$lib/supabase";
+    import type { Unpacked } from "$lib/supabaseClient";
 
     const {
         team_member,
+        team_id,
         onDragStart,
         onDeleteStudent,
+        event_id,
         editableFeatures = true,
-    } = $props();
+    }: {team_member: Unpacked<Unpacked<CoachEventOrg["teams"]>["members"]>, team_id: string | null} & Omit<any, "team_member"> = $props();
 
     let isEditModalOpen = $state(false);
 
@@ -24,7 +28,7 @@
 <div
     class="teamMember"
     draggable="true"
-    on:dragstart={(e) => onDragStart(e, team_member)}
+    on:dragstart={(e) => onDragStart(e, team_id, team_member)}
 >
     <div class="ml-2">
         <div class="flex">
@@ -33,14 +37,14 @@
             {/if}
             <div class="ml-2">
                 <p class="font-bold text-gray-800">
-                    {team_member.person.first_name}
-                    {team_member.person.last_name}
+                    {team_member.user.first_name}
+                    {team_member.user.last_name}
                 </p>
                 <p
                     class="text-sm text-gray-600"
                     style="overflow-wrap: anywhere;"
                 >
-                    {team_member.person.email ?? "No associated email."}
+                    {team_member.user.email ?? "No associated email."}
                 </p>
             </div>
         </div>
@@ -74,8 +78,8 @@
         <StudentForm
             title=""
             student_event={team_member}
-            user={team_member.person}
-            event_id={team_member.event_id}
+            user={team_member.user}
+            event_id={event_id}
         />
     </Modal>
 </div>
