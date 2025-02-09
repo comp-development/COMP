@@ -28,7 +28,8 @@ export async function getHostEvents(
     .from("events")
     .select(customSelect)
     .eq("host_id", host_id)
-    .eq("published", published);
+    .eq("published", published)
+    .order("event_date", { ascending: true });
   if (error) throw error;
   return data;
 }
