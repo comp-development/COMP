@@ -477,7 +477,7 @@
     {:else}
         <OrgForm
             title="Registration Form"
-            org={organizationDetails}
+            bind:org={organizationDetails}
             {event_id}
             {org_id}
         />

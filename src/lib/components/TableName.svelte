@@ -49,7 +49,7 @@
                     >
                     <ConfirmationModal
                         isShown={showDeleteConfirmation}
-                        actionName="remove this coach from organization"
+                        text="Are you sure you want to remove this team from this organization?"
                         onCancel={() => {
                             showDeleteConfirmation = false;
                         }}
