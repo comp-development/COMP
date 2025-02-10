@@ -5,6 +5,7 @@
         getEventCustomFields,
         getCustomFieldResponses,
     } from "$lib/supabase";
+    import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
 
     let selectedTab = "student";
     let studentResponses = $state({});
@@ -114,13 +115,14 @@
         title="Student"
         on:click={() => (selectedTab = "student")}
     >
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid">
             <div>
-                <h2>Student Registration</h2>
+                <h2>Custom Field Builder</h2>
+                <EditableCustomForm bind:custom_fields={studentCustomFields} />
             </div>
             <div>
                 <CustomForm
-                    title="Registration Form"
+                    title="Registration Form Preview"
                     fields={studentFields}
                     custom_fields={studentCustomFields}
                     bind:newResponses={studentResponses}
@@ -137,7 +139,8 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2>Organization Registration</h2>
+                <h2>Custom Field Builder</h2>
+                <EditableCustomForm bind:custom_fields={orgCustomFields} />
             </div>
             <div>
                 <CustomForm
@@ -158,7 +161,8 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2>Team Registration</h2>
+                <h2>Custom Field Builder</h2>
+                <EditableCustomForm bind:custom_fields={teamCustomFields} />
             </div>
             <div>
                 <CustomForm

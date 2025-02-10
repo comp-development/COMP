@@ -378,94 +378,94 @@ async function reset_db() {
       org_to_s.set(key, (org_to_s.get(key) ?? []).concat([e.student_id]));
     });
     // Have orgs purchase sufficient tickets (greater or equal to assigned student count).
-    await seed.ticket_orders(
-      (x) =>
-        x(
-          org_to_s.size,
-          ({ index }) =>
-            [...org_to_s.entries()].map(([e, s]) => ({
-              student_id: null,
-              org_id: e,
-              quantity:
-                s.length +
-                copycat.int(["extra tickets", i], { min: 0, max: 3 }),
-            }))[index],
-        ),
-      { connect: { events: [event] } },
-    );
+    // await seed.ticket_orders(
+    //   (x) =>
+    //     x(
+    //       org_to_s.size,
+    //       ({ index }) =>
+    //         [...org_to_s.entries()].map(([e, s]) => ({
+    //           student_id: null,
+    //           org_id: e,
+    //           quantity:
+    //             s.length +
+    //             copycat.int(["extra tickets", i], { min: 0, max: 3 }),
+    //         }))[index],
+    //     ),
+    //   { connect: { events: [event] } },
+    // );
 
-    // Have individual students purchase their tickets.
-    await seed.ticket_orders(
-      indiv_s.map((s) => ({
-        student_id: s.student_id,
-        org_id: null,
-        quantity: 1,
-      })),
-      { connect: { events: [event] } },
-    );
+    // // Have individual students purchase their tickets.
+    // await seed.ticket_orders(
+    //   indiv_s.map((s) => ({
+    //     student_id: s.student_id,
+    //     org_id: null,
+    //     quantity: 1,
+    //   })),
+    //   { connect: { events: [event] } },
+    // );
 
     // Group org students and indiv students into teams.
     // Note that the grouping implementation may result in anywhere from 1 to
     // max_group_size members in a team (for the final team).
 
     // TODO: don't use assign ALL students to a team. choose [0, 5 or so] to omit.
-    await seed.teams(
-      [...org_to_s.entries()]
-        .flatMap(([o, s]) =>
-          chunks(["team_orgs", o, i], s, 2, 4, copycat.int).map(
-            (s) => [o, s] as [number, string[]],
-          ),
-        )
-        .map(([org_id, student_ids], t_i) => {
-          const team_id = (
-            copycat.unique(
-              ["org team #", i, t_i],
-              (i) => copycat.int(i, { max: 999 }),
-              team_store,
-            ) as number
-          )
-            .toString()
-            .padStart(3, "0");
-          return {
-            org_id,
-            event_id: event.event_id,
-            front_id: team_id,
-            student_events: student_ids.map((student_id, s_i) => ({
-              student_id,
-              front_id: team_id + team_letters[s_i],
-              event_id: event.event_id,
-              org_id,
-            })),
-          };
-        }),
-      { connect: { events: [event] } },
-    );
+    // await seed.teams(
+    //   [...org_to_s.entries()]
+    //     .flatMap(([o, s]) =>
+    //       chunks(["team_orgs", o, i], s, 2, 4, copycat.int).map(
+    //         (s) => [o, s] as [number, string[]],
+    //       ),
+    //     )
+    //     .map(([org_id, student_ids], t_i) => {
+    //       const team_id = (
+    //         copycat.unique(
+    //           ["org team #", i, t_i],
+    //           (i) => copycat.int(i, { max: 999 }),
+    //           team_store,
+    //         ) as number
+    //       )
+    //         .toString()
+    //         .padStart(3, "0");
+    //       return {
+    //         org_id,
+    //         event_id: event.event_id,
+    //         front_id: team_id,
+    //         student_events: student_ids.map((student_id, s_i) => ({
+    //           student_id,
+    //           front_id: team_id + team_letters[s_i],
+    //           event_id: event.event_id,
+    //           org_id,
+    //         })),
+    //       };
+    //     }),
+    //   { connect: { events: [event] } },
+    // );
 
-    const indiv_teams_s = chunks(["indiv org", i], indiv_s, 2, 4, copycat.int);
-    await seed.teams(
-      indiv_teams_s.map((s, t_i) => {
-        const team_id = (
-          copycat.unique(
-            ["indiv team #", i, t_i],
-            (i) => copycat.int(i, { max: 999 }),
-            team_store,
-          ) as number
-        )
-          .toString()
-          .padStart(3, "0");
-        return {
-          org_id: null,
-          event_id: event.event_id,
-          front_id: team_id,
-          student_events: s.map((s, s_i) => ({
-            student_id: s.student_id,
-            event_id: event.event_id,
-            front_id: team_id + team_letters[s_i],
-          })),
-        };
-      }),
-      { connect: { events: [event] } },
-    );
+    // const indiv_teams_s = chunks(["indiv org", i], indiv_s, 2, 4, copycat.int);
+    // await seed.teams(
+    //   indiv_teams_s.map((s, t_i) => {
+    //     const team_id = (
+    //       copycat.unique(
+    //         ["indiv team #", i, t_i],
+    //         (i) => copycat.int(i, { max: 999 }),
+    //         team_store,
+    //       ) as number
+    //     )
+    //       .toString()
+    //       .padStart(3, "0");
+    //     return {
+    //       org_id: null,
+    //       event_id: event.event_id,
+    //       front_id: team_id,
+    //       student_events: s.map((s, s_i) => ({
+    //         student_id: s.student_id,
+    //         event_id: event.event_id,
+    //         front_id: team_id + team_letters[s_i],
+    //       })),
+    //     };
+    //   }),
+    //   { connect: { events: [event] } },
+    // );
   }
   if (!dryRun) {
     console.log("Successfully seeded database!");
