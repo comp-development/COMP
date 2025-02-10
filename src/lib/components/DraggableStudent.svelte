@@ -66,8 +66,8 @@
     {/if}
 </div>
 
-<div class="modalExterior">
-    <Modal bind:open={isEditModalOpen} size="md" autoclose={false}>
+<div class="modalExterior secondPlaneModal">
+    <Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
         <h3 class="text-xl font-medium text-gray-900 dark:text-white">
             Edit Student
         </h3>
@@ -96,5 +96,21 @@
 
     .teamMember:hover {
         transform: scale(1.01);
+    }
+
+    :global(.secondPlaneModal) {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 99999999;
+        pointer-events: all;
+        display: contents;
+    }
+
+    :global(.secondPlaneModal div) {
+        pointer-events: all;
+        z-index: 99999999;
     }
 </style>

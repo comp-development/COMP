@@ -337,3 +337,27 @@ export async function getEventOrganizations(event_id: number) {
 
   return data;
 }
+
+export async function createEvent(eventData: {
+  event_name: string;
+  event_date: string;
+  ticket_price_cents: number;
+  max_team_size: number;
+  email: string;
+  logo: string;
+  summary: string;
+  host_id: number;
+  published?: boolean;
+}) {
+  const { data, error } = await supabase
+    .from('events')
+    .insert({
+      ...eventData,
+      published: eventData.published ?? false
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}

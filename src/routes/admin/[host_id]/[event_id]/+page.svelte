@@ -42,11 +42,7 @@
 		markdown={event_information.summary}
 		editable={true}
 	/>
-
-	<div class="flex">
-		<Button pill color="primary" href="./{eventId}/registration">Develop Event Registration</Button>
-	</div>
-
+	
 	<div class="mt-4 mb-4 p-4">
 		<h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
 		<div class="tableMax">
