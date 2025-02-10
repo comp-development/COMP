@@ -48,12 +48,22 @@
         tel: /^\d{3}-\d{3}-\d{4}$/,
     };
 
-    function validateInput(key, value, regex) {
+    const validationMessages = {
+        date: "Please follow the format: YYYY-MM-DD",
+        email: "Please follow the format: username@domain.com",
+        tel: "Please follow the format: NNN-NNN-NNNN",
+    };
+
+    type Unpacked<T> = T extends (infer U)[] ? U : T; //Francis Chua
+    // type Keys<T> = T extends (infer U)[] ? U : T; //Francis Chua
+    
+
+    // type a = Unpacked<typeof Object.keys(validationMessages)>;
+
+    function validateInput(key, value, regex, error_message) {
         if (regex && value) {
             const pattern = new RegExp(regex);
-            validationErrors[key] = !pattern.test(value)
-                ? `Please follow the format: ${regex}`
-                : null;
+            validationErrors[key] = !pattern.test(value) ? error_message : null
         } else {
             validationErrors[key] = null;
         }
@@ -164,6 +174,7 @@
                                     key,
                                     newResponses[key],
                                     typePatterns.date,
+                                    validationMessages.date
                                 )}
                         />
                     {:else if field.custom_field_type === "email"}
@@ -179,6 +190,7 @@
                                     key,
                                     newResponses[key],
                                     typePatterns.email,
+                                    validationMessages.email
                                 )}
                         >
                             <EnvelopeSolid
@@ -199,6 +211,7 @@
                                     key,
                                     newResponses[key],
                                     typePatterns.tel,
+                                    validationMessages.tel
                                 )}
                         >
                             <PhoneSolid
@@ -276,6 +289,7 @@
                                     key,
                                     newResponses[key],
                                     field.regex,
+                                    field.regex_error_message
                                 );
                             }}
                         />
