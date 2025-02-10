@@ -183,6 +183,5 @@
         position: relative;
         text-align: left;
         transition: background-color 0.2s ease;
-        z-index: 2;
     }
 </style>

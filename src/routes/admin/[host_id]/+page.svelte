@@ -33,6 +33,10 @@
         id={host_id}
         editable={true}
     />
+    <div class="mb-4">
+    <Button href={`/admin/${host_id}/create`} pill>Create Event</Button>
+    </div>
+
     <h2 style="text-align: center;">Host Events</h2>
     <br />
     <div class="buttonContainer">
@@ -66,16 +70,3 @@
     {/if}
     <br /><br />
 {/if}
-
-<style>
-    .container {
-        max-width: 768px;
-    }
-
-    .summary {
-        border: 3px solid var(--primary-tint);
-        padding: 10px;
-        margin: 10px;
-        border-radius: 15px;
-    }
-</style>
