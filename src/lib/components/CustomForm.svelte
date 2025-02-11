@@ -158,6 +158,7 @@
                         <Datepicker
                             bind:value={newResponses[key]}
                             required={field.required}
+                            placeholder={field.placeholder}
                             disabled={!field.editable && field?.value !== null}
                             on:blur={() =>
                                 validateInput(

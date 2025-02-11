@@ -23,7 +23,6 @@
 
     const studentFields = [
         {
-            event_custom_field_id: "first_name",
             key: "first_name",
             label: "First Name",
             required: true,
@@ -35,7 +34,6 @@
             hidden: false,
         },
         {
-            event_custom_field_id: "last_name",
             key: "last_name",
             label: "Last Name",
             required: true,
@@ -47,7 +45,6 @@
             hidden: false,
         },
         {
-            event_custom_field_id: "email",
             key: "email",
             label: "Email Address",
             required: true,
@@ -62,7 +59,6 @@
 
     const orgFields = [
         {
-            event_custom_field_id: "org_name",
             key: "org_name",
             label: "Organization Name",
             required: true,
@@ -74,7 +70,6 @@
             hidden: false,
         },
         {
-            event_custom_field_id: "org_address",
             key: "org_address",
             label: "Organization Address",
             required: true,
@@ -89,7 +84,6 @@
 
     const teamFields = [
         {
-            event_custom_field_id: "team_name",
             key: "team_name",
             label: "Team Name",
             required: true,
@@ -117,8 +111,7 @@
     >
         <div class="grid">
             <div>
-                <h2>Custom Field Builder</h2>
-                <EditableCustomForm bind:custom_fields={studentCustomFields} />
+                <EditableCustomForm bind:custom_fields={studentCustomFields} event_id={event_id} />
             </div>
             <div>
                 <CustomForm
@@ -139,8 +132,7 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2>Custom Field Builder</h2>
-                <EditableCustomForm bind:custom_fields={orgCustomFields} />
+                <EditableCustomForm bind:custom_fields={orgCustomFields} event_id={event_id} />
             </div>
             <div>
                 <CustomForm
@@ -161,8 +153,7 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2>Custom Field Builder</h2>
-                <EditableCustomForm bind:custom_fields={teamCustomFields} />
+                <EditableCustomForm bind:custom_fields={teamCustomFields} event_id={event_id} />
             </div>
             <div>
                 <CustomForm

@@ -1,5 +1,12 @@
 <script lang="ts">
-    import { Button, Toggle, Input, Popover, Label } from "flowbite-svelte";
+    import {
+        Button,
+        Toggle,
+        Input,
+        Popover,
+        Label,
+        Modal,
+    } from "flowbite-svelte";
     import {
         CalendarMonthOutline,
         TextSizeOutline,
@@ -10,13 +17,34 @@
         PhoneOutline,
         TrashBinOutline,
         CaretDownOutline,
-        MinimizeOutline,
         ChevronDownOutline,
         CaretSortOutline,
+        CirclePlusSolid,
     } from "flowbite-svelte-icons";
-    import ConfirmationModal from "./ConfirmationModal.svelte";
+    import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+    import TableName from "$lib/components/TableName.svelte";
+    import { getCustomFields, upsertEventCustomFields } from "$lib/supabase";
+    import toast from "$lib/toast.svelte";
 
-    let { custom_fields = $bindable() } = $props();
+    let { custom_fields = $bindable(), event_id } = $props();
+    let showCustomFieldModal = $state(false);
+    let availableCustomFields = $state([]);
+
+    async function onLoad() {
+        availableCustomFields = await getCustomFields();
+    }
+
+    onLoad();
+
+    // Fetch custom fields when modal opens
+    async function openCustomFieldModal() {
+        try {
+            showCustomFieldModal = true;
+            console.log("AVAILABLE CUSTOM FIELDS", availableCustomFields);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 
     const inputTypes = [
         { icon: TextSizeOutline, type: "text", tooltip: "Text" },
@@ -31,6 +59,12 @@
         { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
         { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
         { icon: PhoneOutline, type: "number", tooltip: "Number" },
+        {
+            icon: CirclePlusSolid,
+            type: "add_existing",
+            tooltip: "Add Existing Field",
+            onClick: openCustomFieldModal,
+        },
     ];
 
     // Generate unique IDs for each button
@@ -38,8 +72,8 @@
         () => `button-${Math.random().toString(36).substr(2, 9)}`,
     );
 
-    let showDeleteModal = false;
-    let fieldToDelete: number | null = null;
+    let showDeleteModal = $state(false);
+    let fieldToDelete: number | null = $state(null);
 
     // Track which sections are expanded using a simple object
     let expandedSections = $state({});
@@ -81,7 +115,6 @@
 
     function addField(type: string) {
         const newField = {
-            event_custom_field_id: crypto.randomUUID(),
             key: "",
             label: "",
             required: false,
@@ -148,19 +181,53 @@
                 .join(" ") + " Field"
         );
     }
+
+    function selectCustomField(_: Event, field: any) {
+        const newField = {
+            key: field.key,
+            label: field.label,
+            required: field.required ?? false,
+            regex: field.regex,
+            help_text: field.help_text,
+            placeholder: field.placeholder ?? "",
+            value: null,
+            choices: field.choices,
+            editable: field.editable ?? true,
+            hidden: field.hidden ?? false,
+            custom_field_type: field.custom_field_type,
+        };
+        custom_fields = [...custom_fields, newField];
+        showCustomFieldModal = false;
+    }
+
+    async function handleSubmit() {
+        try {
+            if (!event_id) {
+                throw new Error('No event ID provided');
+            }
+            
+            await upsertEventCustomFields(event_id, custom_fields);
+            toast.success('Custom fields saved successfully');
+        } catch (error) {
+            console.error('Error saving custom fields:', error);
+            toast.error('Failed to save custom fields');
+        }
+    }
 </script>
 
-<div class="space-y-6">
-    <!-- Input Type Selection Bar -->
-    <div class="flex gap-2 p-4 rounded-lg">
-        {#each inputTypes as { icon: Icon, type, tooltip }, i}
+<div class="space-y-2">
+    <h2>Custom Field Builder</h2>
+    <Button pill on:click={handleSubmit}>Submit</Button>
+
+    <div class="flex gap-2 rounded-lg">
+        {#each inputTypes as { icon: Icon, type, tooltip, onClick }, i}
             <div class="relative">
                 <Button
                     id={buttonIds[i]}
                     size="sm"
                     color="light"
                     class="p-2.5"
-                    on:click={() => addField(type)}
+                    on:click={onClick || (() => addField(type))}
                 >
                     <svelte:component this={Icon} class="w-4 h-4" />
                 </Button>
@@ -178,7 +245,7 @@
 
     <!-- Draggable Fields -->
     <div class="space-y-4">
-        {#each custom_fields as field, index (field.event_custom_field_id)}
+        {#each custom_fields as field, index}
             <div
                 class="p-4 border rounded-lg relative editable-field"
                 draggable="true"
@@ -190,7 +257,10 @@
                     class="absolute top-2 right-2"
                     color="red"
                     size="xs"
-                    on:click={() => confirmDelete(index)}
+                    onclick={(e) => {
+                        e.preventDefault();
+                        confirmDelete(index);
+                    }}
                 >
                     <TrashBinOutline class="w-4 h-4" />
                 </Button>
@@ -232,7 +302,6 @@
                                     id="label-{index}"
                                     type="text"
                                     bind:value={field.label}
-                                    placeholder="Enter field label"
                                 />
                             </div>
                             <div>
@@ -243,9 +312,42 @@
                                     id="key-{index}"
                                     type="text"
                                     bind:value={field.key}
-                                    placeholder="Enter field key"
                                 />
                             </div>
+                        </div>
+
+                        {#if !["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
+                            <div>
+                                <Label for="label-{index}" class="mb-2 text-left"
+                                    >Placeholder</Label
+                                >
+                                <Input
+                                    id="label-{index}"
+                                    type="text"
+                                    bind:value={field.placeholder}
+                                />
+                            </div>
+                        {/if}
+
+                        <div>
+                            <Label for="label-{index}" class="mb-2 text-left"
+                                >Help Text</Label
+                            >
+                            <Input
+                                id="label-{index}"
+                                type="text"
+                                bind:value={field.help_text}
+                            />
+                        </div>
+                        <div>
+                            <Label for="label-{index}" class="mb-2 text-left"
+                                >Regex</Label
+                            >
+                            <Input
+                                id="label-{index}"
+                                type="text"
+                                bind:value={field.regex}
+                            />
                         </div>
 
                         <!-- Toggles -->
@@ -310,9 +412,43 @@
     </div>
 </div>
 
+<!-- Custom Fields Modal -->
+<Modal bind:open={showCustomFieldModal} size="xl">
+    <h3 class="text-xl font-medium text-gray-900 dark:text-white mb-4">
+        Select Custom Field
+    </h3>
+    <TableName
+        items={availableCustomFields}
+        columns={[
+            {
+                label: "Label",
+                value: (item) => item.label,
+                sortable: true,
+            },
+            {
+                label: "Key",
+                value: (item) => item.key,
+                sortable: true,
+            },
+            {
+                label: "Type",
+                value: (item) => item.custom_field_type,
+                sortable: true,
+            },
+            {
+                label: "Recipient",
+                value: (item) => item.custom_field_table,
+                sortable: true,
+            },
+        ]}
+        actionType="select"
+        action={selectCustomField}
+    />
+</Modal>
+
 <ConfirmationModal
-    bind:isShown={showDeleteModal}
-    text="Are you sure you want to delete this field?"
+    isShown={showDeleteModal}
+    actionName="delete this custom field"
     onCancel={() => {
         showDeleteModal = false;
         fieldToDelete = null;
@@ -350,5 +486,9 @@
 
     :global(.flex-content .cursor-pointer) {
         background-color: transparent;
+    }
+
+    :global(div[role=tabpanel]) {
+        background: transparent;
     }
 </style>

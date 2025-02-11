@@ -7,14 +7,13 @@
         getEventInformation,
         getCoachOrganization,
         updateStudentTeam,
-        upsertTeam,
         deleteTeam,
         deleteStudentTeam,
         getHostInformation,
         getStudentsWithoutTeam,
         removeStudentFromOrganization,
     } from "$lib/supabase";
-    import { Button, ButtonGroup, Input, Label, Modal } from "flowbite-svelte";
+    import { Button, ButtonGroup, Modal } from "flowbite-svelte";
     import type { Tables } from "../../../../../../db/database.types";
     import { CartSolid, UsersGroupSolid } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
@@ -25,7 +24,6 @@
     import StudentTeam from "$lib/components/StudentTeam.svelte";
     import DraggableStudent from "$lib/components/DraggableStudent.svelte";
     import TeamForm from "$lib/components/TeamForm.svelte";
-    import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
     import CustomForm from "$lib/components/CustomForm.svelte";
     import { supabase } from "$lib/supabaseClient";
     import InfoToolTip from "$lib/components/InfoToolTip.svelte";
