@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Toggle, Input, Popover, Label } from 'flowbite-svelte';
+    import { Button, Toggle, Input, Popover, Label } from "flowbite-svelte";
     import {
         CalendarMonthOutline,
         TextSizeOutline,
@@ -9,42 +9,93 @@
         EnvelopeOutline,
         PhoneOutline,
         TrashBinOutline,
-        CaretDownOutline
-    } from 'flowbite-svelte-icons';
-    import ConfirmationModal from './ConfirmationModal.svelte';
+        CaretDownOutline,
+        MinimizeOutline,
+        ChevronDownOutline,
+        CaretSortOutline,
+    } from "flowbite-svelte-icons";
+    import ConfirmationModal from "./ConfirmationModal.svelte";
 
-    export let custom_fields: any[] = [];
+    let { custom_fields = $bindable() } = $props();
 
     const inputTypes = [
-        { icon: TextSizeOutline, type: 'text', tooltip: 'Text' },
-        { icon: CalendarMonthOutline, type: 'date', tooltip: 'Date' },
-        { icon: ParagraphOutline, type: 'paragraph', tooltip: 'Paragraph' },
-        { icon: CheckCircleOutline, type: 'checkboxes', tooltip: 'Checkboxes' },
-        { icon: ListOutline, type: 'multiple_choice', tooltip: 'Multiple Choice' },
-        { icon: CaretDownOutline, type: 'dropdown', tooltip: 'Dropdown' },
-        { icon: EnvelopeOutline, type: 'email', tooltip: 'Email' },
-        { icon: PhoneOutline, type: 'number', tooltip: 'Number' }
+        { icon: TextSizeOutline, type: "text", tooltip: "Text" },
+        { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
+        { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
+        { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
+        {
+            icon: ListOutline,
+            type: "multiple_choice",
+            tooltip: "Multiple Choice",
+        },
+        { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
+        { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
+        { icon: PhoneOutline, type: "number", tooltip: "Number" },
     ];
 
     // Generate unique IDs for each button
-    const buttonIds = inputTypes.map(() => `button-${Math.random().toString(36).substr(2, 9)}`);
+    const buttonIds = inputTypes.map(
+        () => `button-${Math.random().toString(36).substr(2, 9)}`,
+    );
 
     let showDeleteModal = false;
     let fieldToDelete: number | null = null;
 
+    // Track which sections are expanded using a simple object
+    let expandedSections = $state({});
+    let draggedIndex: number | null = null;
+
+    // Simplified toggle function
+    function toggleSection(index: number) {
+        expandedSections[index] = !expandedSections[index];
+    }
+
+    // Drag and Drop handlers
+    function handleDragStart(e: DragEvent, index: number) {
+        draggedIndex = index;
+        if (e.target instanceof HTMLElement) {
+            e.target.style.opacity = "0.4";
+        }
+    }
+
+    function handleDragEnd(e: DragEvent) {
+        if (e.target instanceof HTMLElement) {
+            e.target.style.opacity = "1";
+        }
+        draggedIndex = null;
+    }
+
+    function handleDragOver(e: DragEvent, index: number) {
+        e.preventDefault();
+        if (draggedIndex === null || draggedIndex === index) return;
+
+        const items = [...custom_fields];
+        const draggedItem = items[draggedIndex];
+
+        items.splice(draggedIndex, 1);
+        items.splice(index, 0, draggedItem);
+
+        custom_fields = items;
+        draggedIndex = index;
+    }
+
     function addField(type: string) {
         const newField = {
             event_custom_field_id: crypto.randomUUID(),
-            key: '',
-            label: '',
+            key: "",
+            label: "",
             required: false,
             regex: null,
-            placeholder: '',
+            placeholder: "",
             value: null,
-            choices: ['checkboxes', 'multiple_choice', 'dropdown'].includes(type) ? [] : null,
+            choices: ["checkboxes", "multiple_choice", "dropdown"].includes(
+                type,
+            )
+                ? []
+                : null,
             editable: true,
             hidden: false,
-            custom_field_type: type
+            custom_field_type: type,
         };
         custom_fields = [...custom_fields, newField];
     }
@@ -64,35 +115,45 @@
 
     function addChoice(fieldIndex: number) {
         if (custom_fields[fieldIndex].choices) {
-            custom_fields[fieldIndex].choices = [...custom_fields[fieldIndex].choices, ''];
-            custom_fields = [...custom_fields];
+            let newChoices = [...custom_fields];
+            newChoices[fieldIndex].choices = [
+                ...newChoices[fieldIndex].choices,
+                "",
+            ];
+            custom_fields = newChoices;
         }
     }
 
     function removeChoice(fieldIndex: number, choiceIndex: number) {
         if (custom_fields[fieldIndex].choices) {
-            custom_fields[fieldIndex].choices = custom_fields[fieldIndex].choices.filter((_, i) => i !== choiceIndex);
-            custom_fields = [...custom_fields];
+            let newChoices = [...custom_fields];
+            newChoices[fieldIndex].choices = newChoices[
+                fieldIndex
+            ].choices.filter((_, i) => i !== choiceIndex);
+            custom_fields = newChoices;
         }
     }
 
     // Add a function to get the icon component based on type
     function getIconForType(type: string) {
-        return inputTypes.find(t => t.type === type)?.icon;
+        return inputTypes.find((t) => t.type === type)?.icon;
     }
 
     // Add a function to get a formatted title for the type
     function getTypeTitle(type: string) {
-        return type.split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ') + ' Field';
+        return (
+            type
+                .split("_")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ") + " Field"
+        );
     }
 </script>
 
 <div class="space-y-6">
     <!-- Input Type Selection Bar -->
-    <div class="flex gap-2 p-4 bg-gray-50 rounded-lg">
-        {#each inputTypes as {icon: Icon, type, tooltip}, i}
+    <div class="flex gap-2 p-4 rounded-lg">
+        {#each inputTypes as { icon: Icon, type, tooltip }, i}
             <div class="relative">
                 <Button
                     id={buttonIds[i]}
@@ -115,9 +176,16 @@
         {/each}
     </div>
 
+    <!-- Draggable Fields -->
     <div class="space-y-4">
-        {#each custom_fields as field, index}
-            <div class="p-4 border rounded-lg relative editable-field">
+        {#each custom_fields as field, index (field.event_custom_field_id)}
+            <div
+                class="p-4 border rounded-lg relative editable-field"
+                draggable="true"
+                on:dragstart={(e) => handleDragStart(e, index)}
+                on:dragend={handleDragEnd}
+                on:dragover={(e) => handleDragOver(e, index)}
+            >
                 <Button
                     class="absolute top-2 right-2"
                     color="red"
@@ -127,88 +195,116 @@
                     <TrashBinOutline class="w-4 h-4" />
                 </Button>
 
-                <!-- Type header -->
-                <div class="flex items-center gap-2 mb-6">
-                    <svelte:component 
-                        this={getIconForType(field.custom_field_type)} 
-                        class="w-5 h-5"
-                    />
+                <div class="absolute top-2 left-2 flex">
+                    <div class="cursor-move">
+                        <CaretSortOutline class="w-4 h-4 text-gray-500" />
+                    </div>
+                    <div class:rotate-180={expandedSections[index]}>
+                        <ChevronDownOutline
+                            class="w-4 h-4 text-gray-500"
+                            onclick={() => toggleSection(index)}
+                        />
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <Button size="xs" color="light" class="p-1.5">
+                        <svelte:component
+                            this={getIconForType(field.custom_field_type)}
+                            class="w-4 h-4"
+                        />
+                    </Button>
                     <h3 class="text-lg font-semibold">
                         {getTypeTitle(field.custom_field_type)}
                     </h3>
                 </div>
 
-                <div class="mt-8 space-y-4">
-                    <!-- Field Label and Key in two columns -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label for="label-{index}" class="mb-2 text-left">Field Label</Label>
-                            <Input
-                                id="label-{index}"
-                                type="text"
-                                bind:value={field.label}
-                                placeholder="Enter field label"
-                            />
-                        </div>
-                        <div>
-                            <Label for="key-{index}" class="mb-2 text-left">Field Key</Label>
-                            <Input
-                                id="key-{index}"
-                                type="text"
-                                bind:value={field.key}
-                                placeholder="Enter field key"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Toggles stacked vertically -->
-                    <div class="flex-content">
-                        <div class="flex-content max-w-[200px]">
-                            <Label class="mb-0">Required</Label>
-                            <Toggle bind:checked={field.required} />
-                        </div>
-                        <div class="flex-content max-w-[200px]">
-                            <Label class="mb-0">Hidden</Label>
-                            <Toggle bind:checked={field.hidden} />
-                        </div>
-                        <div class="flex-content max-w-[200px]">
-                            <Label class="mb-0">Editable</Label>
-                            <Toggle bind:checked={field.editable} />
-                        </div>
-                    </div>
-
-                    {#if ['multiple_choice', 'checkboxes', 'dropdown'].includes(field.custom_field_type)}
-                        <div class="space-y-2">
+                {#if expandedSections[index]}
+                    <div class="mt-8 space-y-4">
+                        <!-- Field Label and Key -->
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <Label>Choices</Label>
-                                <Button
-                                    size="xs"
-                                    pill
-                                    outline
-                                    on:click={() => addChoice(index)}
+                                <Label
+                                    for="label-{index}"
+                                    class="mb-2 text-left">Field Label</Label
                                 >
-                                    Add Choice
-                                </Button>
+                                <Input
+                                    id="label-{index}"
+                                    type="text"
+                                    bind:value={field.label}
+                                    placeholder="Enter field label"
+                                />
                             </div>
-                            {#each field.choices as choice, choiceIndex}
-                                <div class="flex gap-2">
-                                    <Input
-                                        type="text"
-                                        bind:value={field.choices[choiceIndex]}
-                                        placeholder={`Choice ${choiceIndex + 1}`}
-                                    />
+                            <div>
+                                <Label for="key-{index}" class="mb-2 text-left"
+                                    >Field Key</Label
+                                >
+                                <Input
+                                    id="key-{index}"
+                                    type="text"
+                                    bind:value={field.key}
+                                    placeholder="Enter field key"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Toggles -->
+                        <div class="flex-content">
+                            <div class="flex-content max-w-[200px]">
+                                <Label class="mb-0">Required</Label>
+                                <Toggle bind:checked={field.required} />
+                            </div>
+                            <div class="flex-content max-w-[200px]">
+                                <Label class="mb-0">Hidden</Label>
+                                <Toggle bind:checked={field.hidden} />
+                            </div>
+                            <div class="flex-content max-w-[200px]">
+                                <Label class="mb-0">Editable</Label>
+                                <Toggle bind:checked={field.editable} />
+                            </div>
+                        </div>
+
+                        <!-- Choices -->
+                        {#if ["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
+                            <div class="space-y-2">
+                                <div>
+                                    <Label class="mb-2">Choices</Label>
                                     <Button
-                                        color="red"
+                                        class="mb-2"
                                         size="xs"
-                                        on:click={() => removeChoice(index, choiceIndex)}
+                                        pill
+                                        outline
+                                        onclick={() => addChoice(index)}
                                     >
-                                        <TrashBinOutline class="w-4 h-4" />
+                                        Add Choice
                                     </Button>
                                 </div>
-                            {/each}
-                        </div>
-                    {/if}
-                </div>
+                                {#each field.choices as choice, choiceIndex}
+                                    <div class="flex gap-2">
+                                        <Input
+                                            type="text"
+                                            bind:value={field.choices[
+                                                choiceIndex
+                                            ]}
+                                            placeholder={`Choice ${choiceIndex + 1}`}
+                                        />
+                                        <Button
+                                            color="red"
+                                            size="xs"
+                                            on:click={() =>
+                                                removeChoice(
+                                                    index,
+                                                    choiceIndex,
+                                                )}
+                                        >
+                                            <TrashBinOutline class="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
             </div>
         {/each}
     </div>
@@ -236,6 +332,14 @@
 
     .grid {
         grid-template-columns: 65% 32%;
+    }
+
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+
+    .cursor-move {
+        cursor: move;
     }
 
     .flex-content {
