@@ -1,37 +1,36 @@
 <script lang="ts">
 	import { handleError } from "$lib/handleError";
 	import { createAccount, signIntoAccount, addStudent, addCoach } from "$lib/supabase";
+	import { supabase } from "$lib/supabaseClient";
 	import toast from "$lib/toast.svelte";
 	import CustomForm from "$lib/components/CustomForm.svelte";
 	import { Tabs, TabItem } from "flowbite-svelte";
 
+	// Instead of using an enum for login state, we'll just use string literals.
+	// Define the allowed login states.
+	type LogInState = "LOGIN" | "SIGNUP" | "RESET";
+
+	// Update props interface to use the string union type
 	interface Props {
-		logIn: boolean;
+		logInState: LogInState;
 	}
 
-	let { logIn }: Props = $props();
+	// Destructure the prop (if not provided, you can set a default value)
+	let { logInState="LOGIN" }: Props = $props();
 	let newResponses = $state({});
 	let validationErrors = $state({});
 	let selectedOption = $state("student");
 
 	const handleLogin = async () => {
 		try {
-			console.log(newResponses)
+			console.log(newResponses);
 			const email = newResponses.email.trim();
 			const password = newResponses.password.trim();
-			if (
-				!email ||
-				!password ||
-				email == "" ||
-				password == ""
-			) {
-				console.log("error")
+			if (!email || !password || email == "" || password == "") {
+				console.log("error");
 				throw new Error("Not all of the fields are complete");
 			}
-			await signIntoAccount(
-				email,
-				password,
-			);
+			await signIntoAccount(email, password);
 		} catch (error) {
 			handleError(error);
 		}
@@ -41,21 +40,34 @@
 		try {
 			if (newResponses.password === newResponses.retypePassword) {
 				try {
-                    const user = await createAccount(newResponses.email, newResponses.password);
+					const user = await createAccount(newResponses.email, newResponses.password);
 
-                    if (selectedOption === 'student') {
-                        await addStudent(user.id, newResponses);
-                    } else {
-                        await addCoach(user.id, newResponses);
-                    }
+					if (selectedOption === "student") {
+						await addStudent(user.id, newResponses);
+					} else {
+						await addCoach(user.id, newResponses);
+					}
 
-                    toast.success("Successfully signed up, check your email to confirm your account.");
-                } catch (error) {
-                    throw error;
+					toast.success("Successfully signed up, check your email to confirm your account.");
+				} catch (error) {
+					throw error;
 				}
 			} else {
 				throw new Error("Passwords do not match");
 			}
+		} catch (error) {
+			handleError(error);
+		}
+	};
+
+	const handleResetPassword = async () => {
+		try {
+			// Implement your reset password logic here (e.g., calling a reset service)
+			const { data, error } = await supabase.auth.resetPasswordForEmail(newResponses.email, {
+				redirectTo: 'https://comp.mt/reset-password',
+			});	
+			console.log("SQUAWK0", data, error);
+			toast.success("Reset password link sent. Please check your email.");
 		} catch (error) {
 			handleError(error);
 		}
@@ -87,7 +99,6 @@
 			hidden: false,
 			custom_field_type: "text",
 			placeholder: "First Name",
-
 		},
 		{
 			name: "last_name",
@@ -121,67 +132,119 @@
 		},
 	];
 
-	const studentSignupFields = commonSignupFields;
+	const resetPasswordFields = [
+		{
+			name: "email",
+			label: "Email",
+			required: true,
+			custom_field_type: "email",
+			placeholder: "Email",
+		}
+	];
 
+	const studentSignupFields = commonSignupFields;
 	const coachSignupFields = commonSignupFields;
 </script>
 
-<div>
-	<h1 id="headerText">
-		{#if logIn}
-			Log In
-		{:else}
-			Sign Up
-		{/if}
-	</h1>
+<div class="center-vertical">
+	<div style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;">
+		<div>
+			<!-- Change header based on login state -->
+			<h1 id="headerText">
+				{#if logInState === "LOGIN"}
+					Log In
+				{:else if logInState === "SIGNUP"}
+					Sign Up
+				{:else if logInState === "RESET"}
+					Reset Password
+				{/if}
+			</h1>
 
-	{#if logIn}
-		<div class="no-padding">
-			<CustomForm
-				fields={loginFields}
-				bind:newResponses
-				bind:validationErrors
-				handleSubmit={handleLogin}
-				showBorder={false}
-			/>
+			<!-- Display the appropriate form based on state -->
+			{#if logInState === "LOGIN"}
+				<div class="no-padding">
+					<CustomForm
+						fields={loginFields}
+						bind:newResponses
+						bind:validationErrors
+						handleSubmit={handleLogin}
+						showBorder={false}
+					/>
+				</div>
+			{:else if logInState === "SIGNUP"}
+				<br />
+				<div class="tabs">
+					<Tabs tabStyle="pill">
+						<TabItem
+							on:click={() => (selectedOption = "student")}
+							open={selectedOption === "student"}
+							title="Student"
+						>
+							<div class="no-padding">
+								<CustomForm
+									fields={studentSignupFields}
+									bind:newResponses
+									bind:validationErrors
+									handleSubmit={handleSignUp}
+									showBorder={false}
+								/>
+							</div>
+						</TabItem>
+						<TabItem
+							on:click={() => (selectedOption = "coach")}
+							open={selectedOption === "coach"}
+							title="Coach"
+						>
+							<div class="no-padding">
+								<CustomForm
+									fields={coachSignupFields}
+									bind:newResponses
+									bind:validationErrors
+									handleSubmit={handleSignUp}
+									showBorder={false}
+								/>
+							</div>
+						</TabItem>
+					</Tabs>
+				</div>
+			{:else if logInState === "RESET"}
+				<div class="no-padding">
+					<CustomForm
+						fields={resetPasswordFields}
+						bind:newResponses
+						bind:validationErrors
+						handleSubmit={handleResetPassword}
+						showBorder={false}
+					/>
+				</div>
+			{/if}
+			<br>
+			<!-- Footer buttons to toggle states -->
+			<div class="flex">
+				<div class="bottomSection" style="color: white;">
+					<button
+						size="lg"
+						class="link"
+						id="switchScreen"
+						on:click={() => {
+							// Toggle between LOGIN and SIGNUP (if in RESET, switch back to LOGIN)
+							if (logInState === "LOGIN") {
+								logInState = "SIGNUP";
+							} else {
+								logInState = "LOGIN";
+							}
+						}}><u>{logInState === "LOGIN" ? "Sign Up" : "Log In"}</u></button>
+					<button
+						size="lg"
+						class="link"
+						id="forgotPassword"
+						on:click={() => {
+							logInState = "RESET";
+						}}><u>Forgot Password</u></button>
+				</div>
+			</div>
 		</div>
-	{:else}
-		<br />
-		<div class="tabs">
-			<Tabs tabStyle="pill">
-				<TabItem
-					on:click={() => (selectedOption = "student")}
-					open={selectedOption === "student"}
-					title="Student"
-				>
-					<div class="no-padding">
-						<CustomForm
-							fields={studentSignupFields}
-							bind:newResponses
-							bind:validationErrors
-							handleSubmit={handleSignUp}
-							showBorder={false}
-						/>
-					</div>
-				</TabItem>
-				<TabItem
-					on:click={() => (selectedOption = "coach")}
-					open={selectedOption === "coach"}
-					title="Coach"
-				>
-					<div class="no-padding">
-						<CustomForm
-							fields={coachSignupFields}
-							bind:newResponses
-							bind:validationErrors
-							handleSubmit={handleSignUp}
-							showBorder={false}
-						/>
-					</div>
-				</TabItem>
-			</Tabs>
-		</div>
-	{/if}
+	</div>
 </div>
 
 <style>
@@ -197,5 +260,18 @@
 	:global(.tabs [role="tabpanel"]) {
 		padding: 0px;
 		background: transparent;
+	}
+
+	@media only screen and (max-width: 700px) {
+		.bottomSection {
+			width: 80vw;
+		}
+	}
+
+	.center-vertical {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 100vh;
 	}
 </style>

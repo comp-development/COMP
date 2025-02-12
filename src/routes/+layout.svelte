@@ -68,47 +68,7 @@
 			<Loading />
 		</div>
 	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores") && $page.route.id != "/password-reset"}
-		<div class="center-vertical">
-			{#if hasAccount}
-				<div style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;">
-					<Account logIn={true} />
-					<br />
-					<div class="flex">
-						<div class="bottomSection" style="color: white;">
-							<button
-								size="lg"
-								class="link"
-								id="switchScreen"
-								on:click={() => {
-									hasAccount = false;
-								}}><u>Sign-Up</u></button>
-							<button size="lg" class="link" id="forgotPassword">
-								<a href="/password-reset" style="color: black;"><u>Forgot Password</u></a>
-							</button>
-						</div>
-					</div>
-				</div>
-			{:else}
-				<div style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;">
-					<Account logIn={false} />
-					<br />
-					<div class="flex">
-						<div class="bottomSection" style="color: white;">
-							<button
-								size="lg"
-								class="link"
-								id="switchScreen"
-								on:click={() => {
-									hasAccount = true;
-								}}><u>Log-In</u></button>
-							<button size="lg" class="link" id="forgotPassword">
-								<a href="/password-reset" style="color: black;"><u>Forgot Password</u></a>
-							</button>
-						</div>
-					</div>
-				</div>
-			{/if}
-		</div>
+		<Account />
 	{:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores" && $page.route.id != "/password-reset"}
 		<div class="flex-dir-col">
 			<div class="verify-email">
