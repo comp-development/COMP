@@ -25,7 +25,7 @@ export async function getOrganizationDetails(org_id: number, event_id: number) {
         .single();
     if (error) throw error;
 
-    const teams = await getOrganizationTeams(org_id);
+    const teams = await getOrganizationTeams(org_id, event_id);
     data.teams = teams;
 
     const events = await ifOrgEvent(event_id, org_id);

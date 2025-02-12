@@ -315,11 +315,12 @@ export async function getStudentTicketOrder(
   return data;
 }
 
-export async function isEventPublished(event_id: number) {
+export async function isEventPublished(event_id: number, host_id: number) {
   const { data, error } = await supabase
     .from("events")
     .select("published")
     .eq("event_id", event_id)
+    .eq("host_id", host_id)
     .single();
   if (error) throw error;
 

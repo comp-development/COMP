@@ -17,10 +17,10 @@
     } from "flowbite-svelte-icons";
     import { page } from "$app/stores";
     import {
-        getHostEvents,
+        getAllHostEvents,
+        getAllHosts,
         getCoachOrganizations,
         signOut,
-        getAllPublicHosts,
         getAdminHosts,
         getCoachHosts,
         getStudentHosts,
@@ -52,6 +52,9 @@
     async function initializeNavbar() {
         paths = $page.route.id?.split("/").filter(Boolean);
 
+        const allHosts = await getAllHosts();
+        let allEvents;
+
         if (paths[0] === "admin") {
             hosts = await getAdminHosts($user!.id);
         } else if (paths[0] === "student") {
@@ -70,28 +73,28 @@
 
             if ($page.params.host_id) {
                 hostId = parseInt($page.params.host_id);
-                selectedHost = hosts.find((h) => h.host_id === hostId);
+                selectedHost = allHosts.find((h) => h.host_id === hostId);
 
                 let data = await getCoachHostEvents($user!.id, hostId, orgId);
                 events = data.map((e) => e.event);
             }
         }
 
-
         if ($page.params.host_id) {
             hostId = parseInt($page.params.host_id);
-            selectedHost = hosts.find((h) => h.host_id === hostId);
+            selectedHost = allHosts.find((h) => h.host_id === hostId);
+            allEvents = await getAllHostEvents(hostId);
 
             if (paths[0] === "student") {
                 events = await getStudentHostEvents($user!.id, hostId);
             } else if (paths[0] === "admin") {
-                events = await getHostEvents(hostId);
+                events = allEvents;
             }
         }
 
         if ($page.params.event_id) {
             eventId = parseInt($page.params.event_id);
-            selectedEvent = events.find((e) => e.event_id === eventId);
+            selectedEvent = allEvents.find((e) => e.event_id === eventId);
         }
     }
 

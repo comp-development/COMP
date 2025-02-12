@@ -47,7 +47,7 @@
         host = await getHostInformation(host_id);
         event_details = await getEventInformation(event_id);
         organizationDetails = await getOrganizationDetails(org_id, event_id);
-        studentsWithoutTeams = await getAllStudentsWithoutTeam(event_id, org_id);
+        studentsWithoutTeams = await getAllStudentsWithoutTeam(event_id);
         loading = false;
     })();
 
