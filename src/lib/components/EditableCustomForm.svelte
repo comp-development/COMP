@@ -27,12 +27,14 @@
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
 
-    let { custom_fields = $bindable(), event_id, host_id, table } = $props();
+    let { custom_fields = $bindable(), action, host_id, table } = $props();
     let showCustomFieldModal = $state(false);
     let availableCustomFields = $state([]);
+    let originalCustomFields = $state("");
 
     async function onLoad() {
         availableCustomFields = await getCustomFields(host_id, table);
+        originalCustomFields = JSON.stringify(custom_fields);
     }
 
     onLoad();
@@ -59,7 +61,7 @@
         },
         { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
         { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
-        { icon: PhoneOutline, type: "number", tooltip: "Number" },
+        { icon: PhoneOutline, type: "phone", tooltip: "Number" },
         {
             icon: CirclePlusSolid,
             type: "add_existing",
@@ -132,6 +134,7 @@
             custom_field_type: type,
         };
         custom_fields = [...custom_fields, newField];
+        expandedSections[custom_fields.length - 1] = true;
     }
 
     function confirmDelete(index: number) {
@@ -169,11 +172,6 @@
 
     async function handleSubmit() {
         try {
-            if (!event_id) {
-                throw new Error("No event ID provided");
-            }
-
-            // Validate all fields have labels and keys
             const invalidFields = custom_fields.filter(
                 (field) => !field.label?.trim() || !field.key?.trim(),
             );
@@ -189,7 +187,8 @@
 
             console.log("custom_fields", custom_fields);
 
-            await upsertEventCustomFields(custom_fields, table, event_id);
+            await action();
+
             toast.success("Custom fields saved successfully");
         } catch (error) {
             handleError(error);
@@ -199,7 +198,9 @@
 
 <div class="space-y-2">
     <h2>Custom Field Builder</h2>
-    <Button pill on:click={handleSubmit}>Submit</Button>
+    {#if JSON.stringify(custom_fields) !== originalCustomFields}
+        <Button pill on:click={handleSubmit}>Submit</Button>
+    {/if}
 
     <div class="flex gap-2 rounded-lg">
         {#each inputTypes as { icon: Icon, type, tooltip, onClick }, i}
@@ -267,7 +268,7 @@
                         />
                     </Button>
                     <h3 class="text-lg font-semibold">
-                        {getTypeTitle(field.custom_field_type)}
+                        {field.key}
                     </h3>
                 </div>
 
@@ -317,17 +318,19 @@
                         </div>
 
                         <div class="grid grid-cols-3 gap-4">
-                            <div>
-                                <Label
-                                    for="label-{index}"
-                                    class="mb-2 text-left">Regex</Label
-                                >
-                                <Input
-                                    id="label-{index}"
-                                    type="text"
-                                    bind:value={field.regex}
-                                />
-                            </div>
+                            {#if !["email", "phone"].includes(field.custom_field_type)}
+                                <div>
+                                    <Label
+                                        for="label-{index}"
+                                        class="mb-2 text-left">Regex</Label
+                                    >
+                                    <Input
+                                        id="label-{index}"
+                                        type="text"
+                                        bind:value={field.regex}
+                                    />
+                                </div>
+                            {/if}
 
                             {#if !["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
                                 <div>

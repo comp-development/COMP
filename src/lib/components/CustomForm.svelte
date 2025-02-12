@@ -37,7 +37,6 @@
         for (var field of [...fields, ...custom_fields]) {
             const key = field.event_custom_field_id ?? field.name;
             initialResponses[key] = field?.value;
-            //field.disabled = !field.editable && field?.value !== null;
             newResponses[key] = field?.value;
         }
         console.log(fields, custom_fields)
@@ -45,7 +44,7 @@
     const typePatterns = {
         date: /^\d{4}-\d{2}-\d{2}$/,
         email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        tel: /^\d{3}-\d{3}-\d{4}$/,
+        tel: /^\d{10}$/,
     };
 
     function validateInput(key, value, regex) {
@@ -90,7 +89,6 @@
 
         if (validateForm()) {
             await handleSubmit(event);
-            //toast.success("Submitted!");
         }
     }
 
@@ -193,6 +191,19 @@
                             type="tel"
                             placeholder={field.placeholder ?? "123-456-7890"}
                             bind:value={newResponses[key]}
+                            on:input={(e) => {
+                                let rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
+                                
+                                let formattedValue = rawValue;
+                                if (rawValue.length > 6) {
+                                    formattedValue = `${rawValue.slice(0, 3)}-${rawValue.slice(3, 6)}-${rawValue.slice(6)}`;
+                                } else if (rawValue.length > 3) {
+                                    formattedValue = `${rawValue.slice(0, 3)}-${rawValue.slice(3)}`;
+                                }
+                        
+                                e.target.value = formattedValue;
+                                newResponses[key] = rawValue;
+                            }}
                             required={field.required}
                             disabled={field.disabled}
                             on:blur={() =>

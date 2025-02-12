@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import Loading from "$lib/components/Loading.svelte";
-    import { Button } from "flowbite-svelte";
+    import { Button, ButtonGroup } from "flowbite-svelte";
     import { getHostInformation, getAllHostEvents } from "$lib/supabase";
     import EventDisplay from "$lib/components/EventDisplay.svelte";
 
@@ -34,7 +34,10 @@
         editable={true}
     />
     <div class="mb-4">
-    <Button href={`/admin/${host_id}/create`} pill>Create Event</Button>
+        <ButtonGroup>
+            <Button href={`/admin/${host_id}/custom_fields`} pill color="primary">Edit Custom Fields</Button>
+            <Button href={`/admin/${host_id}/create`} pill color="primary">Create Event</Button>
+        </ButtonGroup>
     </div>
 
     <h2 style="text-align: center;">Host Events</h2>
