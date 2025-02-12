@@ -1,11 +1,9 @@
 <script>
     import { Tabs, TabItem } from "flowbite-svelte";
     import CustomForm from "$lib/components/CustomForm.svelte";
-    import {
-        getEventCustomFields,
-        getCustomFieldResponses,
-    } from "$lib/supabase";
+    import { getEventCustomFields } from "$lib/supabase";
     import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
+    import { page } from "$app/stores";
 
     let selectedTab = "student";
     let studentResponses = $state({});
@@ -19,7 +17,8 @@
     let teamCustomFields = $state([]);
 
     // Get the event_id from the URL
-    const event_id = parseInt(window.location.pathname.split("/")[3]);
+    const event_id = parseInt($page.params.event_id);
+    const host_id = parseInt($page.params.host_id);
 
     const studentFields = [
         {
@@ -111,7 +110,7 @@
     >
         <div class="grid">
             <div>
-                <EditableCustomForm bind:custom_fields={studentCustomFields} event_id={event_id} />
+                <EditableCustomForm bind:custom_fields={studentCustomFields} event_id={event_id} table="students" host_id={host_id} />
             </div>
             <div>
                 <CustomForm
@@ -132,7 +131,7 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <EditableCustomForm bind:custom_fields={orgCustomFields} event_id={event_id} />
+                <EditableCustomForm bind:custom_fields={orgCustomFields} event_id={event_id} table="orgs" host_id={host_id} />
             </div>
             <div>
                 <CustomForm
@@ -153,7 +152,7 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <EditableCustomForm bind:custom_fields={teamCustomFields} event_id={event_id} />
+                <EditableCustomForm bind:custom_fields={teamCustomFields} event_id={event_id} table="teams" host_id={host_id} />
             </div>
             <div>
                 <CustomForm

@@ -63,10 +63,11 @@ export async function getEventTeams(event_id: number) {
   return data;
 }
 
-export async function getCustomFields() {
+export async function getCustomFields(host_id: number) {
   const { data, error } = await supabase
     .from("custom_fields")
-    .select("*");
+    .select("*")
+    .eq("host_id", host_id);
   if (error) throw error;
   return data;
 }
@@ -371,84 +372,103 @@ export async function createEvent(eventData: {
 }
 
 export async function upsertEventCustomFields(
+  custom_fields: any[],
+  table: "orgs" | "students" | "teams",
   event_id: number,
-  custom_fields: Array<{
-    event_custom_field_id?: string;
-    custom_field_id?: number;
-    key: string;
-    label: string;
-    custom_field_type: string;
-    custom_field_table: "orgs" | "students" | "teams";
-    choices?: string[] | null;
-    help_text?: string;
-    regex?: string | null;
-    required?: boolean;
-    editable?: boolean;
-    hidden?: boolean;
-    placeholder?: string;
-    ordering: number;
-  }>
+  host_id: number
 ) {
-  const customFieldsToUpsert = custom_fields.map(field => {
-    const choices = ['multiple_choice', 'checkbox', 'dropdown'].includes(field.custom_field_type)
-      ? field.choices || []
-      : null;
-
-    return {
-      custom_field_id: field.custom_field_id,
-      key: field.key,
-      label: field.label,
-      custom_field_type: field.custom_field_type,
-      custom_field_table: field.custom_field_table,
-      choices: choices,
-      help_text: field.help_text || null,
-      regex: field.regex || null,
-      required: field.required ?? false,
-      editable: field.editable ?? true,
-      hidden: field.hidden ?? false,
-      placeholder: field.placeholder || null
-    };
+  // Helper function to format field data
+  const formatFieldData = (field: any) => ({
+    key: field.key,
+    label: field.label,
+    custom_field_type: field.custom_field_type,
+    custom_field_table: table,
+    choices: ['multiple_choice', 'checkbox', 'dropdown'].includes(field.custom_field_type)
+      ? field.choices || ""
+      : null,
+    help_text: field.help_text || null,
+    regex: field.regex || null,
+    required: field.required ?? false,
+    editable: field.editable ?? true,
+    hidden: field.hidden ?? false,
+    host_id: host_id,
+    placeholder: field.placeholder || null
   });
 
-  // Rest of the function remains the same...
-  const { data: upsertedCustomFields, error: customFieldsError } = await supabase
-    .from('custom_fields')
-    .upsert(customFieldsToUpsert, {
-      onConflict: 'custom_field_id',
-      ignoreDuplicates: false
+  // Handle custom_fields table
+  const newFields = custom_fields.filter(field => !field.custom_field_id);
+  const existingFields = custom_fields.filter(field => field.custom_field_id);
+
+  // Insert new custom fields
+  let insertedCustomFields = [];
+  if (newFields.length > 0) {
+    const { data, error } = await supabase
+      .from('custom_fields')
+      .insert(newFields.map(formatFieldData))
+      .select();
+    if (error) throw error;
+    insertedCustomFields = data || [];
+  }
+
+  // Update existing custom fields
+  let updatedCustomFields = [];
+  if (existingFields.length > 0) {
+    const { data, error } = await supabase
+      .from('custom_fields')
+      .upsert(existingFields.map(field => ({
+        custom_field_id: field.custom_field_id,
+        ...formatFieldData(field)
+      })))
+      .select();
+    if (error) throw error;
+    updatedCustomFields = data || [];
+  }
+
+  // Create mapping of original index to custom_field_id
+  const customFieldIdMap = new Map(
+    custom_fields.map((field, index) => {
+      if (field.custom_field_id) {
+        return [index, field.custom_field_id];
+      }
+      const newField = insertedCustomFields[newFields.indexOf(field)];
+      return [index, newField.custom_field_id];
     })
-    .select();
+  );
 
-  if (customFieldsError) throw customFieldsError;
+  // Separate existing and new event_custom_fields relationships
+  const existingEventFields = custom_fields.filter(field => field.event_custom_field_id);
+  const newEventFields = custom_fields.filter(field => !field.event_custom_field_id);
 
-  // Map the new custom_field_ids to their corresponding fields
-  const customFieldIdMap = new Map();
-  custom_fields.forEach((field, index) => {
-    if (field.custom_field_id) {
-      customFieldIdMap.set(index, field.custom_field_id);
-    } else if (upsertedCustomFields?.[index]) {
-      customFieldIdMap.set(index, upsertedCustomFields[index].custom_field_id);
-    }
-  });
+  // Insert new event_custom_fields relationships
+  let insertedEventFields = [];
+  if (newEventFields.length > 0) {
+    const { data, error } = await supabase
+      .from('event_custom_fields')
+      .insert(newEventFields.map((field, index) => ({
+        custom_field_id: customFieldIdMap.get(custom_fields.indexOf(field)),
+        event_id: event_id,
+        ordering: custom_fields.indexOf(field) + 1
+      })))
+      .select();
+    if (error) throw error;
+    insertedEventFields = data || [];
+  }
 
-  // Prepare event_custom_fields data
-  const eventCustomFieldsToUpsert = custom_fields.map((field, index) => ({
-    event_custom_field_id: field.event_custom_field_id,
-    custom_field_id: customFieldIdMap.get(index),
-    event_id: event_id,
-    ordering: index
-  }));
+  // Update existing event_custom_fields relationships
+  let updatedEventFields = [];
+  if (existingEventFields.length > 0) {
+    const { data, error } = await supabase
+      .from('event_custom_fields')
+      .upsert(existingEventFields.map(field => ({
+        event_custom_field_id: field.event_custom_field_id,
+        custom_field_id: customFieldIdMap.get(custom_fields.indexOf(field)),
+        event_id: event_id,
+        ordering: custom_fields.indexOf(field) + 1
+      })))
+      .select();
+    if (error) throw error;
+    updatedEventFields = data || [];
+  }
 
-  // Upsert into event_custom_fields
-  const { data: upsertedEventCustomFields, error: eventCustomFieldsError } = await supabase
-    .from('event_custom_fields')
-    .upsert(eventCustomFieldsToUpsert, {
-      onConflict: 'event_custom_field_id',
-      ignoreDuplicates: false
-    })
-    .select();
-
-  if (eventCustomFieldsError) throw eventCustomFieldsError;
-
-  return upsertedEventCustomFields;
+  return [...insertedEventFields, ...updatedEventFields];
 }

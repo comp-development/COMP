@@ -1,11 +1,11 @@
 <script lang="ts">
     import {
         Button,
-        Toggle,
         Input,
         Popover,
         Label,
         Modal,
+        Checkbox,
     } from "flowbite-svelte";
     import {
         CalendarMonthOutline,
@@ -26,12 +26,12 @@
     import { getCustomFields, upsertEventCustomFields } from "$lib/supabase";
     import toast from "$lib/toast.svelte";
 
-    let { custom_fields = $bindable(), event_id } = $props();
+    let { custom_fields = $bindable(), event_id, host_id, table } = $props();
     let showCustomFieldModal = $state(false);
     let availableCustomFields = $state([]);
 
     async function onLoad() {
-        availableCustomFields = await getCustomFields();
+        availableCustomFields = await getCustomFields(host_id);
     }
 
     onLoad();
@@ -124,7 +124,7 @@
             choices: ["checkboxes", "multiple_choice", "dropdown"].includes(
                 type,
             )
-                ? []
+                ? ""
                 : null,
             editable: true,
             hidden: false,
@@ -143,27 +143,6 @@
             custom_fields = custom_fields.filter((_, i) => i !== fieldToDelete);
             showDeleteModal = false;
             fieldToDelete = null;
-        }
-    }
-
-    function addChoice(fieldIndex: number) {
-        if (custom_fields[fieldIndex].choices) {
-            let newChoices = [...custom_fields];
-            newChoices[fieldIndex].choices = [
-                ...newChoices[fieldIndex].choices,
-                "",
-            ];
-            custom_fields = newChoices;
-        }
-    }
-
-    function removeChoice(fieldIndex: number, choiceIndex: number) {
-        if (custom_fields[fieldIndex].choices) {
-            let newChoices = [...custom_fields];
-            newChoices[fieldIndex].choices = newChoices[
-                fieldIndex
-            ].choices.filter((_, i) => i !== choiceIndex);
-            custom_fields = newChoices;
         }
     }
 
@@ -203,14 +182,32 @@
     async function handleSubmit() {
         try {
             if (!event_id) {
-                throw new Error('No event ID provided');
+                throw new Error("No event ID provided");
             }
-            
-            await upsertEventCustomFields(event_id, custom_fields);
-            toast.success('Custom fields saved successfully');
+
+            // Validate all fields have labels and keys
+            const invalidFields = custom_fields.filter(field => 
+                !field.label?.trim() || !field.key?.trim()
+            );
+
+            if (invalidFields.length > 0) {
+                const fieldTypes = invalidFields
+                    .map(field => getTypeTitle(field.custom_field_type))
+                    .join(", ");
+                throw new Error(
+                    `All fields must have both a label and key. Please check: ${fieldTypes}`
+                );
+            }
+
+            await upsertEventCustomFields(
+                event_id,
+                custom_fields,
+                table
+            );
+            toast.success("Custom fields saved successfully");
         } catch (error) {
-            console.error('Error saving custom fields:', error);
-            toast.error('Failed to save custom fields');
+            console.error("Error saving custom fields:", error);
+            toast.error(error instanceof Error ? error.message : "Failed to save custom fields");
         }
     }
 </script>
@@ -292,119 +289,101 @@
                 {#if expandedSections[index]}
                     <div class="mt-8 space-y-4">
                         <!-- Field Label and Key -->
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <Label
-                                    for="label-{index}"
-                                    class="mb-2 text-left">Field Label</Label
-                                >
-                                <Input
-                                    id="label-{index}"
-                                    type="text"
-                                    bind:value={field.label}
-                                />
-                            </div>
+                        <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <Label for="key-{index}" class="mb-2 text-left"
-                                    >Field Key</Label
+                                    >Field Key<span class="text-red-600 ml-1">*</span></Label
                                 >
                                 <Input
                                     id="key-{index}"
                                     type="text"
+                                    required
                                     bind:value={field.key}
                                 />
                             </div>
-                        </div>
-
-                        {#if !["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
                             <div>
-                                <Label for="label-{index}" class="mb-2 text-left"
-                                    >Placeholder</Label
+                                <Label
+                                    for="label-{index}"
+                                    class="mb-2 text-left">Field Label<span class="text-red-600 ml-1">*</span></Label
                                 >
                                 <Input
                                     id="label-{index}"
                                     type="text"
-                                    bind:value={field.placeholder}
+                                    required
+                                    bind:value={field.label}
                                 />
                             </div>
-                        {/if}
-
-                        <div>
-                            <Label for="label-{index}" class="mb-2 text-left"
-                                >Help Text</Label
-                            >
-                            <Input
-                                id="label-{index}"
-                                type="text"
-                                bind:value={field.help_text}
-                            />
-                        </div>
-                        <div>
-                            <Label for="label-{index}" class="mb-2 text-left"
-                                >Regex</Label
-                            >
-                            <Input
-                                id="label-{index}"
-                                type="text"
-                                bind:value={field.regex}
-                            />
-                        </div>
-
-                        <!-- Toggles -->
-                        <div class="flex-content">
-                            <div class="flex-content max-w-[200px]">
-                                <Label class="mb-0">Required</Label>
-                                <Toggle bind:checked={field.required} />
-                            </div>
-                            <div class="flex-content max-w-[200px]">
-                                <Label class="mb-0">Hidden</Label>
-                                <Toggle bind:checked={field.hidden} />
-                            </div>
-                            <div class="flex-content max-w-[200px]">
-                                <Label class="mb-0">Editable</Label>
-                                <Toggle bind:checked={field.editable} />
+                            <div>
+                                <Label
+                                    for="label-{index}"
+                                    class="mb-2 text-left">Help Text</Label
+                                >
+                                <Input
+                                    id="label-{index}"
+                                    type="text"
+                                    bind:value={field.help_text}
+                                />
                             </div>
                         </div>
 
-                        <!-- Choices -->
-                        {#if ["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
-                            <div class="space-y-2">
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <Label
+                                    for="label-{index}"
+                                    class="mb-2 text-left">Regex</Label
+                                >
+                                <Input
+                                    id="label-{index}"
+                                    type="text"
+                                    bind:value={field.regex}
+                                />
+                            </div>
+
+                            {#if !["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
                                 <div>
-                                    <Label class="mb-2">Choices</Label>
-                                    <Button
-                                        class="mb-2"
-                                        size="xs"
-                                        pill
-                                        outline
-                                        onclick={() => addChoice(index)}
+                                    <Label
+                                        for="label-{index}"
+                                        class="mb-2 text-left"
+                                        >Placeholder</Label
                                     >
-                                        Add Choice
-                                    </Button>
+                                    <Input
+                                        id="label-{index}"
+                                        type="text"
+                                        bind:value={field.placeholder}
+                                    />
                                 </div>
-                                {#each field.choices as choice, choiceIndex}
-                                    <div class="flex gap-2">
-                                        <Input
-                                            type="text"
-                                            bind:value={field.choices[
-                                                choiceIndex
-                                            ]}
-                                            placeholder={`Choice ${choiceIndex + 1}`}
-                                        />
-                                        <Button
-                                            color="red"
-                                            size="xs"
-                                            on:click={() =>
-                                                removeChoice(
-                                                    index,
-                                                    choiceIndex,
-                                                )}
-                                        >
-                                            <TrashBinOutline class="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                {/each}
+                            {:else}
+                                <div>
+                                    <Label
+                                        for="label-{index}"
+                                        class="mb-2 text-left">Choices</Label
+                                    >
+                                    <Input
+                                        id="label-{index}"
+                                        type="text"
+                                        placeholder="Separate with a comma"
+                                        bind:value={field.choices}
+                                    />
+                                </div>
+                            {/if}
+                            <div>
+                                <div class="flex-content max-w-[200px] mt-1">
+                                    <Checkbox bind:checked={field.required}>
+                                        Required
+                                    </Checkbox>
+                                </div>
+                                <div class="flex-content max-w-[200px]">
+                                    <Checkbox bind:checked={field.hidden}>
+                                        Hidden
+                                    </Checkbox>
+                                </div>
+                                <div class="flex-content max-w-[200px]">
+                                    <Checkbox bind:checked={field.editable}>
+                                        Editable
+                                    </Checkbox>
+                                </div>
                             </div>
-                        {/if}
+                        </div>
                     </div>
                 {/if}
             </div>
@@ -467,7 +446,7 @@
     }
 
     .grid {
-        grid-template-columns: 65% 32%;
+        grid-template-columns: 31% 31% 31%;
     }
 
     .rotate-180 {
@@ -488,7 +467,7 @@
         background-color: transparent;
     }
 
-    :global(div[role=tabpanel]) {
+    :global(div[role="tabpanel"]) {
         background: transparent;
     }
 </style>
