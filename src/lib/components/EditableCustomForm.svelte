@@ -25,13 +25,14 @@
     import TableName from "$lib/components/TableName.svelte";
     import { getCustomFields, upsertEventCustomFields } from "$lib/supabase";
     import toast from "$lib/toast.svelte";
+    import { handleError } from "$lib/handleError";
 
     let { custom_fields = $bindable(), event_id, host_id, table } = $props();
     let showCustomFieldModal = $state(false);
     let availableCustomFields = $state([]);
 
     async function onLoad() {
-        availableCustomFields = await getCustomFields(host_id);
+        availableCustomFields = await getCustomFields(host_id, table);
     }
 
     onLoad();
@@ -161,21 +162,8 @@
         );
     }
 
-    function selectCustomField(_: Event, field: any) {
-        const newField = {
-            key: field.key,
-            label: field.label,
-            required: field.required ?? false,
-            regex: field.regex,
-            help_text: field.help_text,
-            placeholder: field.placeholder ?? "",
-            value: null,
-            choices: field.choices,
-            editable: field.editable ?? true,
-            hidden: field.hidden ?? false,
-            custom_field_type: field.custom_field_type,
-        };
-        custom_fields = [...custom_fields, newField];
+    function selectCustomField(_, field) {
+        custom_fields = [...custom_fields, field];
         showCustomFieldModal = false;
     }
 
@@ -186,28 +174,25 @@
             }
 
             // Validate all fields have labels and keys
-            const invalidFields = custom_fields.filter(field => 
-                !field.label?.trim() || !field.key?.trim()
+            const invalidFields = custom_fields.filter(
+                (field) => !field.label?.trim() || !field.key?.trim(),
             );
 
             if (invalidFields.length > 0) {
                 const fieldTypes = invalidFields
-                    .map(field => getTypeTitle(field.custom_field_type))
+                    .map((field) => getTypeTitle(field.custom_field_type))
                     .join(", ");
                 throw new Error(
-                    `All fields must have both a label and key. Please check: ${fieldTypes}`
+                    `All fields must have both a label and key. Please check: ${fieldTypes}`,
                 );
             }
 
-            await upsertEventCustomFields(
-                event_id,
-                custom_fields,
-                table
-            );
+            console.log("custom_fields", custom_fields);
+
+            await upsertEventCustomFields(custom_fields, table, event_id);
             toast.success("Custom fields saved successfully");
         } catch (error) {
-            console.error("Error saving custom fields:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to save custom fields");
+            handleError(error);
         }
     }
 </script>
@@ -292,7 +277,9 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div>
                                 <Label for="key-{index}" class="mb-2 text-left"
-                                    >Field Key<span class="text-red-600 ml-1">*</span></Label
+                                    >Field Key<span class="text-red-600 ml-1"
+                                        >*</span
+                                    ></Label
                                 >
                                 <Input
                                     id="key-{index}"
@@ -304,7 +291,10 @@
                             <div>
                                 <Label
                                     for="label-{index}"
-                                    class="mb-2 text-left">Field Label<span class="text-red-600 ml-1">*</span></Label
+                                    class="mb-2 text-left"
+                                    >Field Label<span class="text-red-600 ml-1"
+                                        >*</span
+                                    ></Label
                                 >
                                 <Input
                                     id="label-{index}"
@@ -362,7 +352,19 @@
                                         id="label-{index}"
                                         type="text"
                                         placeholder="Separate with a comma"
-                                        bind:value={field.choices}
+                                        value={Array.isArray(field.choices)
+                                            ? field.choices.join(", ")
+                                            : field.choices}
+                                        on:input={(e) => {
+                                            const choicesArray =
+                                                e.currentTarget.value
+                                                    .split(",")
+                                                    .map((choice) =>
+                                                        choice.trim(),
+                                                    )
+                                                    .filter(Boolean);
+                                            field.choices = choicesArray;
+                                        }}
                                     />
                                 </div>
                             {/if}

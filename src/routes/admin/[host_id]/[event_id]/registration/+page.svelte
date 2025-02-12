@@ -110,7 +110,12 @@
     >
         <div class="grid">
             <div>
-                <EditableCustomForm bind:custom_fields={studentCustomFields} event_id={event_id} table="students" host_id={host_id} />
+                <EditableCustomForm
+                    bind:custom_fields={studentCustomFields}
+                    {event_id}
+                    table="students"
+                    {host_id}
+                />
             </div>
             <div>
                 <CustomForm
@@ -131,7 +136,12 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <EditableCustomForm bind:custom_fields={orgCustomFields} event_id={event_id} table="orgs" host_id={host_id} />
+                <EditableCustomForm
+                    bind:custom_fields={orgCustomFields}
+                    {event_id}
+                    table="orgs"
+                    {host_id}
+                />
             </div>
             <div>
                 <CustomForm
@@ -152,7 +162,12 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <EditableCustomForm bind:custom_fields={teamCustomFields} event_id={event_id} table="teams" host_id={host_id} />
+                <EditableCustomForm
+                    bind:custom_fields={teamCustomFields}
+                    {event_id}
+                    table="teams"
+                    {host_id}
+                />
             </div>
             <div>
                 <CustomForm
@@ -173,7 +188,7 @@
         grid-template-columns: 49% 50%;
     }
 
-    :global([role=tabpanel]) {
+    :global([role="tabpanel"]) {
         background-color: transparent;
     }
 </style>
