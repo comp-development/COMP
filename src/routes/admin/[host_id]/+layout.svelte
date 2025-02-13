@@ -1,21 +1,21 @@
 <script lang="ts">
     import { page } from "$app/stores";
-    import { isEventPublished } from "$lib/supabase";
+    import { getAdminHosts } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
     import { handleError } from "$lib/handleError";
+    import { user } from "$lib/sessionStore";
 
-    const event_id = parseInt($page.params.event_id);
     const host_id = parseInt($page.params.host_id);
-
     let loading = $state(true);
     let error = $state<string | null>(null);
 
     (async () => {
         try {
-            const published = await isEventPublished(event_id, host_id);
+            const hosts = await getAdminHosts($user!.id);
+            const host = hosts.filter(h => h.host_id === host_id);
 
-            if (!published) {
-                error = "This event has not been published yet.";
+            if (host.length == 0) {
+                error = "This host organization doesn't exist.";
             }
 
             loading = false;

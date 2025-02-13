@@ -1,21 +1,21 @@
 <script lang="ts">
     import { page } from "$app/stores";
-    import { isEventPublished } from "$lib/supabase";
+    import { ifOrgEvent } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
     import { handleError } from "$lib/handleError";
 
     const event_id = parseInt($page.params.event_id);
-    const host_id = parseInt($page.params.host_id);
+    const org_id = parseInt($page.params.org_id);
 
     let loading = $state(true);
     let error = $state<string | null>(null);
 
     (async () => {
         try {
-            const published = await isEventPublished(event_id, host_id);
+            const organization = await ifOrgEvent(org_id, event_id);
 
-            if (!published) {
-                error = "This event has not been published yet.";
+            if (organization.length == 0) {
+                error = "This event does not exist under this host organization.";
             }
 
             loading = false;

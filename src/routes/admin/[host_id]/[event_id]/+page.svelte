@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/stores";
-	import { getEventInformation, getEventTeams, getEventOrganizations } from "$lib/supabase";
+	import { getEventInformation, getEventTeams, getEventOrganizations, getEventIndependentTeams } from "$lib/supabase";
 	import { handleError } from "$lib/handleError";
 	import Loading from "$lib/components/Loading.svelte";
 	import EventDisplay from "$lib/components/EventDisplay.svelte";
@@ -13,14 +13,17 @@
 	let event_information = $state({});
 	let loading = $state(true);
 	let organizations = $state([]);
+	let independentTeams = $state([]);
 
 	async function loadInformation() {
 		try {
 			teams = await getEventTeams(Number(eventId));
 			teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
 			event_information = await getEventInformation(Number(eventId));
+
 			organizations = await getEventOrganizations(Number(eventId));
-			console.log(organizations);
+			independentTeams = await getEventIndependentTeams(Number(eventId));
+
 			loading = false;
 		} catch (error) {
 			handleError(error);
@@ -50,7 +53,7 @@
 				actionType="edit"
 				items={organizations}
 				action={(e, org) => {
-					window.location.href = `/admin/${hostId}/${eventId}/${org.org_id}`;
+					window.location.href = `/admin/${hostId}/${eventId}/org/${org.org_id}`;
 				}}
 				columns = {[
 					{
@@ -59,7 +62,7 @@
 						sortable: true,
 					},
 					{
-						label: "Name",
+						label: "Address",
 						value: (item) => item.org.address,
 						sortable: true,
 					},
@@ -73,6 +76,40 @@
 		</div>
 		{#if organizations.length === 0}
 			<p class="text-center text-gray-500 mt-4">No organizations registered yet</p>
+		{/if}
+	</div>
+
+	<div class="mt-4 mb-4 p-4">
+		<h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
+		<Button pill href={`/admin/${hostId}/${eventId}/team`}>Create Team</Button>
+		<div class="tableMax">
+			<TableName
+				actionType="edit"
+				items={independentTeams}
+				action={(e, team) => {
+					window.location.href = `/admin/${hostId}/${eventId}/team/${team.team_id}`;
+				}}
+				columns = {[
+					{
+						label: "Name",
+						value: (item) => item.team_name,
+						sortable: true,
+					},
+					{
+						label: "Front ID",
+						value: (item) => item.front_id,
+						sortable: true,
+					},
+					{
+						label: "Join Code",
+						value: (item) => item.join_code,
+						sortable: true,
+					},
+				]}
+			/>
+		</div>
+		{#if teams.length === 0}
+			<p class="text-center text-gray-500 mt-4">No independent teams registered yet</p>
 		{/if}
 	</div>
 {/if}

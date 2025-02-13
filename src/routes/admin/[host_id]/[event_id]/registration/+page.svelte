@@ -3,8 +3,10 @@
     import CustomForm from "$lib/components/CustomForm.svelte";
     import {
         getEventCustomFields,
-        getCustomFieldResponses,
+        upsertEventCustomFields,
     } from "$lib/supabase";
+    import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
+    import { page } from "$app/stores";
 
     let selectedTab = "student";
     let studentResponses = $state({});
@@ -18,13 +20,14 @@
     let teamCustomFields = $state([]);
 
     // Get the event_id from the URL
-    const event_id = parseInt(window.location.pathname.split("/")[3]);
+    const event_id = parseInt($page.params.event_id);
+    const host_id = parseInt($page.params.host_id);
 
     const studentFields = [
         {
-            event_custom_field_id: "first_name",
             key: "first_name",
             label: "First Name",
+            custom_field_type: "text",
             required: true,
             regex: null,
             placeholder: null,
@@ -34,9 +37,9 @@
             hidden: false,
         },
         {
-            event_custom_field_id: "last_name",
             key: "last_name",
             label: "Last Name",
+            custom_field_type: "text",
             required: true,
             regex: null,
             placeholder: null,
@@ -46,9 +49,9 @@
             hidden: false,
         },
         {
-            event_custom_field_id: "email",
             key: "email",
             label: "Email Address",
+            custom_field_type: "email",
             required: true,
             regex: null,
             placeholder: null,
@@ -61,7 +64,6 @@
 
     const orgFields = [
         {
-            event_custom_field_id: "org_name",
             key: "org_name",
             label: "Organization Name",
             required: true,
@@ -73,7 +75,6 @@
             hidden: false,
         },
         {
-            event_custom_field_id: "org_address",
             key: "org_address",
             label: "Organization Address",
             required: true,
@@ -88,7 +89,6 @@
 
     const teamFields = [
         {
-            event_custom_field_id: "team_name",
             key: "team_name",
             label: "Team Name",
             required: true,
@@ -114,13 +114,25 @@
         title="Student"
         on:click={() => (selectedTab = "student")}
     >
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid">
             <div>
-                <h2>Student Registration</h2>
+                <EditableCustomForm
+                    bind:custom_fields={studentCustomFields}
+                    table="students"
+                    editableHostFields={false}
+                    action={async () => {
+                        await upsertEventCustomFields(
+                            studentCustomFields,
+                            "students",
+                            event_id,
+                        );
+                    }}
+                    {host_id}
+                />
             </div>
             <div>
                 <CustomForm
-                    title="Registration Form"
+                    title="Registration Form Preview"
                     fields={studentFields}
                     custom_fields={studentCustomFields}
                     bind:newResponses={studentResponses}
@@ -137,11 +149,23 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2>Organization Registration</h2>
+                <EditableCustomForm
+                    bind:custom_fields={orgCustomFields}
+                    table="orgs"
+                    editableHostFields={false}
+                    action={async () => {
+                        await upsertEventCustomFields(
+                            orgCustomFields,
+                            "orgs",
+                            event_id,
+                        );
+                    }}
+                    {host_id}
+                />
             </div>
             <div>
                 <CustomForm
-                    title="Registration Form"
+                    title="Registration Form Preview"
                     fields={orgFields}
                     custom_fields={orgCustomFields}
                     bind:newResponses={orgResponses}
@@ -158,11 +182,23 @@
     >
         <div class="grid grid-cols-2 gap-4">
             <div>
-                <h2>Team Registration</h2>
+                <EditableCustomForm
+                    bind:custom_fields={teamCustomFields}
+                    table="teams"
+                    editableHostFields={false}
+                    action={async () => {
+                        await upsertEventCustomFields(
+                            teamCustomFields,
+                            "teams",
+                            event_id,
+                        );
+                    }}
+                    {host_id}
+                />
             </div>
             <div>
                 <CustomForm
-                    title="Registration Form"
+                    title="Registration Form Preview"
                     fields={teamFields}
                     custom_fields={teamCustomFields}
                     bind:newResponses={teamResponses}
@@ -179,7 +215,7 @@
         grid-template-columns: 49% 50%;
     }
 
-    :global([role=tabpanel]) {
+    :global([role="tabpanel"]) {
         background-color: transparent;
     }
 </style>
