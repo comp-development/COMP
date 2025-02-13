@@ -63,6 +63,7 @@
 	const handleResetPassword = async () => {
 		try {
 			// Implement your reset password logic here (e.g., calling a reset service)
+			console.log(newResponses)
 			const { data, error } = await supabase.auth.resetPasswordForEmail(newResponses.email, {
 				redirectTo: 'https://comp.mt/reset-password',
 			});	

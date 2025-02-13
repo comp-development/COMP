@@ -27,6 +27,7 @@
 	supabase.auth.onAuthStateChange((_, session) => {
 		user.set(session?.user);
 	});
+	
 
 	onMount(async () => {
 		// Fetch style settings from the database
@@ -67,9 +68,9 @@
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
-	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores") && $page.route.id != "/password-reset"}
+	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores")}
 		<Account />
-	{:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores" && $page.route.id != "/password-reset"}
+	{:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores"}
 		<div class="flex-dir-col">
 			<div class="verify-email">
 				<h2>Verify Your Email</h2>

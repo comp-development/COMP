@@ -17,6 +17,17 @@ export async function createAccount(email: string, password: string) {
 }
 
 /**
+ * Change user's password if verified. Returns nothing.
+ *
+ * @param accessToken
+ * @param password
+ */
+export async function updateUserAuth(password: string) {
+	const { data, error } = await supabase.auth.updateUser({ password: password })
+	if (error) throw error;
+}
+
+/**
  * Signs into an existing COMPOSE account for the user
  *
  * @param email string
