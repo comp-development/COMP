@@ -46,7 +46,7 @@
                     <div>
                         <Button
                             size="sm"
-                            href={`/student/${host.host_id}`}
+                            href={`/admin/${host.host_id}`}
                             pill>Go to Host</Button
                         >
                     </div>
