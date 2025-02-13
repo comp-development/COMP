@@ -1,53 +1,45 @@
-<script lang="ts">
-	import { TextInput, PasswordInput } from "carbon-components-svelte";
-	import { page } from "$app/stores";
-	import Banner from "$lib/components/Banner.svelte";
-	import Button from "$lib/components/Button.svelte";
-	import toast from "$lib/toast.svelte";
-	import { updateUserAuth } from "$lib/supabase";
+<script>
+    import CustomForm from "$lib/components/CustomForm.svelte";
+    import { handleError } from "$lib/handleError";
+    import { updateUserAuth } from "$lib/supabase";
+    import toast from "$lib/toast.svelte";
 
-	let accessToken = "";
-	let password = "";
-	let newPassword = "";
+    let newResponses = $state({});
+    let validationErrors = $state({});
 
+    const fields = [
+        {
+            name: "password",
+            label: "Password",
+            required: true,
+            custom_field_type: "password",
+            placeholder: "Password",
+        },
+        {
+            name: "retypePassword",
+            label: "Retype Password",
+            required: true,
+            custom_field_type: "password",
+            placeholder: "Retype Password",
+        },
+    ];
 
-	async function updateUser() {
-		try {
-			if (password == newPassword) {
-				await updateUserAuth(password);
-				toast.success("Successfully changed password.");
-				window.location.href = "/";
-			} else {
-				throw new Error("Your passwords should match.");
-			}
-		} catch (error) {
-			toast.error(error.message);
-		}
-	}
+    async function updateUser() {
+        try {
+            await updateUserAuth(newResponses.password);
+            toast.success("Successfully changed password.");
+            window.location.href = "/";
+        } catch (error) {
+            handleError(error);
+        }
+    }
 </script>
 
-<Banner />
-<br />
-<h1>Reset Password</h1>
-<div style="padding: 20px;overflow: hidden;">
-	<div class="flex" style="width: 100%; margin-bottom: 0.75rem;">
-		<div style="width: 30em;">
-			<PasswordInput
-				bind:value={password}
-				class="input"
-				placeholder="New password"
-			/>
-		</div>
-	</div>
-	<br />
-	<div class="flex" style="width: 100%; margin-bottom: 0.75rem;">
-		<div style="width: 30em;">
-			<PasswordInput
-				bind:value={newPassword}
-				class="input"
-				placeholder="Confirm new password"
-			/>
-		</div>
-	</div>
-	<Button action={updateUser} title="Reset Password" />
-</div>
+<CustomForm
+    title="Reset Password"
+    {fields}
+    bind:newResponses
+    bind:validationErrors
+    handleSubmit={updateUser}
+    showBorder={false}
+/>

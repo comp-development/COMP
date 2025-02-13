@@ -269,6 +269,38 @@
 		}
 	}
 
+	.menu-split {
+		display: grid;
+		grid-template-columns: 10% 90%;
+	}
+
+	.loadingPage {
+		width: 100vw;
+		height: 80vh;
+	}
+
+	button {
+		border: none;
+		background-color: transparent;
+		outline: none;
+		color: none;
+		color: var(--text-color-dark);
+		text-decoration: underline;
+		font-size: 15px;
+	}
+
+	button:hover {
+		color: var(--primary);
+		cursor: pointer;
+	}
+
+	#switchScreen {
+		float: left;
+	}
+	#forgotPassword {
+		float: right;
+	}
+
 	.center-vertical {
 		display: flex;
 		align-items: center;
