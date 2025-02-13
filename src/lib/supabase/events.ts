@@ -409,13 +409,13 @@ export async function upsertEventCustomFields(
   // Delete event_custom_fields that are no longer present
   const eventCustomFieldsToDelete = [...existingEventCustomFieldIds]
     .filter(id => !remainingEventCustomFieldIds.has(id));
-  
+
   if (eventCustomFieldsToDelete.length > 0) {
     const { error: deleteEventFieldsError } = await supabase
       .from('event_custom_fields')
       .delete()
       .in('event_custom_field_id', eventCustomFieldsToDelete);
-    
+
     if (deleteEventFieldsError) throw deleteEventFieldsError;
   }
 
@@ -432,12 +432,12 @@ export async function upsertEventCustomFields(
       .from('custom_fields')
       .delete()
       .in('custom_field_id', customFieldsToDelete);
-    
+
     if (deleteCustomFieldsError) throw deleteCustomFieldsError;
   }
 
   // Continue with the existing upsert logic
-  const formatFieldData = (field: CustomField) => ({
+  const formatFieldData = (field) => ({
     key: field.key,
     label: field.label,
     custom_field_type: field.custom_field_type,
@@ -528,4 +528,97 @@ export async function upsertEventCustomFields(
   }
 
   return [...insertedEventFields, ...updatedEventFields];
+}
+
+export async function upsertHostCustomFields(
+  custom_fields: any[],
+  table: "orgs" | "students" | "teams",
+  host_id: number
+) {
+  console.log("upsertHostCustomFields", custom_fields);
+
+  // Ensure custom_fields is an array
+  const fieldsArray = Array.isArray(custom_fields) ? custom_fields : [custom_fields];
+
+  // First, get all existing custom fields and event_custom_fields for this event
+  const { data: existingEventFields, error: fetchError } = await supabase
+    .from('custom_fields')
+    .select('*')
+    .eq('host_id', host_id);
+
+  if (fetchError) throw fetchError;
+
+  const existingCustomFieldIds = new Set(existingEventFields?.map(f => f.custom_field_id));
+
+  const remainingCustomFieldIds = new Set(
+    fieldsArray
+      .filter(f => f.custom_field_id && !f.host_id)
+      .map(f => f.custom_field_id)
+  );
+
+  // Delete custom_fields that are no longer present and don't have a host_id
+  const customFieldsToDelete = [...existingCustomFieldIds]
+    .filter(id => !remainingCustomFieldIds.has(id))
+    .filter(id => {
+      const field = existingEventFields?.find(f => f.custom_field_id === id)?.custom_fields;
+      return field && !field.host_id;
+    });
+
+  if (customFieldsToDelete.length > 0) {
+    const { error: deleteCustomFieldsError } = await supabase
+      .from('custom_fields')
+      .delete()
+      .in('custom_field_id', customFieldsToDelete);
+
+    if (deleteCustomFieldsError) throw deleteCustomFieldsError;
+  }
+
+  // Continue with the existing upsert logic
+  const formatFieldData = (field) => ({
+    key: field.key,
+    label: field.label,
+    custom_field_type: field.custom_field_type,
+    custom_field_table: table,
+    choices: ['multiple_choice', 'checkboxes', 'dropdown'].includes(field.custom_field_type)
+      ? field.choices || []
+      : null,
+    help_text: field.help_text || null,
+    regex: field.regex || null,
+    required: field.required ?? false,
+    editable: field.editable ?? true,
+    hidden: field.hidden ?? false,
+    host_id: field.host_id ?? host_id,
+    placeholder: field.placeholder || null
+  });
+
+  // Handle new and existing fields
+  const newFields = fieldsArray.filter(field => !field.custom_field_id);
+  const existingFields = fieldsArray.filter(field => field.custom_field_id);
+
+  // Insert new custom fields
+  let insertedCustomFields = [];
+  if (newFields.length > 0) {
+    const { data, error } = await supabase
+      .from('custom_fields')
+      .insert(newFields.map(formatFieldData))
+      .select();
+    if (error) throw error;
+    insertedCustomFields = data || [];
+  }
+
+  // Update existing custom fields
+  let updatedCustomFields = [];
+  if (existingFields.length > 0) {
+    const { data, error } = await supabase
+      .from('custom_fields')
+      .upsert(existingFields.map(field => ({
+        custom_field_id: field.custom_field_id,
+        ...formatFieldData(field)
+      })))
+      .select();
+    if (error) throw error;
+    updatedCustomFields = data || [];
+  }
+
+  return [...insertedCustomFields, ...updatedCustomFields];
 }

@@ -23,11 +23,11 @@
     } from "flowbite-svelte-icons";
     import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
     import TableName from "$lib/components/TableName.svelte";
-    import { getCustomFields, upsertEventCustomFields } from "$lib/supabase";
+    import { getCustomFields } from "$lib/supabase";
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";
 
-    let { custom_fields = $bindable(), action, host_id, table } = $props();
+    let { custom_fields = $bindable(), action, host_id, table, editableHostFields } = $props();
     let showCustomFieldModal = $state(false);
     let availableCustomFields = $state([]);
     let originalCustomFields = $state("");
@@ -170,6 +170,10 @@
         showCustomFieldModal = false;
     }
 
+    function isFieldEditable(field) {
+        return editableHostFields !== false || !field.host_id;
+    }
+
     async function handleSubmit() {
         try {
             const invalidFields = custom_fields.filter(
@@ -286,6 +290,7 @@
                                     id="key-{index}"
                                     type="text"
                                     required
+                                    disabled={!isFieldEditable(field)}
                                     bind:value={field.key}
                                 />
                             </div>
@@ -301,6 +306,7 @@
                                     id="label-{index}"
                                     type="text"
                                     required
+                                    disabled={!isFieldEditable(field)}
                                     bind:value={field.label}
                                 />
                             </div>
@@ -312,6 +318,7 @@
                                 <Input
                                     id="label-{index}"
                                     type="text"
+                                    disabled={!isFieldEditable(field)}
                                     bind:value={field.help_text}
                                 />
                             </div>
@@ -327,6 +334,7 @@
                                     <Input
                                         id="label-{index}"
                                         type="text"
+                                        disabled={!isFieldEditable(field)}
                                         bind:value={field.regex}
                                     />
                                 </div>
@@ -342,6 +350,7 @@
                                     <Input
                                         id="label-{index}"
                                         type="text"
+                                        disabled={!isFieldEditable(field)}
                                         bind:value={field.placeholder}
                                     />
                                 </div>
@@ -354,6 +363,7 @@
                                     <Input
                                         id="label-{index}"
                                         type="text"
+                                        disabled={!isFieldEditable(field)}
                                         placeholder="Separate with a comma"
                                         value={Array.isArray(field.choices)
                                             ? field.choices.join(", ")
@@ -373,17 +383,17 @@
                             {/if}
                             <div>
                                 <div class="flex-content max-w-[200px] mt-1">
-                                    <Checkbox bind:checked={field.required}>
+                                    <Checkbox bind:checked={field.required} disabled={!isFieldEditable(field)}>
                                         Required
                                     </Checkbox>
                                 </div>
                                 <div class="flex-content max-w-[200px]">
-                                    <Checkbox bind:checked={field.hidden}>
+                                    <Checkbox bind:checked={field.hidden} disabled={!isFieldEditable(field)}>
                                         Hidden
                                     </Checkbox>
                                 </div>
                                 <div class="flex-content max-w-[200px]">
-                                    <Checkbox bind:checked={field.editable}>
+                                    <Checkbox bind:checked={field.editable} disabled={!isFieldEditable(field)}>
                                         Editable
                                     </Checkbox>
                                 </div>

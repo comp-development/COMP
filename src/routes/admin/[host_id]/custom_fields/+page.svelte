@@ -1,7 +1,7 @@
 <script>
     import { Tabs, TabItem } from "flowbite-svelte";
     import CustomForm from "$lib/components/CustomForm.svelte";
-    import { getCustomFields } from "$lib/supabase";
+    import { getCustomFields, upsertHostCustomFields } from "$lib/supabase";
     import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
     import { page } from "$app/stores";
 
@@ -16,7 +16,6 @@
     let orgCustomFields = $state([]);
     let teamCustomFields = $state([]);
 
-    // Get the event_id from the URL
     const host_id = parseInt($page.params.host_id);
 
     (async () => {
@@ -37,7 +36,8 @@
                 <EditableCustomForm
                     bind:custom_fields={studentCustomFields}
                     table="students"
-                    action={async() => { /*WRITE NEW FUNCTION*/ }}
+                    editableHostFields={true}
+                    action={async() => { await upsertHostCustomFields(studentCustomFields, "students", host_id) }}
                     {host_id}
                 />
             </div>
@@ -62,8 +62,9 @@
             <div>
                 <EditableCustomForm
                     bind:custom_fields={orgCustomFields}
+                    editableHostFields={true}
                     table="orgs"
-                    action={async() => { /*WRITE NEW FUNCTION*/ }}
+                    action={async() => { await upsertHostCustomFields(orgCustomFields, "orgs", host_id) }}
                     {host_id}
                 />
             </div>
@@ -88,8 +89,9 @@
             <div>
                 <EditableCustomForm
                     bind:custom_fields={teamCustomFields}
+                    editableHostFields={true}
                     table="teams"
-                    action={async() => { /*WRITE NEW FUNCTION*/ }}
+                    action={async() => { await upsertHostCustomFields(teamCustomFields, "teams", host_id) }}
                     {host_id}
                 />
             </div>

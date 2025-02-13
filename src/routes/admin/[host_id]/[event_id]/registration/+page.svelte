@@ -1,7 +1,10 @@
 <script>
     import { Tabs, TabItem } from "flowbite-svelte";
     import CustomForm from "$lib/components/CustomForm.svelte";
-    import { getEventCustomFields, upsertEventCustomFields } from "$lib/supabase";
+    import {
+        getEventCustomFields,
+        upsertEventCustomFields,
+    } from "$lib/supabase";
     import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
     import { page } from "$app/stores";
 
@@ -116,7 +119,14 @@
                 <EditableCustomForm
                     bind:custom_fields={studentCustomFields}
                     table="students"
-                    action={async() => { await upsertEventCustomFields(studentCustomFields, "students", event_id); }}
+                    editableHostFields={false}
+                    action={async () => {
+                        await upsertEventCustomFields(
+                            studentCustomFields,
+                            "students",
+                            event_id,
+                        );
+                    }}
                     {host_id}
                 />
             </div>
@@ -142,7 +152,14 @@
                 <EditableCustomForm
                     bind:custom_fields={orgCustomFields}
                     table="orgs"
-                    action={async() => { await upsertEventCustomFields(orgCustomFields, "orgs", event_id); }}
+                    editableHostFields={false}
+                    action={async () => {
+                        await upsertEventCustomFields(
+                            orgCustomFields,
+                            "orgs",
+                            event_id,
+                        );
+                    }}
                     {host_id}
                 />
             </div>
@@ -168,7 +185,14 @@
                 <EditableCustomForm
                     bind:custom_fields={teamCustomFields}
                     table="teams"
-                    action={async() => { await upsertEventCustomFields(teamCustomFields, "teams", event_id); }}
+                    editableHostFields={false}
+                    action={async () => {
+                        await upsertEventCustomFields(
+                            teamCustomFields,
+                            "teams",
+                            event_id,
+                        );
+                    }}
                     {host_id}
                 />
             </div>
