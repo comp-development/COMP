@@ -12,7 +12,7 @@
         getAllStudentsWithoutTeam
     } from "$lib/supabase";
     import { Button, ButtonGroup, Modal } from "flowbite-svelte";
-    import type { Tables } from "../../../../../../db/database.types";
+    import type { Tables } from "../../../../../../../db/database.types";
     import { UsersGroupSolid } from "flowbite-svelte-icons";
     import toast from "$lib/toast.svelte";
     import { handleError } from "$lib/handleError";

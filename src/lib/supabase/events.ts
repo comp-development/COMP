@@ -348,6 +348,28 @@ export async function getEventOrganizations(event_id: number) {
   return data;
 }
 
+export async function getEventIndependentTeams(event_id: number) {
+  const { data, error } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("event_id", event_id)
+    .is("org_id", null);
+  if (error) throw error;
+  return data;
+}
+
+export async function getSingularEventTeam(team_id: number, event_id: number) {
+  const { data, error } = await supabase
+    .from("teams")
+    .select(`*`)
+    .eq("team_id", team_id)
+    .eq("event_id", event_id)
+    .eq("org_id", null);
+  if (error) throw error;
+
+  return data;
+}
+
 export async function createEvent(eventData: {
   event_name: string;
   event_date: string;
