@@ -148,7 +148,7 @@
 </script>
 
 <div class="center-vertical">
-	<div style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;">
+	<div style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px;">
 		<div>
 			<!-- Change header based on login state -->
 			<h1 id="headerText">
@@ -221,28 +221,30 @@
 			{/if}
 			<br>
 			<!-- Footer buttons to toggle states -->
-			<div class="flex">
-				<div class="bottomSection" style="color: white;">
-					<button
-						size="lg"
-						class="link"
-						id="switchScreen"
-						on:click={() => {
-							// Toggle between LOGIN and SIGNUP (if in RESET, switch back to LOGIN)
-							if (logInState === "LOGIN") {
-								logInState = "SIGNUP";
-							} else {
-								logInState = "LOGIN";
-							}
-						}}><u>{logInState === "LOGIN" ? "Sign Up" : "Log In"}</u></button>
-					<button
-						size="lg"
-						class="link"
-						id="forgotPassword"
-						on:click={() => {
+			<div class="bottomSection" style="color: white;">
+				<button
+					size="lg"
+					class="link"
+					id="leftButton"
+					on:click={() => {
+						// Toggle between LOGIN and SIGNUP (if in RESET, switch back to LOGIN)
+						if (logInState === "LOGIN") {
+							logInState = "SIGNUP";
+						} else {
+							logInState = "LOGIN";
+						}
+					}}><u>{logInState === "LOGIN" ? "Sign Up" : "Log In"}</u></button>
+				<button
+					size="lg"
+					class="link"
+					id="rightButton"
+					on:click={() => {
+						if (logInState === "RESET") {
+							logInState = "SIGNUP";
+						} else {
 							logInState = "RESET";
-						}}><u>Forgot Password</u></button>
-				</div>
+						}
+					}}><u>{logInState === "RESET" ? "Sign Up" : "Forgot Password"}</u></button>
 			</div>
 		</div>
 	</div>
@@ -265,40 +267,22 @@
 
 	@media only screen and (max-width: 700px) {
 		.bottomSection {
-			width: 80vw;
+			width: 100vw;
 		}
 	}
 
-	.menu-split {
-		display: grid;
-		grid-template-columns: 10% 90%;
+	/* Remove the float rules */
+	#leftButton,
+	#rightButton {
+		float: none;
 	}
 
-	.loadingPage {
-		width: 100vw;
-		height: 80vh;
-	}
-
-	button {
-		border: none;
-		background-color: transparent;
-		outline: none;
-		color: none;
-		color: var(--text-color-dark);
-		text-decoration: underline;
-		font-size: 15px;
-	}
-
-	button:hover {
-		color: var(--primary);
-		cursor: pointer;
-	}
-
-	#switchScreen {
-		float: left;
-	}
-	#forgotPassword {
-		float: right;
+	/* Use flex styling to align the buttons to the edges */
+	.bottomSection {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		width: 100%;
 	}
 
 	.center-vertical {
