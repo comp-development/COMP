@@ -182,6 +182,7 @@
             handleDragOver={() => {}}
             handleDragLeave={() => {}}
             maxTeamSize={event_details?.max_team_size}
+            handleDeleteTeam={() => {}}
           />
         </div>
       </div>

@@ -2,7 +2,7 @@
     import { Modal, Button } from "flowbite-svelte";
 
     export let isShown = false;
-    export let text = "Are you sure?";
+    export let actionName = "Are you sure?";
     export let color = "red";
     export let onCancel = () => {};
     export let onConfirm = () => {};

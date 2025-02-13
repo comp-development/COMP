@@ -82,12 +82,15 @@
 			</div>
 		</div>
 	{:else}
-		<NavBar />
-		<br />
+		{#if $page.route.id != "/scores" && $page.route.id != "/password-request" && $page.route.id != "/password-reset"}
+			<NavBar />
+			<br />
+		{/if}
 		<div>
 			{@render children?.()}
 		</div>
 	{/if}
+	<br />
 </main>
 
 <style>

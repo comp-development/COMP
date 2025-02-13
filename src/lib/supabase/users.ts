@@ -42,6 +42,29 @@ export async function signIntoAccount(email: string, password: string) {
 }
 
 /**
+ * Reset a user's password through email. Returns nothing.
+ *
+ * @param email
+ */
+export async function resetUserPassword(email: string) {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + "/password-reset",
+  });
+  if (error) throw error;
+}
+
+/**
+ * Change user's password if verified. Returns nothing.
+ *
+ * @param password
+ */
+export async function updateUserAuth(password: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    password: password
+  });  
+}
+
+/**
  * Signs out user from their account in their browser
  */
 export async function signOut() {

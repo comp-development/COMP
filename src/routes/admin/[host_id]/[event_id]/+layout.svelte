@@ -1,6 +1,6 @@
 <script lang="ts">
     import { page } from "$app/stores";
-    import { isEventPublished } from "$lib/supabase";
+    import { getAllHostEvents } from "$lib/supabase";
     import Loading from "$lib/components/Loading.svelte";
     import { handleError } from "$lib/handleError";
 
@@ -12,10 +12,11 @@
 
     (async () => {
         try {
-            const published = await isEventPublished(event_id, host_id);
+            const all_events = await getAllHostEvents(host_id);
+            const published = all_events.filter(e => e.event_id === event_id);
 
-            if (!published) {
-                error = "This event has not been published yet.";
+            if (published.length == 0) {
+                error = "This event does not exist under this host organization.";
             }
 
             loading = false;

@@ -44,15 +44,12 @@
         try {
             e.preventDefault();
 
-            const lastTeam = organizationDetails.teams.find(
-                (team) => team.team_id === studentModalOpenTeam,
-            );
-            if (!lastTeam) {
+            if (!team) {
                 toast.error("No teams available to assign the student.");
                 return;
             }
 
-            if (lastTeam.teamMembers.length >= (maxTeamSize ?? 0)) {
+            if (team.teamMembers.length >= (maxTeamSize ?? 0)) {
                 toast.error(
                     "This team is already at maximum capacity. Add this student to another team.",
                 );
@@ -61,27 +58,36 @@
 
             const newStudent = await updateStudentTeam(
                 student.student_event_id,
-                lastTeam.team_id,
+                team.team_id,
                 org_id,
             );
 
-            const updatedTeams = organizationDetails.teams.map((team: any) => {
-                if (team.team_id === lastTeam.team_id) {
-                    return {
-                        ...team,
-                        teamMembers: [...team.teamMembers, newStudent],
-                    };
-                }
-                return team;
-            });
-            organizationDetails.teams = updatedTeams;
+            if (organizationDetails) {
+                const updatedTeams = organizationDetails.teams.map(
+                    (newTeam: any) => {
+                        if (newTeam.team_id === team.team_id) {
+                            return {
+                                ...newTeam,
+                                teamMembers: [...newTeam.teamMembers, newStudent],
+                            };
+                        }
+                        return newTeam;
+                    },
+                );
+                organizationDetails.teams = updatedTeams;
+            } else {
+                team = {
+                    ...team,
+                    teamMembers: [...team.teamMembers, newStudent],
+                };
+            }
 
             studentsWithoutTeams = studentsWithoutTeams.filter(
                 (s) => s.student_event_id !== student.student_event_id,
             );
 
             toast.success(
-                `Student ${newStudent.person.first_name} added to team ${lastTeam.team_name}`,
+                `Student ${newStudent.person.first_name} added to team ${team.team_name}`,
             );
 
             studentModalOpenTeam = null;
@@ -153,7 +159,7 @@
 
 <ConfirmationModal
     isShown={showDeleteTeamConfirmation}
-    text="Are you sure you want to delete this team? This action cannot be undone."
+    text="delete this team"
     onCancel={() => {
         showDeleteTeamConfirmation = false;
         deleteTeamId = false;
