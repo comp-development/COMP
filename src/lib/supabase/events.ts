@@ -364,7 +364,7 @@ export async function getSingularEventTeam(team_id: number, event_id: number) {
     .select(`*`)
     .eq("team_id", team_id)
     .eq("event_id", event_id)
-    .eq("org_id", null);
+    .is("org_id", null);
   if (error) throw error;
 
   return data;
