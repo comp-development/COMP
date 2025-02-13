@@ -53,16 +53,6 @@ export async function resetUserPassword(email: string) {
   if (error) throw error;
 }
 
-/**
- * Change user's password if verified. Returns nothing.
- *
- * @param password
- */
-export async function updateUserAuth(password: string) {
-  const { data, error } = await supabase.auth.updateUser({
-    password: password
-  });  
-}
 
 /**
  * Signs out user from their account in their browser
