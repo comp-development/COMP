@@ -5,7 +5,7 @@
 
 To generate (a superset of) this diagram, run `tree -d --gitignore`.
 
-```
+```bash
 ├── db # local database scripts and schema
 │      # for seed scripts, migrations
 ├── src
