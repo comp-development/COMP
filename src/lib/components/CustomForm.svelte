@@ -54,16 +54,10 @@
         tel: "Please follow the format: NNN-NNN-NNNN",
     };
 
-    type Unpacked<T> = T extends (infer U)[] ? U : T; //Francis Chua
-    // type Keys<T> = T extends (infer U)[] ? U : T; //Francis Chua
-    
-
-    // type a = Unpacked<typeof Object.keys(validationMessages)>;
-
-    function validateInput(key, value, regex, error_message) {
+    function validateInput(key: string, value: string, regex: RegExp | string, error_message: string | null) {
         if (regex && value) {
             const pattern = new RegExp(regex);
-            validationErrors[key] = !pattern.test(value) ? error_message : null
+            validationErrors[key] = !pattern.test(value) ? error_message ?? ("please match the format " + regex + ".") : null
         } else {
             validationErrors[key] = null;
         }
