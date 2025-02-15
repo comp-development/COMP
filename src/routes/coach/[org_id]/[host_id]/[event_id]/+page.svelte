@@ -12,6 +12,7 @@
     getHostInformation,
     getStudentsWithoutTeam,
     removeStudentFromOrganization,
+    getTicketCount,
   } from "$lib/supabase";
   import { Button, ButtonGroup, Modal } from "flowbite-svelte";
   import type { Tables } from "../../../../../../db/database.types";
@@ -31,6 +32,7 @@
   let loading = $state(true);
   let coach: any = $state();
   let organizationDetails: any = $state();
+  let ticketCount: number = $state(0);
   let event_details: Tables<"events"> | null = $state(null);
   const event_id = parseInt($page.params.event_id);
   const org_id = parseInt($page.params.org_id);
@@ -62,6 +64,7 @@
       event_id,
       org_id,
     );
+    ticketCount = await getTicketCount(event_id, org_id);
 
     studentsWithoutTeams = await getStudentsWithoutTeam(event_id, org_id);
 
@@ -228,7 +231,6 @@
   }
 
   async function purchase_ticket(quantity: number) {
-    console.log("bonjour");
     const { data, error } = await supabase.auth.getSession();
     if (error != null) {
       handleError(error);
@@ -405,7 +407,7 @@
           </Button>
           <Button pill outline color="primary" onclick={openPurchaseModal}>
             <CartSolid class="w-4 h-4 me-2" />
-            Purchase Tickets (1 bought)
+            Purchase Tickets ({ticketCount} bought)
           </Button>
         </ButtonGroup>
       </div>

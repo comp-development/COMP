@@ -111,7 +111,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       team_error,
     );
 
-    let joined_org = false;
     // If the join code is for an org team, add the student to the org.
     if (team_data!.org_id) {
       // Add student to org_event.
@@ -121,7 +120,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         org_id: team_data!.org_id,
       });
       wrap_supabase_error("adding student to org", 0, error);
-      joined_org = true;
     }
 
     // Validate that session is paid.
@@ -133,32 +131,49 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       .maybeSingle();
     wrap_supabase_error("fetching ticket order", 0, error);
 
-    let using_org_order = false;
-    // Use org session if student's does not exist.
-    if (!ticket_order) {
-      let { data: org_ticket_order, error } = await adminSupabase
+    // If using an org order, provide a nice error if there are
+    // insufficient purchased tickets.
+    if (team_data!.org_id) {
+      const { count: used_quantity, error: st_error } = await adminSupabase
+        .from("student_events")
+        .select("*, teams!inner(*)", { count: "exact" })
+        .eq("event_id", event_id)
+        .eq("teams.org_id", team_data!.org_id);
+      wrap_supabase_error(
+        "counting uses of org id ticket",
+        used_quantity,
+        st_error,
+      );
+      // Assume the # of ticket orders isn't too large.
+      const { data: tickets, error: to_error } = await adminSupabase
         .from("ticket_orders")
         .select("*")
-        .eq("student_id", user.id)
-        .eq("event_id", event_id)
-        .maybeSingle();
-      wrap_supabase_error("fetching org ticket order", 0, error);
-      ticket_order = org_ticket_order;
-      using_org_order = true;
-    }
+        .eq("org_id", team_data!.org_id);
+      wrap_supabase_error(
+        "counting available org id tickets",
+        tickets,
+        to_error,
+      );
 
-    if (!ticket_order) {
-      return construct_response({
-        failure: { reason: "missing payment session" },
-      });
-    }
-
-    const stripe = new Stripe(stripeSecretKey);
-    const session = await stripe.checkout.sessions.retrieve(
-      ticket_order.order_id,
-    );
-    if (session.payment_status == "paid") {
+      const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+      const purchased_quantity = sum(tickets!.map((t) => t.quantity));
+      if (purchased_quantity <= used_quantity!) {
+        return construct_response({
+          failure: { reason: "joined org, insufficient org tickets" },
+        });
+      }
     } else {
+      // If not using an org order, provide nice errors for varying payment statuses.
+      if (!ticket_order) {
+        return construct_response({
+          failure: { reason: "missing payment session" },
+        });
+      }
+      const stripe = new Stripe(stripeSecretKey);
+      const session = await stripe.checkout.sessions.retrieve(
+        ticket_order.order_id,
+      );
+
       if (session.status == "expired") {
         await adminSupabase
           .from("ticket_orders")
@@ -169,9 +184,11 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           failure: { reason: "payment expired", stripe_url: session.url! },
         });
       }
-      return construct_response({
-        failure: { reason: "payment not complete", stripe_url: session.url! },
-      });
+      if (session.payment_status != "paid") {
+        return construct_response({
+          failure: { reason: "payment not complete", stripe_url: session.url! },
+        });
+      }
     }
 
     // Add student to team.
@@ -185,26 +202,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         },
         { onConflict: "student_id, event_id" },
       );
-
-    // If using an org order, provide a nice error if there are
-    // insufficient purchased tickets.
-    if (using_org_order && joined_org && student_team_error) {
-      const { count: used_quantity, error: st_error } = await adminSupabase
-        .from("student_events")
-        .select("*, teams!inner(*, student_events(*))", { count: "exact" })
-        .eq("ticket_order_id", ticket_order.id);
-      wrap_supabase_error(
-        "counting uses of org id ticket",
-        used_quantity,
-        st_error,
-      );
-      const purchased_quantity = session!.line_items!.data[0].quantity;
-      if (purchased_quantity == used_quantity) {
-        return construct_response({
-          failure: { reason: "joined org, insufficient org tickets" },
-        });
-      }
-    }
     wrap_supabase_error("adding student to team", 0, student_team_error);
 
     return construct_response({ success: { team_join_code: join_code } });
