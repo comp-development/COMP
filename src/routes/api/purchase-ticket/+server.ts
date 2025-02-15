@@ -155,6 +155,13 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           quantity,
         },
       ],
+      metadata: {
+        purchasing_user_id: user.id,
+        event_id,
+        creating_team: `${creating_team}`,
+        target_org_id,
+        joining_team_code,
+      },
       mode: "payment",
       success_url,
       cancel_url,
