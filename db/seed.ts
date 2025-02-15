@@ -358,7 +358,7 @@ async function reset_db() {
       chosen_students,
       copycat.int,
     );
-    const split = <T,>(a: T[], i: number) => [a.slice(0, i), a.slice(i)];
+    const split = <T>(a: T[], i: number) => [a.slice(0, i), a.slice(i)];
     const [org_s, indiv_s] = split(
       scrambled_students,
       copycat.int(["organization or individual", i], {
@@ -373,8 +373,9 @@ async function reset_db() {
     // Map from org ids to student ids.
     let org_to_s: Map<number, string[]> = new Map();
     org_s.map((e) => {
-      const key = org_events.find((oe) => oe.event_id == event.event_id)!
-        .org_id!;
+      const key = org_events.find(
+        (oe) => oe.event_id == event.event_id,
+      )!.org_id!;
       org_to_s.set(key, (org_to_s.get(key) ?? []).concat([e.student_id]));
     });
     // Have orgs purchase sufficient tickets (greater or equal to assigned student count).

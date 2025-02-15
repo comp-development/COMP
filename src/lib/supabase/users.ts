@@ -23,8 +23,10 @@ export async function createAccount(email: string, password: string) {
  * @param password
  */
 export async function updateUserAuth(password: string) {
-	const { data, error } = await supabase.auth.updateUser({ password: password })
-	if (error) throw error;
+  const { data, error } = await supabase.auth.updateUser({
+    password: password,
+  });
+  if (error) throw error;
 }
 
 /**
@@ -53,7 +55,6 @@ export async function resetUserPassword(email: string) {
   if (error) throw error;
 }
 
-
 /**
  * Signs out user from their account in their browser
  */
@@ -75,28 +76,24 @@ export async function getThisUser() {
 }
 
 export async function addStudent(user_id: string, data: any) {
-  const { error } = await supabase
-    .from('students')
-    .insert({
-      student_id: user_id,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      grade: data.grade,
-      email: data.email
-    });
+  const { error } = await supabase.from("students").insert({
+    student_id: user_id,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    grade: data.grade,
+    email: data.email,
+  });
 
   if (error) throw error;
 }
 
 export async function addCoach(user_id: string, data: any) {
-  const { error } = await supabase
-    .from('coaches')
-    .insert({
-      coach_id: user_id,
-      first_name: data.first_name,
-      last_name: data.last_name,
-      email: data.email
-    });
+  const { error } = await supabase.from("coaches").insert({
+    coach_id: user_id,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+  });
 
   if (error) throw error;
 }
@@ -230,7 +227,7 @@ export async function getallUsers() {
         last_name: user.last_name,
       },
       role: "Admin",
-      admin_id: user.admin_id
+      admin_id: user.admin_id,
     });
   }
 
@@ -242,7 +239,7 @@ export async function getallUsers() {
         last_name: user.last_name,
       },
       role: "Student",
-      student_id: user.student_id
+      student_id: user.student_id,
     });
   }
 
@@ -254,7 +251,7 @@ export async function getallUsers() {
         last_name: user.last_name,
       },
       role: "Coach",
-      coach_id: user.coach_id
+      coach_id: user.coach_id,
     });
   }
 
@@ -283,7 +280,7 @@ export async function getStudentUsers(select: string = "*") {
 export async function transferUser(
   user_id: string,
   from_type: "admin" | "student" | "coach",
-  to_type: "admin" | "student" | "coach"
+  to_type: "admin" | "student" | "coach",
 ) {
   // Get the database table names
   const fromDatabase = getUserTypeDatabase(from_type);
@@ -309,7 +306,7 @@ export async function transferUser(
     [`${to_type}_id`]: user_id,
     first_name: data.first_name,
     last_name: data.last_name,
-    email: data.email
+    email: data.email,
   };
 
   // If transferring to student table, include grade if it exists

@@ -51,7 +51,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
   const user = user_response.data.user;
 
-  const dbg = <T,>(x: T): T => {
+  const dbg = <T>(x: T): T => {
     console.log(x);
     return x;
   };

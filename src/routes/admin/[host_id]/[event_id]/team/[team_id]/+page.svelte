@@ -85,7 +85,9 @@
       onDrop={() => {}}
       onDragStart={() => {}}
       onDeleteStudent={handleDeleteStudent}
-      openEditModal={() => { isTeamModalOpen = true; }}
+      openEditModal={() => {
+        isTeamModalOpen = true;
+      }}
       handleDragOver={() => {}}
       handleDragLeave={() => {}}
       maxTeamSize={event_details?.max_team_size}

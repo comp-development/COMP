@@ -2,7 +2,6 @@
 
 ## Project Overview
 
-
 To generate (a superset of) this diagram, run `tree -d --gitignore`.
 
 ```bash
@@ -27,6 +26,7 @@ To generate (a superset of) this diagram, run `tree -d --gitignore`.
 ### Install
 
 First, install dependencies with
+
 ```bash
 npm install
 ```
@@ -53,6 +53,7 @@ If you don't know which workflow to use, you should probably use the
 ### Develop
 
 Start on a branch! Run the below command.
+
 ```
 git checkout -b your-feature-name-here
 ```
@@ -70,7 +71,6 @@ When saving a file, vite will automatically hot reload pages (reloads just the
 scripting portion for a faster feedback loop). If this leaves the page in a
 broken state, just manually refresh the page.
 
-
 On the database side, run `supabase status` inside the `db` folder and open
 the studio link. This page shows the state of that local database instance
 and lets you modify the data or schema contained therein.
@@ -87,9 +87,10 @@ code to generated sample emails in that table. Verify the script works with
 `npx tsx seed.ts`.
 
 After making either database or webpage changes, please extend the `tests/node.ts`
-file to cover success and failure cases. 
+file to cover success and failure cases.
 
 To verify tests pass after developing, run the below:
+
 ```bash
 cd tests
 npx tsx node.ts
@@ -97,9 +98,11 @@ npx tsx node.ts
 
 ### Merge
 
-Commit your changes, push them to Github on your fork or the COMP repository,
-and open a pull request. 
+Run the format command `npx prettier --write --plugin prettier-plugin-svelte .`
+before commiting.
 
+Commit your changes, push them to Github on your fork or the COMP repository,
+and open a pull request.
 
 <!--
 ## Building

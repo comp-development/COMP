@@ -106,7 +106,7 @@
       choices: null,
       editable: false,
       hidden: false,
-    }
+    },
   ]}
   {custom_fields}
   bind:newResponses

@@ -21,13 +21,14 @@ npx patch-package # applies our patch to the seed package
 ```
 
 ```
-supabase start 
+supabase start
 touch ../.env
 ```
 
 Fill in the below variables in the `COMP/.env` file using the output of `supabase status`
 (same as initial output of `supabase start`). Note that there should be no spaces
 between the `=` and the value.
+
 ```
 VITE_SUPABASE_URL=API_URL
 VITE_SUPABASE_ANON_KEY=anon_key
@@ -37,6 +38,7 @@ SUPABASE_SERVICE_KEY=service_role_key
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
 
 ## Dev+Update Workflow:
+
 1. start supabase. run `supabase db reset` to get remote changes applied locally.
 2. fill out seed data with `npx @snaplet/seed sync`, `npx tsx seed.ts`
 3. edit the db via UI or SQL commands
@@ -50,6 +52,7 @@ See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getti
 11. notify admin
 
 ## One-time Admin Setup (only if the db folder doesn't already exist):
+
 1. download current schema via `supabase login`, `supabase init`, `supabase link`,
    `supabase db pull`, `supabase db pull --schema auth`, etc. make the start
    migration as minimal as possible
@@ -59,6 +62,7 @@ See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getti
 4. test against COMP and commit to VCS
 
 ## Admin Migration Workflow:
+
 1. get notified by dev, pull latest
 2. start supabase. run `supabase db reset` and `npx tsx seed.ts`
 3. test against COMP
@@ -85,6 +89,7 @@ again, then finally `supabase db reset`.
 # COMP Dev DB
 
 Use the pre-authenticated email and password pairs below to sign in.
+
 ```
 admin@gmail.com
 admin123

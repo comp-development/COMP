@@ -15,13 +15,12 @@
   toast.subscribe(() => {
     messages = [...toast.messages.entries()];
   });
-
 </script>
 
 <div style="position: fixed; top: 10px;">
-{#each messages.toReversed() as [_, data]}
+  {#each messages.toReversed() as [_, data]}
     <Toast dismissable={true} {...data}></Toast>
-{/each}
+  {/each}
 </div>
 
 <style>

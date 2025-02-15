@@ -1,193 +1,187 @@
 <script lang="ts">
-    import {
-        PenSolid,
-        TrashBinSolid,
-        UserAddSolid,
-    } from "flowbite-svelte-icons";
-    import DraggableStudent from "./DraggableStudent.svelte";
-    import CopyText from "./CopyText.svelte";
-    import { updateStudentTeam } from "$lib/supabase";
-    import { handleError } from "$lib/handleError";
-    import toast from "$lib/toast.svelte";
-    import { Modal } from "flowbite-svelte";
-    import TableName from "$lib/components/TableName.svelte";
-    import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+  import { PenSolid, TrashBinSolid, UserAddSolid } from "flowbite-svelte-icons";
+  import DraggableStudent from "./DraggableStudent.svelte";
+  import CopyText from "./CopyText.svelte";
+  import { updateStudentTeam } from "$lib/supabase";
+  import { handleError } from "$lib/handleError";
+  import toast from "$lib/toast.svelte";
+  import { Modal } from "flowbite-svelte";
+  import TableName from "$lib/components/TableName.svelte";
+  import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
 
-    let {
-        event_id,
+  let {
+    event_id,
+    org_id,
+    team,
+    onDrop,
+    onDragStart,
+    onDeleteStudent,
+    openEditModal,
+    handleDragOver,
+    editableFeatures = true,
+    handleDragLeave,
+    studentsWithoutTeams = $bindable(),
+    maxTeamSize,
+    handleDeleteTeam,
+    showDeleteTeamConfirmation = $bindable(),
+    deleteTeamId = $bindable(),
+    organizationDetails = $bindable(),
+  } = $props();
+
+  let isStudentModalOpen = $state(false);
+  let studentModalOpenTeam = $state(null);
+
+  function openStudentModal(team_id: number) {
+    studentModalOpenTeam = team_id;
+    isStudentModalOpen = true;
+  }
+
+  async function selectStudent(e, student) {
+    try {
+      e.preventDefault();
+
+      if (!team) {
+        toast.error("No teams available to assign the student.");
+        return;
+      }
+
+      if (team.teamMembers.length >= (maxTeamSize ?? 0)) {
+        toast.error(
+          "This team is already at maximum capacity. Add this student to another team.",
+        );
+        return;
+      }
+
+      const newStudent = await updateStudentTeam(
+        student.student_event_id,
+        team.team_id,
         org_id,
-        team,
-        onDrop,
-        onDragStart,
-        onDeleteStudent,
-        openEditModal,
-        handleDragOver,
-        editableFeatures = true,
-        handleDragLeave,
-        studentsWithoutTeams = $bindable(),
-        maxTeamSize,
-        handleDeleteTeam,
-        showDeleteTeamConfirmation = $bindable(),
-        deleteTeamId = $bindable(),
-        organizationDetails = $bindable(),
-    } = $props();
+      );
 
-    let isStudentModalOpen = $state(false);
-    let studentModalOpenTeam = $state(null);
+      if (organizationDetails) {
+        const updatedTeams = organizationDetails.teams.map((newTeam: any) => {
+          if (newTeam.team_id === team.team_id) {
+            return {
+              ...newTeam,
+              teamMembers: [...newTeam.teamMembers, newStudent],
+            };
+          }
+          return newTeam;
+        });
+        organizationDetails.teams = updatedTeams;
+      } else {
+        team = {
+          ...team,
+          teamMembers: [...team.teamMembers, newStudent],
+        };
+      }
 
-    function openStudentModal(team_id: number) {
-        studentModalOpenTeam = team_id;
-        isStudentModalOpen = true;
+      studentsWithoutTeams = studentsWithoutTeams.filter(
+        (s) => s.student_event_id !== student.student_event_id,
+      );
+
+      toast.success(
+        `Student ${newStudent.person.first_name} added to team ${team.team_name}`,
+      );
+
+      studentModalOpenTeam = null;
+      isStudentModalOpen = false;
+    } catch (error) {
+      handleError(error);
     }
-
-    async function selectStudent(e, student) {
-        try {
-            e.preventDefault();
-
-            if (!team) {
-                toast.error("No teams available to assign the student.");
-                return;
-            }
-
-            if (team.teamMembers.length >= (maxTeamSize ?? 0)) {
-                toast.error(
-                    "This team is already at maximum capacity. Add this student to another team.",
-                );
-                return;
-            }
-
-            const newStudent = await updateStudentTeam(
-                student.student_event_id,
-                team.team_id,
-                org_id,
-            );
-
-            if (organizationDetails) {
-                const updatedTeams = organizationDetails.teams.map(
-                    (newTeam: any) => {
-                        if (newTeam.team_id === team.team_id) {
-                            return {
-                                ...newTeam,
-                                teamMembers: [...newTeam.teamMembers, newStudent],
-                            };
-                        }
-                        return newTeam;
-                    },
-                );
-                organizationDetails.teams = updatedTeams;
-            } else {
-                team = {
-                    ...team,
-                    teamMembers: [...team.teamMembers, newStudent],
-                };
-            }
-
-            studentsWithoutTeams = studentsWithoutTeams.filter(
-                (s) => s.student_event_id !== student.student_event_id,
-            );
-
-            toast.success(
-                `Student ${newStudent.person.first_name} added to team ${team.team_name}`,
-            );
-
-            studentModalOpenTeam = null;
-            isStudentModalOpen = false;
-        } catch (error) {
-            handleError(error);
-        }
-    }
+  }
 </script>
 
 <div
-    class="team"
-    on:dragover={handleDragOver}
-    on:dragleave={handleDragLeave}
-    on:drop={(e) => onDrop(e, team)}
+  class="team"
+  on:dragover={handleDragOver}
+  on:dragleave={handleDragLeave}
+  on:drop={(e) => onDrop(e, team)}
 >
-    <div class="flex" style="justify-content: space-between">
-        <h3>{team.team_name}</h3>
-        {#if editableFeatures}
-            <div class="space-y-1">
-                <button
-                    class="hover:bg-green-100 rounded-lg"
-                    aria-label="Add Student"
-                    on:click={() => openStudentModal(team.team_id)}
-                >
-                    <UserAddSolid class="w-5 h-5" />
-                </button>
-                <button
-                    class="hover:bg-blue-100 rounded-lg"
-                    aria-label="Edit"
-                    on:click={() => openEditModal(team)}
-                >
-                    <PenSolid class="w-5 h-5" />
-                </button>
-                <button
-                    class="hover:bg-red-100 rounded-lg"
-                    aria-label="Delete"
-                    on:click={(e) => {
-                        e.preventDefault();
-                        showDeleteTeamConfirmation = true;
-                        deleteTeamId = team.team_id;
-                    }}
-                >
-                    <TrashBinSolid class="w-5 h-5" />
-                </button>
-            </div>
-        {/if}
-    </div>
-
+  <div class="flex" style="justify-content: space-between">
+    <h3>{team.team_name}</h3>
     {#if editableFeatures}
-        <CopyText text={team.join_code} />
+      <div class="space-y-1">
+        <button
+          class="hover:bg-green-100 rounded-lg"
+          aria-label="Add Student"
+          on:click={() => openStudentModal(team.team_id)}
+        >
+          <UserAddSolid class="w-5 h-5" />
+        </button>
+        <button
+          class="hover:bg-blue-100 rounded-lg"
+          aria-label="Edit"
+          on:click={() => openEditModal(team)}
+        >
+          <PenSolid class="w-5 h-5" />
+        </button>
+        <button
+          class="hover:bg-red-100 rounded-lg"
+          aria-label="Delete"
+          on:click={(e) => {
+            e.preventDefault();
+            showDeleteTeamConfirmation = true;
+            deleteTeamId = team.team_id;
+          }}
+        >
+          <TrashBinSolid class="w-5 h-5" />
+        </button>
+      </div>
     {/if}
+  </div>
 
-    {#each team.teamMembers as team_member}
-        <DraggableStudent
-            {team_member}
-            {onDragStart}
-            {onDeleteStudent}
-            {editableFeatures}
-        />
-    {/each}
+  {#if editableFeatures}
+    <CopyText text={team.join_code} />
+  {/if}
 
-    <div
-        class="flex-shrink-0 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 inline-flex items-center justify-center absolute top-0 end-0 translate-x-1/3 rtl:-translate-x-1/3 -translate-y-1/3 px-1"
-    >
-        <span class="text-xs font-bold p-0 m-0y">{team.front_id}</span>
-    </div>
+  {#each team.teamMembers as team_member}
+    <DraggableStudent
+      {team_member}
+      {onDragStart}
+      {onDeleteStudent}
+      {editableFeatures}
+    />
+  {/each}
+
+  <div
+    class="flex-shrink-0 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 inline-flex items-center justify-center absolute top-0 end-0 translate-x-1/3 rtl:-translate-x-1/3 -translate-y-1/3 px-1"
+  >
+    <span class="text-xs font-bold p-0 m-0y">{team.front_id}</span>
+  </div>
 </div>
 
 <ConfirmationModal
-    isShown={showDeleteTeamConfirmation}
-    text="delete this team"
-    onCancel={() => {
-        showDeleteTeamConfirmation = false;
-        deleteTeamId = false;
-    }}
-    onConfirm={handleDeleteTeam}
+  isShown={showDeleteTeamConfirmation}
+  text="delete this team"
+  onCancel={() => {
+    showDeleteTeamConfirmation = false;
+    deleteTeamId = false;
+  }}
+  onConfirm={handleDeleteTeam}
 />
 
 <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-        Select Student
-    </h3>
-    <div class="tableMaxHeight">
-        <TableName
-            actionType="select_student"
-            items={studentsWithoutTeams}
-            action={selectStudent}
-            {org_id}
-        />
-    </div>
+  <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+    Select Student
+  </h3>
+  <div class="tableMaxHeight">
+    <TableName
+      actionType="select_student"
+      items={studentsWithoutTeams}
+      action={selectStudent}
+      {org_id}
+    />
+  </div>
 </Modal>
 
 <style>
-    .team {
-        border: 3px solid var(--primary-tint);
-        padding: 10px;
-        border-radius: 15px;
-        position: relative;
-        text-align: left;
-        transition: background-color 0.2s ease;
-    }
+  .team {
+    border: 3px solid var(--primary-tint);
+    padding: 10px;
+    border-radius: 15px;
+    position: relative;
+    text-align: left;
+    transition: background-color 0.2s ease;
+  }
 </style>
