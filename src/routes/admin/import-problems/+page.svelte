@@ -4,11 +4,11 @@
     import { onMount } from 'svelte';
     import { handleError } from '$lib/handleError';
 
-    let loading = true;
-    let loggedIn = false;
-    let synced = false;
-    let email = "";
-    let password = "";
+    let loading = $state(true);
+    let loggedIn = $state(false);
+    let synced = $state(false);
+    let email = $state("");
+    let password = $state("");
 
     onMount(async () => {
         const { data, error } = await supabaseCompose.auth.getUser()
@@ -52,7 +52,7 @@
 {#if loading}
     <p>Loading...</p>
 {:else if loggedIn}
-    <button on:click={syncProblems}>Sync Problems</button>
+    <button onclick={syncProblems}>Sync Problems</button>
     {#if synced}
         Problems synced!
     {/if}
@@ -62,4 +62,4 @@
 <input placeholder="Email" bind:value={email} />
 <input placeholder="Password" type="password" bind:value={password} />
 
-<button on:click={logInCompose}>Log In</button>{/if}
+<button onclick={logInCompose}>Log In</button>{/if}

@@ -1,0 +1,3 @@
+node_modules
+.snaplet/dataModel.json
+supabase/seed.sql

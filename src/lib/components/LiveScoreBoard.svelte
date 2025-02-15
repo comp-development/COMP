@@ -2,16 +2,19 @@
 	import { onMount } from "svelte";
 	import { getGutsScores } from "$lib/supabase/";
 
-	export let test;
-    export let max_per_side = 10;
+	interface Props {
+		test: any;
+		max_per_side?: number;
+	}
+
+	let { test, max_per_side = 10 }: Props = $props();
     let num_rounds = test.settings.pages.length
-	let round = "Guts Round: Score Display";
 	let screen_width = screen.width;
 	let curr_screen = 0
 	let num_screens = 0
 	let num_teams = 0
-    let num_copies = 10
-	let scores = []
+    let num_copies = 1	
+	let scores = $state([])
 	let seconds = 0
 	let minutes = 60
 	//document.documentElement.style.setProperty('--light', styles["background-dark"]);
@@ -77,11 +80,13 @@
 </script>
 
 <div>
-	<h1>{test.test_name}</h1>
-	<p>{round || ""}</p>
+	<h1 style="text-align: center">{test.event_name}</h1>
+	<h2 style="text-align: center">{test.test_name}</h2>
+	{#if test.division}<h3 style="text-align: center">{test.division}</h3>{/if}
 
 	<br />
-	<p style="font-style: italic;">Please note that all scores from Set {num_rounds} will not be shown.</p>
+	<p style="font-style: italic; text-align: center;">Please note that all scores from Set {num_rounds} will not be shown.</p>
+	<br />
 	<div id = "leftwrapper">
 		<table class="gutsDisplay" id="leftTable">
 			<thead>
@@ -99,8 +104,8 @@
 						<td class="gutsResult teamName">{scores[i].name}</td>
 						<td class="gutsResult">
 							<div class ="round">
-								{#each Array(num_rounds) as __, round}
-                                    <div class="color-box ${round < scores[i].page_number ? "complete" : "not-complete"}"></div>
+								{#each Array.from({ length: num_rounds }, (_, i) => i + 1) as round}
+                                    <div class="color-box {round < scores[i].page_number ? "complete" : "not-complete"}"></div>
 								{/each}
 						</td>
 						<td class="gutsResult">{scores[i].score}</td>
@@ -126,9 +131,9 @@
                         <td class="gutsResult teamName">{scores[i].name}</td>
                         <td class="gutsResult">
                             <div class ="round">
-                                {#each Array(num_rounds) as __, round}
-                                    <div class="color-box ${round < scores[i].page_number ? "complete" : "not-complete"}"></div>
-                                {/each}
+                                {#each Array.from({ length: num_rounds }, (_, i) => i + 1) as round}
+                                    <div class="color-box {round < scores[i].page_number ? "complete" : "not-complete"}"></div>
+								{/each}
                         </td>
                         <td class="gutsResult">{scores[i].score}</td>
                     </tr>
@@ -149,7 +154,7 @@
   	}
 
     .complete {
-        background-color: var(--secondary);
+        background-color: var(--primary-light);
     }
 
     .not-complete {
@@ -162,9 +167,7 @@
 		border-collapse: collapse;
 		padding: 10px;
 		white-space: nowrap;
-		height: var(--screen_height);
         float: left;
-		background-color: var(--secondary-light);
 		border-right: 3px dotted var(--secondary);
     }
 
@@ -174,21 +177,19 @@
 		border-collapse: collapse;
 		padding: 10px;
 		white-space: nowrap;
-		height: var(--screen_height);
         float: right;
-		background-color: var(--secondary-light);
     }
 
 	#leftTable {
 		float: left;
-		background-color: var(--secondary-light);
 		margin: 10px;
+		border: 2px solid var(--primary);
     }
 
     #rightTable {
 		float: right;
-        background-color: var(--secondary-light);
 		margin: 10px;
+		border: 2px solid var(--primary);
     }
 
     .gutsDisplay {
@@ -214,22 +215,19 @@
 
     .gutsInfo {
 		color: white;
-		background-color: var(--secondary);
+		background-color: var(--primary);
 		padding: 10px;
-        border: none;
+        border: 1px solid var(--primary);
         text-align: left;
 		font-family: var(--font-family);
 		font-size: 20px;
-		font-weight: bold; /* Makes the text bold */
-    	text-shadow: -1px -1px 0 #000, 
-			1px -1px 0 #000; ; 
+		font-weight: bold;
     }
 
 	.gutsResult {
-		background-color: var(--secondary-light);
-
+		background-color: var(--primary-tint);
 		padding: 10px;
-        border: none;
+		border: 1px solid var(--primary);
         text-align: left;
 		font-family: var(--font-family);
 		font-size: 20px;

@@ -1,156 +1,131 @@
-<script>
+<script lang="ts">
+	import "../app.css";
 	import "carbon-components-svelte/css/white.css";
+	import Toaster from "$lib/components/Toaster.svelte";
 	import { supabase } from "$lib/supabaseClient";
 	import Account from "$lib/components/Account.svelte";
-	import Banner from "$lib/components/Banner.svelte";
-	import Menu from "$lib/components/Menu.svelte";
+	import NavBar from "$lib/components/Navbar.svelte";
 	import Loading from "$lib/components/Loading.svelte";
 	import { user } from "$lib/sessionStore";
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
-	import { Toaster } from "svelte-french-toast";
-	import { getThisUser } from "$lib/supabase";
+	import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
+	interface Props {
+		children?: import("svelte").Snippet;
+	}
 
-	let loaded = false;
+	let { children }: Props = $props();
+	let scheme: any = defaultSettings; // Initialize scheme variable
 
-	let hasAccount = true;
-	// user.set(browser ? localStorage.getItem("user") : null);
-	(async () => {
-		user.set(await getThisUser());
-	})();
+	let loaded = $state(false);
+
+	let hasAccount = $state(true);
+	if ($page.route.id?.includes("/signup")) {
+		hasAccount = false;
+	}
 
 	supabase.auth.onAuthStateChange((_, session) => {
 		user.set(session?.user);
 	});
+	
 
 	onMount(async () => {
+		// Fetch style settings from the database
+		// Set CSS variables dynamically
+		Object.entries(scheme.styles || {})
+			.concat(Object.entries(scheme.constants || {}))
+			.forEach(([key, value]) => {
+				document.documentElement.style.setProperty(
+					`--${key}`,
+					value as string,
+				);
+			});
+		user.set((await supabase.auth.getUser()).data.user);
+
 		loaded = true;
 	});
-
-	// user.subscribe(val => browser ? localStorage.setItem("user", val) : null);
 </script>
 
 <svelte:head>
 	<link rel="icon" type="image/png" href="https://mustangmath.com/logo.png" />
-	<link rel="og:image" type="image/png" href="https://mustangmath.com/logo.png" />
-	<title>Mustang Math Tournament Platform</title>
+	<link
+		rel="og:image"
+		type="image/png"
+		href="https://mustangmath.com/logo.png"
+	/>
+	<title>Contest Organization & Management Platform (COMP)</title>
 	<meta
 		name="description"
-		content="This is a platform that solves platforms."
+		content="COMP is an all-in-one solution for running contests."
 	/>
 </svelte:head>
 
-<Toaster />
 <main>
+	<div class="absolute flex items-center mt-3 w-full">
+		<Toaster></Toaster>
+	</div>
 	{#if !loaded}
-		<Banner />
 		<div class="loadingPage flex">
 			<Loading />
 		</div>
-	{:else if !$user && hasAccount && $page.route.id != "/password-reset"}
-		<Banner />
-		<br />
-		<div class="flex">
-			<div
-				style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
-			>
-				<Account logIn={true} />
+	{:else if !$user && $page.route.id && !$page.route.id.includes("/scores")}
+		<Account />
+	{:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores"}
+		<div class="flex-dir-col">
+			<div class="verify-email">
+				<h2>Verify Your Email</h2>
 				<br />
-				<br />
-				<div class="flex">
-					<div class="bottomSection" style="color: white;">
-						<button
-							size="lg"
-							class="link"
-							id="switchScreen"
-							on:click={() => {
-								hasAccount = false;
-							}}>Sign-Up</button
-						>
-						<button size="lg" class="link" id="forgotPassword"
-							><a href="/password-reset" style="color: black;"
-								>Forgot Password</a
-							></button
-						>
-					</div>
-				</div>
-			</div>
-		</div>
-	{:else if !$user && !hasAccount && $page.route.id != "/password-reset"}
-		<Banner />
-		<br />
-		<div class="flex">
-			<div
-				style="background-color: var(--primary-tint); border-radius: 10px; width: fit-content; padding: 20px;"
-			>
-				<Account logIn={false} />
-				<br />
-				<br />
-				<div class="flex">
-					<div class="bottomSection" style="color: white;">
-						<button
-							size="lg"
-							class="link"
-							id="switchScreen"
-							on:click={() => {
-								hasAccount = true;
-							}}
-						>
-							Log-In
-						</button>
-						<button size="lg" class="link" id="forgotPassword"
-							><a href="/password-reset" style="color: black;"
-								>Forgot Password</a
-							></button
-						>
-					</div>
-				</div>
+				<p>
+					Check your email for a verification link. You won't be able
+					to access the platform until your email is verified.
+				</p>
 			</div>
 		</div>
 	{:else}
-		<Menu />
-		<br />
-		<slot />
+		{#if $page.route.id != "/scores" && $page.route.id != "/password-request" && $page.route.id != "/password-reset"}
+			<NavBar />
+			<br />
+		{/if}
+		<div>
+			{@render children?.()}
+		</div>
 	{/if}
+	<br />
 </main>
 
 <style>
-	/* Overall styling */
 	:global(:root) {
-		--font-family: var(--font-family), "Roboto", Arial, -apple-system,
-			BlinkMacSystemFont, "Segoe UI", Oxygen, Cantarell, "Open Sans",
-			"Helvetica Neue", sans-serif;
-
+		--font-family: "Ubuntu";
 		--large-gap: 30px;
 		--medium-gap: 20px;
 		--small-gap: 10px;
-
-        --text-color-light: #fff;
-		--text-color-dark: #000;
-		--background: #f5fffb;
-		--background-dark: #dcfff1;
-		--primary: #1c6825;
-		--primary-light: #65c083;
-		--primary-dark: #5b8064;
-		--primary-tint: #d9f5e2;
-		--error-tint: #ffe0e0;
-		--error-light:#ff8a8a;
-		--error-dark: #ff3636;
-		--secondary: #213d44;
-		--secondary-light: #1b9aaa;
-		--secondary-dark: #061333;
-		--secondary-tint: #b9c6d2;
-		--font-family: "Ubuntu";
+		--primary: gray;
 	}
 
 	:global(h1) {
 		font-weight: 700;
+		font-size: 40px;
 		color: var(--secondary-dark);
 	}
 
+	:global(h2) {
+		font-weight: 600;
+		font-size: 25px;
+	}
+
+	:global(h3) {
+		font-weight: 600;
+		font-size: 20px;
+	}
+
+	:global(h4) {
+		font-weight: 600;
+		font-size: 16px;
+	}
+
 	:global(::placeholder),
-    :global(body),
-    :global(input) {
+	:global(body),
+	:global(input) {
 		font-family: var(--font-family);
 	}
 
@@ -172,6 +147,46 @@
 		word-wrap: break-word;
 	}
 
+	:global(.buttonContainer) {
+		display: grid;
+		grid-template-columns: 32% 32% 32%;
+		row-gap: 20px;
+		column-gap: 20px;
+		margin: 0 auto;
+		width: 70%;
+	}
+
+	:global(.problemContainer) {
+		background-color: white;
+		border: 3px solid var(--primary-tint);
+		padding: 20px;
+		height: 100%;
+		border-radius: 20px;
+		font-weight: bold;
+		text-decoration: none;
+		color: var(--text-color-dark);
+		transition: all 0.3s ease;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+		text-align: left;
+	}
+
+	:global(.problemContainer h4) {
+		font-weight: bold;
+		margin-right: 5px;
+	}
+
+	:global(.modalExterior div) {
+		width: 100%;
+		z-index: 9999;
+	}
+
+	:global(.modalExterior) {
+		position: relative;
+		z-index: 9999;
+	}
+
 	/* Different grid types */
 	:global(.row) {
 		display: grid;
@@ -190,14 +205,7 @@
 		grid-template-columns: 33% 33% 33%;
 	}
 
-	@media (max-width: 900px) {
-		:global(.grid),
-		:global(.grid-thirds) {
-			grid-template-columns: 50% 50%;
-		}
-	}
-
-	@media (max-width: 700px) {
+	@media (max-width: 800px) {
 		:global(.row),
 		:global(.grid),
 		:global(.grid-thirds) {
@@ -460,6 +468,11 @@
 		background-color: var(--background);
 	}
 
+	.menu-split {
+		display: grid;
+		grid-template-columns: 10% 90%;
+	}
+
 	.loadingPage {
 		width: 100vw;
 		height: 80vh;
@@ -480,6 +493,33 @@
 		cursor: pointer;
 	}
 
+	:global(.tooltip-container) {
+		position: relative; /* Positioning context for the tooltip */
+		display: inline-block; /* Allow the tooltip to be positioned relative to the button */
+	}
+
+	:global(.tooltip) {
+		visibility: hidden; /* Hidden by default */
+		width: 120px; /* Set width */
+		background-color: black; /* Background color */
+		color: #fff; /* Text color */
+		text-align: center; /* Center text */
+		border-radius: 5px; /* Rounded corners */
+		padding: 5px; /* Padding */
+		position: absolute; /* Positioning */
+		z-index: 1; /* Ensure it appears above other elements */
+		bottom: 125%; /* Position above the button */
+		left: 50%; /* Center horizontally */
+		transform: translateX(-50%); /* Center adjustment */
+		opacity: 0; /* Hidden by default */
+		transition: opacity 0.3s; /* Fade effect */
+	}
+
+	:global(.tooltip-container:hover .tooltip) {
+		visibility: visible; /* Show tooltip on hover */
+		opacity: 1; /* Fade in */
+	}
+
 	#switchScreen {
 		float: left;
 	}
@@ -495,5 +535,12 @@
 		.bottomSection {
 			width: 80vw;
 		}
+	}
+
+	.center-vertical {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 100vh;
 	}
 </style>

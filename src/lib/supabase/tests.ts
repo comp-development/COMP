@@ -8,7 +8,7 @@ import { supabase } from "../supabaseClient";
  */
 export async function getTestProblems(
 	test_id: number,
-    page_num: number,
+    page_num: number | null = null,
 	customSelect: string = "*",
 ) {
     if (page_num) {
@@ -17,7 +17,7 @@ export async function getTestProblems(
             .select(customSelect)
             .eq("test_id", test_id)
             .eq("page_number", page_num)
-            .order("problem_order");
+            .order("problem_number");
         if (error) throw error;
         return data;
     } else {
@@ -25,10 +25,21 @@ export async function getTestProblems(
             .from("test_problems")
             .select(customSelect)
             .eq("test_id", test_id)
-            .order("problem_order");
+            .order("problem_number");
         if (error) throw error;
         return data;
     }
+}
+
+export async function fetchTestProblems(
+	test_taker_id: number,
+) {
+    const { data, error } = await supabase
+        .rpc('fetch_test_problems', {
+            p_test_taker_id: test_taker_id,
+        })
+    if (error) { throw error; }
+    return data;
 }
 
 /**
@@ -53,9 +64,20 @@ export async function getTestAnswers(
 	return data;
 }
 
-export async function getTest(test_id, customSelect = "*") {
+export async function getTest(test_id, detailed=false, customSelect = "*") {
     const { data, error } = await supabase
-        .from("tests")
+        .from(detailed ? "tests_detailed" : "tests")
+        .select(customSelect)
+        .eq("test_id", test_id)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function getGutsTest(test_id, customSelect = "*") {
+    const { data, error } = await supabase
+        .from("guts_tests")
         .select(customSelect)
         .eq("test_id", test_id)
         .single();
@@ -67,7 +89,7 @@ export async function getTest(test_id, customSelect = "*") {
 export async function addTestTaker(test_id) {
     console.log("TESTID",test_id)
     const { data, error } = await supabase
-        .rpc('add_test_taker', {
+        .rpc('add_test_taker_2', {
             p_test_id: test_id,
         });
     console.log("ERROR", error)
@@ -153,6 +175,15 @@ export async function getTestTaker(test_id, taker_id, is_team = false, customSel
         console.error('Error retrieving test taker:', error);
         return null;
     }
+}
+
+export async function getTestTakers(test_id, detailed=false, customSelect="*") {
+    const { data, error } = await supabase
+        .from(detailed ? "test_takers_detailed" : "test_takers")
+        .select(customSelect)
+        .eq("test_id", test_id);
+    if (error) throw error;
+    return data;
 }
 
 export async function updateTest(test_id, testData) {
