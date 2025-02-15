@@ -211,7 +211,7 @@
           {:else if field.custom_field_type === "password"}
             <ButtonGroup class="w-full">
               <Input
-                id="show-password1"
+                id={key}
                 disabled={field.disabled}
                 required={field.required}
                 bind:value={newResponses[key]}

@@ -55,6 +55,17 @@ export async function getCoachOrganization(
   return data;
 }
 
+export async function getTicketCount(event_id: number, org_id: number) {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("quantity")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id);
+  if (error) throw error;
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+  return sum(data.map((to) => to.quantity));
+}
+
 export async function getCoachOrganizations(coach_id: string) {
   const { data, error } = await supabase
     .from("org_coaches")

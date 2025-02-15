@@ -51,7 +51,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
   const user = user_response.data.user;
 
-  const dbg = <T>(x: T): T => {
+  const dbg = <T,>(x: T): T => {
     console.log(x);
     return x;
   };
@@ -97,10 +97,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       // and CORS doesn't like redirects.
       return new Response(`/student/${event_id}`);
     }
-    // TODO: handle if org already has ticket transaction
   }
-
-  // TODO: check that if purchasing org ticket, that the user is a coach for that org
 
   let redirect_url = null;
   try {
@@ -134,6 +131,11 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
               console.error("unexpected request state", body);
               throw Error("unexpected request state");
             })();
+    const success_url = `${
+      request.url.origin
+    }/api/purchase-ticket?session_id={CHECKOUT_SESSION_ID}&redirect=${encodeURIComponent(
+      redirect,
+    )}`;
     const cancel_url =
       request.url.origin +
       (target_org_id
@@ -154,14 +156,15 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         },
       ],
       mode: "payment",
-      success_url: redirect,
+      success_url,
       cancel_url,
     });
 
     // Insert session id into db. Status to be checked
+    // The quantity should be 0 until the order is confirmed.
     let ticket_order: any = {
       event_id,
-      quantity: quantity as number,
+      quantity: 0,
       order_id: session.id,
     };
     if (!purchasing_org_ticket) {
@@ -187,4 +190,39 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
 
   return new Response(redirect_url);
+};
+
+export const GET: RequestHandler = async (request: RequestEvent) => {
+  let session_id;
+  let redirect;
+  try {
+    session_id = request.url.searchParams.get("session_id");
+    if (!session_id) throw Error("missing session id");
+
+    const redirect_param = request.url.searchParams.get("redirect");
+    if (!redirect_param) throw Error("missing redirect");
+    redirect = decodeURIComponent(redirect_param);
+  } catch (e: any) {
+    return new Response(e.message, {
+      status: 400,
+    });
+  }
+  const stripe = new Stripe(stripeSecretKey);
+  const session = await stripe.checkout.sessions.retrieve(session_id);
+  const line_items = await stripe.checkout.sessions.listLineItems(session_id);
+
+  if (session.payment_status != "paid")
+    return new Response("payment not completed", { status: 400 });
+
+  const { error: to_error } = await adminSupabase
+    .from("ticket_orders")
+    .update({ quantity: line_items.data.at(0)?.quantity ?? 0 })
+    .eq("order_id", session_id);
+  if (to_error != null) {
+    return new Response(
+      `failed to update ticket orders due to (${to_error.code}) ${to_error.message}`,
+    );
+  }
+
+  return Response.redirect(redirect, 303);
 };

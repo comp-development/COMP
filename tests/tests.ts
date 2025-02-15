@@ -114,13 +114,15 @@ export async function student_signup(browser: Browser) {
   // Navigate the page to a URL.
   await page.goto(BASE_URL);
 
-  (await page.locator("text/Sign-Up").waitHandle())?.click();
+  (await page.locator("text/Sign Up").waitHandle())?.click();
 
   // Fill this first so that the puppeteer waits for all input elements to update.
-  await page.locator("#show-password2").fill("example123");
-  await page.locator("input[type=email]").fill("example@gmail.com");
-  await page.locator("#show-password1").fill("example123");
-  await page.locator(".profileButtons button").click();
+  await page.locator("#first_name").fill("Testing");
+  await page.locator("#last_name").fill("Student");
+  await page.locator("#email").fill("example@gmail.com");
+  await page.locator("#password").fill("example123");
+  await page.locator("#retypePassword").fill("example123");
+  await page.locator("button[type=submit]").click();
 
   await page.close();
 
@@ -134,7 +136,7 @@ export async function student_login(browser: Browser): Promise<Page> {
   await page.goto(BASE_URL);
 
   await page.locator("input[type=email]").fill("student@gmail.com");
-  await page.locator("#show-password1").fill("student123");
+  await page.locator("#password").fill("student123");
   await page.keyboard.press("Enter");
 
   // Wait for the next page to load.
