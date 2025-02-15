@@ -12,7 +12,6 @@ problem is endorsed. Similar to if a problem can be "Published" (whether or not
 its in the test_problems table). Need to update the `full_problems` view to get
 the status.
 
-
 # COMP
 
 - Sign up page should look nicer
@@ -22,5 +21,3 @@ the status.
     code
 - need to look into eventbrite API and make it compatible with current stripe API
 - need to look into stripe managed accounts so that the money goes directly to hosts
-
-

@@ -5,7 +5,7 @@
   import { getStudentTicketOrder } from "$lib/supabase";
   import { user } from "$lib/sessionStore";
   import Loading from "$lib/components/Loading.svelte";
-  import { Button, Input } from 'flowbite-svelte';
+  import { Button, Input } from "flowbite-svelte";
 
   const event_id = parseInt($page.params.event_id);
   const host_id = parseInt($page.params.host_id);
@@ -75,7 +75,6 @@
       failure = json.failure!;
     }
   }
-
 </script>
 
 {#if loading}
@@ -88,7 +87,12 @@
   <form>
     <div class="flex">
       <div style="width: 400px;">
-        <Input type="text" id="team-name" bind:value={team_name} placeholder="Team Name" />
+        <Input
+          type="text"
+          id="team-name"
+          bind:value={team_name}
+          placeholder="Team Name"
+        />
       </div>
     </div>
     <br />
@@ -98,9 +102,7 @@
   </form>
   {#if failure?.reason == "payment not complete"}
     <p>Payment was not started but not completed.</p>
-    <a href={failure?.stripe_url}
-      >Click here to complete payment.</a
-    >
+    <a href={failure?.stripe_url}>Click here to complete payment.</a>
   {/if}
   {#if failure?.reason == "payment expired"}
     <p>

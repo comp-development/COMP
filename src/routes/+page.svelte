@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Loading from "$lib/components/Loading.svelte";
+  import Loading from "$lib/components/Loading.svelte";
 
-	async function onLoad() {
-		window.location.href='./student';
-	}
+  async function onLoad() {
+    window.location.href = "./student";
+  }
 
-	onLoad();
+  onLoad();
 </script>
 
 <br />

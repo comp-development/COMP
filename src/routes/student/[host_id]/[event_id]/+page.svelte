@@ -182,6 +182,7 @@
             handleDragOver={() => {}}
             handleDragLeave={() => {}}
             maxTeamSize={event_details?.max_team_size}
+            handleDeleteTeam={() => {}}
           />
         </div>
       </div>
@@ -247,7 +248,10 @@
               custom_fields={[]}
               bind:newResponses={teamJoinFormResponses}
               bind:validationErrors={teamJoinFormErrors}
-              handleSubmit={() => document.location.assign(`/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`)}
+              handleSubmit={() =>
+                document.location.assign(
+                  `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`,
+                )}
             />
           </TabItem>
           <TabItem

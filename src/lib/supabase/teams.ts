@@ -1,6 +1,6 @@
 import { supabase } from "../supabaseClient";
 
-export async function getTeam(team_id: string) {
+export async function getTeam(team_id: number) {
   const { data: teamData, error: teamError } = await supabase
     .from("teams")
     .select("*")
@@ -11,7 +11,7 @@ export async function getTeam(team_id: string) {
 
   const { data, error } = await supabase
     .from("student_events")
-    .select("*, students(*)")
+    .select("*, person:students(*)")
     .eq("team_id", team_id)
     .order("front_id", { ascending: true });
 

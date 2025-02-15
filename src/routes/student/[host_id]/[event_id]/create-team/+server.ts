@@ -14,7 +14,7 @@ import { env } from "$env/dynamic/private";
 
 const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
-const dbg = <T,>(x: T): T => {
+const dbg = <T>(x: T): T => {
   console.log(x);
   return x;
 };

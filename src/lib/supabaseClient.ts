@@ -11,6 +11,5 @@ export type AsyncReturnType<T extends (...args: any) => Promise<any>> =
   T extends (...args: any) => Promise<infer R> ? R : any;
 
 // Extracts the field `Key` of T | null if T is not null.
-export type Get<T, Key extends keyof NonNullable<T>> = T extends NonNullable<T>
-  ? T[Key]
-  : null;
+export type Get<T, Key extends keyof NonNullable<T>> =
+  T extends NonNullable<T> ? T[Key] : null;

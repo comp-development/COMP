@@ -4,6 +4,7 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { isType } from "$lib/supabase";
+  import { handleError } from "$lib/handleError";
 
   interface Props {
     children?: import("svelte").Snippet;
@@ -29,16 +30,16 @@
         }
 
         const isAdmin = await isType("admin", $user?.id);
-        
+
         if (isAdmin) {
           const newUrl = $page.url.pathname.replace("/student", "/admin");
           goto(newUrl);
         }
       }
-    } catch (error) {
-      console.error("Error checking user role:", error);
-    } finally {
+
       loading = false;
+    } catch (error) {
+      handleError(error);
     }
   })();
 </script>
