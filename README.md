@@ -38,6 +38,7 @@ run Docker containers, the supabase CLI, and the dependencies installed.
 ```bash
 cd db
 # run the commands in db/README.md
+# then return to the COMP directory
 cd ..
 ```
 
@@ -90,7 +91,7 @@ file to cover success and failure cases.
 
 To verify tests pass after developing, run the below:
 ```bash
-cd tests # (go into tests directory)
+cd tests
 npx tsx node.ts
 ```
 

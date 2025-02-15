@@ -12,7 +12,7 @@ on arm mac with few issues. works (with occasional Docker issues) on Windows.
 
 # Workflows
 
-All of the below require Docker/Colima and Supabase to be running.
+All of the below require Orbstack/Docker/Colima and Supabase to be running.
 
 ```
 cd COMP/db
