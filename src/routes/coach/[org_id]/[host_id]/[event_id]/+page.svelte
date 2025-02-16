@@ -434,16 +434,15 @@
           { title: "Add Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
           { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." },
           { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the join code. You can also send them the team join code." },
-          { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams." },
+          { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams. You can do this by clicking and dragging students from the 'Unassigned Students' section into one of your teams!" },
           { title: "Done!", step: 6, description: null }
         ] as { title, step, description }}
-        <div style="max-width: 300px; margin: 0 auto;">
+        <div style="max-width: 500px; margin: 0 auto;">
           <TimelineItem title={title} classLi="text-left mx-2" classH3="text-left">
               <svelte:fragment slot="icon">
-                <div class="flex items-center">
+                <div class="flex items-center justify-center">
                   <div class="flex z-10 justify-center items-center w-6 h-6 
-                    {step < stepNumber || stepNumber === 6 ? 'bg-primary-200 rounded-full border border-gray-900' : step === stepNumber ? 'rounded-full bg-primary-200 border border-gray-900' : 'rounded-full border border-gray-900 bg-gray-200'} 
-                    ">
+                    {step < stepNumber || stepNumber === 6 ? 'bg-primary-200 rounded-full border border-gray-900' : step === stepNumber ? 'rounded-full bg-primary-200 border border-gray-900' : 'rounded-full border border-gray-900 bg-gray-200'} ">
                     {#if step < stepNumber || stepNumber === 6}
                       <CheckCircleSolid class="w-4 h-4 text-primary-600 dark:text-primary-400" />
                     {:else if step === stepNumber}
