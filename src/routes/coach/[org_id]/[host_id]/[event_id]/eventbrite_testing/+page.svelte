@@ -1,5 +1,6 @@
 <script lang="ts">
-
+    console.log("THIS IS A NEW PUSH")
+    // Load the Eventbrite script
   const loadExternalScript = () => {
     return new Promise<void>((resolve, reject) => {
       const script = document.createElement('script');
