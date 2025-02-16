@@ -114,11 +114,14 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     // If the join code is for an org team, add the student to the org.
     if (team_data!.org_id) {
       // Add student to org_event.
-      let { error } = await adminSupabase.from("student_events").upsert({
-        event_id,
-        student_id: user.id,
-        org_id: team_data!.org_id,
-      });
+      let { error } = await adminSupabase.from("student_events").upsert(
+        {
+          event_id,
+          student_id: user.id,
+          org_id: team_data!.org_id,
+        },
+        { onConflict: "event_id, student_id" },
+      );
       wrap_supabase_error("adding student to org", 0, error);
     }
 
