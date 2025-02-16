@@ -47,6 +47,7 @@
   let isPurchaseModalOpen = $state(false);
   let ticketQuantity = $state(0);
   let newResponses = $state({});
+  
 
   let showDeleteTeamConfirmation = $state(false);
   let deleteTeamId = $state(null);
@@ -420,11 +421,6 @@
     markdown={event_details?.summary}
   />
   <hr /><br><br>
-
-  <script>
-    import { Timeline, TimelineItem } from 'flowbite-svelte';
-    import { CalendarWeekSolid } from 'flowbite-svelte-icons';
-  </script>
   
   <div class="flex justify-center">
     <div class="mx-10">
