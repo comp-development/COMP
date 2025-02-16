@@ -17,6 +17,7 @@
 
   // Once the script is loaded, create the widget
   loadExternalScript().then(() => {
+    console.log("EBWIDGETS", window.EBWidgets);
     window.EBWidgets.createWidget({
       widgetType: 'checkout',
       eventId: '52766401728',
