@@ -12,15 +12,21 @@
   
     // Once the script is loaded, create the widget
     loadExternalScript().then(() => {
-      window.EBWidgets.createWidget({
-        widgetType: 'checkout',
-        eventId: '52766401728',
-        modal: true,
-        modalTriggerElementId: 'example-widget-trigger',
-        onOrderComplete: () => {
-          console.log('Order complete!');
-        },
-      });
+      // Ensure EBWidgets is defined before creating the widget
+      console.log('EBWidgets', window.EBWidgets);
+      if (window.EBWidgets) {
+        window.EBWidgets.createWidget({
+          widgetType: 'checkout',
+          eventId: '52766401728',
+          modal: true,
+          modalTriggerElementId: 'example-widget-trigger',
+          onOrderComplete: () => {
+            console.log('Order complete!');
+          },
+        });
+      } else {
+        console.error('EBWidgets is not defined');
+      }
     }).catch(console.error);
     import { page } from "$app/stores";
     import Loading from "$lib/components/Loading.svelte";
