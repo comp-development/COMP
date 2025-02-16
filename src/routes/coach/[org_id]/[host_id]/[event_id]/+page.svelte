@@ -14,9 +14,9 @@
     removeStudentFromOrganization,
     getTicketCount,
   } from "$lib/supabase";
-  import { Button, ButtonGroup, Modal } from "flowbite-svelte";
+  import { Button, ButtonGroup, Modal, Timeline, TimelineItem } from "flowbite-svelte";
   import type { Tables } from "../../../../../../db/database.types";
-  import { CartSolid, UsersGroupSolid } from "flowbite-svelte-icons";
+  import { CartSolid, UsersGroupSolid, CalendarWeekSolid, CheckCircleSolid, ClockSolid, CloseCircleSolid } from "flowbite-svelte-icons";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
   import OrgForm from "$lib/components/OrgForm.svelte";
@@ -51,6 +51,8 @@
   let showDeleteTeamConfirmation = $state(false);
   let deleteTeamId = $state(null);
 
+  let stepNumber = $state(0);
+
   let host: any = $state();
   const host_id = parseInt($page.params.host_id);
 
@@ -64,6 +66,8 @@
       event_id,
       org_id,
     );
+
+    console.log("ORG", organizationDetails);
     ticketCount = await getTicketCount(event_id, org_id);
 
     studentsWithoutTeams = await getStudentsWithoutTeam(event_id, org_id);
@@ -79,7 +83,25 @@
     }
   }
 
+  $effect(() => {
+    if (!organizationDetails) return;
+    if (!organizationDetails.event) {
+      stepNumber = 1;
+    } else if (organizationDetails.teams.length === 0) {
+      stepNumber = 2;
+    } else if (ticketCount === 0) {
+      stepNumber = 3;
+    } else if (organizationDetails.teams.every((team: any) => team.teamMembers.length === 0) && studentsWithoutTeams.length === 0) {
+      stepNumber = 4;
+    } else if (organizationDetails.teams.every((team: any) => team.teamMembers.length === 0)) {
+      stepNumber = 5;
+    } else {
+      stepNumber = 6;
+    }
+  });
+
   async function handleDrop(event: DragEvent, targetTeam: any | null) {
+    console.log("DROP", draggedMember, sourceTeamId, targetTeam);
     try {
       event.preventDefault();
       if (event.currentTarget instanceof HTMLElement) {
@@ -87,7 +109,8 @@
       }
 
       // Early return if dragging to same team
-      if (sourceTeamId && targetTeam?.team_id === sourceTeamId) return;
+      console.log(sourceTeamId, targetTeam?.team_id);
+      if ((sourceTeamId && targetTeam?.team_id === sourceTeamId) || (!targetTeam && !sourceTeamId)) return;
       if (!draggedMember) return;
 
       if (targetTeam === null) {
@@ -111,10 +134,15 @@
           }),
         };
 
-        // Add to unassigned students
-        studentsWithoutTeams = [...studentsWithoutTeams, draggedMember];
+        const updatedMember = {
+          ...draggedMember,
+          team_id: null,
+        };
 
-        toast.success(
+        // Add to unassigned students
+        studentsWithoutTeams = [...studentsWithoutTeams, updatedMember];
+
+        console.log(
           `Moving ${draggedMember.person.first_name} to unassigned students`,
         );
       } else if (sourceTeamId) {
@@ -153,7 +181,7 @@
           }),
         };
 
-        toast.success(
+        console.log(
           `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`,
         );
       } else {
@@ -188,7 +216,7 @@
           }),
         };
 
-        toast.success(
+        console.log(
           `Moving ${draggedMember.person.first_name} to team ${targetTeam.team_name}`,
         );
       }
@@ -198,6 +226,7 @@
       // Reset the drag state
       draggedMember = null;
       sourceTeamId = null;
+      console.log("DROP_FINISH", sourceTeamId, draggedMember);
     }
   }
 
@@ -376,6 +405,8 @@
       handleError(error);
     }
   }
+
+
 </script>
 
 {#if loading}
@@ -388,9 +419,60 @@
     email={event_details?.email ?? host.email}
     markdown={event_details?.summary}
   />
+  <hr /><br><br>
+
+  <script>
+    import { Timeline, TimelineItem } from 'flowbite-svelte';
+    import { CalendarWeekSolid } from 'flowbite-svelte-icons';
+  </script>
+  
+  <div class="flex justify-center">
+    <div class="mx-10">
+      <Timeline order="horizontal">
+        {#each [
+          { title: "Register", step: 1, description: "Fill out the registration form below." },
+          { title: "Add Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
+          { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." },
+          { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the join code. You can also send them the team join code." },
+          { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams." },
+          { title: "Done!", step: 6, description: null }
+        ] as { title, step, description }}
+        <div style="max-width: 300px; margin: 0 auto;">
+          <TimelineItem title={title} classLi="text-left mx-2" classH3="text-left">
+              <svelte:fragment slot="icon">
+                <div class="flex items-center">
+                  <div class="flex z-10 justify-center items-center w-6 h-6 
+                    {step < stepNumber || stepNumber === 6 ? 'bg-primary-200 rounded-full border border-gray-900' : step === stepNumber ? 'rounded-full bg-primary-200 border border-gray-900' : 'rounded-full border border-gray-900 bg-gray-200'} 
+                    ">
+                    {#if step < stepNumber || stepNumber === 6}
+                      <CheckCircleSolid class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                    {:else if step === stepNumber}
+                      <div class="w-3 h-3" style="background-color: var(--background); border-radius: 50%;"></div>
+                    {/if}
+                  </div>
+                  {#if step < 6}
+                    <div class="hidden sm:flex w-full bg-gray-200 h-0.5 dark:bg-gray-700 -mx-4"></div>
+                  {/if}
+                </div>
+              </svelte:fragment>
+                {#if step === stepNumber && description}
+                  <div class="border-box">
+                    <p class="text-base font-normal text-gray-500 dark:text-gray-400 text-left">
+                      {description}
+                    </p>
+                  </div>
+                {/if}
+          </TimelineItem>
+        </div>
+        {/each}
+      </Timeline>
+    </div>
+  </div>
+  <br>
+  <hr>
 
   {#if organizationDetails.event}
-    <hr />
+    
     <div class="organization">
       <div class="flex">
         <InfoToolTip
@@ -435,7 +517,7 @@
           {/each}
         </div>
         <div
-          class="unassigned-students"
+          class="border-box"
           ondragover={handleDragOver}
           ondragleave={handleDragLeave}
           ondrop={(e) => handleDrop(e, null)}
@@ -533,7 +615,7 @@
     gap: 20px;
   }
 
-  .unassigned-students {
+  .border-box {
     padding: 20px;
     border-radius: 15px;
     border: 2px solid var(--primary-tint);
