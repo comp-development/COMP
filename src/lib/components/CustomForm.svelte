@@ -47,11 +47,22 @@
     tel: /^\d{10}$/,
   };
 
-  function validateInput(key, value, regex) {
+  const validationMessages = {
+    date: "Please follow the format: YYYY-MM-DD",
+    email: "Please follow the format: username@domain.com",
+    tel: "Please follow the format: NNN-NNN-NNNN",
+  };
+
+  function validateInput(
+    key: string,
+    value: string,
+    regex: RegExp | string,
+    error_message: string | null,
+  ) {
     if (regex && value) {
       const pattern = new RegExp(regex);
       validationErrors[key] = !pattern.test(value)
-        ? `Please follow the format: ${regex}`
+        ? (error_message ?? "please match the format " + regex + ".")
         : null;
     } else {
       validationErrors[key] = null;
@@ -128,7 +139,7 @@
               ? "red"
               : !field.editable && field?.value !== null
                 ? "disabled"
-                : "base"}
+                : "gray"}
           >
             {field.label}
             {#if field.required}
@@ -158,10 +169,14 @@
             <Datepicker
               bind:value={newResponses[key]}
               required={field.required}
-              placeholder={field.placeholder}
               disabled={!field.editable && field?.value !== null}
               on:blur={() =>
-                validateInput(key, newResponses[key], typePatterns.date)}
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.date,
+                  validationMessages.date,
+                )}
             />
           {:else if field.custom_field_type === "email"}
             <Input
@@ -172,7 +187,12 @@
               disabled={field.disabled}
               required={field.required}
               on:blur={() =>
-                validateInput(key, newResponses[key], typePatterns.email)}
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.email,
+                  validationMessages.email,
+                )}
             >
               <EnvelopeSolid
                 slot="left"
@@ -185,7 +205,9 @@
               type="tel"
               placeholder={field.placeholder ?? "123-456-7890"}
               bind:value={newResponses[key]}
-              on:input={(e) => {
+              required={field.required}
+              disabled={field.disabled}
+              on:input={(e: any) => {
                 let rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
 
                 let formattedValue = rawValue;
@@ -198,10 +220,13 @@
                 e.target.value = formattedValue;
                 newResponses[key] = rawValue;
               }}
-              required={field.required}
-              disabled={field.disabled}
               on:blur={() =>
-                validateInput(key, newResponses[key], typePatterns.tel)}
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.tel,
+                  validationMessages.tel,
+                )}
             >
               <PhoneSolid
                 slot="left"
@@ -211,7 +236,7 @@
           {:else if field.custom_field_type === "password"}
             <ButtonGroup class="w-full">
               <Input
-                id={key}
+                id="show-password1"
                 disabled={field.disabled}
                 required={field.required}
                 bind:value={newResponses[key]}
@@ -231,11 +256,13 @@
           {:else if field.custom_field_type === "multiple_choice"}
             {#each field.choices as choice}
               <div style="display: flex; align-items: left">
+                  <!-- label={choice}-->
                 <Radio
                   bind:group={newResponses[key]}
                   value={choice}
-                  label={choice}>{choice}</Radio
                 >
+                  {choice}
+                </Radio>
               </div>
             {/each}
           {:else if field.custom_field_type === "checkboxes"}
@@ -273,7 +300,12 @@
                 newResponses[key] = newResponses[key]
                   ? newResponses[key].trim()
                   : newResponses[key];
-                validateInput(key, newResponses[key], field.regex);
+                validateInput(
+                  key,
+                  newResponses[key],
+                  field.regex,
+                  field.regex_error_message,
+                );
               }}
             />
           {/if}
