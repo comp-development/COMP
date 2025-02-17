@@ -82,6 +82,8 @@
 	<div class="mt-4 mb-4 p-4">
 		<h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
 		<Button pill href={`/admin/${hostId}/${eventId}/team`}>Create Team</Button>
+		<Button pill href={`/admin/${hostId}/${eventId}/data-visualization`}>MAPPP</Button>
+
 		<div class="tableMax">
 			<TableName
 				actionType="edit"
