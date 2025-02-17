@@ -52,122 +52,82 @@
 {#if loading}
   <Loading />
 {:else}
-  <EventDisplay
-    id={eventId}
-    host={host}
-    event={event_information}
-    editable={true}
-  />
+	<EventDisplay
+		id={eventId}
+		name={event_information.event_name}
+		date={event_information.event_date}
+		logo={event_information.logo != "" ? event_information.logo : host.logo}
+		email={event_information.email ?? host.email}
+		markdown={event_information.summary}
+		editable={true}
+	/>
+	
+	<div class="mt-4 mb-4 p-4">
+		<h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
+		<div class="tableMax">
+			<TableName
+				actionType="edit"
+				items={organizations}
+				action={(e, org) => {
+					window.location.href = `/admin/${hostId}/${eventId}/org/${org.org_id}`;
+				}}
+				columns = {[
+					{
+						label: "Name",
+						value: (item) => item.org.name,
+						sortable: true,
+					},
+					{
+						label: "Address",
+						value: (item) => item.org.address,
+						sortable: true,
+					},
+					{
+						label: "Join Code",
+						value: (item) => item.join_code,
+						sortable: true,
+					},
+				]}
+			/>
+		</div>
+		{#if organizations.length === 0}
+			<p class="text-center text-gray-500 mt-4">No organizations registered yet</p>
+		{/if}
+	</div>
 
-  <Tabs tabStyle="pill">
-    <TabItem
-      open={selectedTab === "student"}
-      title="Student"
-      onclick={() => (selectedTab = "student")}
-    >
-      <div>
-        <h2 class="text-2xl font-bold mb-4">Registered Students</h2>
-        <div class="tableMax">
-          <TableName
-            actionType="edit"
-            items={students}
-            action={(e, student) => {
-              letEditableStudent = student;
-              isEditModalOpen = true;
-            }}
-          />
-        </div>
-        {#if students.length === 0}
-          <p class="text-center text-gray-500 mt-4">
-            No students registered yet
-          </p>
-        {/if}
-      </div>
-    </TabItem>
-    <TabItem
-      open={selectedTab === "teams"}
-      title="Teams"
-      onclick={() => (selectedTab = "teams")}
-    >
-      <div>
-        <h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
-        <!-- <Button pill href={`/admin/${hostId}/${eventId}/team`}
-          >Create Team</Button
-        > -->
-        <div class="tableMax">
-          <TableName
-            actionType="edit"
-            items={independentTeams}
-            action={(e, team) => {
-              window.location.href = `/admin/${hostId}/${eventId}/team/${team.team_id}`;
-            }}
-            columns={[
-              {
-                label: "Name",
-                value: (item) => item.team_name,
-                sortable: true,
-              },
-              {
-                label: "Front ID",
-                value: (item) => item.front_id,
-                sortable: true,
-              },
-              {
-                label: "Join Code",
-                value: (item) => item.join_code,
-                sortable: true,
-              },
-            ]}
-          />
-        </div>
-        {#if teams.length === 0}
-          <p class="text-center text-gray-500 mt-4">
-            No independent teams registered yet
-          </p>
-        {/if}
-      </div>
-    </TabItem>
-    <TabItem
-      open={selectedTab === "orgs"}
-      title="Organizations"
-      onclick={() => (selectedTab = "orgs")}
-    >
-      <div>
-        <h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
-        <div class="tableMax">
-          <TableName
-            actionType="edit"
-            items={organizations}
-            action={(e, org) => {
-              window.location.href = `/admin/${hostId}/${eventId}/org/${org.org_id}`;
-            }}
-            columns={[
-              {
-                label: "Name",
-                value: (item) => item.org.name,
-                sortable: true,
-              },
-              {
-                label: "Address",
-                value: (item) => item.org.address,
-                sortable: true,
-              },
-              {
-                label: "Join Code",
-                value: (item) => item.join_code,
-                sortable: true,
-              },
-            ]}
-          />
-        </div>
-        {#if organizations.length === 0}
-          <p class="text-center text-gray-500 mt-4">
-            No organizations registered yet
-          </p>
-        {/if}
-      </div>
-    </TabItem>
-  </Tabs>
+	<div class="mt-4 mb-4 p-4">
+		<h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
+		<Button pill href={`/admin/${hostId}/${eventId}/team`}>Create Team</Button>
+		<div class="tableMax">
+			<TableName
+				actionType="edit"
+				items={independentTeams}
+				action={(e, team) => {
+					window.location.href = `/admin/${hostId}/${eventId}/team/${team.team_id}`;
+				}}
+				columns = {[
+					{
+						label: "Name",
+						value: (item) => item.team_name,
+						sortable: true,
+					},
+					{
+						label: "Front ID",
+						value: (item) => item.front_id,
+						sortable: true,
+					},
+					{
+						label: "Join Code",
+						value: (item) => item.join_code,
+						sortable: true,
+					},
+				]}
+			/>
+		</div>
+		{#if teams.length === 0}
+			<p class="text-center text-gray-500 mt-4">No independent teams registered yet</p>
+		{/if}
+	</div>
 {/if}
 
 <div class="modalExterior">
