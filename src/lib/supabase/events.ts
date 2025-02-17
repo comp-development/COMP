@@ -204,7 +204,6 @@ export async function getStudentEvents(student_id: string) {
   return data;
 }
 
-<<<<<<< HEAD
 export async function getStudentHostEvents(student_id: string, host_id: number) {
   const { data, error } = await supabase
     .from("student_events")
@@ -263,7 +262,6 @@ export async function getStudentTicketOrder(
 }
 
 
-=======
 export async function getEventsbyStudentID(student_id: string, customSelect: string = "*") {
 	const { data, error } = await supabase
 		.from('student_events_detailed')
@@ -273,23 +271,23 @@ export async function getEventsbyStudentID(student_id: string, customSelect: str
 	return data;
 }
 
-export async function getStudentEvents(event_id: string, select = "*, students(*)") {
+// export async function getStudentEvents(event_id: string, select = "*, students(*)") {
 	
-	const parsedEventId = parseInt(event_id, 10); // Parse event_id to integer
+// 	const parsedEventId = parseInt(event_id, 10); // Parse event_id to integer
 	
-	if (isNaN(parsedEventId)) {
-	  throw new Error("Invalid event_id: Must be a valid integer");
-	}
+// 	if (isNaN(parsedEventId)) {
+// 	  throw new Error("Invalid event_id: Must be a valid integer");
+// 	}
   
-	const { data, error } = await supabase
-	  .from("student_events_detailed")
-	  .select(select)
-	  .eq("event_id", parsedEventId); // Use parsed integer
-	if (error) {
-		console.error(error);
-	}
-	return data
-}
+// 	const { data, error } = await supabase
+// 	  .from("student_events_detailed")
+// 	  .select(select)
+// 	  .eq("event_id", parsedEventId); // Use parsed integer
+// 	if (error) {
+// 		console.error(error);
+// 	}
+// 	return data
+// }
 
 export async function getCustomFields(event_id: string, select = "*") {
 	
@@ -310,4 +308,3 @@ export async function getCustomFields(event_id: string, select = "*") {
 	}
 	return data
 }
->>>>>>> juli-students-view

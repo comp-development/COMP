@@ -2,21 +2,17 @@
 	
 	import UserTable from "$lib/components/UserTable.svelte";
 	import Button from "$lib/components/Button.svelte";
-	
+	import { page } from "$app/stores";
+    import { getStudents } from "$lib/supabase/students";
 	import toast from "svelte-french-toast";
-	import { handleError } from "$lib/handleError";
-	
-	
+	import { handleError } from "$lib/handleError";	
     import { getStudentEvents, getCustomFields } from "$lib/supabase";
 
-<<<<<<< HEAD
 	let pageSize = $state(25);
 	let page = $state(1);
 	let loading = $state(true);
 	let roles = $state([]);
-=======
-	import { page } from "$app/stores";
-    import { getStudents } from "$lib/supabase/students";
+	
     
 	let time_filtered_students = [];
 	
@@ -28,7 +24,6 @@
 	let students = [];
 	let studentTableInfo = [];
 	let event_id = $page.params.event_id;
->>>>>>> juli-students-view
 
 
 	(async () => {
@@ -42,21 +37,7 @@
 			console.log(studentTableInfo);
 			console.log(time_filtered_students.length);
 
-			const topicsCount = students.reduce((count, { topics }) => {
-				let individualTopics;
-				if (topics) {
-					individualTopics = topics.split(", ").map((topic) => topic.trim());
-				} else {
-					individualTopics = ["Uncategorized"];
-				}
-
-				individualTopics.forEach((topic) => {
-					count[topic] = (count[topic] || 0) + 1;
-				});
-
-				return count;
-			}, {});
-			console.log(topicsCount);
+			
 			
 			loaded = true;
 		} catch (error) {
@@ -121,7 +102,6 @@
 	<p>Loading students...</p>
 {/if}
 
-<<<<<<< HEAD
 {#if loading}
 	<p>Loading...</p>
 {:else}
@@ -175,7 +155,6 @@
 			totalItems={roles.length}
 			pageSizeInputDisabled
 		/>
-=======
 <div style="margin-top: 10px;">
 	<Button title="Create a new student" href="/students/new" />
 </div>
@@ -187,7 +166,6 @@
 <br />
 <div class="flex">
 	<div class="stats">
->>>>>>> juli-students-view
 	</div>
 </div>
 <br>

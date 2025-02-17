@@ -77,7 +77,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   // - else, check that team's org's payment status is good and sufficient seats
   // ===============TODO===============
   //  add back join codes to org teams
-  // ==================================
+  // ==============================
   // - add student to team
 
   try {

@@ -1,26 +1,23 @@
 <script lang="ts">
-<<<<<<< HEAD
 	import { user } from "$lib/sessionStore";
-	import { getStudent } from "$lib/supabase";
+	import { getStudentEvents, getEventsbyStudentID, getThisUser, getUser, getStudent } from "$lib/supabase";
 	import Loading from "$lib/components/Loading.svelte";
 
 	let student: any = $state();
 	let loading = $state(true);
 
+    let events = [];
+
 	(async () => {
 		student = await getStudent($user!.id);
 		loading = false;
 	})();
-=======
-    import { getStudentEvents, getEventsbyStudentID, getThisUser, getUser, getStudent } from "$lib/supabase";
+    
    
 
-    let user;
-	let student;
-    let events = [];
+   
   
-    let loading = true;
-
+  
     (async () => {
         user = await getThisUser();
 		student = await getStudent(user.id);
@@ -36,18 +33,11 @@
 
         loading = false;
     })();
->>>>>>> juli-students-view
 </script>
 
 {#if loading}
 	<Loading />
 {:else}
-<<<<<<< HEAD
-	<br />
-	<h1>Welcome, {student.first_name} {student.last_name}</h1>
-	<h2 style="font-weight: 500">{$user?.email}</h2>
-{/if}
-=======
 	<h1>Welcome, {student.first_name}</h1>
 	<h3>{student.email}</h3>
     <br />
@@ -130,4 +120,3 @@
 		width: 70%;
 	}
 </style>
->>>>>>> juli-students-view
