@@ -62,6 +62,15 @@ export async function getEventTeams(event_id: number) {
   return data;
 }
 
+export async function getEventStudents(event_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .select("*, person:students(*)")
+    .eq("event_id", event_id);
+  if (error) throw error;
+  return data;
+}
+
 export async function getCustomFields(
   host_id: number,
   table: "orgs" | "students" | "teams",
