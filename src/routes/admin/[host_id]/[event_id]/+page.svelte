@@ -51,12 +51,48 @@
 {#if loading}
   <Loading />
 {:else}
-  <EventDisplay
-    id={eventId}
-    host={host}
-    event={event_information}
-    editable={true}
-  />
+	<EventDisplay
+		id={eventId}
+		name={event_information.event_name}
+		date={event_information.event_date}
+		logo={event_information.logo != "" ? event_information.logo : host.logo}
+		email={event_information.email ?? host.email}
+		markdown={event_information.summary}
+		editable={true}
+	/>
+	
+	<div class="mt-4 mb-4 p-4">
+		<h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
+		<div class="tableMax">
+			<TableName
+				actionType="edit"
+				items={organizations}
+				action={(e, org) => {
+					window.location.href = `/admin/${hostId}/${eventId}/org/${org.org_id}`;
+				}}
+				columns = {[
+					{
+						label: "Name",
+						value: (item) => item.org.name,
+						sortable: true,
+					},
+					{
+						label: "Address",
+						value: (item) => item.org.address,
+						sortable: true,
+					},
+					{
+						label: "Join Code",
+						value: (item) => item.join_code,
+						sortable: true,
+					},
+				]}
+			/>
+		</div>
+		{#if organizations.length === 0}
+			<p class="text-center text-gray-500 mt-4">No organizations registered yet</p>
+		{/if}
+	</div>
 
   <hr>
 
