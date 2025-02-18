@@ -1,11 +1,14 @@
 <script lang="ts">
   import { handleError } from "$lib/handleError";
-  import { getHostAdmins, getHostInformation, removeAdminFromHost } from "$lib/supabase";
+  import { getHostAdmins, removeAdminFromHost, getHostInformation } from "$lib/supabase";
   import Loading from "$lib/components/Loading.svelte";
   import TableName from "$lib/components/TableName.svelte";
   import { page } from "$app/stores";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { Button, Modal } from "flowbite-svelte";
+  import { CirclePlusSolid } from "flowbite-svelte-icons";
+  import { hashString } from "$lib/encrypt";
+  import toast from "$lib/toast.svelte";
 
   let host_id = Number($page.params.host_id);
   let loading = $state(true);
@@ -57,22 +60,24 @@
 
   async function handleSubmit() {
     try {
+      const encode = await hashString(host_id+"");
       const host = await getHostInformation(host_id);
 
-      const response = await fetch('/api/send-email', {
+      const response = await fetch('/api/sendmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: newResponses.email,
           subject: `Join ${host.host_name} on COMP`,
-          message: `You have been invited to join ${host.host_name} on COMP! To accept the invitation, click on <a href="">the following link</a>.`
+          message: `You have been invited to join ${host.host_name} on COMP! To accept the invitation, click on <a href="https://comp.mt/join-host?hashed_host_id=${encode}&host_id=${host_id}&email=${newResponses.email}">the following link</a>.`
         })
       });
 
       const data = await response.json();
       if (data.error) { throw data.error; }
 
-      toast.success("Email sent successful");
+      toast.success("Email sent successfully");
+      isModalOpen = false;
     } catch (e) {
       handleError(e);
     }
@@ -87,7 +92,10 @@
   <br />
   <h1>Host Admins</h1>
   <br />
-  <Button onclick={() => (isModalOpen = true)} pill>Add Admin</Button>
+  <Button outline pill color="primary" onclick={() => (isModalOpen = true)}>
+    <CirclePlusSolid class="w-4 h-4 me-2" />
+    Add Admin
+  </Button>
 
   <div style="max-width: 600px; margin: 10px auto;">
     {#key updateTrigger}

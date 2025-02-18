@@ -54,11 +54,8 @@
 {:else}
   <EventDisplay
     id={eventId}
-    name={event_information.event_name}
-    date={event_information.event_date}
-    logo={event_information.logo != "" ? event_information.logo : host.logo}
-    email={event_information.email ?? host.email}
-    markdown={event_information.summary}
+    host={host}
+    event={event_information}
     editable={true}
   />
 

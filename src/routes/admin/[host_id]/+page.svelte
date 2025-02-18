@@ -21,7 +21,11 @@
   let host: any = $state();
   const host_id = parseInt($page.params.host_id);
 
-  let newResponses = $state({});
+  let newResponses = $state({
+    ticket_price_cents: 0,
+    max_team_size: 1,
+    summary: null
+  });
   let validationErrors = $state({});
   let isModalOpen = $state(false);
 
@@ -51,13 +55,11 @@
   <Loading />
 {:else}
   <EventDisplay
-    name={host?.host_name}
-    logo={host?.logo}
-    email={host?.email}
-    markdown={host?.summary}
     id={host_id}
+    host={host}
     editable={true}
   />
+
   <div class="mb-4">
     <ButtonGroup>
       <Button
@@ -126,7 +128,7 @@
       <h3 class="text-xl font-medium text-gray-900 dark:text-white">
         Create Event
       </h3>
-      <TournamentForm bind:newResponses bind:validationErrors {handleSubmit} />
+      <TournamentForm bind:newResponses bind:validationErrors {handleSubmit} newForm={true} />
     </div>
   </Modal>
 </div>

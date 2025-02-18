@@ -118,14 +118,12 @@
   <Loading />
 {:else}
   <EventDisplay
-    name={event_details?.event_name}
-    date={event_details?.event_date}
-    logo={event_details?.logo && event_details?.logo != ""
-      ? event_details?.logo
-      : event_details.host.logo}
-    email={event_details?.email ?? event_details.host.email}
-    markdown={event_details?.summary}
+    id={event_id}
+    host={host}
+    event={event_details}
+    editable={true}
   />
+
   {#if !student_event}
     {#if transaction_stored}
       <p>
