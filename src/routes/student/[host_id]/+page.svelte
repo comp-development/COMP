@@ -55,7 +55,7 @@
   <EventDisplay
     id={host_id}
     host={host}
-    editable={true}
+    editable={false}
   />
   <br />
   <h2 style="text-align: center;">My Events</h2>

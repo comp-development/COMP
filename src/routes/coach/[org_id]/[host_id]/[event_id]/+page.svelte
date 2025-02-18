@@ -417,7 +417,7 @@
     id={event_id}
     host={host}
     event={event_details}
-    editable={true}
+    editable={false}
   />
   <hr /><br><br>
   
