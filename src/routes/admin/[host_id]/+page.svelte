@@ -1,9 +1,16 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import Loading from "$lib/components/Loading.svelte";
-  import { Button, ButtonGroup } from "flowbite-svelte";
-  import { getHostInformation, getAllHostEvents } from "$lib/supabase";
+  import { Button, ButtonGroup, Modal } from "flowbite-svelte";
+  import {
+    getHostInformation,
+    getAllHostEvents,
+    createEvent,
+  } from "$lib/supabase";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
+  import TournamentForm from "$lib/components/TournamentForm.svelte";
+  import toast from "$lib/toast.svelte";
+  import { handleError } from "$lib/handleError";
 
   let all_events: {
     event_id: number;
@@ -14,12 +21,30 @@
   let host: any = $state();
   const host_id = parseInt($page.params.host_id);
 
+  let newResponses = $state({});
+  let validationErrors = $state({});
+  let isModalOpen = $state(false);
+
   (async () => {
     host = await getHostInformation(host_id);
     all_events = await getAllHostEvents(host_id);
 
     loading = false;
   })();
+
+  async function handleSubmit() {
+    try {
+      const data = await createEvent({
+        ...newResponses,
+        host_id: host_id,
+      });
+
+      toast.success("Tournament created successfully!");
+      window.location.href = `/admin/${host_id}/${data.event_id}`;
+    } catch (error) {
+      handleError(error);
+    }
+  }
 </script>
 
 {#if loading}
@@ -35,14 +60,33 @@
   />
   <div class="mb-4">
     <ButtonGroup>
-      <Button href={`/admin/${host_id}/custom_fields`} pill color="primary"
-        >Edit Custom Fields</Button
+      <Button
+        outline
+        pill
+        color="primary"
+        onclick={() => {
+          window.location.href = `/admin/${host_id}/custom_fields`;
+        }}>Edit Custom Fields</Button
       >
-      <Button href={`/admin/${host_id}/create`} pill color="primary"
-        >Create Event</Button
+      <Button
+        outline
+        pill
+        color="primary"
+        onclick={() => {
+          window.location.href = `/admin/${host_id}/users`;
+        }}>View Users</Button
+      >
+      <Button
+        outline
+        pill
+        color="primary"
+        onclick={() => {
+          isModalOpen = true;
+        }}>Create Event</Button
       >
     </ButtonGroup>
   </div>
+  <br />
 
   <h2 style="text-align: center;">Host Events</h2>
   <br />
@@ -75,3 +119,24 @@
   {/if}
   <br /><br />
 {/if}
+
+<div class="modalExterior">
+  <Modal bind:open={isModalOpen} size="md" autoclose={false}>
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Create Event
+      </h3>
+      <TournamentForm bind:newResponses bind:validationErrors {handleSubmit} />
+    </div>
+  </Modal>
+</div>
+
+<style>
+  .specificModalMax {
+    max-height: 500px;
+  }
+
+  :global(.specificModalMax .registrationForm .relative div) {
+    justify-content: left !important;
+  }
+</style>

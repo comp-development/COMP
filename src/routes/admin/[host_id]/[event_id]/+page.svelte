@@ -6,6 +6,7 @@
     getEventOrganizations,
     getEventIndependentTeams,
     getEventStudents,
+    getHostInformation,
   } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import Loading from "$lib/components/Loading.svelte";
@@ -18,6 +19,7 @@
   let eventId = Number($page.params.event_id);
   let teams = $state([]);
   let students = $state([]);
+  let host = $state([]);
   let event_information = $state({});
   let loading = $state(true);
   let organizations = $state([]);
@@ -30,6 +32,7 @@
   async function loadInformation() {
     try {
       teams = await getEventTeams(eventId);
+      host = await getHostInformation(hostId);
       teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
       event_information = await getEventInformation(eventId);
 
@@ -91,9 +94,9 @@
     >
       <div>
         <h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
-        <Button pill href={`/admin/${hostId}/${eventId}/team`}
+        <!-- <Button pill href={`/admin/${hostId}/${eventId}/team`}
           >Create Team</Button
-        >
+        > -->
         <div class="tableMax">
           <TableName
             actionType="edit"

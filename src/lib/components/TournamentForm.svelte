@@ -3,10 +3,12 @@
   import MarkdownRender from "$lib/components/MarkdownRender.svelte";
   import { Textarea, Button } from "flowbite-svelte";
 
-  export let newResponses = {};
-  export let validationErrors = {};
-  export let handleSubmit: () => Promise<void>;
-  export let handleSummaryUpdate: (() => Promise<void>) | undefined = undefined;
+  let {
+    newResponses = $bindable({}),
+    validationErrors = $bindable({}),
+    handleSubmit = () => {},
+    handleSummaryUpdate = null,
+  } = $props();
 
   const fields = [
     {
@@ -48,7 +50,7 @@
     {
       name: "email",
       label: "Contact Email",
-      required: true,
+      required: false,
       editable: true,
       custom_field_type: "email",
       placeholder: "Enter contact email",
@@ -57,7 +59,7 @@
     {
       name: "logo",
       label: "Logo URL",
-      required: true,
+      required: false,
       editable: true,
       custom_field_type: "text",
       placeholder: "Enter logo URL",
@@ -83,7 +85,7 @@
       placeholder="Enter event summary in markdown format..."
     />
     {#if handleSummaryUpdate}
-      <Button pill color="primary" class="mt-2" on:click={handleSummaryUpdate}>
+      <Button pill color="primary" class="mt-2" onclick={handleSummaryUpdate}>
         Update Summary
       </Button>
     {/if}
