@@ -172,15 +172,17 @@
 
 <div class="modalExterior">
   <Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-      Edit Student
-    </h3>
-    <StudentForm
-      title=""
-      student_event={letEditableStudent}
-      user={letEditableStudent.person}
-      event_id={eventId}
-    />
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Edit Student
+      </h3>
+      <StudentForm
+        title=""
+        student_event={letEditableStudent}
+        user={letEditableStudent.person}
+        event_id={eventId}
+      />
+    </div>
   </Modal>
 </div>
 
@@ -188,6 +190,10 @@
   .tableMax {
     max-width: 800px;
     margin: 0 auto;
+  }
+
+  .specificModalMax {
+    max-height: 500px;
   }
 
   :global([role="tabpanel"]) {
