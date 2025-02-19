@@ -2,7 +2,6 @@
   import { page } from "$app/stores";
   import Loading from "$lib/components/Loading.svelte";
   import { getHostInformation, userJoinAsHostAdmin, getThisUser } from "$lib/supabase";
-  import { hashString } from "$lib/encrypt";
   import { Button } from "flowbite-svelte";
   import { handleError } from "$lib/handleError";
   import toast from "$lib/toast.svelte";
@@ -14,17 +13,24 @@
  (async () => {
     try {
       let email = $page.url.searchParams.get('email');
+      let host_id = $page.url.searchParams.get('host_id');
+      let hashed_host_id = $page.url.searchParams.get('hashed_host_id');
+
       let user = await getThisUser();
       if (user.email != email) {
         throw new Error("You are not logged into the correct account.");
       }
       user_id = user.id;
 
-      let host_id = Number($page.url.searchParams.get('host_id'));
-      let hashed_host_id = $page.url.searchParams.get('hashed_host_id');
-      let encoded_host_id = await hashString(host_id);
+      const response = await fetch(`/api/hash_data`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, host_id })
+      });
+      const data = await response.json();
+      if (data.error) throw data.error;
 
-      if (hashed_host_id != encoded_host_id) {
+      if (data.hash != hashed_host_id) {
         throw new Error("Hash is incorrect.");
       }
 

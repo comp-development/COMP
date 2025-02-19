@@ -7,7 +7,6 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { Button, Modal } from "flowbite-svelte";
   import { CirclePlusSolid } from "flowbite-svelte-icons";
-  import { hashString } from "$lib/encrypt";
   import toast from "$lib/toast.svelte";
 
   let host_id = Number($page.params.host_id);
@@ -60,21 +59,28 @@
 
   async function handleSubmit() {
     try {
-      const encode = await hashString(host_id+"");
       const host = await getHostInformation(host_id);
 
-      const response = await fetch('/api/sendmail', {
+      const response = await fetch("/api/hash_data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: newResponses.email, host_id: host_id })
+      });
+      const data = await response.json();
+      if (data.error) throw data.error;
+
+      const response2 = await fetch('/api/sendmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           email: newResponses.email,
           subject: `Join ${host.host_name} on COMP`,
-          message: `You have been invited to join ${host.host_name} on COMP! To accept the invitation, click on <a href="https://comp.mt/join-host?hashed_host_id=${encode}&host_id=${host_id}&email=${newResponses.email}">the following link</a>.`
+          message: `You have been invited to join ${host.host_name} on COMP! To accept the invitation, click on <a href="https://comp.mt/join-host?hashed_host_id=${data.hash}&host_id=${host_id}&email=${newResponses.email}">the following link</a>.`
         })
       });
 
-      const data = await response.json();
-      if (data.error) { throw data.error; }
+      const data2 = await response2.json();
+      if (data2.error) { throw data2.error; }
 
       toast.success("Email sent successfully");
       isModalOpen = false;

@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import sgMail from '@sendgrid/mail';
+import { env } from "$env/dynamic/private";
 
-sgMail.setApiKey(import.meta.env.VITE_SENDGRID_API_KEY);
+sgMail.setApiKey(env.SENDGRID_API_KEY);
 
 export async function POST({ request }) {
   try {
