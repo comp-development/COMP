@@ -55,10 +55,9 @@
   <Loading />
 {:else}
   <EventDisplay
-    name={host?.host_name}
-    logo={host?.logo}
-    email={host?.email}
-    markdown={host?.summary}
+    id={host_id}
+    host={host}
+    editable={false}
   />
 
   <h2 style="text-align: center;">My Events</h2>

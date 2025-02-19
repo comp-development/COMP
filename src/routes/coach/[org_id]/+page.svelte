@@ -102,7 +102,7 @@
       }}
     >
       <PenSolid class="w-4 h-4 me-2" />
-      Edit Organizations
+      Edit Organization
     </Button>
     <!--<Button outline pill color="primary" onclick={openStudentModal}>
             <CirclePlusSolid class="w-4 h-4 me-2" />

@@ -12,7 +12,7 @@
     getStudentTicketOrder,
     updateStudentTeam,
     getOrgEventByJoinCode,
-    getTeamByJoinCode,
+    getHostInformation,
     type StudentEvent,
     getStudent,
     updateStudentOrgEvent,
@@ -22,6 +22,7 @@
   import { supabase, type Get } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
 
+  const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
   let student_event: StudentEvent = $state(null);
   let event_details: Tables<"events"> | null = $state(null);
@@ -40,6 +41,7 @@
   let teamJoinFormErrors: any = $state({});
   let orgJoinFormResponses: any = $state({});
   let orgJoinFormErrors: any = $state({});
+  let host = $state();
   let selectedOption: "join_org" | "join_team" | "create_team" =
     $state("join_org");
 
@@ -88,6 +90,7 @@
     // NOTE: only student accounts can view this page (because of the student/layout.svelte)
     // Therefore, getStudent always returns non-null.
     student = await getStudent($user!.id)!;
+    host = await getHostInformation(host_id);
     student_event = await getStudentEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     transaction_stored = ticket_order != null;
@@ -118,14 +121,12 @@
   <Loading />
 {:else}
   <EventDisplay
-    name={event_details?.event_name}
-    date={event_details?.event_date}
-    logo={event_details?.logo && event_details?.logo != ""
-      ? event_details?.logo
-      : event_details.host.logo}
-    email={event_details?.email ?? event_details.host.email}
-    markdown={event_details?.summary}
+    id={event_id}
+    host={host}
+    event={event_details}
+    editable={false}
   />
+
   {#if !student_event}
     {#if transaction_stored}
       <p>

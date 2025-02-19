@@ -30,15 +30,6 @@
   } = $props();
 
   let showDeleteConfirmation = $state(false);
-
-  const handleActionClick = (item) => {
-    if (actionType === "delete") {
-      showDeleteConfirmation = true;
-      deleteUserId = item.admin_id;
-    } else {
-      action(null, item, org_id);
-    }
-  };
 </script>
 
 <Table
@@ -51,7 +42,9 @@
     })}
 >
   <TableHead>
-    <TableHeadCell></TableHeadCell>
+    {#if actionType != "none"}
+      <TableHeadCell></TableHeadCell>
+    {/if}
     {#each columns as column}
       <TableHeadCell
         class="center-text"
@@ -66,34 +59,36 @@
 
   <TableBody tableBodyClass="divide-y">
     <TableBodyRow slot="row" let:item>
-      <TableBodyCell class="px-0 py-1 text-center">
-        {#if actionType === "delete"}
-          <button
-            class="select_button"
-            onclick={() => {
-              showDeleteConfirmation = true;
-              deleteUserId = item.admin_id;
-            }}
-          >
-            🗑️
-          </button>
-        {:else if actionType == "select_student"}
-          <button
-            class="select_button"
-            onclick={(e) => action(e, item, org_id)}
-          >
-            ✅
-          </button>
-        {:else if actionType == "edit"}
-          <button class="select_button" onclick={(e) => action(e, item)}>
-            ✏️
-          </button>
-        {:else}
-          <button class="select_button" onclick={(e) => action(e, item)}>
-            ✅
-          </button>
-        {/if}
-      </TableBodyCell>
+      {#if actionType != "none"}
+        <TableBodyCell class="px-0 py-1 text-center">
+          {#if actionType === "delete"}
+            <button
+              class="select_button"
+              onclick={() => {
+                showDeleteConfirmation = true;
+                deleteUserId = item.admin_id;
+              }}
+            >
+              🗑️
+            </button>
+          {:else if actionType == "select_student"}
+            <button
+              class="select_button"
+              onclick={(e) => action(e, item, org_id)}
+            >
+              ✅
+            </button>
+          {:else if actionType == "edit"}
+            <button class="select_button" onclick={(e) => action(e, item)}>
+              ✏️
+            </button>
+          {:else}
+            <button class="select_button" onclick={(e) => action(e, item)}>
+              ✅
+            </button>
+          {/if}
+        </TableBodyCell>
+      {/if}
       {#each columns as column}
         <TableBodyCell class="px-0 py-0 text-center">
           {column.value(item)}

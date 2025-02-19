@@ -43,10 +43,22 @@
   let selectedHost = null;
   let selectedEvent = null;
 
-  const adminFeatures = [
-    { name: "Users", href: "/admin/users" },
-    { name: "Import Problems", href: "/admin/import-problems" },
-    { name: "New Problem", href: "/admin/problems/new" },
+  // const adminFeatures = [
+  //   { name: "Users", href: "/admin/users" },
+  //   { name: "Import Problems", href: "/admin/import-problems" },
+  //   { name: "New Problem", href: "/admin/problems/new" },
+  // ];
+
+  const adminEventPages = [
+    { name: "Home", route: "" },
+    { name: "Tests", route: "tests" },
+    { name: "Registration", route: "registration" },
+  ];
+
+  const adminHostPages = [
+    { name: "Home", route: "" },
+    { name: "Users", route: "users" },
+    { name: "Custom Fields", route: "custom_fields" }
   ];
 
   async function initializeNavbar() {
@@ -239,7 +251,7 @@
           {/if}
         {/if}
       {:else}
-        <NavLi class="cursor-pointer">
+        <!-- <NavLi class="cursor-pointer">
           Admin Features
           <ChevronDownOutline
             class="w-6 h-6 m-0 p-0 text-primary-800 dark:text-white inline"
@@ -256,7 +268,7 @@
               {feature.name}
             </DropdownItem>
           {/each}
-        </Dropdown>
+        </Dropdown> -->
 
         <NavLi class="cursor-pointer">
           <CodeForkSolid class="h-6 text-primary-800 dark:text-white inline" />
@@ -301,20 +313,29 @@
             {/each}
           </Dropdown>
           {#if eventId}
-            <NavLi
-              class="cursor-pointer navli {$page.route.id?.includes('/tests')
-                ? 'active'
-                : ''}"
-              href="/admin/{hostId}/{eventId}/tests">Tests</NavLi
-            >
-            <NavLi
-              class="cursor-pointer navli {$page.route.id?.includes(
-                '/registration',
-              )
-                ? 'active'
-                : ''}"
-              href="/admin/{hostId}/{eventId}/registration">Registration</NavLi
-            >
+            {#each adminEventPages as adminEventRoute}
+              <NavLi
+                class="cursor-pointer navli {$page.route.id?.includes(
+                  adminEventRoute.route,
+                ) && adminEventRoute.route != ""
+                  ? 'active'
+                  : ''}"
+                href="/admin/{hostId}/{eventId}/{adminEventRoute.route}"
+                >{adminEventRoute.name}</NavLi
+              >
+            {/each}
+          {:else if hostId}
+            {#each adminHostPages as adminHostPage}
+              <NavLi
+                class="cursor-pointer navli {$page.route.id?.includes(
+                  adminHostPage.route,
+                ) && adminHostPage.route != ""
+                  ? 'active'
+                  : ''}"
+                href="/admin/{hostId}/{eventId}{adminHostPage.route}"
+                >{adminHostPage.name}</NavLi
+              >
+            {/each}
           {/if}
         {/if}
       {/if}

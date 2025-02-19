@@ -31,6 +31,7 @@
     "@carbon/react": "1.33.0",
     "@carbon/web-components": "^2.11.1",
     "@popperjs/core": "^2.11.8",
+    "@sendgrid/mail": "^8.1.4",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "asciimath2tex": "^1.5.0",
