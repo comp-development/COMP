@@ -28,6 +28,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { supabase } from "$lib/supabaseClient";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+  import { onMount } from 'svelte';
 
   let loading = $state(true);
   let coach: any = $state();
@@ -60,6 +61,14 @@
   (async () => {
     host = await getHostInformation(host_id);
     event_details = await getEventInformation(event_id);
+
+    if (event_details?.eventbrite_event_id) {
+      // Load the Eventbrite widget
+      const script = document.createElement('script');
+      script.src = 'https://www.eventbrite.com/static/widgets/eb_widgets.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
 
     coach = await getCoach($user!.id);
     organizationDetails = await getCoachOrganization(
@@ -277,7 +286,7 @@
       is_coach: true,
       host_id,
     };
-    const response = await fetch("/api/purchase-ticket", {
+    const response = await fetch("/api/purchase-stripe-ticket", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -408,6 +417,50 @@
   }
 
 
+  function openEventbriteWidget() {
+    const eventbriteEventId = event_details?.eventbrite_event_id; // Replace with your actual Eventbrite event ID
+    window.EBWidgets.createWidget({
+        widgetType: 'checkout',
+        eventId: eventbriteEventId,
+        modal: true,
+        modalTriggerElementId: 'eventbrite-widget-container',
+        onOrderComplete: async (data) => {
+            console.log("Order completed with ID:", data);
+            try {
+                const { data: authData, error } = await supabase.auth.getSession();
+                if (error != null) {
+                  handleError(error);
+                }
+                const token = authData.session?.access_token ?? null;
+                const response = await fetch('/api/purchase-eventbrite-ticket', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        event_id,
+                        host_id,
+                        token,
+                        creating_team: false, // or true based on your logic
+                        joining_team_code: null, // or your joining team code
+                        target_org_id: org_id, // or null if not applicable
+                        eventbrite_order_id: data.orderId,
+                    }),
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to process Eventbrite order');
+                }
+                const result = await response.json();
+                console.log('Eventbrite order processed:', result);
+                // Handle success (e.g., redirect or show a success message)
+            } catch (error) {
+                console.error('Error processing Eventbrite order:', error);
+                // Handle error (e.g., show an error message)
+            }
+        }
+    });
+  }
+
 </script>
 
 {#if loading}
@@ -482,12 +535,14 @@
             <UsersGroupSolid class="w-4 h-4 me-2" />
             Add Team
           </Button>
-          <Button pill outline color="primary" onclick={openPurchaseModal}>
+          <Button pill outline color="primary" id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} onclick={event_details.eventbrite_event_id ? openEventbriteWidget : openPurchaseModal}>
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
           </Button>
         </ButtonGroup>
       </div>
+
+      
 
       <div class="grid-container">
         <div class="teams-grid">

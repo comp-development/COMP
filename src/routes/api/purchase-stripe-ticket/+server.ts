@@ -51,10 +51,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
   const user = user_response.data.user;
 
-  const dbg = <T,>(x: T): T => {
-    console.log(x);
-    return x;
-  };
   const is_student =
     (
       await adminSupabase
@@ -133,7 +129,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
             })();
     const success_url = `${
       request.url.origin
-    }/api/purchase-ticket?session_id={CHECKOUT_SESSION_ID}&redirect=${encodeURIComponent(
+    }/api/purchase-stripe-ticket?session_id={CHECKOUT_SESSION_ID}&redirect=${encodeURIComponent(
       redirect,
     )}`;
     const cancel_url =

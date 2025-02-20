@@ -56,7 +56,7 @@
       joining_team_code: join_code,
       is_coach: false,
     };
-    const response = await fetch("/api/purchase-ticket", {
+    const response = await fetch("/api/purchase-stripe-ticket", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -79,7 +79,7 @@
   //     - link back to /student/[event_id]
   //   - if error is org has insufficient tickets but successful join
   //     - print that joined org but insufficient tickets
-  //     - link to /purchase-ticket with joining_team code
+  //     - link to /purchase-stripe-ticket with joining_team code
   //     - link back to /student/[event_id]
   // - else, redirect to /student/[event_id]
 </script>

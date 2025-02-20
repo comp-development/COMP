@@ -57,7 +57,7 @@
         joining_team_code: options.joining_team_code ?? null,
         is_coach: false,
       };
-      const response = await fetch("/api/purchase-ticket", {
+      const response = await fetch("/api/purchase-stripe-ticket", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
