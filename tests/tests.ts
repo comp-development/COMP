@@ -8,7 +8,7 @@ import {
   unwrap_error,
 } from "./assert";
 
-export const BASE_URL: string = "http://localhost:5173";
+export const BASE_URL: string = "https://localhost:5173";
 
 export async function setup_test() {
   const test_student = unwrap_data(
