@@ -416,49 +416,54 @@
     }
   }
 
+  async function eventbritePurchase(data) {
+    console.log("Order completed with ID:", data);
+    try {
+        const { data: authData, error } = await supabase.auth.getSession();
+        if (error != null) {
+          handleError(error);
+        }
+        const token = authData.session?.access_token ?? null;
+        const response = await fetch('/api/purchase-eventbrite-ticket', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                event_id,
+                host_id,
+                token,
+                creating_team: false, // or true based on your logic
+                joining_team_code: null, // or your joining team code
+                target_org_id: org_id, // or null if not applicable
+                eventbrite_order_id: data.orderId,
+            }),
+        });
+        const text = await response.text();
+        if (response.ok) {
+          document.location.assign(text);
+        } else {
+          handleError(new Error(text));
+        }
+        // Handle success (e.g., redirect or show a success message)
+    } catch (error) {
+        console.error('Error processing Eventbrite order:', error);
+        toast.error("Error processing Eventbrite order. Please reach out to the tournament organizers.");
+    }
+  }
+
 
   function openEventbriteWidget() {
     const eventbriteEventId = event_details?.eventbrite_event_id; // Replace with your actual Eventbrite event ID
-    window.EBWidgets.createWidget({
-        widgetType: 'checkout',
-        eventId: eventbriteEventId,
-        modal: true,
-        modalTriggerElementId: 'eventbrite-widget-container',
-        onOrderComplete: async (data) => {
-            console.log("Order completed with ID:", data);
-            try {
-                const { data: authData, error } = await supabase.auth.getSession();
-                if (error != null) {
-                  handleError(error);
-                }
-                const token = authData.session?.access_token ?? null;
-                const response = await fetch('/api/purchase-eventbrite-ticket', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        event_id,
-                        host_id,
-                        token,
-                        creating_team: false, // or true based on your logic
-                        joining_team_code: null, // or your joining team code
-                        target_org_id: org_id, // or null if not applicable
-                        eventbrite_order_id: data.orderId,
-                    }),
-                });
-                if (!response.ok) {
-                    throw new Error('Failed to process Eventbrite order');
-                }
-                const result = await response.json();
-                console.log('Eventbrite order processed:', result);
-                // Handle success (e.g., redirect or show a success message)
-            } catch (error) {
-                console.error('Error processing Eventbrite order:', error);
-                // Handle error (e.g., show an error message)
-            }
-        }
-    });
+    if (eventbriteEventId) { // Check if the event ID is valid
+        window.EBWidgets.createWidget({
+            widgetType: 'checkout',
+            eventId: eventbriteEventId,
+            modal: true,
+            modalTriggerElementId: 'eventbrite-widget-container',
+            onOrderComplete: eventbritePurchase
+        });
+    }
   }
 
 </script>
@@ -482,7 +487,7 @@
           { title: "Register", step: 1, description: "Fill out the registration form below." },
           { title: "Add Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
           { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." },
-          { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the join code. You can also send them the team join code." },
+          { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the org join code. You can also have them added directly to teams by sending them the team join code, but you must have enough unsued tickets to do so." },
           { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams. You can do this by clicking and dragging students from the 'Unassigned Students' section into one of your teams!" },
           { title: "Done!", step: 6, description: null }
         ] as { title, step, description }}

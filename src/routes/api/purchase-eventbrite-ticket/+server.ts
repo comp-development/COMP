@@ -112,11 +112,6 @@ import {
                 console.error("unexpected request state", body);
                 throw Error("unexpected request state");
               })();
-      const success_url = `${
-        request.url.origin
-      }/api/purchase-stripe-ticket?session_id={CHECKOUT_SESSION_ID}&redirect=${encodeURIComponent(
-        redirect,
-      )}`;
       
       const cancel_url =
         request.url.origin +
@@ -124,18 +119,27 @@ import {
           ? `/coach/${target_org_id}/${host_id}/`
           : `/student/${host_id}/`) +
         event_id;
-      console.log("REDIRECT", redirect_url, success_url, cancel_url)
-      console.log("EVENTBRITE ORDER ID", eventbrite_order_id)
       if (eventbrite_order_id) {
         console.log("Log2")
-        const eventbriteResponse = await fetch(`https://www.eventbriteapi.com/v3/orders/${eventbrite_order_id}/attendees/?token=${eventbriteToken}`, {
-          method: "GET",
-        });
-        console.log("Log3", eventbriteResponse)
-        const attendeesData = await eventbriteResponse.json();
-        if (!attendeesData || attendeesData.error) {
-          throw Error("Failed to fetch attendees from Eventbrite");
+        let attendeesData = [];
+        let pageNumber = 1;
+        let hasMoreItems = true;
+
+        while (hasMoreItems) {
+            const eventbriteResponse = await fetch(`https://www.eventbriteapi.com/v3/orders/${eventbrite_order_id}/attendees/?token=${eventbriteToken}&page=${pageNumber}`, {
+                method: "GET",
+            });
+            console.log("Log3", eventbriteResponse);
+            const data = await eventbriteResponse.json();
+            if (!data || data.error) {
+                throw Error("Failed to fetch attendees from Eventbrite");
+            }
+
+            attendeesData = attendeesData.concat(data.attendees); // Combine current page attendees with the total
+            hasMoreItems = data.pagination.has_more_items; // Check if there are more pages
+            pageNumber++; // Increment page number for the next request
         }
+
         const existingOrder = await adminSupabase
           .from("ticket_orders")
           .select("*")
@@ -146,7 +150,7 @@ import {
           // Update existing order
           const { error: updateError } = await admisnSupabase
             .from("ticket_orders")
-            .update({ quantity: attendeesData.attendees.length })
+            .update({ quantity: attendeesData.length })
             .eq("order_id", eventbrite_order_id);
           if (updateError) {
             throw Error("Failed to update ticket orders: " + updateError.message);
@@ -155,8 +159,9 @@ import {
           // Create new order
           const ticket_order = {
             event_id,
-            quantity: attendeesData.attendees.length,
+            quantity: attendeesData.length,
             order_id: eventbrite_order_id,
+            ticket_service: "eventbrite"
           };
           if (!purchasing_org_ticket) {
             ticket_order.student_id = user.id;

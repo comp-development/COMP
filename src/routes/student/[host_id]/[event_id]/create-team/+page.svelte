@@ -28,20 +28,40 @@
 
     // If there is no stored transaction, redirect the student to payment page.
     if (!transaction_stored) {
-      let body = {
-        event_id,
-        host_id,
-        token,
-        quantity: 1,
-        creating_team: true,
-        joining_team_code: null,
-        is_coach: false,
-      };
-      const response = await fetch("/api/purchase-stripe-ticket", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      let body;
+
+      if (event.eventbrite_event_id) {
+        body = {
+          event_id,
+          host_id,
+          token,
+          creating_team: true,
+          joining_team_code: null,
+          target_org_id: null, // Set this if needed
+          eventbrite_order_id: null, // Set this if needed
+        };
+        const response = await fetch("/api/purchase-eventbrite-ticket", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      } else {
+        body = {
+          event_id,
+          host_id,
+          token,
+          quantity: 1,
+          creating_team: true,
+          joining_team_code: null,
+          is_coach: false,
+        };
+        const response = await fetch("/api/purchase-stripe-ticket", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
       const text = await response.text();
       if (response.ok) {
         document.location.assign(text);
