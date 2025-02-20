@@ -9,7 +9,7 @@
   import { supabase } from "$lib/supabaseClient";
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
-  import { Tabs, TabItem } from "flowbite-svelte";
+  import { Tabs, TabItem, Alert } from "flowbite-svelte";
 
   // Instead of using an enum for login state, we'll just use string literals.
   // Define the allowed login states.
@@ -57,7 +57,7 @@
           }
 
           toast.success(
-            "Successfully signed up, check your email to confirm your account.",
+            "Successfully signed up, check your email to confirm your account. Make sure to check your junk/spam folders as well.",
           );
         } catch (error) {
           throw error;
@@ -81,7 +81,7 @@
         },
       );
       console.log("SQUAWK0", data, error);
-      toast.success("Reset password link sent. Please check your email.");
+      toast.success("Reset password link sent. Please check your email. Don't forget to check junk/spam folders as well.");
     } catch (error) {
       handleError(error);
     }
@@ -189,6 +189,11 @@
         </div>
       {:else if logInState === "SIGNUP"}
         <br />
+        <Alert color="yellow">
+          <span class="font-medium">Confirmation emails to hotmail, live, outlook, and msn are currently unreliable.</span><br>
+           If you sign up with one of these and don't receive a confirmation email, try signing up with another service.
+        </Alert>
+        <br>
         <div class="tabs">
           <Tabs tabStyle="pill">
             <TabItem
