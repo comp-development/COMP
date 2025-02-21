@@ -197,6 +197,6 @@
   }
 
   :global([role="tabpanel"]) {
-    background-color: transparent;
+    background-color: transparent !important;
   }
 </style>
