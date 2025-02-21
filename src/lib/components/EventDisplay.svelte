@@ -40,6 +40,13 @@
   }
 
   function handleEdit() {
+    if (editingField === "max_team_size" || editingField === "ticket_price_cents") {
+      if (newResponses[editingField] == null || newResponses[editingField] < 0) {
+        toast.error(`${editingField.replace('_', ' ')} cannot be null or negative`);
+        newResponses[editingField] = 0;
+        return;
+      }
+    }
     hasEdits = true;
   }
 </script>
@@ -57,7 +64,7 @@
               on:blur={() => editingField = null}
             />
           {:else}
-            {newResponses.event_name}
+            {newResponses.event_name || "None"}
           {/if}
         </h1>
         <h2 class="text-2xl text-center flex">
@@ -70,7 +77,7 @@
                 on:blur={() => editingField = null}
               />
             {:else}
-              {newResponses.event_date}
+              {newResponses.event_date || "None"}
             {/if}
           </span>
           <span class="mr-2" onmouseenter={() => editable && (editingField = 'published')} onmouseleave={() => editingField = null}>
@@ -101,7 +108,7 @@
               on:blur={() => editingField = null}
             />
           {:else}
-            {newResponses.host_name}
+            {newResponses.host_name || "None"}
           {/if}
         </h1>
       {/if}
@@ -118,7 +125,11 @@
               on:blur={() => editingField = null}
             />
           {:else}
-            <img src={newResponses.logo} alt="logo" class="w-32 h-32 rounded-full shadow-ld" />
+            {#if event ? (newResponses.logo || host.logo) : (newResponses.logo)}
+              <img src={event ? (newResponses.logo || host.logo) : (newResponses.logo)} alt="logo" class="w-32 h-32 rounded-full shadow-ld" />
+            {:else}
+              <p>No logo</p>
+            {/if}
           {/if}
         </div>
       {/if}
@@ -135,8 +146,8 @@
               on:blur={() => editingField = null}
             />
           {:else}
-            <a href="mailto:{newResponses.email}" class="text-lg text-blue-500 hover:underline">
-              {newResponses.email}
+            <a href="mailto:{event ? (newResponses.email || host.email) : (newResponses.email)}" class="text-lg text-blue-500 hover:underline">
+              {event ? (newResponses.email || host.email || "None") : (newResponses.email || "None")}
             </a>
           {/if}
         </div>
@@ -162,7 +173,7 @@
             on:blur={() => editingField = null}
           />
         {:else}
-          {newResponses.max_team_size}
+          {newResponses.max_team_size || 0}
         {/if}
       </p>
       <p onmouseenter={() => editable && (editingField = 'ticket_price_cents')} onmouseleave={() => editingField = null}>
@@ -175,7 +186,7 @@
             on:blur={() => editingField = null}
           />
         {:else}
-          {newResponses.ticket_price_cents} cents
+          {newResponses.ticket_price_cents || 0} cents
         {/if}
       </p>
       <br />
