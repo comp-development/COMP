@@ -64,49 +64,46 @@
     <div>
       {#if event}
         <h1
-          class="text-4xl font-extrabold text-center m-0 p-0"
+          class="text-4xl font-extrabold text-center m-0 p-0 {editable ? 'editableField' : ''}"
           style="min-height: 45px;"
-          onmouseenter={() => editable && (editingField = "event_name")}
-          onmouseleave={() => (editingField = null)}
+          onclick={() => editable && (editingField = "event_name")}
         >
           {#if editingField === "event_name"}
             <Input
               type="text"
               bind:value={newResponses.event_name}
               on:input={handleEdit}
-              on:blur={() => (editingField = null)}
+              onmouseleave={() => (editingField = null)}
             />
           {:else}
             {newResponses.event_name || "None"}
           {/if}
         </h1>
-        <h2 class="text-2xl text-center flex" style="min-height: 50px;">
+        <h2 class="text-2xl text-center flex {editable ? 'editableField' : ''}" style="min-height: 50px;">
           <span
             class="mr-3"
-            onmouseenter={() => editable && (editingField = "event_date")}
-            onmouseleave={() => (editingField = null)}
+            onclick={() => editable && (editingField = "event_date")}
           >
             {#if editingField === "event_date"}
               <Input
                 type="date"
                 bind:value={newResponses.event_date}
                 on:input={handleEdit}
-                on:blur={() => (editingField = null)}
+                onmouseleave={() => (editingField = null)}
               />
             {:else}
               {newResponses.event_date || "None"}
             {/if}
           </span>
           <span
-            class="mr-2 flex"
-            onmouseenter={() => editable && (editingField = "published")}
-            onmouseleave={() => (editingField = null)}
+            class="mr-2 flex {editable ? 'editableField' : ''}"
+            onclick={() => editable && (editingField = "published")}
           >
             {#if editingField === "published"}
               <Checkbox
                 bind:checked={newResponses.published}
                 on:change={handleEdit}
-                on:blur={() => (editingField = null)}
+                onmouseleave={() => (editingField = null)}
               >
                 Public
               </Checkbox>
@@ -120,15 +117,14 @@
       {:else}
         <h1
           class="text-4xl font-extrabold text-center"
-          onmouseenter={() => editable && (editingField = "host_name")}
-          onmouseleave={() => (editingField = null)}
+          onclick={() => editable && (editingField = "host_name")}
         >
           {#if editingField === "host_name"}
             <Input
               type="text"
               bind:value={newResponses.host_name}
               on:input={handleEdit}
-              on:blur={() => (editingField = null)}
+              onmouseleave={() => (editingField = null)}
             />
           {:else}
             {newResponses.host_name || "None"}
@@ -148,13 +144,13 @@
               type="text"
               bind:value={newResponses.logo}
               on:input={handleEdit}
-              on:blur={() => (editingField = null)}
+              onmouseleave={() => (editingField = null)}
             />
           {:else if event ? newResponses.logo || host.logo : newResponses.logo}
             <img
               src={event ? newResponses.logo || host.logo : newResponses.logo}
               alt="logo"
-              class="w-32 h-32 rounded-full shadow-ld"
+              class="w-32 h-32 rounded-full shadow-ld {editable ? 'editableField' : ''}"
             />
           {:else}
             <p>No logo</p>
@@ -166,17 +162,16 @@
 
       {#if (event && event.email) || host.email}
         <div
-          class="text-center"
+          class="text-center {editable ? 'editableField' : ''}"
           style="min-height: 45px;"
-          onmouseenter={() => editable && (editingField = "email")}
-          onmouseleave={() => (editingField = null)}
+          onclick={() => editable && (editingField = "email")}
         >
           {#if editingField === "email"}
             <Input
               type="email"
               bind:value={newResponses.email}
               on:input={handleEdit}
-              on:blur={() => (editingField = null)}
+              onmouseleave={() => (editingField = null)}
             />
           {:else}
             <a
@@ -207,9 +202,8 @@
         <div class="flex" style="justify-content: left;">
           <div style="width: 350px;">
             <p
-              class="flex"
-              onmouseenter={() => editable && (editingField = "max_team_size")}
-              onmouseleave={() => (editingField = null)}
+              class="flex {editable ? 'editableField' : ''}"
+              onclick={() => editable && (editingField = "max_team_size")}
             >
               <span
                 style="font-weight: 600; min-width: fit-content; margin-right: 5px;"
@@ -220,7 +214,7 @@
                   type="number"
                   bind:value={newResponses.max_team_size}
                   on:input={handleEdit}
-                  on:blur={() => (editingField = null)}
+                  onmouseleave={() => (editingField = null)}
                 />
               {:else}
                 {newResponses.max_team_size || 0}
@@ -229,9 +223,8 @@
           </div>
           <div style="width: 350px;">
             <p
-              class="flex"
-              onmouseenter={() => editable && (editingField = "ticket_price_cents")}
-              onmouseleave={() => (editingField = null)}
+              class="flex {editable ? 'editableField' : ''}"
+              onclick={() => editable && (editingField = "ticket_price_cents")}
             >
               <span
                 style="font-weight: 600; min-width: fit-content; margin-right: 5px;"
@@ -242,7 +235,7 @@
                   type="number"
                   bind:value={newResponses.ticket_price_cents}
                   on:input={handleEdit}
-                  on:blur={() => (editingField = null)}
+                  onmouseleave={() => (editingField = null)}
                 />
               {:else}
                 {newResponses.ticket_price_cents || 0} cents
@@ -255,14 +248,14 @@
     {/if}
     {#if (event && event.summary) || host.summary}
       <div
-        onmouseenter={() => editable && (editingField = "summary")}
-        onmouseleave={() => (editingField = null)}
+        class="{editable ? 'editableField' : ''}"
+        onclick={() => editable && (editingField = "summary")}
       >
         {#if editingField === "summary"}
           <Textarea
             bind:value={newResponses.summary}
             on:input={handleEdit}
-            on:blur={() => (editingField = null)}
+            onmouseleave={() => (editingField = null)}
             rows={5}
           />
         {:else}
@@ -282,5 +275,9 @@
     width: 100%;
     padding: 40px;
     padding-top: 20px;
+  }
+
+  :global(.editableField) {
+    cursor: url(/edit.svg) 0 16, auto !important;
   }
 </style>
