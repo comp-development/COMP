@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
+    import InfoToolTip from "$lib/components/InfoToolTip.svelte";
 
   let { id = null, event = null, host, editable = false } = $props();
   let newResponses = $state({});
@@ -197,6 +198,11 @@
   </div>
 
   <div>
+    {#if editable}
+      <div class="flex" style="justify-content: end;">
+        <InfoToolTip text="To edit, click on the text that you want to change and update the input field." />
+      </div>
+    {/if}
     {#if event}
       <div class="flex" style="min-height: 45px;">
         <div class="flex" style="justify-content: left;">
