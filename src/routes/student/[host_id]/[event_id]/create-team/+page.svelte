@@ -28,39 +28,37 @@
 
     // If there is no stored transaction, redirect the student to payment page.
     if (!transaction_stored) {
-      let body;
 
-      if (event.eventbrite_event_id) {
-        body = {
-          event_id,
-          host_id,
-          token,
-          creating_team: true,
-          joining_team_code: null,
-          target_org_id: null, // Set this if needed
-          eventbrite_order_id: null, // Set this if needed
-        };
-        const response = await fetch("/api/purchase-eventbrite-ticket", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-      } else {
-        body = {
-          event_id,
-          host_id,
-          token,
-          quantity: 1,
-          creating_team: true,
-          joining_team_code: null,
-          is_coach: false,
-        };
-        const response = await fetch("/api/purchase-stripe-ticket", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
+      const { data, error } = await supabase
+        .from("events")
+        .select("eventbrite_event_id")
+        .eq("event_id", event_id)
+        .single();
+      if (error) {
+        handleError(error);
+        return;
       }
+
+      // If this is an eventbrite event, then the purchase screen is on the event page.
+      if (data.eventbrite_event_id) {
+        document.location.assign(`${document.location.origin}/student/${host_id}/${event_id}`);
+        return;
+        
+      } 
+      const body = {
+        event_id,
+        host_id,
+        token,
+        quantity: 1,
+        creating_team: true,
+        joining_team_code: null,
+        is_coach: false,
+      };
+      const response = await fetch("/api/purchase-stripe-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
       const text = await response.text();
       if (response.ok) {

@@ -37,6 +37,18 @@ SUPABASE_SERVICE_KEY=service_role_key
 
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
 
+
+For eventbrite seeding, you need to fill out a private token.
+
+On the publish page, choose "Is your event public or private?" to be "private."
+Create an API key in your `account settings > developer links > api keys`
+and copy the private token. Add to a `db/.env` file the following.
+
+```
+EVENTBRITE_SAMPLE_EVENT_ID=private_token
+```
+
+
 ## Dev+Update Workflow:
 
 1. start supabase. run `supabase db reset` to get remote changes applied locally.

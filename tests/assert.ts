@@ -14,8 +14,9 @@ export type AsyncReturnType<T extends (...args: any) => Promise<any>> =
   T extends (...args: any) => Promise<infer R> ? R : any;
 
 // Extracts the field `Key` of T | null if T is not null.
-export type Get<T, Key extends keyof NonNullable<T>> =
-  T extends NonNullable<T> ? T[Key] : null;
+export type Get<T, Key extends keyof NonNullable<T>> = T extends NonNullable<T>
+  ? T[Key]
+  : null;
 
 // Get parent directory path (we are in subdir `tests`)
 const COMP_DIR = path.resolve(
@@ -91,4 +92,8 @@ export function unwrap_error<E, R extends { error: E | null }>(
 ): Diff<UnwrapError<R>, null | undefined> {
   assert(result.error != null, "Expected error to be non-null", 2);
   return result.error as Diff<UnwrapError<R>, undefined | null>;
+}
+
+export async function sleep(duration_ms: number) {
+  await new Promise((e) => setTimeout(() => e(0), duration_ms));
 }

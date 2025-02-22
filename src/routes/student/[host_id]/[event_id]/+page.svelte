@@ -19,12 +19,17 @@
     type Student,
   } from "$lib/supabase";
   import type { Tables } from "../../../../../db/database.types";
-  import { supabase, type Get } from "$lib/supabaseClient";
+  import {
+    supabase,
+    type AsyncReturnType,
+    type Get,
+  } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
 
   const event_id = parseInt($page.params.event_id);
   let student_event: StudentEvent = $state(null);
-  let event_details: Tables<"events"> | null = $state(null);
+  let event_details: AsyncReturnType<typeof getEventInformation> | null =
+    $state(null);
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
@@ -35,7 +40,6 @@
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student: Student = $state(null);
-  let purchase_ticket = $state(true);
   let teamJoinFormResponses: any = $state({});
   let teamJoinFormErrors: any = $state({});
   let orgJoinFormResponses: any = $state({});
@@ -83,6 +87,73 @@
     }
   };
 
+  async function eventbritePurchase(
+    creating_team: boolean,
+    joining_team_code: string | null,
+  ) {
+    const { data: authData, error } = await supabase.auth.getSession();
+    if (error != null) {
+      handleError(error);
+    }
+    const token = authData.session?.access_token ?? null;
+
+    return async (data: any) => {
+      // TODO: check that data has quantity 1.
+      console.log("eventbrite", data)
+      let body = {
+        event_id,
+        host_id: event_details!.host_id,
+        token,
+        quantity: 1,
+        creating_team,
+        joining_team_code,
+        target_org_id: null,
+        eventbrite_order_id: data.orderId,
+      };
+      const response = await fetch("/api/purchase-eventbrite-ticket", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const text = await response.text();
+      if (response.ok) {
+        document.location.assign(text);
+      } else {
+        handleError(new Error(text));
+      }
+    };
+  }
+
+  async function openEventbriteWidget(
+    creating_team: boolean,
+    joining_team_code: string | null,
+  ) {
+    const eventbriteEventId = event_details?.eventbrite_event_id; // Replace with your actual Eventbrite event ID
+    if (eventbriteEventId) {
+      // Check if the event ID is valid
+       (window as any).EBWidgets.createWidget({
+        widgetType: "checkout",
+        eventId: eventbriteEventId,
+        modal: true,
+        modalTriggerElementId: "eventbrite-widget-container",
+        iFrameContainerId: "modalTriggerElementId",
+        onOrderComplete: await eventbritePurchase(creating_team, joining_team_code),
+      });
+      (document.querySelector("#eventbrite-widget-container") as HTMLElement).click();
+      // setTimeout(async () => {
+      //    (window as any).EBWidgets.createWidget({
+      //     widgetType: "checkout",
+      //     eventId: eventbriteEventId,
+      //     modal: true,
+      //     modalTriggerElementId: "eventbrite-widget-container",
+      //     iFrameContainerId: "modalTriggerElementId",
+      //     onOrderComplete: await eventbritePurchase(creating_team, joining_team_code),
+      //   });
+        
+      // }, 1000)
+    }
+  }
+
   (async () => {
     // Check if this student is registered in this event.
     // NOTE: only student accounts can view this page (because of the student/layout.svelte)
@@ -110,6 +181,14 @@
     console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
 
+    // if (event_details?.eventbrite_event_id) {
+    //   // Load the Eventbrite widget
+    //   const script = document.createElement("script");
+    //   script.src = "https://www.eventbrite.com/static/widgets/eb_widgets.js";
+    //   script.async = true;
+    //   document.body.appendChild(script);
+    // }
+
     loading = false;
   })();
 </script>
@@ -117,13 +196,14 @@
 {#if loading}
   <Loading />
 {:else}
+  <script src="https://www.eventbrite.com/static/widgets/eb_widgets.js"></script>
   <EventDisplay
     name={event_details?.event_name}
     date={event_details?.event_date}
     logo={event_details?.logo && event_details?.logo != ""
       ? event_details?.logo
-      : event_details.host.logo}
-    email={event_details?.email ?? event_details.host.email}
+      : event_details?.host.logo}
+    email={event_details?.email ?? event_details?.host.email}
     markdown={event_details?.summary}
   />
   {#if !student_event}
@@ -248,11 +328,20 @@
               custom_fields={[]}
               bind:newResponses={teamJoinFormResponses}
               bind:validationErrors={teamJoinFormErrors}
-              handleSubmit={() =>
-                document.location.assign(
-                  `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`,
-                )}
+              handleSubmit={() => {
+                if (event_details?.eventbrite_event_id && !transaction_stored) {
+                  openEventbriteWidget(
+                    false,
+                    teamJoinFormResponses["team_join_code"],
+                  );
+                } else {
+                  document.location.assign(
+                    `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`,
+                  );
+                }
+              }}
             />
+            <div id="eventbrite-widget-container"></div>
           </TabItem>
           <TabItem
             on:click={() => (selectedOption = "create_team")}
@@ -261,12 +350,26 @@
           >
             <div class="flex">
               <Button
-                href={`/student/${$page.params.host_id}/${$page.params.event_id}/create-team`}
+                on:click={()=> {
+                  if (event_details?.eventbrite_event_id && !transaction_stored) {
+                  console.log("hi")
+                    openEventbriteWidget(
+                      true,
+                      null,
+                    );
+                  } else {
+                    document.location.assign(
+                      `/student/${$page.params.host_id}/${$page.params.event_id}/create-team`,
+                    );
+                  }
+                  
+                }}
                 pill
               >
                 Create Team!
               </Button>
             </div>
+            <div id="eventbrite-widget-container"></div>
           </TabItem>
         </Tabs>
         <br />

@@ -1,14 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
 import {
   redirect,
   type RequestEvent,
   type RequestHandler,
 } from "@sveltejs/kit";
 import { Stripe } from "stripe";
-import type { Tables } from "../../../../../../db/database.types";
 import { adminSupabase } from "$lib/adminSupabaseClient";
-import { get } from "svelte/store";
-import { page } from "$app/stores";
 import { generate_join_code } from "$lib/joinCode";
 import { env } from "$env/dynamic/private";
 
@@ -89,7 +85,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       await adminSupabase
         .from("student_events")
         .select(
-          "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+          "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*)), events(*)",
         )
         .eq("student_id", user.id)
         .eq("event_id", event_id)
@@ -116,28 +112,35 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         failure: { reason: "missing payment session" },
       });
     }
-    const stripe = new Stripe(stripeSecretKey);
-    const session = await stripe.checkout.sessions.retrieve(
-      ticket_order.order_id,
-    );
-    if (session.payment_status == "paid") {
-    } else {
-      if (session.status == "expired") {
-        await adminSupabase
-          .from("ticket_orders")
-          .delete()
-          .eq("student_id", user.id)
-          .eq("event_id", event_id);
+
+    // Give nice errors if something happened to stripe session.
+    if (ticket_order.ticket_service == "stripe") {
+      const stripe = new Stripe(stripeSecretKey);
+      const session = await stripe.checkout.sessions.retrieve(
+        ticket_order.order_id,
+      );
+      if (session.payment_status == "paid") {
+      } else {
+        if (session.status == "expired") {
+          await adminSupabase
+            .from("ticket_orders")
+            .delete()
+            .eq("student_id", user.id)
+            .eq("event_id", event_id);
+          return construct_response({
+            failure: { reason: "payment expired", stripe_url: session.url! },
+          });
+        }
         return construct_response({
-          failure: { reason: "payment expired", stripe_url: session.url! },
+          failure: { reason: "payment not complete", stripe_url: session.url! },
         });
       }
-      return construct_response({
-        failure: { reason: "payment not complete", stripe_url: session.url! },
-      });
     }
+    
 
     // Create team and return join code.
+    // Database constraints should generate error if ticket is not fully paid for
+    // or is not of correct quantity.
     const join_code = generate_join_code();
     const { data: t_data, error: t_error } = dbg(
       await adminSupabase
