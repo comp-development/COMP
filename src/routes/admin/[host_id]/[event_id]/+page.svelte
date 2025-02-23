@@ -6,6 +6,7 @@
     getEventOrganizations,
     getEventIndependentTeams,
     getEventStudents,
+    getHostInformation,
   } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import Loading from "$lib/components/Loading.svelte";
@@ -18,6 +19,7 @@
   let eventId = Number($page.params.event_id);
   let teams = $state([]);
   let students = $state([]);
+  let host = $state([]);
   let event_information = $state({});
   let loading = $state(true);
   let organizations = $state([]);
@@ -30,6 +32,7 @@
   async function loadInformation() {
     try {
       teams = await getEventTeams(eventId);
+      host = await getHostInformation(hostId);
       teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
       event_information = await getEventInformation(eventId);
 
@@ -51,11 +54,8 @@
 {:else}
   <EventDisplay
     id={eventId}
-    name={event_information.event_name}
-    date={event_information.event_date}
-    logo={event_information.logo != "" ? event_information.logo : host.logo}
-    email={event_information.email ?? host.email}
-    markdown={event_information.summary}
+    host={host}
+    event={event_information}
     editable={true}
   />
 
@@ -91,9 +91,9 @@
     >
       <div>
         <h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
-        <Button pill href={`/admin/${hostId}/${eventId}/team`}
+        <!-- <Button pill href={`/admin/${hostId}/${eventId}/team`}
           >Create Team</Button
-        >
+        > -->
         <div class="tableMax">
           <TableName
             actionType="edit"
@@ -172,15 +172,17 @@
 
 <div class="modalExterior">
   <Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-      Edit Student
-    </h3>
-    <StudentForm
-      title=""
-      student_event={letEditableStudent}
-      user={letEditableStudent.person}
-      event_id={eventId}
-    />
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Edit Student
+      </h3>
+      <StudentForm
+        title=""
+        student_event={letEditableStudent}
+        user={letEditableStudent.person}
+        event_id={eventId}
+      />
+    </div>
   </Modal>
 </div>
 
@@ -190,7 +192,11 @@
     margin: 0 auto;
   }
 
+  .specificModalMax {
+    max-height: 500px;
+  }
+
   :global([role="tabpanel"]) {
-    background-color: transparent;
+    background-color: transparent !important;
   }
 </style>
