@@ -35,9 +35,9 @@ import {
       host_id = r("host_id");
       token = r("token");
       creating_team = r("creating_team");
+      eventbrite_order_id = r("eventbrite_order_id");
       target_org_id = body.target_org_id;
       joining_team_code = body.joining_team_code;
-      eventbrite_order_id = body.eventbrite_order_id;
     } catch (e: any) {
       return new Response("missing or malformed body: " + e.message, {
         status: 400,
@@ -113,15 +113,9 @@ import {
                 throw Error("unexpected request state");
               })();
       
-      const cancel_url =
-        request.url.origin +
-        (target_org_id
-          ? `/coach/${target_org_id}/${host_id}/`
-          : `/student/${host_id}/`) +
-        event_id;
       if (eventbrite_order_id) {
         console.log("Log2")
-        let attendeesData = [];
+        let attendeesData: any[] = [];
         let pageNumber = 1;
         let hasMoreItems = true;
 
@@ -148,7 +142,7 @@ import {
         
         if (existingOrder.data) {
           // Update existing order
-          const { error: updateError } = await admisnSupabase
+          const { error: updateError } = await adminSupabase
             .from("ticket_orders")
             .update({ quantity: attendeesData.length })
             .eq("order_id", eventbrite_order_id);
@@ -162,7 +156,7 @@ import {
             quantity: attendeesData.length,
             order_id: eventbrite_order_id,
             ticket_service: "eventbrite"
-          };
+          } as Tables<"ticket_orders">;
           if (!purchasing_org_ticket) {
             ticket_order.student_id = user.id;
           } else {
