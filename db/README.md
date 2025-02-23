@@ -38,14 +38,17 @@ SUPABASE_SERVICE_KEY=service_role_key
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
 
 
-For eventbrite seeding, you need to fill out a private token.
+For eventbrite seeding, you need to create an event to which the
+`EVENTBRITE_TOKEN` in the root `.env` has access. On the publish page, choose
+"Is your event public or private?" to be "private."
 
-On the publish page, choose "Is your event public or private?" to be "private."
-Create an API key in your `account settings > developer links > api keys`
-and copy the private token. Add to a `db/.env` file the following.
+Ensure your API key private token is in the root `.env`.
 
+Add to the `db/.env` file the following. Note that if you do not fill this
+entry out, then seeding will succeed with no events using the eventbrite
+payment system. The tests for eventbrite payments, however, will not work.
 ```
-EVENTBRITE_SAMPLE_EVENT_ID=private_token
+EVENTBRITE_SAMPLE_EVENT_ID=event_id
 ```
 
 

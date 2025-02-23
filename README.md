@@ -132,6 +132,7 @@ Store in `.env` as `STRIPE_SECRET_API_KEY=fill_in_your_key_here`.
 ### Eventbrite
 
 Create your own Eventbrite account and get an API key for your account.
+(get the API key from `account settings > developer links > api keys`.)
 Store the private token in `.env` as `EVENTBRITE_TOKEN=fill_in_here`.
 
 ### Google Maps
