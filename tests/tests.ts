@@ -285,12 +285,12 @@ export async function student_register_eventbrite(browser: Browser) {
 
   // For some reason, clicking event immediately and up two seconds later doesn't work.
   // But clicking, some three or so seconds later does.
-  await eventbrite_page.locator("::-p-text(Complete order)").click();
-  let el = await eventbrite_page.$("::-p-text(Complete order)");
+  await eventbrite_page.locator("::-p-text(Complete order),::-p-text(Complete Order)").click();
+  let el = await eventbrite_page.$("::-p-text(Complete order),::-p-text(Complete Order)");
   while (el) {
     await el.click();
     await sleep(1_000);
-    el = await eventbrite_page.$("::-p-text(Complete order)");
+    el = await eventbrite_page.$("::-p-text(Complete order),::-p-text(Complete Order)");
   }
 
   await page.locator("#team-name").fill("Test Student's Team");
