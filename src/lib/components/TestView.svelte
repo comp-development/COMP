@@ -445,7 +445,7 @@
   primaryButtonText="Submit"
   secondaryButtonText="Cancel"
   size="sm"
-  on:click:button--secondary={() => (open = false)}
+  onclick:button--secondary={() => (open = false)}
   on:submit={async () => {
     open = false;
     await handleContinue();

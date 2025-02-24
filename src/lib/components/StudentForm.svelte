@@ -182,7 +182,7 @@
 <div class="registrationForm">
     <Tabs tabStyle="pill">
       <TabItem
-        on:click={() => (selectedOption = "create_team")}
+        onclick={() => (selectedOption = "create_team")}
         open={selectedOption === "create_team"}
         title="Create or Join Independent Team"
       >
@@ -190,14 +190,14 @@
         <CustomForm fields={[]} custom_fields={custom_fields} bind:initialResponses={initialResponses} bind:newResponses={newResponses} bind:validationErrors={validationErrors} handleSubmit={handleSubmit}/>
       </TabItem>
       <TabItem
-        on:click={() => (selectedOption = "join_team")}
+        onclick={() => (selectedOption = "join_team")}
         open={selectedOption === "join_team"}
         title="Join Independent Team"
       >
         <h2>Student Registration Form</h2>
       </TabItem>
       <TabItem
-        on:click={() => (selectedOption = "join_org")}
+        onclick={() => (selectedOption = "join_org")}
         open={selectedOption === "join_org"}
         title="Register With Organization"
       >

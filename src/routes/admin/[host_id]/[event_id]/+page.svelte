@@ -63,7 +63,7 @@
     <TabItem
       open={selectedTab === "student"}
       title="Student"
-      on:click={() => (selectedTab = "student")}
+      onclick={() => (selectedTab = "student")}
     >
       <div>
         <h2 class="text-2xl font-bold mb-4">Registered Students</h2>
@@ -87,7 +87,7 @@
     <TabItem
       open={selectedTab === "teams"}
       title="Teams"
-      on:click={() => (selectedTab = "teams")}
+      onclick={() => (selectedTab = "teams")}
     >
       <div>
         <h2 class="text-2xl font-bold mb-4">Independent Teams</h2>
@@ -130,7 +130,7 @@
     <TabItem
       open={selectedTab === "orgs"}
       title="Organizations"
-      on:click={() => (selectedTab = "orgs")}
+      onclick={() => (selectedTab = "orgs")}
     >
       <div>
         <h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>

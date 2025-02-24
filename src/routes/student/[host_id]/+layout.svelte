@@ -15,6 +15,10 @@
         error = "This host organization doesn't exist.";
       }
 
+      Object.entries(host.styles || {}).forEach(([key, value]) => {
+        document.documentElement.style.setProperty(`--${key}`, value);
+      });
+
       loading = false;
     } catch (e) {
       handleError(e);
