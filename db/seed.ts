@@ -1,5 +1,7 @@
 import { SeedClient, createSeedClient } from "@snaplet/seed";
 import { copycat, type Input } from "@snaplet/copycat";
+import "dotenv/config";
+import { env } from "process";
 
 enum UserType {
   Superadmin = 1,
@@ -89,7 +91,7 @@ function chunks<T>(
   return output;
 }
 
-async function reset_db() {
+async function reset_db(params: { eventbrite_sample_event_id?: string }) {
   // TODO: take args for clear, dry run false, dry run true
   const dryRun = false;
   if (!dryRun) {
@@ -134,13 +136,17 @@ async function reset_db() {
           // See https://picsum.photos/ (image generator)
           logo: (ctx) =>
             `https://picsum.photos/seed/${copycat.word(ctx.seed)}/200`,
+          eventbrite_event_id: (ctx) =>
+            copycat.bool(ctx.seed) && params.eventbrite_sample_event_id
+              ? params.eventbrite_sample_event_id
+              : null,
         },
       },
       hosts: {
         data: {
           host_name: (ctx) =>
             "Host " + copycat.word(ctx.seed, { capitalize: true }),
-          styles: (ctx) => {
+          styles: (_ctx) => {
             return {
               primary: "#201c98",
               secondary: "#81706d",
@@ -474,7 +480,11 @@ async function reset_db() {
 // If called from command line, execute once.
 if (require.main === module) {
   (async () => {
-    await reset_db();
+    const eventbrite_sample_event_id = env.EVENTBRITE_SAMPLE_EVENT_ID;
+    if (!eventbrite_sample_event_id) {
+      console.warn("missing eventbrite sample event id");
+    }
+    await reset_db({ eventbrite_sample_event_id });
     process.exit();
   })();
 }

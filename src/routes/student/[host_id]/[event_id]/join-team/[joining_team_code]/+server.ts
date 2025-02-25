@@ -65,9 +65,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   // - if join code is org's team: add student to org
   // - if have student payment entry, check that payment status is good
   // - else, check that team's org's payment status is good and sufficient seats
-  // ===============TODO===============
-  //  add back join codes to org teams
-  // ==================================
   // - add student to team
 
   try {
@@ -137,6 +134,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     // If using an org order, provide a nice error if there are
     // insufficient purchased tickets.
     if (team_data!.org_id) {
+      // TODO: check logic if on org team but paid for own ticket.
       const { count: used_quantity, error: st_error } = await adminSupabase
         .from("student_events")
         .select("*, teams!inner(*)", { count: "exact" })
@@ -172,26 +170,34 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           failure: { reason: "missing payment session" },
         });
       }
-      const stripe = new Stripe(stripeSecretKey);
-      const session = await stripe.checkout.sessions.retrieve(
-        ticket_order.order_id,
-      );
 
-      if (session.status == "expired") {
-        await adminSupabase
-          .from("ticket_orders")
-          .delete()
-          .eq("student_id", user.id)
-          .eq("event_id", event_id);
-        return construct_response({
-          failure: { reason: "payment expired", stripe_url: session.url! },
-        });
+      if (ticket_order.ticket_service == "stripe") {
+        const stripe = new Stripe(stripeSecretKey);
+        const session = await stripe.checkout.sessions.retrieve(
+          ticket_order.order_id,
+        );
+
+        if (session.status == "expired") {
+          await adminSupabase
+            .from("ticket_orders")
+            .delete()
+            .eq("student_id", user.id)
+            .eq("event_id", event_id);
+          return construct_response({
+            failure: { reason: "payment expired", stripe_url: session.url! },
+          });
+        }
+        if (session.payment_status != "paid") {
+          return construct_response({
+            failure: {
+              reason: "payment not complete",
+              stripe_url: session.url!,
+            },
+          });
+        }
       }
-      if (session.payment_status != "paid") {
-        return construct_response({
-          failure: { reason: "payment not complete", stripe_url: session.url! },
-        });
-      }
+      // We need no check for eventbrite - the eventbrite ticket order is only
+      // inserted AFTER payment is complete.
     }
 
     // Add student to team.
