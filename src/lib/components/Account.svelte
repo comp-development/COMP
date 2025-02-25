@@ -189,11 +189,11 @@
         </div>
       {:else if logInState === "SIGNUP"}
         <br />
-        <Alert color="yellow">
+        <!--<Alert color="yellow">
           <span class="font-medium">Confirmation emails to hotmail, live, outlook, and msn are currently unreliable.</span><br>
            If you sign up with one of these and don't receive a confirmation email, try signing up with another service.
         </Alert>
-        <br>
+        <br>-->
         <div class="tabs">
           <Tabs tabStyle="pill">
             <TabItem
