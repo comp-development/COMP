@@ -18,7 +18,7 @@
     EyeSlashOutline,
     PhoneSolid,
   } from "flowbite-svelte-icons";
-  import toast from "$lib/toast.svelte";
+  import { onMount } from "svelte";
 
   let {
     title = null,
@@ -32,6 +32,7 @@
 
   let initialResponses = $state({});
   let show = $state(false);
+  let telephoneValues = $state({});
 
   $effect(() => {
     for (var field of [...fields, ...custom_fields]) {
@@ -184,19 +185,25 @@
               id={key}
               type="tel"
               placeholder={field.placeholder ?? "123-456-7890"}
-              bind:value={newResponses[key]}
+              bind:value={telephoneValues[key]}
               on:input={(e) => {
                 let rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
-
                 let formattedValue = rawValue;
-                if (rawValue.length > 6) {
-                  formattedValue = `${rawValue.slice(0, 3)}-${rawValue.slice(3, 6)}-${rawValue.slice(6)}`;
-                } else if (rawValue.length > 3) {
-                  formattedValue = `${rawValue.slice(0, 3)}-${rawValue.slice(3)}`;
+
+                const areaCode = formattedValue.substring(0, 3);
+                const prefix = formattedValue.substring(3, 6);
+                const suffix = formattedValue.substring(6, 10);
+
+                if (formattedValue.length > 6) {
+                  formattedValue = `(${areaCode}) ${prefix} - ${suffix}`;
+                } else if (formattedValue.length > 3) {
+                  formattedValue = `(${areaCode}) ${prefix}`;
+                } else if (formattedValue.length > 0) {
+                  formattedValue = `(${areaCode}`;
                 }
 
-                e.target.value = formattedValue;
                 newResponses[key] = rawValue;
+                telephoneValues[key] = formattedValue;
               }}
               required={field.required}
               disabled={field.disabled}

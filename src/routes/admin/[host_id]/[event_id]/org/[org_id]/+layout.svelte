@@ -12,15 +12,16 @@
 
   (async () => {
     try {
-      const organization = await ifOrgEvent(org_id, event_id);
+      const organization = await ifOrgEvent(event_id, org_id);
 
-      if (!organization) {
+      if (organization === null || organization === undefined) {
         error = "This event does not exist under this host organization.";
       }
 
       loading = false;
     } catch (e) {
       handleError(e);
+      loading = false;
     }
   })();
 </script>

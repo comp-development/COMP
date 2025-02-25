@@ -1,4 +1,5 @@
 import { supabase } from "../supabaseClient";
+import { isType, transferUser } from "./users";
 
 export async function getAllHosts(select: string = "*") {
   const { data, error } = await supabase.from("hosts").select(select);
@@ -85,6 +86,16 @@ export async function updateHost(host_id: number, hostData: any) {
     .update(hostData)
     .eq("host_id", host_id);
   if (error) throw error;
+}
+
+export async function userJoinAsHostAdmin(user_id: string, host_id: number) {
+  const isAdmin = await isType("admin", user_id);
+  if (!isAdmin) {
+    const isCoach = await isType("coach", user_id);
+    await transferUser(user_id, isCoach ? "coach" : "student", "admin");
+  }
+
+  await addAdminToHost(user_id, host_id);
 }
 
 export async function addAdminToHost(admin_id: string, host_id: number) {
