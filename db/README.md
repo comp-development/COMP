@@ -40,7 +40,13 @@ See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getti
 
 For eventbrite seeding, you need to create an event to which the
 `EVENTBRITE_TOKEN` in the root `.env` has access. On the publish page, choose
-"Is your event public or private?" to be "private."
+"Is your event public or private?" to be "private." 
+If you choose the event to be online, there are less steps to create the event.
+
+Under `Add tickets`, rename the general admission to
+`Coach Order (only purchase if you're a coach)` and add a ticket named
+`Student Order (only purchase if you're a student)` with a minimum and maximum
+quantity of `1`.
 
 Ensure your API key private token is in the root `.env`.
 
