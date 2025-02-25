@@ -12,6 +12,8 @@ export async function createAccount(email: string, password: string) {
     email: email,
     password: password,
   });
+  console.log("DATA", data);
+  console.log("ERROR", error)
   if (error) throw error;
   return data.user;
 }

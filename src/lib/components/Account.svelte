@@ -51,6 +51,8 @@
             newResponses.password,
           );
 
+          console.log("USER", user)
+
           if (selectedOption === "student") {
             await addStudent(user.id, newResponses);
           } else {
@@ -60,6 +62,7 @@
           toast.success(
             "Successfully signed up, check your email to confirm your account. Make sure to check your junk/spam folders as well.",
           );
+          logInState = "LOGIN";
         } catch (error) {
           throw error;
         }
@@ -67,6 +70,9 @@
         throw new Error("Passwords do not match");
       }
     } catch (error) {
+      if (error.code === "23505" || error.code === "23503"){
+        error.message = "An account with this email already exists";
+      }
       handleError(error);
     }
   };
