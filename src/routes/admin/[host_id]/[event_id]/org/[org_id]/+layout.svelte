@@ -14,7 +14,7 @@
     try {
       const organization = await ifOrgEvent(org_id, event_id);
 
-      if (organization.length == 0) {
+      if (!organization) {
         error = "This event does not exist under this host organization.";
       }
 
