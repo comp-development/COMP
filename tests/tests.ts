@@ -2,13 +2,16 @@ import type { AsyncReturnType } from "$lib/supabaseClient";
 import type { Browser, BrowserContext, Page } from "puppeteer";
 import {
   adminSupabase,
+  assert_b,
   assert_eq,
   sleep,
   unwrap,
   unwrap_data,
   unwrap_error,
+  wait_for_stdin,
 } from "./assert";
-import { assert } from "console";
+import readline, { createInterface } from "readline";
+import * as assert from "assert";
 
 export const BASE_URL: string = "https://localhost:5173";
 
@@ -254,6 +257,11 @@ export async function student_register_eventbrite(browser: Browser) {
       break;
     }
     try {
+      // Hit the button to get one student order.
+      await eventbrite_page
+        .locator("::-p-text(Student Order (only purchase if you're a student)) + div button[aria-label=Increase]")
+        .setTimeout(100)
+        .click();
       await eventbrite_page
         .locator("::-p-text(Register)")
         .setTimeout(100)
@@ -285,19 +293,25 @@ export async function student_register_eventbrite(browser: Browser) {
 
   // For some reason, clicking event immediately and up two seconds later doesn't work.
   // But clicking, some three or so seconds later does.
-  await eventbrite_page.locator("::-p-text(Complete order),::-p-text(Complete Order)").click();
-  let el = await eventbrite_page.$("::-p-text(Complete order),::-p-text(Complete Order)");
+  await eventbrite_page
+    .locator("::-p-text(Complete order),::-p-text(Complete Order)")
+    .click();
+  let el = await eventbrite_page.$(
+    "::-p-text(Complete order),::-p-text(Complete Order)",
+  );
   while (el) {
     await el.click();
     await sleep(1_000);
-    el = await eventbrite_page.$("::-p-text(Complete order),::-p-text(Complete Order)");
+    el = await eventbrite_page.$(
+      "::-p-text(Complete order),::-p-text(Complete Order)",
+    );
   }
 
   await page.locator("#team-name").fill("Test Student's Team");
   await page.locator("button::-p-text(Create Team)").click();
 
   // Check that the page now include's the team name.
-  assert(await page.$("::-p-text(Test Student's Team)"), "should be on team");
+  assert_b(await page.$("::-p-text(Test Student's Team)") != null, "should be on team");
 
   await page.close();
   console.log("student eventbrite create team passed");
