@@ -166,7 +166,7 @@
   >
     <div>
       <!-- Add logo above the header -->
-      <img src="./COMP_Black.png" alt="Logo" style="width: 100%; max-width: 100%; margin: 0 auto; display: block;" /><br>
+      <img src="https://comp.mt/COMP_Black.png" alt="Logo" style="width: 100%; max-width: 100%; margin: 0 auto; display: block;" /><br>
       <hr style="border: none; border-top: 1px solid black;" /><br>
 
       <!-- Change header based on login state -->
