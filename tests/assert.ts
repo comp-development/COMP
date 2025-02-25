@@ -115,7 +115,7 @@ export async function wait_for_stdin(
 ): Promise<string> {
   const int = createInterface({ output: process.stdout, input: process.stdin });
   const line = await new Promise((r) =>
-    int.question(`Paused at ${get_line(1)}, ${prompt}: `, (l) => r(l)),
+    int.question(`Paused at ${get_line(2)}, ${prompt}: `, (l) => r(l)),
   );
   return line as string;
 }

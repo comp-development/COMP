@@ -184,7 +184,7 @@ export async function student_register_stripe(browser: Browser, ids: TestIds) {
   await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
 
-  await page.locator("#team-name").fill("New Team");
+  await page.locator("#team_name").fill("New Team");
   await page.locator("button").click();
 
   await page.close();
@@ -307,8 +307,8 @@ export async function student_register_eventbrite(browser: Browser) {
     );
   }
 
-  await page.locator("#team-name").fill("Test Student's Team");
-  await page.locator("button::-p-text(Create Team)").click();
+  await page.locator("#team_name").fill("Test Student's Team");
+  await page.locator("button").click();
 
   // Check that the page now include's the team name.
   assert_b(await page.$("::-p-text(Test Student's Team)") != null, "should be on team");

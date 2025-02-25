@@ -352,7 +352,6 @@
               <Button
                 on:click={()=> {
                   if (event_details?.eventbrite_event_id && !transaction_stored) {
-                  console.log("hi")
                     openEventbriteWidget(
                       true,
                       null,
