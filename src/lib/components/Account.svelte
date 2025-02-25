@@ -10,6 +10,7 @@
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { Tabs, TabItem, Alert } from "flowbite-svelte";
+  import { InfoCircleSolid } from "flowbite-svelte-icons";
 
   // Instead of using an enum for login state, we'll just use string literals.
   // Define the allowed login states.
@@ -80,7 +81,6 @@
           redirectTo: "https://comp.mt/reset-password",
         },
       );
-      console.log("SQUAWK0", data, error);
       toast.success("Reset password link sent. Please check your email. Don't forget to check junk/spam folders as well.");
     } catch (error) {
       handleError(error);
@@ -165,8 +165,12 @@
     style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px;"
   >
     <div>
+      <!-- Add logo above the header -->
+      <img src="./COMP_Black.png" alt="Logo" style="width: 100%; max-width: 100%; margin: 0 auto; display: block;" /><br>
+      <hr style="border: none; border-top: 1px solid black;" /><br>
+
       <!-- Change header based on login state -->
-      <h1 id="headerText">
+      <h3 id="headerText">
         {#if logInState === "LOGIN"}
           Log In
         {:else if logInState === "SIGNUP"}
@@ -174,7 +178,7 @@
         {:else if logInState === "RESET"}
           Reset Password
         {/if}
-      </h1>
+      </h3>
 
       <!-- Display the appropriate form based on state -->
       {#if logInState === "LOGIN"}
@@ -194,6 +198,10 @@
            If you sign up with one of these and don't receive a confirmation email, try signing up with another service.
         </Alert>
         <br>-->
+        <Alert>
+          <InfoCircleSolid slot="icon" class="w-5 h-5" />
+          If you are a coach of a school team or organization, please sign up as a <b class="font-bold">coach</b>. If you are a student that needs to join a team, please sign up as a <b class="font-bold">student</b>.
+        </Alert><br>
         <div class="tabs">
           <Tabs tabStyle="pill">
             <TabItem
@@ -276,7 +284,7 @@
 
 <style>
   #headerText {
-    font-size: 50px;
+    font-size: 40px;
   }
 
   :global(.no-padding .registrationForm),
