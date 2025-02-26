@@ -170,7 +170,7 @@
             pill
             outline
             color="primary"
-            onclick={() => {
+            on:click={() => {
               selectedConversion = "student";
               handleTransfer();
             }}
@@ -183,7 +183,7 @@
             pill
             outline
             color="primary"
-            onclick={() => {
+            on:click={() => {
               selectedConversion = "coach";
               handleTransfer();
             }}
@@ -196,7 +196,7 @@
             pill
             outline
             color="primary"
-            onclick={() => {
+            on:click={() => {
               selectedConversion = "admin";
               handleTransfer();
             }}

@@ -24,7 +24,7 @@
 <div
   class="teamMember"
   draggable="true"
-  ondragstart={(e) => onDragStart(e, team_member)}
+  on:dragstart={(e) => onDragStart(e, team_member)}
 >
   <div class="ml-2">
     <div class="flex">
@@ -48,14 +48,14 @@
       <button
         class="hover:bg-blue-100 rounded-lg"
         aria-label="Edit"
-        onclick={openEditModal}
+        on:click={openEditModal}
       >
         <PenSolid class="w-5 h-5" />
       </button>
       <button
         class="hover:bg-red-100 rounded-lg"
         aria-label="Delete"
-        onclick={(event) => onDeleteStudent(event, team_member)}
+        on:click={(event) => onDeleteStudent(event, team_member)}
       >
         <TrashBinSolid class="w-5 h-5" />
       </button>
