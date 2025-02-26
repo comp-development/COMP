@@ -18,7 +18,7 @@
 
 <style>
   .cls-1 {
-    fill: var(--primary);
+    fill: var(--primary-light);
   }
 
   .cls-1, .cls-2, .cls-3 {
