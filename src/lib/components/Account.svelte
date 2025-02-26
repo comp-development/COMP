@@ -169,14 +169,14 @@
 
 <div class="center-vertical">
   <div
-    style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px;"
+    style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px; margin: 50px"
   >
     <div>
       <div style="display: flex; justify-content: center; border-radius: 5px; padding: 5px">
         <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
       </div>
       <br>
-      <hr style="border: none; border-top: 1px solid black;" /><br>
+      <hr style="border: none; border-top: 1px solid black;" /><br><br>
 
       <!-- Change header based on login state -->
       <h3 id="headerText">
