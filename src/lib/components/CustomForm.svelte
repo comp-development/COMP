@@ -30,13 +30,24 @@
     handleSubmit,
   } = $props();
 
-  let initialResponses = $state({});
+  let initialResponses: any = $state({});
   let show = $state(false);
-  let telephoneValues = $state({});
+  let telephoneValues: any = $state({});
 
   $effect(() => {
     for (var field of [...fields, ...custom_fields]) {
       const key = field.event_custom_field_id ?? field.name;
+      if (field.custom_field_type == "phone") {
+        telephoneValues[key] = format_phone(field?.value)[1];
+      } else if (field.custom_field_type == "date") {
+        if (!field.value) {
+          continue;
+        }
+        const date = new Date(field?.value);
+        initialResponses[key] = date;
+        newResponses[key] = date;
+        continue;
+      }
       initialResponses[key] = field?.value;
       newResponses[key] = field?.value;
     }
@@ -46,6 +57,28 @@
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     tel: /^\d{10}$/,
   };
+
+  function format_phone(input: string): [string | null, string | null] {
+    if (!input) {
+      return [null, null];
+    }
+    let rawValue = input.replace(/\D/g, "").slice(0, 10);
+    let formattedValue = rawValue;
+
+    const areaCode = formattedValue.substring(0, 3);
+    const prefix = formattedValue.substring(3, 6);
+    const suffix = formattedValue.substring(6, 10);
+
+    if (formattedValue.length > 6) {
+      formattedValue = `(${areaCode}) ${prefix} - ${suffix}`;
+    } else if (formattedValue.length > 3) {
+      formattedValue = `(${areaCode}) ${prefix}`;
+    } else if (formattedValue.length > 0) {
+      formattedValue = `(${areaCode}`;
+    }
+    return [rawValue, formattedValue];
+    
+  }
 
   function validateInput(key, value, regex) {
     if (regex && value) {
@@ -187,21 +220,8 @@
               placeholder={field.placeholder ?? "123-456-7890"}
               bind:value={telephoneValues[key]}
               on:input={(e) => {
-                let rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
-                let formattedValue = rawValue;
 
-                const areaCode = formattedValue.substring(0, 3);
-                const prefix = formattedValue.substring(3, 6);
-                const suffix = formattedValue.substring(6, 10);
-
-                if (formattedValue.length > 6) {
-                  formattedValue = `(${areaCode}) ${prefix} - ${suffix}`;
-                } else if (formattedValue.length > 3) {
-                  formattedValue = `(${areaCode}) ${prefix}`;
-                } else if (formattedValue.length > 0) {
-                  formattedValue = `(${areaCode}`;
-                }
-
+                const [rawValue, formattedValue] = format_phone((e.target as any).value);
                 newResponses[key] = rawValue;
                 telephoneValues[key] = formattedValue;
               }}
