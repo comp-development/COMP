@@ -15,8 +15,8 @@
     </h3>
     <br />
     <div class="flex justify-center gap-4">
-      <Button color="alternative" onclick={onCancel}>Cancel</Button>
-      <Button {color} onclick={onConfirm}>Confirm</Button>
+      <Button color="alternative" on:click={onCancel}>Cancel</Button>
+      <Button {color} on:click={onConfirm}>Confirm</Button>
     </div>
   </div>
 </Modal>
