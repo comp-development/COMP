@@ -40,7 +40,6 @@
       initialResponses[key] = field?.value;
       newResponses[key] = field?.value;
     }
-    console.log(fields, custom_fields);
   });
   const typePatterns = {
     date: /^\d{4}-\d{2}-\d{2}$/,
@@ -157,6 +156,7 @@
             />
           {:else if field.custom_field_type === "date"}
             <Datepicker
+              inputClass="w-full min-w-[300px]"
               bind:value={newResponses[key]}
               required={field.required}
               placeholder={field.placeholder}
@@ -251,7 +251,7 @@
                 <Checkbox
                   disabled={!field.editable && field?.value !== null}
                   checked={(newResponses[key] || "")
-                    .split(",")
+                    .split(", ")
                     .includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
@@ -313,5 +313,24 @@
   /* Only apply the border when showBorder is true */
   form.bordered {
     border: 3px solid var(--primary-tint);
+  }
+
+  :global(#datepicker-dropdown) {
+    min-width: 320px !important; /* Adjust as needed */
+    max-width: 400px !important;
+  }
+
+  /* Expand the internal calendar layout */
+  :global(#datepicker-dropdown .grid) {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(40px, 1fr)) !important;
+    gap: 4px !important; /* Adds spacing between days */
+  }
+
+  /* Ensure individual date buttons fit properly */
+  :global(#datepicker-dropdown button[role="gridcell"]) {
+    width: 100% !important;
+    height: 40px !important; /* Adjust height */
+    text-align: center;
   }
 </style>

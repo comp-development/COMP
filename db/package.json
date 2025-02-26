@@ -19,6 +19,7 @@
   },
   "postinstall": "patch-package",
   "dependencies": {
+    "dotenv": "^16.4.7",
     "patch-package": "^8.0.0"
   }
 }
