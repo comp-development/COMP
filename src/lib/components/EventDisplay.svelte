@@ -191,7 +191,7 @@
 
       {#if hasEdits}
         <div class="flex justify-end mt-4">
-          <Button pill color="primary" on:click={handleSave}>Save Edits</Button>
+          <Button pill color="primary" onclick={handleSave}>Save Edits</Button>
         </div>
       {/if}
     </div>

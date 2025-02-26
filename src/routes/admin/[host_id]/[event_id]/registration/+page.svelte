@@ -109,7 +109,7 @@
   <TabItem
     open={selectedTab === "student"}
     title="Student"
-    on:click={() => (selectedTab = "student")}
+    onclick={() => (selectedTab = "student")}
   >
     <div class="grid">
       <div>
@@ -142,7 +142,7 @@
   <TabItem
     open={selectedTab === "organization"}
     title="Organization"
-    on:click={() => (selectedTab = "organization")}
+    onclick={() => (selectedTab = "organization")}
   >
     <div class="grid grid-cols-2 gap-4">
       <div>
@@ -171,7 +171,7 @@
   <TabItem
     open={selectedTab === "team"}
     title="Team"
-    on:click={() => (selectedTab = "team")}
+    onclick={() => (selectedTab = "team")}
   >
     <div class="grid grid-cols-2 gap-4">
       <div>

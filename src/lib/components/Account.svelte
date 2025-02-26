@@ -211,7 +211,7 @@
         <div class="tabs">
           <Tabs tabStyle="pill">
             <TabItem
-              on:click={() => (selectedOption = "student")}
+              onclick={() => (selectedOption = "student")}
               open={selectedOption === "student"}
               title="Student"
             >
@@ -226,7 +226,7 @@
               </div>
             </TabItem>
             <TabItem
-              on:click={() => (selectedOption = "coach")}
+              onclick={() => (selectedOption = "coach")}
               open={selectedOption === "coach"}
               title="Coach"
             >
@@ -260,7 +260,7 @@
           size="lg"
           class="link"
           id="leftButton"
-          on:click={() => {
+          onclick={() => {
             // Toggle between LOGIN and SIGNUP (if in RESET, switch back to LOGIN)
             if (logInState === "LOGIN") {
               logInState = "SIGNUP";
@@ -273,7 +273,7 @@
           size="lg"
           class="link"
           id="rightButton"
-          on:click={() => {
+          onclick={() => {
             if (logInState === "RESET") {
               logInState = "SIGNUP";
             } else {
