@@ -37,6 +37,27 @@ SUPABASE_SERVICE_KEY=service_role_key
 
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
 
+
+For eventbrite seeding, you need to create an event to which the
+`EVENTBRITE_TOKEN` in the root `.env` has access. On the publish page, choose
+"Is your event public or private?" to be "private." 
+If you choose the event to be online, there are less steps to create the event.
+
+Under `Add tickets`, rename the general admission to
+`Coach Order (only purchase if you're a coach)` and add a ticket named
+`Student Order (only purchase if you're a student)` with a minimum and maximum
+quantity of `1`.
+
+Ensure your API key private token is in the root `.env`.
+
+Add to the `db/.env` file the following. Note that if you do not fill this
+entry out, then seeding will succeed with no events using the eventbrite
+payment system. The tests for eventbrite payments, however, will not work.
+```
+EVENTBRITE_SAMPLE_EVENT_ID=event_id
+```
+
+
 ## Dev+Update Workflow:
 
 1. start supabase. run `supabase db reset` to get remote changes applied locally.

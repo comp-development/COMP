@@ -117,3 +117,32 @@ You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
 -->
+
+## Secret Keys
+
+While the self-hosted, local database functionality should cover most of COMP's
+development, certain features require third party integrations and thus additional
+`.env` entries. The services below allow creating keys for free. 
+
+### Stripe
+
+Create your own Stripe account and get the API key for a sandbox.
+Store in `.env` as `STRIPE_SECRET_API_KEY=fill_in_your_key_here`.
+
+### Eventbrite
+
+Create your own Eventbrite account and get an API key for your account.
+(get the API key from `account settings > developer links > api keys`.)
+Store the private token in `.env` as `EVENTBRITE_TOKEN=fill_in_here`.
+
+### Google Maps
+
+We have an integration with google's geocoding API to visualize addresses on a map.
+See the [geocoding API docs](https://developers.google.com/maps/documentation/geocoding/start).
+Google has a pretty generous free tier for queries (10,000 billable requests/month).
+
+Create a `credentials > API key` and enable the geocoding API on it. Add the key to
+the `.env` file.
+```
+GOOGLE_MAPS_GEOCODING_KEY=fill_in_here
+```
