@@ -207,7 +207,7 @@
            If you sign up with one of these and don't receive a confirmation email, try signing up with another service.
         </Alert>
         <br>-->
-        <Alert>
+        <Alert color="light">
           <InfoCircleSolid slot="icon" class="w-5 h-5" />
           If you are a coach of a school team or organization, please sign up as a <b class="font-bold">coach</b>. If you are a student that needs to join a team, please sign up as a <b class="font-bold">student</b>.
         </Alert><br>
