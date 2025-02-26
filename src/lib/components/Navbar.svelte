@@ -29,7 +29,6 @@
   } from "$lib/supabase";
   import { user } from "$lib/sessionStore";
   import { handleError } from "$lib/handleError";
-  import FavIcon from "$lib/components/FavIcon.svelte";
   import Logo from "$lib/components/Logo.svelte";
 
   let hostId: number | null = null;

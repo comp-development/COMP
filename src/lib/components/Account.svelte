@@ -11,6 +11,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { Tabs, TabItem, Alert } from "flowbite-svelte";
   import { InfoCircleSolid } from "flowbite-svelte-icons";
+  import Logo from "$lib/components/Logo.svelte";
 
   // Instead of using an enum for login state, we'll just use string literals.
   // Define the allowed login states.
@@ -171,8 +172,10 @@
     style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px;"
   >
     <div>
-      <!-- Add logo above the header -->
-      <img src="https://comp.mt/COMP_Black.png" alt="Logo" style="width: 100%; max-width: 100%; margin: 0 auto; display: block;" /><br>
+      <div style="display: flex; justify-content: center; border-radius: 5px; padding: 5px">
+        <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
+      </div>
+      <br>
       <hr style="border: none; border-top: 1px solid black;" /><br>
 
       <!-- Change header based on login state -->
@@ -328,5 +331,10 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+  }
+
+  .logo {
+    width: 100%;
+    max-width: 200px; /* Adjust as needed */
   }
 </style>
