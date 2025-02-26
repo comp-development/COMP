@@ -271,7 +271,7 @@
       <div class="registrationForm">
         <Tabs tabStyle="pill">
           <TabItem
-            onclick={() => (selectedOption = "join_org")}
+            on:click={() => (selectedOption = "join_org")}
             open={selectedOption === "join_org"}
             title="Join Organization"
           >
@@ -301,7 +301,7 @@
             />
           </TabItem>
           <TabItem
-            onclick={() => (selectedOption = "join_team")}
+            on:click={() => (selectedOption = "join_team")}
             open={selectedOption === "join_team"}
             title="Join Team"
           >
@@ -345,7 +345,7 @@
             <div id="eventbrite-widget-container"></div>
           </TabItem>
           <TabItem
-            onclick={() => (selectedOption = "create_team")}
+            on:click={() => (selectedOption = "create_team")}
             open={selectedOption === "create_team"}
             title="Create Independent Team"
           >

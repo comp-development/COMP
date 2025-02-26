@@ -207,7 +207,7 @@
 <div class="space-y-2">
   <h2>Custom Field Builder</h2>
   {#if JSON.stringify(custom_fields) !== originalCustomFields}
-    <Button pill onclick={handleSubmit}>Submit</Button>
+    <Button pill on:click={handleSubmit}>Submit</Button>
   {/if}
 
   <div class="flex gap-2 rounded-lg">
@@ -218,7 +218,7 @@
           size="sm"
           color="light"
           class="p-2.5"
-          onclick={onClick || (() => addField(type))}
+          on:click={onClick || (() => addField(type))}
         >
           <svelte:component this={Icon} class="w-4 h-4" />
         </Button>
@@ -240,9 +240,9 @@
       <div
         class="p-4 border rounded-lg relative editable-field"
         draggable="true"
-        ondragstart={(e) => handleDragStart(e, index)}
-        ondragend={handleDragEnd}
-        ondragover={(e) => handleDragOver(e, index)}
+        on:dragstart={(e) => handleDragStart(e, index)}
+        on:dragend={handleDragEnd}
+        on:dragover={(e) => handleDragOver(e, index)}
       >
         <Button
           class="absolute top-2 right-2"

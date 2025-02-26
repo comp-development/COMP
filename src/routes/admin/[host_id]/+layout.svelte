@@ -18,10 +18,6 @@
         error = "This host organization doesn't exist.";
       }
 
-      Object.entries(host[0].styles || {}).forEach(([key, value]) => {
-        document.documentElement.style.setProperty(`--${key}`, value);
-      });
-
       loading = false;
     } catch (e) {
       handleError(e);
@@ -41,10 +37,5 @@
   :global(body) {
     margin: 0;
     padding: 0;
-  }
-
-  :global(.cls-1),
-  :global(.cls-2) {
-    fill: var(--primary) !important;
   }
 </style>

@@ -51,7 +51,7 @@
     class={classs}
     {disabled}
     size="small"
-    onclick={action}
+    on:click={action}
     type="submit"
     style="width: {bwidth}; border-radius: 2.5em; margin: 0; padding: 0;"
   >

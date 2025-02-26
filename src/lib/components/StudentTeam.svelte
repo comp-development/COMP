@@ -94,9 +94,9 @@
 
 <div
   class="team"
-  ondragover={handleDragOver}
-  ondragleave={handleDragLeave}
-  ondrop={(e) => onDrop(e, team)}
+  on:dragover={handleDragOver}
+  on:dragleave={handleDragLeave}
+  on:drop={(e) => onDrop(e, team)}
 >
   <div class="flex" style="justify-content: space-between">
     <h3>{team.team_name}</h3>
@@ -105,21 +105,21 @@
         <button
           class="hover:bg-green-100 rounded-lg"
           aria-label="Add Student"
-          onclick={() => openStudentModal(team.team_id)}
+          on:click={() => openStudentModal(team.team_id)}
         >
           <UserAddSolid class="w-5 h-5" />
         </button>
         <button
           class="hover:bg-blue-100 rounded-lg"
           aria-label="Edit"
-          onclick={() => openEditModal(team)}
+          on:click={() => openEditModal(team)}
         >
           <PenSolid class="w-5 h-5" />
         </button>
         <button
           class="hover:bg-red-100 rounded-lg"
           aria-label="Delete"
-          onclick={(e) => {
+          on:click={(e) => {
             e.preventDefault();
             showDeleteTeamConfirmation = true;
             deleteTeamId = team.team_id;
