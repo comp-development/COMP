@@ -16,11 +16,11 @@
 </script>
 
 <p class="flex" style="justify-content: left;">
-  Join Code: <span
+  <span
     onclick={() => {
       copyText(text);
     }}
-    class="flex"
+    class="flex hover:scale-110 transition-transform duration-200"
     style="justify-content: left; margin-left: 2px; cursor: pointer;"
     ><FileCopyOutline class="w-4 h-4" />{text}</span
   >

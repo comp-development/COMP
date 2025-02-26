@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Badge, Modal } from "flowbite-svelte";
+  import { Badge} from "flowbite-svelte";
+  import Modal from "./Modal.svelte";
   import { PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
   import StudentForm from "./StudentForm.svelte";
 
@@ -23,7 +24,8 @@
 
 <div
   class="teamMember"
-  draggable="true"
+  style="cursor: {editableFeatures ? 'move' : 'default'};"
+  draggable={editableFeatures}
   ondragstart={(e) => onDragStart(e, team_member)}
 >
   <div class="ml-2">
@@ -64,15 +66,15 @@
 </div>
 
 <div class="modalExterior secondPlaneModal">
-  <Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-      Edit Student
-    </h3>
+  <Modal 
+    bind:open={isEditModalOpen}
+  >
     <StudentForm
-      title=""
+      title="Edit Student"
       student_event={team_member}
       user={team_member.person}
       event_id={team_member.event_id}
+      editing
     />
   </Modal>
 </div>
@@ -87,7 +89,6 @@
     margin-top: 10px;
     position: relative;
     border-radius: 15px;
-    cursor: move;
     transition: transform 0.2s ease;
   }
 
@@ -110,4 +111,6 @@
     pointer-events: all;
     z-index: 99999999;
   }
+
 </style>
+

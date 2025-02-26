@@ -203,6 +203,26 @@
         <InfoToolTip text="To edit, click on the text that you want to change and update the input field." />
       </div>
     {/if}
+
+    {#if (event && event.summary) || host.summary || isEditing}
+      <div
+        class="{editable ? 'editableField' : ''}"
+        onclick={() => editable && (editingField = "summary")}
+      >
+        {#if editingField === "summary"}
+          <Textarea
+            bind:value={newResponses.summary}
+            on:input={handleEdit}
+            onmouseleave={() => (editingField = null)}
+            rows={5}
+          />
+        {:else}
+          <MarkdownRender
+            source={newResponses.summary != null ? newResponses.summary : ""}
+          />
+        {/if}
+      </div>
+    {/if}
     {#if event}
       <div class="flex" style="min-height: 45px;">
         <div class="flex" style="justify-content: left;">
@@ -227,49 +247,32 @@
               {/if}
             </p>
           </div>
-          <div style="width: 350px;">
-            <p
-              class="flex {editable ? 'editableField' : ''}"
-              onclick={() => editable && (editingField = "ticket_price_cents")}
-            >
-              <span
-                style="font-weight: 600; min-width: fit-content; margin-right: 5px;"
-                >Cost per Student:</span
+          {#if !event.eventbrite_event_id}
+            <div style="width: 350px;">
+              <p
+                class="flex {editable ? 'editableField' : ''}"
+                onclick={() => editable && (editingField = "ticket_price_cents")}
               >
-              {#if editingField === "ticket_price_cents"}
-                <Input
-                  type="number"
-                  bind:value={newResponses.ticket_price_cents}
-                  on:input={handleEdit}
-                  onmouseleave={() => (editingField = null)}
-                />
-              {:else}
-                {newResponses.ticket_price_cents || 0} cents
-              {/if}
-            </p>
-          </div>
+                <span
+                  style="font-weight: 600; min-width: fit-content; margin-right: 5px;"
+                  >Cost per Student:</span
+                >
+                {#if editingField === "ticket_price_cents"}
+                  <Input
+                    type="number"
+                    bind:value={newResponses.ticket_price_cents}
+                    on:input={handleEdit}
+                    onmouseleave={() => (editingField = null)}
+                  />
+                {:else}
+                  {(newResponses.ticket_price_cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' }) || '$0.00'}
+                {/if}
+              </p>
+            </div>
+          {/if}
         </div>
       </div>
       <br />
-    {/if}
-    {#if (event && event.summary) || host.summary}
-      <div
-        class="{editable ? 'editableField' : ''}"
-        onclick={() => editable && (editingField = "summary")}
-      >
-        {#if editingField === "summary"}
-          <Textarea
-            bind:value={newResponses.summary}
-            on:input={handleEdit}
-            onmouseleave={() => (editingField = null)}
-            rows={5}
-          />
-        {:else}
-          <MarkdownRender
-            source={newResponses.summary != null ? newResponses.summary : ""}
-          />
-        {/if}
-      </div>
     {/if}
   </div>
 </div>

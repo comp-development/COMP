@@ -31,6 +31,7 @@
     title = null,
     org_id = null,
     student_event = $bindable(null),
+    editing=false
   } = $props();
 
   let token: string | null = null;
@@ -81,7 +82,7 @@
 </script>
 
 <CustomForm
-  title="Registration Form"
+  title={title ?? (editing ? "Edit Organization" : "Org Registration")}
   fields={[
     {
       event_custom_field_id: "org_name",
@@ -112,4 +113,5 @@
   bind:newResponses
   bind:validationErrors
   {handleSubmit}
+  buttonText={editing ? "Save" : "Submit"}
 />

@@ -11,7 +11,7 @@
 <Modal bind:open={isShown} size="sm" autoclose={false}>
   <div class="text-center">
     <h3 class="text-lg font-medium text-gray-900 dark:text-white">
-      Do you want to confirm "{actionName}"?
+      Are you sure you want to {actionName}?
     </h3>
     <br />
     <div class="flex justify-center gap-4">

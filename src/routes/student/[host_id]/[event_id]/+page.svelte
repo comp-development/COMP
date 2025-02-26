@@ -223,16 +223,14 @@
         {#if org_event}
           <h2>{org_event.org.name}</h2>
           <br />
-        {:else}
-          <CopyText text={team?.join_code} />
         {/if}
 
         {#if !team}
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
             <span class="font-medium">Not assigned to a team!</span>
-            You cannot take tests until you are assigned to a team - reach out to
-            your coach if you believe this is in error.
+            Your regsitration is not complete until you are assigned to a team - reach out to
+            your coach to assign you to a team.
           </Alert>
         {:else}
           <div class="flex">
@@ -242,30 +240,32 @@
             >
           </div>
           <br />
+          <div class="teamContainer">
+            <StudentTeam
+              {event_id}
+              org_id={team?.org_id}
+              team={{
+                ...team,
+                teamMembers: team?.student_event?.map((member) => ({
+                  ...member,
+                  person: member.student,
+                })),
+              }}
+              showTeamCode={org_event ? false : true}
+              editableFeatures={false}
+              onDrop={() => {}}
+              onDragStart={() => {}}
+              onDeleteStudent={() => {}}
+              openEditModal={() => {}}
+              handleDragOver={() => {}}
+              handleDragLeave={() => {}}
+              maxTeamSize={event_details?.max_team_size}
+              handleDeleteTeam={() => {}}
+            />
+          </div>
         {/if}
 
-        <div class="teamContainer">
-          <StudentTeam
-            {event_id}
-            org_id={team?.org_id}
-            team={{
-              ...team,
-              teamMembers: team?.student_event?.map((member) => ({
-                ...member,
-                person: member.student,
-              })),
-            }}
-            editableFeatures={false}
-            onDrop={() => {}}
-            onDragStart={() => {}}
-            onDeleteStudent={() => {}}
-            openEditModal={() => {}}
-            handleDragOver={() => {}}
-            handleDragLeave={() => {}}
-            maxTeamSize={event_details?.max_team_size}
-            handleDeleteTeam={() => {}}
-          />
-        </div>
+        
       </div>
     {:else}
       <div class="registrationForm">
@@ -303,12 +303,11 @@
           <TabItem
             onclick={() => (selectedOption = "join_team")}
             open={selectedOption === "join_team"}
-            title="Join Team"
+            title="Join Independent Team"
           >
-            <h2>Join Team</h2>
+            <h2>Join Independent Team</h2>
             <p>
-              Get the code from your coach if you're a part of an org, or an
-              already registered team member for independent teams.
+              Get the code from an already registered team member.
             </p>
             <CustomForm
               fields={[
@@ -349,6 +348,10 @@
             open={selectedOption === "create_team"}
             title="Create Independent Team"
           >
+            <h2>Create Independent Team</h2>
+            <p>
+              If you're an individual, or you want to create a team independent of an org, then create an independent team.
+            </p><br>
             <div class="flex">
               <Button
                 on:click={()=> {
@@ -388,10 +391,10 @@
   {/if}
   <hr />
   <StudentForm
-    title={student_event ? "Update Registration" : "Register"}
     bind:student_event
     user={{ ...student, ...$user }}
     {event_id}
+    editing={student_event ? true : false}
   />
 {/if}
 
