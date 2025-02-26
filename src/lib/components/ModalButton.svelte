@@ -23,7 +23,7 @@
     kind="danger-tertiary"
     iconDescription={runHeader}
     icon={TrashCan}
-    on:click={(e) => {
+    onclick={(e) => {
       if (!open) {
         e.preventDefault();
         if (stopPropagation) e.stopPropagation();
@@ -37,7 +37,7 @@
     class="button"
     size="small"
     type="submit"
-    on:click={(e) => {
+    onclick={(e) => {
       if (!open) {
         e.preventDefault();
         if (stopPropagation) e.stopPropagation();
@@ -60,7 +60,7 @@
   modalHeading="{runHeader}?"
   primaryButtonText="Confirm"
   secondaryButtonText="Cancel"
-  on:click:button--secondary={(e) => {
+  onclick:button--secondary={(e) => {
     e.preventDefault();
     open = false;
   }}

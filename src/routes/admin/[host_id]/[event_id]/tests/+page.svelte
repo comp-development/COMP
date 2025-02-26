@@ -323,7 +323,7 @@
       primaryButtonText="Save"
       secondaryButtonText="Cancel"
       size="lg"
-      on:click:button--secondary={() => (open = false)}
+      onclick:button--secondary={() => (open = false)}
       on:submit={async () => {
         open = false;
         await handleSubmit();

@@ -29,6 +29,7 @@
   } from "$lib/supabase";
   import { user } from "$lib/sessionStore";
   import { handleError } from "$lib/handleError";
+    import FavIcon from "$lib/components/FavIcon.svelte";
 
   let hostId: number | null = null;
   let eventId: number | null = null;
@@ -58,7 +59,7 @@
   const adminHostPages = [
     { name: "Home", route: "" },
     { name: "Users", route: "users" },
-    { name: "Custom Fields", route: "custom_fields" }
+    { name: "Custom Fields", route: "custom_fields" },
   ];
 
   async function initializeNavbar() {
@@ -123,7 +124,9 @@
 <div style="background-color: var(--primary-dark);">
   <Navbar rounded color="transparent">
     <NavBrand href="/">
-      <img src="/favicon.png" class="me-3 h-10 sm:h-9 logo" alt="COMP Logo" />
+      <div class="me-3 p-1 logo">
+        <FavIcon />
+      </div>
     </NavBrand>
     <div class="md:order-2">
       <Button size="sm" onclick={handleSignout} pill color="primary"
@@ -144,7 +147,7 @@
           {#each organizations as org}
             <DropdownItem
               class={orgId === org.org_id ? "active" : ""}
-              on:click={() => {
+              onclick={() => {
                 window.location.href = `/coach/${org.org_id}`;
               }}
             >
@@ -167,7 +170,7 @@
             {#each hosts as host}
               <DropdownItem
                 class={hostId === host.host_id ? "active" : ""}
-                on:click={() => {
+                onclick={() => {
                   window.location.href = `/coach/${orgId}/${host.host_id}`;
                 }}
               >
@@ -190,7 +193,7 @@
               {#each events as event}
                 <DropdownItem
                   class={eventId === event.event_id ? "active" : ""}
-                  on:click={() => {
+                  onclick={() => {
                     window.location.href = `/coach/${orgId}/${hostId}/${event.event_id}`;
                   }}
                 >
@@ -212,7 +215,7 @@
           {#each hosts as host}
             <DropdownItem
               class={hostId === host.host_id ? "active" : ""}
-              on:click={() => {
+              onclick={() => {
                 window.location.href = `/student/${host.host_id}`;
               }}
             >
@@ -235,7 +238,7 @@
             {#each events as event}
               <DropdownItem
                 class={eventId === event.event_id ? "active" : ""}
-                on:click={() => {
+                onclick={() => {
                   window.location.href = `/student/${hostId}/${event.event_id}`;
                 }}
               >
@@ -260,7 +263,7 @@
         <Dropdown class="w-44 z-20">
           {#each adminFeatures as feature}
             <DropdownItem
-              on:click={() => {
+              onclick={() => {
                 window.location.href = feature.href;
               }}
               class={$page.route.id?.includes(feature.href) ? "active" : ""}
@@ -281,7 +284,7 @@
           {#each hosts as host}
             <DropdownItem
               class={hostId === host.host_id ? "active" : ""}
-              on:click={() => {
+              onclick={() => {
                 window.location.href = `/admin/${host.host_id}`;
               }}
             >
@@ -304,7 +307,7 @@
             {#each events as event}
               <DropdownItem
                 class={eventId == event.event_id ? "active" : ""}
-                on:click={() => {
+                onclick={() => {
                   window.location.href = `/admin/${hostId}/${event.event_id}`;
                 }}
               >
@@ -317,7 +320,7 @@
               <NavLi
                 class="cursor-pointer navli {$page.route.id?.includes(
                   adminEventRoute.route,
-                ) && adminEventRoute.route != ""
+                ) && adminEventRoute.route != ''
                   ? 'active'
                   : ''}"
                 href="/admin/{hostId}/{eventId}/{adminEventRoute.route}"
@@ -329,7 +332,7 @@
               <NavLi
                 class="cursor-pointer navli {$page.route.id?.includes(
                   adminHostPage.route,
-                ) && adminHostPage.route != ""
+                ) && adminHostPage.route != ''
                   ? 'active'
                   : ''}"
                 href="/admin/{hostId}/{eventId}{adminHostPage.route}"
