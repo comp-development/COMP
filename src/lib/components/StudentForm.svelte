@@ -25,10 +25,11 @@
   import { handleError } from "$lib/handleError";
 
   let {
-    title = "Registration Form",
+    title = null,
     student_event = $bindable(null),
     user,
     event_id,
+    editing=false
   } = $props();
 
   let token: string | null = null;
@@ -94,7 +95,7 @@
 </script>
 
 <CustomForm
-  {title}
+  title={title ?? (editing ? "Edit Student" : "Student Registration")}
   fields={[
     {
       event_custom_field_id: "first_name",
@@ -138,4 +139,5 @@
   bind:newResponses
   bind:validationErrors
   {handleSubmit}
+  buttonText={editing ? "Save" : "Submit"}
 />

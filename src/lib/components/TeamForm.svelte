@@ -28,6 +28,7 @@
     title = null,
     org_id = null,
     afterSubmit = async () => {},
+    editing=false
   } = $props();
 
   let token: string | null = null;
@@ -93,7 +94,7 @@
 </script>
 
 <CustomForm
-  {title}
+  title={title ?? (editing ? "Edit Team" : "Create Team")}
   fields={[
     {
       event_custom_field_id: "team_name",
@@ -112,4 +113,5 @@
   bind:newResponses
   bind:validationErrors
   {handleSubmit}
+  buttonText={editing ? "Save" : "Submit"}
 />

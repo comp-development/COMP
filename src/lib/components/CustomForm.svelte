@@ -28,6 +28,7 @@
     validationErrors = $bindable({}),
     newResponses = $bindable({}),
     handleSubmit,
+    buttonText="Submit",
   } = $props();
 
   let initialResponses: any = $state({});
@@ -314,7 +315,7 @@
       {/if}
     {/each}
 
-    <Button type="submit" pill>Submit</Button>
+    <Button type="submit" pill>{buttonText}</Button>
   </form>
 </div>
 

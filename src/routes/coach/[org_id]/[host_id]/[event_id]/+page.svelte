@@ -2,6 +2,7 @@
   import { page } from "$app/stores";
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
+  import Modal from "$lib/components/Modal.svelte";
   import {
     getCoach,
     getEventInformation,
@@ -14,7 +15,7 @@
     removeStudentFromOrganization,
     getTicketCount,
   } from "$lib/supabase";
-  import { Button, ButtonGroup, Modal, Timeline, TimelineItem } from "flowbite-svelte";
+  import { Button, ButtonGroup, Timeline, TimelineItem } from "flowbite-svelte";
   import type { Tables } from "../../../../../../db/database.types";
   import { CartSolid, UsersGroupSolid, CalendarWeekSolid, CheckCircleSolid, ClockSolid, CloseCircleSolid } from "flowbite-svelte-icons";
   import toast from "$lib/toast.svelte";
@@ -32,7 +33,7 @@
 
   let loading = $state(true);
   let coach: any = $state();
-  let organizationDetails: any = $state();
+  let organizationDetails: any = $state(null);
   let ticketCount: number = $state(0);
   let event_details: Tables<"events"> | null = $state(null);
   const event_id = parseInt($page.params.event_id);
@@ -86,6 +87,7 @@
   })();
 
   function handleDragStart(event: DragEvent, team_member: any) {
+    console.log("EVENT", event)
     if (event.dataTransfer) {
       draggedMember = team_member;
       sourceTeamId = team_member.team_id;
@@ -240,17 +242,10 @@
     }
   }
 
-  function openEditModal(team: any) {
-    teamName = team.team_name;
-    editingTeamId = team.team_id;
+  function openAddModal() {
     isTeamModalOpen = true;
   }
 
-  function openAddModal() {
-    teamName = "";
-    editingTeamId = null;
-    isTeamModalOpen = true;
-  }
   function openPurchaseModal() {
     ticketQuantity = 0;
     isPurchaseModalOpen = true;
@@ -299,36 +294,23 @@
     }
   }
 
-  async function handleChangeTeam(newTeamData) {
+  async function handleAddTeam(newTeamData) {
     try {
       let newOrganizationDetails = { ...organizationDetails };
 
-      if (editingTeamId) {
-        // Update the existing team
-        newOrganizationDetails = {
-          ...newOrganizationDetails,
-          teams: newOrganizationDetails.teams.map((team) => {
-            if (team.team_id === newTeamData.team_id) {
-              return { ...team, team_name: newTeamData.team_name };
-            }
-            return team;
-          }),
-        };
-        toast.success("Team updated successfully");
-      } else {
-        // Add a new team
-        newOrganizationDetails = {
-          ...newOrganizationDetails,
-          teams: [
-            ...newOrganizationDetails.teams,
-            {
-              ...newTeamData,
-              teamMembers: [],
-            },
-          ],
-        };
-        toast.success("Team added successfully");
-      }
+      
+      newOrganizationDetails = {
+        ...newOrganizationDetails,
+        teams: [
+          ...newOrganizationDetails.teams,
+          {
+            ...newTeamData,
+            teamMembers: [],
+          },
+        ],
+      };
+      toast.success("Team created successfully");
+      
 
       organizationDetails = newOrganizationDetails;
 
@@ -484,7 +466,7 @@
       <Timeline order="horizontal">
         {#each [
           { title: "Register", step: 1, description: "Fill out the registration form below." },
-          { title: "Add Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
+          { title: "Create Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
           { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." },
           { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the org join code. You can also have them added directly to teams by sending them the team join code, but you must have enough unsued tickets to do so." },
           { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams. You can do this by clicking and dragging students from the 'Unassigned Students' section into one of your teams!" },
@@ -528,16 +510,16 @@
     <div class="organization">
       <div class="flex">
         <InfoToolTip
-          text="Send this code to your students and they will be able to join this organization"
+          text="Send this code to your students and they will be able to join your organization after they create an account"
         />
-        <CopyText text={organizationDetails.event.join_code} />
+        Org Join Code: <CopyText text={organizationDetails.event.join_code} />
       </div>
 
       <div style="margin: 10px 0;">
         <ButtonGroup>
           <Button pill outline color="primary" onclick={openAddModal}>
             <UsersGroupSolid class="w-4 h-4 me-2" />
-            Add Team
+            Create Team
           </Button>
           <Button pill outline color="primary" id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} onclick={event_details.eventbrite_event_id ? openEventbriteWidget : openPurchaseModal}>
             <CartSolid class="w-4 h-4 me-2" />
@@ -550,20 +532,18 @@
 
       <div class="grid-container">
         <div class="teams-grid">
-          {#each organizationDetails.teams as team}
+          {#each organizationDetails.teams as team, index}
             <StudentTeam
               {event_id}
               {org_id}
-              {team}
+              bind:team={organizationDetails.teams[index]}
               onDrop={handleDrop}
               onDragStart={handleDragStart}
               onDeleteStudent={handleDeleteStudentTeam}
-              {openEditModal}
               {handleDeleteTeam}
               {handleDragOver}
               {handleDragLeave}
               maxTeamSize={event_details?.max_team_size}
-              bind:organizationDetails
               bind:studentsWithoutTeams
               bind:showDeleteTeamConfirmation
               bind:deleteTeamId
@@ -594,31 +574,26 @@
         </div>
       </div>
     </div>
-  {:else}
-    <OrgForm
-      title="Registration Form"
-      bind:org={organizationDetails}
-      {event_id}
-      {org_id}
-    />
   {/if}
+  <hr />
+  <OrgForm
+    bind:org={organizationDetails}
+    {event_id}
+    {org_id}
+    editing={organizationDetails.event ? true : false}
+  />
 {/if}
 
 <div class="modalExterior">
   <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-      {editingTeamId ? "Edit Team" : "Add a New Team"}
-    </h3>
     <TeamForm
-      title=""
       {event_id}
       {org_id}
-      team={editingTeamId
-        ? organizationDetails.teams.find((t) => t.team_id === editingTeamId)
-        : null}
+      team={null}
       afterSubmit={async (team) => {
-        await handleChangeTeam(team);
+        await handleAddTeam(team);
       }}
+      editing={false}
     />
   </Modal>
 </div>
