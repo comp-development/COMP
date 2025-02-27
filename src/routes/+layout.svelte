@@ -3,13 +3,15 @@
   import "carbon-components-svelte/css/white.css";
   import Toaster from "$lib/components/Toaster.svelte";
   import { supabase } from "$lib/supabaseClient";
+  import posthog from 'posthog-js'
+  import { browser } from '$app/environment';
   import Account from "$lib/components/Account.svelte";
   import NavBar from "$lib/components/Navbar.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { user } from "$lib/sessionStore";
   import { onMount } from "svelte";
   import { page } from "$app/stores";
-  import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
+  import { defaultSettings, fetchSettings, getUser, getThisUser } from "$lib/supabase";
   interface Props {
     children?: import("svelte").Snippet;
   }
@@ -24,8 +26,27 @@
     hasAccount = false;
   }
 
-  supabase.auth.onAuthStateChange((_, session) => {
-    user.set(session?.user);
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    console.log("AUTH STATE CHANGE", event)
+    const thisUser = session?.user
+    user.set(thisUser);
+    if (!thisUser) {
+      return
+    }
+    const thisUserWithType = await getUser(thisUser.id);
+    if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && !posthog.get_distinct_id()) {
+      posthog.identify(
+        thisUser.id, 
+        {
+          email: thisUser.email,
+          name: `${thisUserWithType.first_name} ${thisUserWithType.last_name}`,
+          type: thisUserWithType.userType
+        },
+        {first_visited_url: $page.url.pathname}
+      )
+    } else if (event === "SIGNED_OUT") {
+      posthog.reset();
+    }
   });
 
   onMount(async () => {
@@ -39,6 +60,17 @@
     user.set((await supabase.auth.getUser()).data.user);
 
     loaded = true;
+
+    if (browser) {
+      console.log("POSTHOG INIT")
+      posthog.init(
+        'phc_Qt9iMmf7EGxfugmgQnfIhMO0r0rEOESv9Px8cnN1lOM',
+        { 
+          api_host: 'https://us.i.posthog.com',
+          person_profiles: 'identified_only', // or 'always' to create profiles for anonymous users as well
+        }
+      );
+    }
   });
 </script>
 

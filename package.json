@@ -49,6 +49,7 @@
     "mathlifier": "^2.0.2",
     "moment": "^2.30.1",
     "papaparse": "^5.4.1",
+    "posthog-js": "^1.224.0",
     "puppeteer": "^24.1.1",
     "stripe": "^17.5.0",
     "tailwind-merge": "^2.6.0",

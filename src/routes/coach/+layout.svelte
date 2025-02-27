@@ -1,10 +1,14 @@
 <script lang="ts">
   import Loading from "$lib/components/Loading.svelte";
+  import posthog from 'posthog-js'
+  import { browser } from '$app/environment';
+  import { onMount } from 'svelte';
   import { user } from "$lib/sessionStore";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { isType } from "$lib/supabase";
+  import { getUser, isType } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
+  import { getThisUser } from "$lib/supabase";
 
   interface Props {
     children?: import("svelte").Snippet;
@@ -14,6 +18,8 @@
 
   let can_view_page = $state(false);
   let loading = $state(true);
+
+  
 
   (async () => {
     try {
