@@ -44,9 +44,15 @@ For eventbrite seeding, you need to create an event to which the
 If you choose the event to be online, there are less steps to create the event.
 
 Under `Add tickets`, rename the general admission to
-`Coach Order (only purchase if you're a coach)` and add a ticket named
+`Org Order (only purchase if you're a coach)` and add a ticket named
 `Student Order (only purchase if you're a student)` with a minimum and maximum
-quantity of `1`.
+quantity of `1` in `advanced settings > tickets per order`.
+
+Edit both tickets and set `advanced settings > visibility` to be Hidden.
+In the `Promotions` tab, add two promotions named `org` and `student`
+(note that case probably matters). The ticket limit should be `unlimited`.
+Use `only certain hidden tickets > Org Order ...` and
+`only certain tickets > Student Order ...` for the `apply code to` field.
 
 Ensure your API key private token is in the root `.env`.
 
