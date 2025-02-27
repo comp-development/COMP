@@ -108,13 +108,18 @@ export async function addCoach(user_id: string, data: any) {
  */
 
 export async function getUser(user_id: string) {
+  console.log("GETTING USER")
   if (await isType("admin", user_id)) {
+    console.log("ADMIN")
     return await getAdmin(user_id);
   } else if (await isType("coach", user_id)) {
+    console.log("COACH")
     return await getCoach(user_id);
   } else {
+    console.log("STUDENT")
     return await getStudent(user_id);
   }
+  
 }
 
 export async function getAdmin(user_id: string) {
@@ -189,20 +194,22 @@ export async function isType(
   type: string = "admin",
   user_id: string | null = null,
 ) {
+  console.log("IS TYPE", type, user_id)
   try {
     if (!user_id) {
       const user = await getThisUser();
       user_id = user?.id;
     }
-
+    console.log(getUserTypeDatabase(type))
     const { data, error } = await supabase
       .from(getUserTypeDatabase(type))
       .select(type + "_id")
       .eq(type + "_id", user_id);
-
+    console.log("DATA", data)
     if (error) return false;
     return data !== null && data.length > 0;
   } catch (e) {
+    console.log(e)
     return false;
   }
 }

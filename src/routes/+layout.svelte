@@ -30,10 +30,13 @@
     console.log("AUTH STATE CHANGE", event)
     const thisUser = session?.user
     user.set(thisUser);
+    console.log("AUTH STATE CHANGE USER", thisUser)
     if (!thisUser) {
       return
     }
+    console.log("TEST")
     const thisUserWithType = await getUser(thisUser.id);
+    console.log("POSTHOG IDENTIFY", thisUser, thisUserWithType, posthog.get_distinct_id())
     if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && !posthog.get_distinct_id()) {
       posthog.identify(
         thisUser.id, 
