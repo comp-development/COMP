@@ -125,7 +125,8 @@
             eventId: eventbriteEventId,
             modal: true,
             modalTriggerElementId: 'eventbrite-widget-container',
-            onOrderComplete: eventbritePurchase
+            onOrderComplete: eventbritePurchase,
+            promoCode: "student",
         });
     }
   }
