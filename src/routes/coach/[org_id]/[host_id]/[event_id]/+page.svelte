@@ -444,7 +444,7 @@
             modal: true,
             modalTriggerElementId: 'eventbrite-widget-container',
             onOrderComplete: eventbritePurchase,
-            promoCode: "coach",
+            promoCode: "org",
         });
     }
   }
