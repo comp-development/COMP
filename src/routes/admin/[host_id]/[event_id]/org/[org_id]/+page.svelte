@@ -334,7 +334,7 @@
     <h1>{organizationDetails.name}</h1>
     <div class="flex">
       <InfoToolTip
-        text="Send this code to the students and they will be able to join this organization"
+        text="Send this code to your students and they will be able to join this organization after they create an account"
       />
       <CopyText text={organizationDetails.event.join_code} />
     </div>

@@ -29,7 +29,7 @@
   } from "$lib/supabase";
   import { user } from "$lib/sessionStore";
   import { handleError } from "$lib/handleError";
-    import FavIcon from "$lib/components/FavIcon.svelte";
+  import Logo from "$lib/components/Logo.svelte";
 
   let hostId: number | null = null;
   let eventId: number | null = null;
@@ -124,8 +124,8 @@
 <div style="background-color: var(--primary-dark);">
   <Navbar rounded color="transparent">
     <NavBrand href="/">
-      <div class="me-3 p-1 logo">
-        <FavIcon />
+      <div class="me-3 p-1">
+        <Logo />
       </div>
     </NavBrand>
     <div class="md:order-2">

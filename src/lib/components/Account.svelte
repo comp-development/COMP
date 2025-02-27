@@ -10,6 +10,8 @@
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { Tabs, TabItem, Alert } from "flowbite-svelte";
+  import { InfoCircleSolid } from "flowbite-svelte-icons";
+  import Logo from "$lib/components/Logo.svelte";
 
   // Instead of using an enum for login state, we'll just use string literals.
   // Define the allowed login states.
@@ -50,6 +52,8 @@
             newResponses.password,
           );
 
+          console.log("USER", user)
+
           if (selectedOption === "student") {
             await addStudent(user.id, newResponses);
           } else {
@@ -59,6 +63,7 @@
           toast.success(
             "Successfully signed up, check your email to confirm your account. Make sure to check your junk/spam folders as well.",
           );
+          logInState = "LOGIN";
         } catch (error) {
           throw error;
         }
@@ -66,6 +71,9 @@
         throw new Error("Passwords do not match");
       }
     } catch (error) {
+      if (error.code === "23505" || error.code === "23503"){
+        error.message = "An account with this email already exists";
+      }
       handleError(error);
     }
   };
@@ -80,7 +88,6 @@
           redirectTo: "https://comp.mt/reset-password",
         },
       );
-      console.log("SQUAWK0", data, error);
       toast.success("Reset password link sent. Please check your email. Don't forget to check junk/spam folders as well.");
     } catch (error) {
       handleError(error);
@@ -162,11 +169,17 @@
 
 <div class="center-vertical">
   <div
-    style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px;"
+    style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px; margin: 50px"
   >
     <div>
+      <div style="display: flex; justify-content: center; align-items: center; border-radius: 5px; padding: 5px">
+        <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
+      </div>
+      <br>
+      <hr style="border: none; border-top: 1px solid black;" /><br><br>
+
       <!-- Change header based on login state -->
-      <h1 id="headerText">
+      <h3 id="headerText">
         {#if logInState === "LOGIN"}
           Log In
         {:else if logInState === "SIGNUP"}
@@ -174,7 +187,7 @@
         {:else if logInState === "RESET"}
           Reset Password
         {/if}
-      </h1>
+      </h3>
 
       <!-- Display the appropriate form based on state -->
       {#if logInState === "LOGIN"}
@@ -194,6 +207,10 @@
            If you sign up with one of these and don't receive a confirmation email, try signing up with another service.
         </Alert>
         <br>-->
+        <Alert color="light">
+          <InfoCircleSolid slot="icon" class="w-5 h-5" />
+          If you are a coach of a school team or organization, please sign up as a <b class="font-bold">coach</b>. If you are a student that needs to join a team, please sign up as a <b class="font-bold">student</b>.
+        </Alert><br>
         <div class="tabs">
           <Tabs tabStyle="pill">
             <TabItem
@@ -276,7 +293,7 @@
 
 <style>
   #headerText {
-    font-size: 50px;
+    font-size: 40px;
   }
 
   :global(.no-padding .registrationForm),
@@ -314,5 +331,10 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+  }
+
+  .logo {
+    width: 100%;
+    max-width: 200px; /* Adjust as needed */
   }
 </style>

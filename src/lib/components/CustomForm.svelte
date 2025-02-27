@@ -28,25 +28,58 @@
     validationErrors = $bindable({}),
     newResponses = $bindable({}),
     handleSubmit,
+    buttonText="Submit",
   } = $props();
 
-  let initialResponses = $state({});
+  let initialResponses: any = $state({});
   let show = $state(false);
-  let telephoneValues = $state({});
+  let telephoneValues: any = $state({});
 
   $effect(() => {
     for (var field of [...fields, ...custom_fields]) {
       const key = field.event_custom_field_id ?? field.name;
+      if (field.custom_field_type == "phone") {
+        telephoneValues[key] = format_phone(field?.value)[1];
+      } else if (field.custom_field_type == "date") {
+        if (!field.value) {
+          continue;
+        }
+        const date = new Date(field?.value);
+        initialResponses[key] = date;
+        newResponses[key] = date;
+        continue;
+      }
       initialResponses[key] = field?.value;
       newResponses[key] = field?.value;
     }
-    console.log(fields, custom_fields);
   });
   const typePatterns = {
     date: /^\d{4}-\d{2}-\d{2}$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     tel: /^\d{10}$/,
   };
+
+  function format_phone(input: string): [string | null, string | null] {
+    if (!input) {
+      return [null, null];
+    }
+    let rawValue = input.replace(/\D/g, "").slice(0, 10);
+    let formattedValue = rawValue;
+
+    const areaCode = formattedValue.substring(0, 3);
+    const prefix = formattedValue.substring(3, 6);
+    const suffix = formattedValue.substring(6, 10);
+
+    if (formattedValue.length > 6) {
+      formattedValue = `(${areaCode}) ${prefix} - ${suffix}`;
+    } else if (formattedValue.length > 3) {
+      formattedValue = `(${areaCode}) ${prefix}`;
+    } else if (formattedValue.length > 0) {
+      formattedValue = `(${areaCode}`;
+    }
+    return [rawValue, formattedValue];
+    
+  }
 
   function validateInput(key, value, regex) {
     if (regex && value) {
@@ -157,6 +190,7 @@
             />
           {:else if field.custom_field_type === "date"}
             <Datepicker
+              inputClass="w-full min-w-[300px]"
               bind:value={newResponses[key]}
               required={field.required}
               placeholder={field.placeholder}
@@ -187,21 +221,8 @@
               placeholder={field.placeholder ?? "123-456-7890"}
               bind:value={telephoneValues[key]}
               on:input={(e) => {
-                let rawValue = e.target.value.replace(/\D/g, "").slice(0, 10);
-                let formattedValue = rawValue;
 
-                const areaCode = formattedValue.substring(0, 3);
-                const prefix = formattedValue.substring(3, 6);
-                const suffix = formattedValue.substring(6, 10);
-
-                if (formattedValue.length > 6) {
-                  formattedValue = `(${areaCode}) ${prefix} - ${suffix}`;
-                } else if (formattedValue.length > 3) {
-                  formattedValue = `(${areaCode}) ${prefix}`;
-                } else if (formattedValue.length > 0) {
-                  formattedValue = `(${areaCode}`;
-                }
-
+                const [rawValue, formattedValue] = format_phone((e.target as any).value);
                 newResponses[key] = rawValue;
                 telephoneValues[key] = formattedValue;
               }}
@@ -251,7 +272,7 @@
                 <Checkbox
                   disabled={!field.editable && field?.value !== null}
                   checked={(newResponses[key] || "")
-                    .split(",")
+                    .split(", ")
                     .includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
@@ -294,7 +315,7 @@
       {/if}
     {/each}
 
-    <Button type="submit" pill>Submit</Button>
+    <Button type="submit" pill>{buttonText}</Button>
   </form>
 </div>
 
@@ -313,5 +334,24 @@
   /* Only apply the border when showBorder is true */
   form.bordered {
     border: 3px solid var(--primary-tint);
+  }
+
+  :global(#datepicker-dropdown) {
+    min-width: 320px !important; /* Adjust as needed */
+    max-width: 400px !important;
+  }
+
+  /* Expand the internal calendar layout */
+  :global(#datepicker-dropdown .grid) {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(40px, 1fr)) !important;
+    gap: 4px !important; /* Adds spacing between days */
+  }
+
+  /* Ensure individual date buttons fit properly */
+  :global(#datepicker-dropdown button[role="gridcell"]) {
+    width: 100% !important;
+    height: 40px !important; /* Adjust height */
+    text-align: center;
   }
 </style>

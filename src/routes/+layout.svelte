@@ -43,11 +43,11 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" type="image/png" href="https://mustangmath.com/logo.png" />
+  <link rel="icon" type="image/png" href="./favicon.png" />
   <link
     rel="og:image"
     type="image/png"
-    href="https://mustangmath.com/logo.png"
+    href="https://comp.mt/COMP_White.png"
   />
   <title>Contest Organization & Management Platform (COMP)</title>
   <meta

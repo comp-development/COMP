@@ -6,33 +6,33 @@
   import { handleError } from "$lib/handleError";
   import toast from "$lib/toast.svelte";
   import { Modal } from "flowbite-svelte";
+  import InfoToolTip from "$lib/components/InfoToolTip.svelte";
   import TableName from "$lib/components/TableName.svelte";
   import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+  import TeamForm from "$lib/components/TeamForm.svelte";
 
   let {
     event_id,
     org_id,
-    team,
+    team = $bindable(),
     onDrop,
     onDragStart,
     onDeleteStudent,
-    openEditModal,
     handleDragOver,
     editableFeatures = true,
+    showTeamCode = false,
     handleDragLeave,
     studentsWithoutTeams = $bindable(),
     maxTeamSize,
     handleDeleteTeam,
     showDeleteTeamConfirmation = $bindable(),
     deleteTeamId = $bindable(),
-    organizationDetails = $bindable(),
   } = $props();
 
   let isStudentModalOpen = $state(false);
-  let studentModalOpenTeam = $state(null);
+  let isTeamModalOpen = $state(false);
 
   function openStudentModal(team_id: number) {
-    studentModalOpenTeam = team_id;
     isStudentModalOpen = true;
   }
 
@@ -58,23 +58,11 @@
         org_id,
       );
 
-      if (organizationDetails) {
-        const updatedTeams = organizationDetails.teams.map((newTeam: any) => {
-          if (newTeam.team_id === team.team_id) {
-            return {
-              ...newTeam,
-              teamMembers: [...newTeam.teamMembers, newStudent],
-            };
-          }
-          return newTeam;
-        });
-        organizationDetails.teams = updatedTeams;
-      } else {
-        team = {
-          ...team,
-          teamMembers: [...team.teamMembers, newStudent],
-        };
-      }
+      
+      team = {
+        ...team,
+        teamMembers: [...team.teamMembers, newStudent],
+      };
 
       studentsWithoutTeams = studentsWithoutTeams.filter(
         (s) => s.student_event_id !== student.student_event_id,
@@ -84,8 +72,27 @@
         `Student ${newStudent.person.first_name} added to team ${team.team_name}`,
       );
 
-      studentModalOpenTeam = null;
       isStudentModalOpen = false;
+    } catch (error) {
+      handleError(error);
+      isStudentModalOpen = false;
+    }
+  }
+
+  function openEditModal() {
+    isTeamModalOpen = true;
+  }
+
+  async function handleChangeTeam(newTeamData) {
+    try {
+      console.log("CHANGE TEAM", newTeamData);
+      team = newTeamData
+
+      toast.success(
+        `Team Updated Succesfully`,
+      );
+      // Close the modal and reset the input
+      isTeamModalOpen = false;
     } catch (error) {
       handleError(error);
     }
@@ -128,11 +135,24 @@
           <TrashBinSolid class="w-5 h-5" />
         </button>
       </div>
+    {:else if showTeamCode}
+      <button
+        class="hover:bg-blue-100 rounded-lg"
+        aria-label="Edit"
+        onclick={() => openEditModal(team)}
+      >
+        <PenSolid class="w-5 h-5" />
+      </button>
     {/if}
   </div>
 
-  {#if editableFeatures}
-    <CopyText text={team.join_code} />
+  {#if showTeamCode}
+    <div class="flex" style="justify-content: flex-start">
+      <InfoToolTip
+        text="Send this code to your teammates to join your team!"
+      />
+      Team Join Code: <CopyText text={team.join_code} />
+    </div>
   {/if}
 
   {#each team.teamMembers as team_member}
@@ -153,7 +173,7 @@
 
 <ConfirmationModal
   isShown={showDeleteTeamConfirmation}
-  text="delete this team"
+  actionName="delete this team"
   onCancel={() => {
     showDeleteTeamConfirmation = false;
     deleteTeamId = false;
@@ -173,6 +193,18 @@
       {org_id}
     />
   </div>
+</Modal>
+
+<Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
+  <TeamForm
+    {event_id}
+    {org_id}
+    {team}
+    afterSubmit={async (team) => {
+      await handleChangeTeam(team);
+    }}
+    editing={true}
+  />
 </Modal>
 
 <style>
