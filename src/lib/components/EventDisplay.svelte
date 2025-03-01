@@ -204,25 +204,24 @@
       </div>
     {/if}
 
-    {#if (event && event.summary) || host.summary || isEditing}
-      <div
-        class="{editable ? 'editableField' : ''}"
-        onclick={() => editable && (editingField = "summary")}
-      >
-        {#if editingField === "summary"}
-          <Textarea
-            bind:value={newResponses.summary}
-            on:input={handleEdit}
-            onmouseleave={() => (editingField = null)}
-            rows={5}
-          />
-        {:else}
-          <MarkdownRender
-            source={newResponses.summary != null ? newResponses.summary : ""}
-          />
-        {/if}
-      </div>
-    {/if}
+    <div
+      class="{editable ? 'editableField' : ''}"
+      onclick={() => editable && (editingField = "summary")}
+    >
+      {#if editingField === "summary"}
+        <Textarea
+          bind:value={newResponses.summary}
+          on:input={handleEdit}
+          onmouseleave={() => (editingField = null)}
+          rows={5}
+        />
+      {:else}
+        <MarkdownRender
+          source={newResponses.summary != null ? newResponses.summary : ""}
+        />
+      {/if}
+    </div>
+
     {#if event}
       <div class="flex" style="min-height: 45px;">
         <div class="flex" style="justify-content: left;">

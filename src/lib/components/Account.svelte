@@ -306,6 +306,11 @@
     background: transparent;
   }
 
+  :global([role=presentation] :not(.active)) {
+    border: 2px solid var(--primary);
+    padding: 10px 16px;
+  }
+
   @media only screen and (max-width: 700px) {
     .bottomSection {
       width: 100vw;

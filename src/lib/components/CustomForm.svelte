@@ -129,7 +129,6 @@
   function handleCheckboxChange(key, value) {
     let selectedValues = (newResponses[key] || "")
       .split(",")
-      .map((v) => v.trim())
       .filter((v) => v);
 
     if (selectedValues.includes(value)) {
@@ -138,10 +137,7 @@
       selectedValues.push(value);
     }
 
-    newResponses[key] =
-      selectedValues.length === 1
-        ? selectedValues[0]
-        : selectedValues.join(", ");
+    newResponses[key] = selectedValues.join(",");
   }
 </script>
 
@@ -271,9 +267,7 @@
               <div style="display: flex; align-items: left">
                 <Checkbox
                   disabled={!field.editable && field?.value !== null}
-                  checked={(newResponses[key] || "")
-                    .split(", ")
-                    .includes(choice)}
+                  checked={(newResponses[key] || "").includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
                   {choice}

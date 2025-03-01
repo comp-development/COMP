@@ -18,7 +18,7 @@
 
 <style>
   .cls-1 {
-    fill: var(--dark-color);
+    fill: var(--dark-color) !important;
   }
 
   .cls-1, .cls-2, .cls-3 {
@@ -26,11 +26,11 @@
   }
 
   .cls-2 {
-    fill: var(--light-color);
+    fill: var(--light-color) !important;
   }
 
   .cls-3 {
-    fill: var(--text-color);
+    fill: var(--text-color) !important;
   }
 
   svg {
