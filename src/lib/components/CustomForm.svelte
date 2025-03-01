@@ -129,6 +129,7 @@
   function handleCheckboxChange(key, value) {
     let selectedValues = (newResponses[key] || "")
       .split(",")
+      .map((v) => v.trim())
       .filter((v) => v);
 
     if (selectedValues.includes(value)) {

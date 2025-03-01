@@ -203,24 +203,26 @@
         <InfoToolTip text="To edit, click on the text that you want to change and update the input field." />
       </div>
     {/if}
-
-    <div
-      class="{editable ? 'editableField' : ''}"
-      onclick={() => editable && (editingField = "summary")}
-    >
-      {#if editingField === "summary"}
-        <Textarea
-          bind:value={newResponses.summary}
-          on:input={handleEdit}
-          onmouseleave={() => (editingField = null)}
-          rows={5}
-        />
-      {:else}
-        <MarkdownRender
-          source={newResponses.summary != null ? newResponses.summary : ""}
-        />
-      {/if}
-    </div>
+    
+    {#if (event && event.summary) || host.summary || editable}
+      <div
+        class="{editable ? 'editableField' : ''}"
+        onclick={() => editable && (editingField = "summary")}
+      >
+        {#if editingField === "summary"}
+          <Textarea
+            bind:value={newResponses.summary}
+            on:input={handleEdit}
+            onmouseleave={() => (editingField = null)}
+            rows={5}
+          />
+        {:else}
+          <MarkdownRender
+            source={newResponses.summary != null && newResponses.summary != "" ? newResponses.summary : (event ? host.summary : "")}
+          />
+        {/if}
+      </div>
+    {/if}
 
     {#if event}
       <div class="flex" style="min-height: 45px;">
