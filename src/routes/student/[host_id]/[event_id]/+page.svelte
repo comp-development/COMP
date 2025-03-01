@@ -140,19 +140,9 @@
         modalTriggerElementId: "eventbrite-widget-container",
         iFrameContainerId: "modalTriggerElementId",
         onOrderComplete: await eventbritePurchase(creating_team, joining_team_code),
+        promoCode: "student",
       });
       (document.querySelector("#eventbrite-widget-container") as HTMLElement).click();
-      // setTimeout(async () => {
-      //    (window as any).EBWidgets.createWidget({
-      //     widgetType: "checkout",
-      //     eventId: eventbriteEventId,
-      //     modal: true,
-      //     modalTriggerElementId: "eventbrite-widget-container",
-      //     iFrameContainerId: "modalTriggerElementId",
-      //     onOrderComplete: await eventbritePurchase(creating_team, joining_team_code),
-      //   });
-        
-      // }, 1000)
     }
   }
 
