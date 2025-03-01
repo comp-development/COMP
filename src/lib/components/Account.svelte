@@ -26,7 +26,7 @@
   let { logInState = "LOGIN" }: Props = $props();
   let newResponses = $state({});
   let validationErrors = $state({});
-  let selectedOption = $state("student");
+  let selectedOption = $state("");
 
   const handleLogin = async () => {
     try {
@@ -99,12 +99,14 @@
       name: "email",
       label: "Email",
       required: true,
+      editable: true,
       custom_field_type: "email",
       placeholder: "Email",
     },
     {
       name: "password",
       label: "Password",
+      editable: true,
       required: true,
       custom_field_type: "password",
       placeholder: "Password",
@@ -134,12 +136,14 @@
       name: "email",
       label: "Email",
       required: true,
+      editable: true,
       custom_field_type: "email",
       placeholder: "Email",
     },
     {
       name: "password",
       label: "Password",
+      editable: true,
       required: true,
       custom_field_type: "password",
       placeholder: "Password",
@@ -147,6 +151,7 @@
     {
       name: "retypePassword",
       label: "Retype Password",
+      editable: true,
       required: true,
       custom_field_type: "password",
       placeholder: "Retype Password",
@@ -163,7 +168,9 @@
     },
   ];
 
-  const studentSignupFields = commonSignupFields;
+  const studentSignupFields = [
+    ...commonSignupFields,
+  ];
   const coachSignupFields = commonSignupFields;
 </script>
 
