@@ -203,8 +203,8 @@
         <InfoToolTip text="To edit, click on the text that you want to change and update the input field." />
       </div>
     {/if}
-
-    {#if (event && event.summary) || host.summary || isEditing}
+    
+    {#if (event && event.summary) || host.summary || editable}
       <div
         class="{editable ? 'editableField' : ''}"
         onclick={() => editable && (editingField = "summary")}
@@ -218,11 +218,12 @@
           />
         {:else}
           <MarkdownRender
-            source={newResponses.summary != null ? newResponses.summary : ""}
+            source={newResponses.summary || host.summary}
           />
         {/if}
       </div>
     {/if}
+
     {#if event}
       <div class="flex" style="min-height: 45px;">
         <div class="flex" style="justify-content: left;">

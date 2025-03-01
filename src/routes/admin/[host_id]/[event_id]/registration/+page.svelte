@@ -98,6 +98,11 @@
     },
   ];
 
+  window.addEventListener('beforeunload', (event) => {
+    event.preventDefault();
+    event.returnValue = ''; // This triggers the confirmation dialog
+  });
+
   (async () => {
     studentCustomFields = await getEventCustomFields(event_id, "students");
     orgCustomFields = await getEventCustomFields(event_id, "orgs");
