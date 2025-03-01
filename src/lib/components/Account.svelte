@@ -26,7 +26,7 @@
   let { logInState = "LOGIN" }: Props = $props();
   let newResponses = $state({});
   let validationErrors = $state({});
-  let selectedOption = $state("student");
+  let selectedOption = $state("");
 
   const handleLogin = async () => {
     try {
@@ -99,12 +99,14 @@
       name: "email",
       label: "Email",
       required: true,
+      editable: true,
       custom_field_type: "email",
       placeholder: "Email",
     },
     {
       name: "password",
       label: "Password",
+      editable: true,
       required: true,
       custom_field_type: "password",
       placeholder: "Password",
@@ -134,12 +136,14 @@
       name: "email",
       label: "Email",
       required: true,
+      editable: true,
       custom_field_type: "email",
       placeholder: "Email",
     },
     {
       name: "password",
       label: "Password",
+      editable: true,
       required: true,
       custom_field_type: "password",
       placeholder: "Password",
@@ -147,6 +151,7 @@
     {
       name: "retypePassword",
       label: "Retype Password",
+      editable: true,
       required: true,
       custom_field_type: "password",
       placeholder: "Retype Password",
@@ -163,7 +168,9 @@
     },
   ];
 
-  const studentSignupFields = commonSignupFields;
+  const studentSignupFields = [
+    ...commonSignupFields,
+  ];
   const coachSignupFields = commonSignupFields;
 </script>
 
@@ -209,7 +216,7 @@
         <br>-->
         <Alert color="light">
           <InfoCircleSolid slot="icon" class="w-5 h-5" />
-          If you are a coach of a school team or organization, please sign up as a <b class="font-bold">coach</b>. If you are a student that needs to join a team, please sign up as a <b class="font-bold">student</b>.
+          If you are a coach of a school team or organization, please sign up as a <b class="font-bold">Coach</b>. If you are a student that needs to join a team, please sign up as a <b class="font-bold">Student</b>.
         </Alert><br>
         <div class="tabs">
           <Tabs tabStyle="pill">
