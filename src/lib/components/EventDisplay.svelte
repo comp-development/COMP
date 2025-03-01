@@ -218,7 +218,7 @@
           />
         {:else}
           <MarkdownRender
-            source={newResponses.summary != null && newResponses.summary != "" ? newResponses.summary : (event ? host.summary : "")}
+            source={newResponses.summary || host.summary}
           />
         {/if}
       </div>

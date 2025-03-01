@@ -268,7 +268,7 @@
               <div style="display: flex; align-items: left">
                 <Checkbox
                   disabled={!field.editable && field?.value !== null}
-                  checked={(newResponses[key] || "").split(",").includes(choice)}
+                  checked={(newResponses[key] || "").split(",").map((x) => x.trim()).filter((v)=>v).includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
                   {choice}
