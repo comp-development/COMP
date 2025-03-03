@@ -469,7 +469,7 @@
           { title: "Register", step: 1, description: "Fill out the registration form below." },
           { title: "Create Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
           { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." },
-          { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the org join code. You can also have them added directly to teams by sending them the team join code, but you must have enough unsued tickets to do so." },
+          { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the org join code." },
           { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams. You can do this by clicking and dragging students from the 'Unassigned Students' section into one of your teams!" },
           { title: "Done!", step: 6, description: null }
         ] as { title, step, description }}
