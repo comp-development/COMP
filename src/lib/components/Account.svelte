@@ -1,118 +1,352 @@
 <script lang="ts">
-	import "carbon-components-svelte/css/white.css";
-	import Button from "$lib/components/Button.svelte";
-	import { Form, TextInput, PasswordInput } from "carbon-components-svelte";
-	import toast from "svelte-french-toast";
-	import { handleError } from "$lib/handleError";
-	import { createAccount, signIntoAccount } from "$lib/supabase";
+  import { handleError } from "$lib/handleError";
+  import {
+    createAccount,
+    signIntoAccount,
+    addStudent,
+    addCoach,
+  } from "$lib/supabase";
+  import { supabase } from "$lib/supabaseClient";
+  import toast from "$lib/toast.svelte";
+  import CustomForm from "$lib/components/CustomForm.svelte";
+  import { Tabs, TabItem, Alert } from "flowbite-svelte";
+  import { InfoCircleSolid } from "flowbite-svelte-icons";
+  import Logo from "$lib/components/Logo.svelte";
 
-	export let logIn: boolean;
-	let loading = false;
-	let signupSuccess = false;
-	let email: string;
-	let password: string;
-	let retypePassword: string;
+  // Instead of using an enum for login state, we'll just use string literals.
+  // Define the allowed login states.
+  type LogInState = "LOGIN" | "SIGNUP" | "RESET";
 
-	const handleLogin = async () => {
-		try {
-			loading = true;
-			await signIntoAccount(email, password);
-		} catch (error) {
-			handleError(error);
-		} finally {
-			loading = false;
-		}
-	};
+  // Update props interface to use the string union type
+  interface Props {
+    logInState: LogInState;
+  }
 
-	const handleSignUp = async () => {
-		try {
-			if (password == retypePassword) {
-				try {
-					loading = true;
-					await createAccount(email, password);
-					signupSuccess = true;
-				} catch (error) {
-					throw error;
-				} finally {
-					loading = false;
-				}
-			} else {
-				throw new Error("Passwords do not match");
-			}
-		} catch (error) {
-			handleError(error);
-		}
-	};
+  // Destructure the prop (if not provided, you can set a default value)
+  let { logInState = "LOGIN" }: Props = $props();
+  let newResponses = $state({});
+  let validationErrors = $state({});
+  let selectedOption = $state("");
+
+  const handleLogin = async () => {
+    try {
+      console.log(newResponses);
+      const email = newResponses.email.trim();
+      const password = newResponses.password.trim();
+      if (!email || !password || email == "" || password == "") {
+        console.log("error");
+        throw new Error("Not all of the fields are complete");
+      }
+      await signIntoAccount(email, password);
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const handleSignUp = async () => {
+    try {
+      if (newResponses.password === newResponses.retypePassword) {
+        try {
+          const user = await createAccount(
+            newResponses.email,
+            newResponses.password,
+          );
+
+          console.log("USER", user)
+
+          if (selectedOption === "student") {
+            await addStudent(user.id, newResponses);
+          } else {
+            await addCoach(user.id, newResponses);
+          }
+
+          toast.success(
+            "Successfully signed up, check your email to confirm your account. Make sure to check your junk/spam folders as well.",
+          );
+          logInState = "LOGIN";
+        } catch (error) {
+          throw error;
+        }
+      } else {
+        throw new Error("Passwords do not match");
+      }
+    } catch (error) {
+      if (error.code === "23505" || error.code === "23503"){
+        error.message = "An account with this email already exists";
+      }
+      handleError(error);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      // Implement your reset password logic here (e.g., calling a reset service)
+      console.log(newResponses);
+      const { data, error } = await supabase.auth.resetPasswordForEmail(
+        newResponses.email,
+        {
+          redirectTo: "https://comp.mt/reset-password",
+        },
+      );
+      toast.success("Reset password link sent. Please check your email. Don't forget to check junk/spam folders as well.");
+    } catch (error) {
+      handleError(error);
+    }
+  };
+
+  const loginFields = [
+    {
+      name: "email",
+      label: "Email",
+      required: true,
+      editable: true,
+      custom_field_type: "email",
+      placeholder: "Email",
+    },
+    {
+      name: "password",
+      label: "Password",
+      editable: true,
+      required: true,
+      custom_field_type: "password",
+      placeholder: "Password",
+    },
+  ];
+
+  const commonSignupFields = [
+    {
+      name: "first_name",
+      label: "First Name",
+      required: true,
+      editable: true,
+      hidden: false,
+      custom_field_type: "text",
+      placeholder: "First Name",
+    },
+    {
+      name: "last_name",
+      label: "Last Name",
+      required: true,
+      editable: true,
+      hidden: false,
+      custom_field_type: "text",
+      placeholder: "Last Name",
+    },
+    {
+      name: "email",
+      label: "Email",
+      required: true,
+      editable: true,
+      custom_field_type: "email",
+      placeholder: "Email",
+    },
+    {
+      name: "password",
+      label: "Password",
+      editable: true,
+      required: true,
+      custom_field_type: "password",
+      placeholder: "Password",
+    },
+    {
+      name: "retypePassword",
+      label: "Retype Password",
+      editable: true,
+      required: true,
+      custom_field_type: "password",
+      placeholder: "Retype Password",
+    },
+  ];
+
+  const resetPasswordFields = [
+    {
+      name: "email",
+      label: "Email",
+      required: true,
+      custom_field_type: "email",
+      placeholder: "Email",
+    },
+  ];
+
+  const studentSignupFields = [
+    ...commonSignupFields,
+  ];
+  const coachSignupFields = commonSignupFields;
 </script>
 
-<Form
-	style="display: flex;
-	flex-direction: column;
-	margin-top: 20px;
-	align-items: center;"
->
-	<h1 class="header" style="margin-bottom: 30px;">
-		{#if logIn}
-			Log In
-		{:else}
-			Sign Up
-		{/if}
-	</h1>
-	<TextInput
-		class="input"
-		bind:value={email}
-		placeholder="Email"
-		style="width: 35em;"
-	/>
-	<br />
-	<PasswordInput
-		bind:value={password}
-		class="input"
-		placeholder="Password"
-		style="width: 35em;"
-	/> <br />
-	{#if !logIn && password != ""}
-		<PasswordInput
-			bind:value={retypePassword}
-			class="input"
-			placeholder="retype password"
-			style="width: 35em;"
-		/> <br />
-	{/if}
-	<div class="profileButtons">
-		{#if logIn}
-			<Button title="Enter" action={handleLogin} />
-		{:else}
-			<Button title="Enter" action={handleSignUp} />
-		{/if}
-	</div>
-</Form>
-{#if signupSuccess}
-	<p style="text-align: center;">
-		Successfully signed up, check your email to confirm!
-	</p>
-	<br />
-{/if}
+<div class="center-vertical">
+  <div
+    style="background-color: var(--primary-tint); border-radius: 10px; width: 90%; max-width: 400px; padding: 20px; margin: 50px"
+  >
+    <div>
+      <div style="display: flex; justify-content: center; align-items: center; border-radius: 5px; padding: 5px">
+        <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
+      </div>
+      <br>
+      <hr style="border: none; border-top: 1px solid black;" /><br><br>
+
+      <!-- Change header based on login state -->
+      <h3 id="headerText">
+        {#if logInState === "LOGIN"}
+          Log In
+        {:else if logInState === "SIGNUP"}
+          Sign Up
+        {:else if logInState === "RESET"}
+          Reset Password
+        {/if}
+      </h3>
+
+      <!-- Display the appropriate form based on state -->
+      {#if logInState === "LOGIN"}
+        <div class="no-padding">
+          <CustomForm
+            fields={loginFields}
+            bind:newResponses
+            bind:validationErrors
+            handleSubmit={handleLogin}
+            showBorder={false}
+          />
+        </div>
+      {:else if logInState === "SIGNUP"}
+        <br />
+        <!--<Alert color="yellow">
+          <span class="font-medium">Confirmation emails to hotmail, live, outlook, and msn are currently unreliable.</span><br>
+           If you sign up with one of these and don't receive a confirmation email, try signing up with another service.
+        </Alert>
+        <br>-->
+        <Alert color="light">
+          <InfoCircleSolid slot="icon" class="w-5 h-5" />
+          If you are a coach of a school team or organization, please sign up as a <b class="font-bold">Coach</b>. If you are a student that needs to join a team, please sign up as a <b class="font-bold">Student</b>.
+        </Alert><br>
+        <div class="tabs">
+          <Tabs tabStyle="pill">
+            <TabItem
+              onclick={() => (selectedOption = "student")}
+              open={selectedOption === "student"}
+              title="Student"
+            >
+              <div class="no-padding">
+                <CustomForm
+                  fields={studentSignupFields}
+                  bind:newResponses
+                  bind:validationErrors
+                  handleSubmit={handleSignUp}
+                  showBorder={false}
+                />
+              </div>
+            </TabItem>
+            <TabItem
+              onclick={() => (selectedOption = "coach")}
+              open={selectedOption === "coach"}
+              title="Coach"
+            >
+              <div class="no-padding">
+                <CustomForm
+                  fields={coachSignupFields}
+                  bind:newResponses
+                  bind:validationErrors
+                  handleSubmit={handleSignUp}
+                  showBorder={false}
+                />
+              </div>
+            </TabItem>
+          </Tabs>
+        </div>
+      {:else if logInState === "RESET"}
+        <div class="no-padding">
+          <CustomForm
+            fields={resetPasswordFields}
+            bind:newResponses
+            bind:validationErrors
+            handleSubmit={handleResetPassword}
+            showBorder={false}
+          />
+        </div>
+      {/if}
+      <br />
+      <!-- Footer buttons to toggle states -->
+      <div class="bottomSection" style="color: white;">
+        <button
+          size="lg"
+          class="link"
+          id="leftButton"
+          onclick={() => {
+            // Toggle between LOGIN and SIGNUP (if in RESET, switch back to LOGIN)
+            if (logInState === "LOGIN") {
+              logInState = "SIGNUP";
+            } else {
+              logInState = "LOGIN";
+            }
+          }}><u>{logInState === "LOGIN" ? "Sign Up" : "Log In"}</u></button
+        >
+        <button
+          size="lg"
+          class="link"
+          id="rightButton"
+          onclick={() => {
+            if (logInState === "RESET") {
+              logInState = "SIGNUP";
+            } else {
+              logInState = "RESET";
+            }
+          }}
+          ><u>{logInState === "RESET" ? "Sign Up" : "Forgot Password"}</u
+          ></button
+        >
+      </div>
+    </div>
+  </div>
+</div>
 
 <style>
-	.header {
-		font-size: 50px;
-	}
+  #headerText {
+    font-size: 40px;
+  }
 
-	:global(
-			.bx--text-input--password__visibility,
-			.bx--btn.bx--text-input--password__visibility__toggle.bx--tooltip__trigger:focus
-		) {
-		outline-color: var(--primary) !important;
-	}
+  :global(.no-padding .registrationForm),
+  :global(.no-padding .registrationForm form) {
+    padding: 0px;
+  }
 
-	@media only screen and (max-width: 700px) {
-		:global(.button) {
-			width: 80vw !important;
-		}
+  :global(.tabs [role="tabpanel"]) {
+    padding: 0px;
+    background: transparent;
+  }
 
-		:global(.input) {
-			width: 80vw !important;
-		}
-	}
+  :global([role=presentation] :not(.active)) {
+    border: 2px solid var(--primary);
+    padding: 10px 16px;
+  }
+
+  @media only screen and (max-width: 700px) {
+    .bottomSection {
+      width: 100vw;
+    }
+  }
+
+  /* Remove the float rules */
+  #leftButton,
+  #rightButton {
+    float: none;
+  }
+
+  /* Use flex styling to align the buttons to the edges */
+  .bottomSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .center-vertical {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .logo {
+    width: 100%;
+    max-width: 200px; /* Adjust as needed */
+  }
 </style>

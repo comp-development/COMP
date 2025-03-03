@@ -1,4 +1,4 @@
-import toast from "svelte-french-toast";
+import toast from "$lib/toast.svelte";
 
 /**
  * Handles errors that arises during usage.
@@ -6,7 +6,7 @@ import toast from "svelte-french-toast";
  * @param error Error
  **/
 export function handleError(error: Error) {
-	console.log(error.message);
-	console.log(error);
-	toast.error(error.message);
+  console.error(error.message);
+  console.error(error);
+  toast.error(error.message);
 }
