@@ -17,7 +17,7 @@
   } from "$lib/supabase";
   import { Button, ButtonGroup, Timeline, TimelineItem } from "flowbite-svelte";
   import type { Tables } from "../../../../../../db/database.types";
-  import { CartSolid, UsersGroupSolid, CalendarWeekSolid, CheckCircleSolid, ClockSolid, CloseCircleSolid } from "flowbite-svelte-icons";
+  import { CartSolid, UsersGroupSolid, CalendarWeekSolid, CheckCircleSolid, ClockSolid, CloseCircleSolid, UserAddSolid } from "flowbite-svelte-icons";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
   import OrgForm from "$lib/components/OrgForm.svelte";
@@ -525,6 +525,10 @@
           <Button pill outline color="primary" id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} onclick={event_details.eventbrite_event_id ? openEventbriteWidget : openPurchaseModal}>
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
+          </Button>
+          <Button pill outline color="primary" onclick={() => { /*to be implemented*/ }}>
+            <UserAddSolid class="w-4 h-4 me-2" />
+            Invite Student
           </Button>
         </ButtonGroup>
       </div>
