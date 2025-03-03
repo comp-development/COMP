@@ -218,6 +218,14 @@
     }
   }
 
+  :global(.specificModalMax) {
+    max-height: 500px;
+  }
+
+  :global(.specificModalMax .registrationForm .relative div) {
+    justify-content: left !important;
+  }
+
   /*Generally applicable styling*/
   :global(.flex) {
     display: flex;

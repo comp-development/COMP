@@ -266,7 +266,7 @@
       <Button pill onclick={handleSubmit}>Submit</Button>
     {/if}
 
-    <div class="flex gap-2 rounded-lg">
+    <div class="flex gap-2 rounded-lg" style="flex-wrap: wrap;">
       {#each inputTypes as { icon: Icon, type, tooltip, onClick }, i}
         <div class="relative">
           <Button

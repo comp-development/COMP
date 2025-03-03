@@ -69,13 +69,18 @@
   <Modal 
     bind:open={isEditModalOpen}
   >
-    <StudentForm
-      title="Edit Student"
-      student_event={team_member}
-      user={team_member.person}
-      event_id={team_member.event_id}
-      editing
-    />
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Edit Student
+      </h3>
+      <StudentForm
+        title=""
+        student_event={team_member}
+        user={team_member.person}
+        event_id={team_member.event_id}
+        editing
+      />
+    </div>
   </Modal>
 </div>
 
