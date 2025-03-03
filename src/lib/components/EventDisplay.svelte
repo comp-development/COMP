@@ -227,7 +227,7 @@
     {#if event}
       <div class="flex" style="min-height: 45px;">
         <div class="flex" style="justify-content: left;">
-          <div style="width: 350px;">
+          <div class="navigationalWidth">
             <p
               class="flex {editable ? 'editableField' : ''}"
               onclick={() => editable && (editingField = "max_team_size")}
@@ -249,7 +249,7 @@
             </p>
           </div>
           {#if !event.eventbrite_event_id}
-            <div style="width: 350px;">
+            <div class="navigationalWidth">
               <p
                 class="flex {editable ? 'editableField' : ''}"
                 onclick={() => editable && (editingField = "ticket_price_cents")}
@@ -285,6 +285,26 @@
     width: 100%;
     padding: 40px;
     padding-top: 20px;
+  }
+
+  .navigationalWidth {
+    width: 350px;
+  }
+
+  @media only screen and (max-width: 900px) {
+    .grid {
+      grid-template-columns: 97vw;
+      padding: 10px;
+    }
+
+    .grid div {
+      max-width: 100%;
+    }
+
+    .navigationalWidth {
+      width: fit-content;
+      padding-right: 10px;
+    }
   }
 
   :global(.editableField) {

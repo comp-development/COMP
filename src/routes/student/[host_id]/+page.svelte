@@ -8,7 +8,6 @@
     getHostEvents,
     getStudentHostEvents,
   } from "$lib/supabase";
-  import MarkdownRender from "$lib/components/MarkdownRender.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
 
   let my_events: {
@@ -118,16 +117,3 @@
     <p style="text-align: center;">No events found</p>
   {/if}
 {/if}
-
-<style>
-  .container {
-    max-width: 768px;
-  }
-
-  .summary {
-    border: 3px solid var(--primary-tint);
-    padding: 10px;
-    margin: 10px;
-    border-radius: 15px;
-  }
-</style>
