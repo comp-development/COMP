@@ -454,6 +454,13 @@ export async function upsertEventCustomFields(
   );
 
   if (eventCustomFieldsToDelete.length > 0) {
+    const { error: deleteEventFieldsError0 } = await supabase
+      .from("custom_field_values")
+      .delete()
+      .in("event_custom_field_id", eventCustomFieldsToDelete);
+
+    if (deleteEventFieldsError0) throw deleteEventFieldsError0;
+
     const { error: deleteEventFieldsError } = await supabase
       .from("event_custom_fields")
       .delete()
