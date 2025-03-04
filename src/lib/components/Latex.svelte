@@ -1,36 +1,37 @@
 <script lang="ts">
-	import { displayLatex } from "$lib/latexStuff";
-	import { unifiedLatexToHast } from "@unified-latex/unified-latex-to-hast";
-	import { processLatexViaUnified } from "@unified-latex/unified-latex";
-	import rehypeStringify from "rehype-stringify";
-	import toast from "svelte-french-toast";
-	import { handleError } from "$lib/handleError";
+  import { displayLatex } from "$lib/latexStuff";
+  import { unifiedLatexToHast } from "@unified-latex/unified-latex-to-hast";
+  import { processLatexViaUnified } from "@unified-latex/unified-latex";
+  import rehypeStringify from "rehype-stringify";
 
-	export let style = "";
-	export let value;
+  interface Props {
+    style?: string;
+    value: any;
+  }
 
-	// fetch images
-	let rendered;
+  let { style = "", value }: Props = $props();
 
-	async function loadLatex() {
-		try {
-			rendered = await displayLatex(value);
+  // fetch images
+  let rendered = $state();
 
-			let unifiedStr = processLatexViaUnified()
-				.use(unifiedLatexToHast)
-				.use(rehypeStringify)
-				.processSync(value).value;
-		} catch (error) {
-			handleError(error);
-			toast.error(error.message);
-		}
-	}
+  async function loadLatex() {
+    try {
+      rendered = await displayLatex(value);
 
-	loadLatex();
+      let unifiedStr = processLatexViaUnified()
+        .use(unifiedLatexToHast)
+        .use(rehypeStringify)
+        .processSync(value).value;
+    } catch (error) {
+      handleError(error);
+    }
+  }
+
+  loadLatex();
 </script>
 
 {#if rendered}
-	<span {style}>{@html rendered.out}</span>
+  <span {style}>{@html rendered.out}</span>
 {:else}
-	<span {style}>Loading...</span>
+  <span {style}>Loading...</span>
 {/if}
