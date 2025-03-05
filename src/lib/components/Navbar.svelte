@@ -53,13 +53,13 @@
   const adminEventPages = [
     { name: "Home", route: "" },
     { name: "Tests", route: "tests" },
-    { name: "Registration", route: "registration" },
+    { name: "Custom Fields", route: "custom-fields" },
   ];
 
   const adminHostPages = [
     { name: "Home", route: "" },
     { name: "Users", route: "users" },
-    { name: "Custom Fields", route: "custom_fields" },
+    { name: "Custom Fields", route: "custom-fields" },
   ];
 
   async function initializeNavbar() {
