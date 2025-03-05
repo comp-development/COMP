@@ -98,11 +98,6 @@
     },
   ];
 
-  window.addEventListener('beforeunload', (event) => {
-    event.preventDefault();
-    event.returnValue = ''; // This triggers the confirmation dialog
-  });
-
   (async () => {
     studentCustomFields = await getEventCustomFields(event_id, "students");
     orgCustomFields = await getEventCustomFields(event_id, "orgs");
@@ -207,6 +202,12 @@
 <style>
   .grid {
     grid-template-columns: 49% 50%;
+  }
+
+  @media only screen and (max-width: 900px) {
+    .grid {
+      grid-template-columns: auto;
+    }
   }
 
   :global([role="tabpanel"]) {

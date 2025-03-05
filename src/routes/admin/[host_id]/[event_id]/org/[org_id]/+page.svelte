@@ -430,6 +430,12 @@
     margin: 20px;
   }
 
+  @media only screen and (max-width: 900px) {
+    .grid-container {
+      grid-template-columns: 100%;
+    }
+  }
+
   .teams-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

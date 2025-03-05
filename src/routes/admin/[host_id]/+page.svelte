@@ -132,13 +132,3 @@
     </div>
   </Modal>
 </div>
-
-<style>
-  .specificModalMax {
-    max-height: 500px;
-  }
-
-  :global(.specificModalMax .registrationForm .relative div) {
-    justify-content: left !important;
-  }
-</style>

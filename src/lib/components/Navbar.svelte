@@ -128,13 +128,13 @@
         <Logo />
       </div>
     </NavBrand>
-    <div class="md:order-2">
+    <div class="md:order-2" style="display: flex; align-items: center; justify-content: end;">
       <Button size="sm" onclick={handleSignout} pill color="primary"
         >Sign Out</Button
       >
-      <NavHamburger />
+      <NavHamburger class="hamburgerClass" />
     </div>
-    <NavUl>
+    <NavUl class="navigationList">
       {#if $page.route.id?.includes("/coach")}
         <NavLi class="cursor-pointer">
           <BuildingSolid class="h-6 text-primary-800 dark:text-white inline" />
@@ -358,16 +358,11 @@
     background-color: white;
   }
 
-  .logo {
-    background-color: black;
-    border-radius: 50px;
-  }
-
   :global([role="link"]:hover) {
     background-color: rgb(221, 221, 221) !important;
   }
 
-  :global(.active) {
+  :global(nav .active) {
     text-decoration: underline;
     text-decoration-thickness: 2px;
     text-underline-offset: 4px;
@@ -376,5 +371,32 @@
   :global(.navli) {
     background-color: transparent;
     color: white;
+  }
+
+  :global(.hamburgerClass) {
+    color: white;
+  }
+
+  :global(.hamburgerClass:hover) {
+    background-color: transparent;
+    border: 2px solid white;
+  }
+
+  @media only screen and (max-width: 800px) {
+    :global(.navigationList ul) {
+      background-color: var(--primary);
+    }
+
+    :global(.navigationList ul li) {
+      padding: 5px;
+    }
+
+    :global(.navigationList ul [role=tooltip]) {
+      color: white;
+    }
+
+    :global(.navigationList ul li a:hover) {
+      background-color: transparent !important;
+    }
   }
 </style>

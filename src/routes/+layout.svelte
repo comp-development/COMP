@@ -200,12 +200,30 @@
     grid-template-columns: 33% 33% 33%;
   }
 
-  @media (max-width: 800px) {
+  @media only screen and (max-width: 900px) {
+    :global(.buttonContainer) {
+      grid-template-columns: 48% 48%;
+    }
+
     :global(.row),
     :global(.grid),
     :global(.grid-thirds) {
       grid-template-columns: auto;
     }
+  }
+
+  @media only screen and (max-width: 600px) {
+    :global(.buttonContainer) {
+      grid-template-columns: 100%;
+    }
+  }
+
+  :global(.specificModalMax) {
+    max-height: 500px;
+  }
+
+  :global(.specificModalMax .registrationForm .relative div) {
+    justify-content: left !important;
   }
 
   /*Generally applicable styling*/

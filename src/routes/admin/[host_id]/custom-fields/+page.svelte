@@ -124,6 +124,12 @@
     grid-template-columns: 49% 50%;
   }
 
+  @media only screen and (max-width: 900px) {
+    .grid {
+      grid-template-columns: auto;
+    }
+  }
+
   :global([role="tabpanel"]) {
     background-color: transparent;
   }
