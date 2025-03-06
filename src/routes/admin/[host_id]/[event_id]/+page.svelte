@@ -26,8 +26,8 @@
   let independentTeams = $state([]);
   let selectedTab = $state("student");
 
-  let isEditModalOpen = $state(false);
-  let letEditableStudent = $state(null);
+	let isEditModalOpen = $state(false);
+	let letEditableStudent = $state(null);
 
   async function loadInformation() {
     try {
@@ -39,17 +39,17 @@
       students = await getEventStudents(eventId);
       independentTeams = await getEventIndependentTeams(eventId);
 
-      loading = false;
-    } catch (error) {
-      handleError(error);
-    }
-  }
+			loading = false;
+		} catch (error) {
+			handleError(error);
+		}
+	}
 
-  loadInformation();
+	loadInformation();
 </script>
 
 {#if loading}
-  <Loading />
+	<Loading />
 {:else}
 	<EventDisplay
 		id={eventId}
@@ -102,32 +102,32 @@
 {/if}
 
 <div class="modalExterior">
-  <Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
-    <div class="specificModalMax">
-      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-        Edit Student
-      </h3>
-      <StudentForm
-        title=""
-        student_event={letEditableStudent}
-        user={letEditableStudent.person}
-        event_id={eventId}
-      />
-    </div>
-  </Modal>
+	<Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
+		<div class="specificModalMax">
+			<h3 class="text-xl font-medium text-gray-900 dark:text-white">
+				Edit Student
+			</h3>
+			<StudentForm
+				title=""
+				student_event={letEditableStudent}
+				user={letEditableStudent.person}
+				event_id={eventId}
+			/>
+		</div>
+	</Modal>
 </div>
 
 <style>
-  .tableMax {
-    max-width: 800px;
-    margin: 0 auto;
-  }
+	.tableMax {
+		max-width: 800px;
+		margin: 0 auto;
+	}
 
-  .specificModalMax {
-    max-height: 500px;
-  }
+	.specificModalMax {
+		max-height: 500px;
+	}
 
-  :global([role="tabpanel"]) {
-    background-color: transparent !important;
-  }
+	:global([role="tabpanel"]) {
+		background-color: transparent !important;
+	}
 </style>
