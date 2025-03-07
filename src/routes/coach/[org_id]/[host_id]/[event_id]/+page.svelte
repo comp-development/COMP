@@ -464,7 +464,7 @@
   
   <div class="flex justify-center">
     <div class="mx-10">
-      <Timeline order="horizontal">
+      <Timeline order="horizontal" class="timeline">
         {#each [
           { title: "Register", step: 1, description: "Fill out the registration form below." },
           { title: "Create Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
@@ -645,6 +645,12 @@
   @media only screen and (max-width: 900px) {
     .grid-container {
       grid-template-columns: 100%;
+    }
+  }
+
+  @media only screen and (max-width: 650px) {
+    :global(.timeline h3) {
+      text-align: center !important;
     }
   }
 
