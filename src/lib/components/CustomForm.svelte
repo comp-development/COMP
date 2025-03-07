@@ -132,6 +132,8 @@
       .map((v) => v.trim())
       .filter((v) => v);
 
+    value = value.trim();
+
     if (selectedValues.includes(value)) {
       selectedValues = selectedValues.filter((v) => v !== value);
     } else {
