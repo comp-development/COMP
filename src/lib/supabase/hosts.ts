@@ -98,11 +98,68 @@ export async function userJoinAsHostAdmin(user_id: string, host_id: number) {
   await addAdminToHost(user_id, host_id);
 }
 
+export async function inviteUserToHost(host_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("hosts")
+    .select("invites")
+    .eq("host_id", host_id)
+    .single();
+
+  if (error) throw error;
+
+  let invites = data.invites;
+
+  if (!invites) { invites = [email]; } 
+  else { invites.push(email); }
+
+  const { error: updateError } = await supabase
+    .from("hosts")
+    .update({ invites })
+    .eq("host_id", host_id);
+
+  if (updateError) throw updateError;
+}
+
+export async function removeUserInvitationFromHost(host_id: number, email: string) {
+  const { data, error: fetchError } = await supabase
+    .from("hosts")
+    .select("invites")
+    .eq("host_id", host_id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  let invites = data.invites;
+
+  if (invites) {
+    invites = invites.filter((invite: string) => invite !== email);
+  }
+
+  const { error: updateError } = await supabase
+    .from("hosts")
+    .update({ invites })
+    .eq("host_id", host_id);
+
+  if (updateError) throw updateError;
+}
+
+export async function checkUserInvitedToHost(host_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("hosts")
+    .select("invites")
+    .eq("host_id", host_id)
+    .single();
+  if (error) throw error;
+  
+  return data.invites.includes(email);
+}
+
 export async function addAdminToHost(admin_id: string, host_id: number) {
   const { error } = await supabase.from("host_admins").insert({
     admin_id: admin_id,
     host_id: host_id,
   });
+
   if (error) throw error;
 }
 

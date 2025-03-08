@@ -1,21 +1,21 @@
 import { json } from '@sveltejs/kit';
-import sgMail from '@sendgrid/mail';
+import postmark from "postmark";
 import { env } from "$env/dynamic/private";
 
-sgMail.setApiKey(env.SENDGRID_API_KEY);
+var client = new postmark.ServerClient(env.POSTMARK_API_KEY);
 
 export async function POST({ request }) {
   try {
     const { email, subject, message } = await request.json();
 
     const msg = {
-      to: email,
-      from: 'admin@comp.mt',
-      subject: subject,
-      html: message
+      To: email,
+      From: 'admin@comp.mt',
+      Subject: subject,
+      HtmlBody: message
     };
 
-    await sgMail.send(msg);
+    await client.sendEmail(msg);
 
     return json({ success: true, message: 'Email sent successfully', error: null });
   } catch (error) {
