@@ -157,7 +157,7 @@
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
-    team?.student_event.sort((a, b) => {
+    team?.student_event.sort((a: StudentEvent, b: StudentEvent) => {
       const aValues = [
         a?.front_id ?? "",
         a?.student?.first_name ?? "",
@@ -236,7 +236,7 @@
               org_id={team?.org_id}
               team={{
                 ...team,
-                teamMembers: team?.student_event?.map((member) => ({
+                teamMembers: team?.student_event?.map((member: StudentEvent) => ({
                   ...member,
                   person: member.student,
                 })),
@@ -246,7 +246,6 @@
               onDrop={() => {}}
               onDragStart={() => {}}
               onDeleteStudent={() => {}}
-              openEditModal={() => {}}
               handleDragOver={() => {}}
               handleDragLeave={() => {}}
               maxTeamSize={event_details?.max_team_size}
@@ -258,12 +257,14 @@
         
       </div>
     {:else}
+      <br><br>
       <div class="registrationForm">
         <Tabs tabStyle="pill">
           <TabItem
             onclick={() => (selectedOption = "join_org")}
             open={selectedOption === "join_org"}
             title="Join Organization"
+            divClass="bg-[var(--background)]"
           >
             <h2>Join Organization</h2>
             <p>
@@ -295,6 +296,7 @@
               onclick={() => (selectedOption = "join_team")}
               open={selectedOption === "join_team"}
               title="Join Independent Team"
+              divClass="bg-[var(--background)]"
             >
               <h2>Join Independent Team</h2>
               <p>
@@ -339,6 +341,7 @@
             onclick={() => (selectedOption = "create_team")}
             open={selectedOption === "create_team"}
             title="Create Independent Team"
+            divClass="bg-[var(--background)]"
           >
             <h2>Create Independent Team</h2>
             <p>
