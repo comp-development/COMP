@@ -33,7 +33,7 @@
       {#if team_member.front_id}
         <Badge rounded large color="dark">{team_member.front_id}</Badge>
       {/if}
-      <div class="ml-2">
+      <div class="ml-2 text-left">
         <p class="font-bold text-gray-800">
           {team_member.person.first_name}
           {team_member.person.last_name}

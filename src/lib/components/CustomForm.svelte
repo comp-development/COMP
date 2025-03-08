@@ -284,18 +284,19 @@
             </ButtonGroup>
           {:else if field.custom_field_type === "multiple_choice"}
             {#each field.choices as choice}
-              <div style="display: flex; align-items: left">
+              <div class="checkbox">
                 <Radio
                   bind:group={newResponses[key]}
                   value={choice}
                   disabled={!field.editable && field.value != null}
-                  >{choice}</Radio
                 >
+                  <p>{choice}</p>
+                </Radio>
               </div>
             {/each}
           {:else if field.custom_field_type === "checkboxes"}
             {#each field.choices as choice}
-              <div style="display: flex; align-items: left">
+              <div class="checkbox">
                 <Checkbox
                   disabled={!field.editable && field.value != null}
                   checked={(newResponses[key] || "")
@@ -305,7 +306,7 @@
                     .includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
-                  {choice}
+                  <p>{choice}</p>
                 </Checkbox>
               </div>
             {/each}
@@ -368,6 +369,22 @@
   /* Only apply the border when showBorder is true */
   form.bordered {
     border: 3px solid var(--primary-light);
+  }
+
+  .checkbox {
+    margin-bottom: 5px;
+  }
+
+  :global(.checkbox label) {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  :global(.checkbox label p) {
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 14px;
   }
 
   :global(#datepicker-dropdown) {
