@@ -16,6 +16,7 @@
     getTicketCount,
     getOrganizationDetails,
     getOrganization,
+    inviteUserToOrgEvent,
   } from "$lib/supabase";
   import { Button, ButtonGroup, Timeline, TimelineItem } from "flowbite-svelte";
   import type { Tables } from "../../../../../../db/database.types";
@@ -486,27 +487,33 @@
   async function handleSubmit() {
     try {
       const org = await getOrganization(org_id);
+      await inviteUserToOrgEvent(org_id, event_id, newResponses2.email);
 
-      const response = await fetch("/api/hash_data", {
+      const response = await fetch("/api/sendmail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: newResponses2.email, id: org_id })
-      });
-      const data = await response.json();
-      if (data.error) throw data.error;
-
-      const response2 = await fetch('/api/sendmail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: newResponses2.email,
           subject: `Join ${org.name} on COMP`,
-          message: `You have been invited to join ${org.name} on COMP! To accept the invitation, click on <a href="https://comp.mt/join-org?hashed_org_id=${data.hash}&org_id=${org_id}&email=${newResponses2.email}">the following link</a>.`
-        })
+          message: `
+        <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
+          <h2 style="color: black;">You're Invited to ${org.name} on COMP!</h2>
+          <p>You have been invited to compete for <strong>${org.name}</strong> during ${event_details?.event_name} on COMP!</p>
+          <p>To accept the invitation, click the button below:</p>
+          <a href="https://comp.mt/join-org?org_id=${org_id}&event_id=${event_id}&email=${newResponses2.email}" 
+             style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
+             Accept Invitation
+          </a>
+          <p>If the button doesn't work, you can also click <a href="https://comp.mt/join-org?org_id=${org_id}&event_id=${event_id}&email=${newResponses2.email}" style="color: black;">this link</a>.</p>
+        </div>
+      `,
+        }),
       });
 
-      const data2 = await response2.json();
-      if (data2.error) { throw data2.error; }
+      const data = await response.json();
+      if (data.error) {
+        throw data.error;
+      }
 
       toast.success("Email sent successfully");
       isModalOpen = false;
@@ -601,6 +608,10 @@
           >
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
+          </Button>
+          <Button pill outline color="primary" onclick={() => (isModalOpen = true)}>
+            <UserAddSolid class="w-4 h-4 me-2" />
+            Invite Student
           </Button>
         </ButtonGroup>
       </div>

@@ -76,6 +76,67 @@ export async function getCoachOrganizations(coach_id: string) {
   return data;
 }
 
+export async function inviteUserToOrgEvent(org_id: number, event_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("org_events")
+    .select("invites")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .single();
+
+  if (error) throw error;
+
+  let invites = data.invites;
+
+  if (!invites) { invites = [email]; } 
+  else { invites.push(email); }
+
+  const { error: updateError } = await supabase
+    .from("org_events")
+    .update({ invites })
+    .eq("org_id", org_id)
+    .eq("event_id", event_id);
+
+  if (updateError) throw updateError;
+}
+
+export async function removeUserInvitationFromOrgEvent(org_id: number, event_id: number, email: string) {
+  const { data, error: fetchError } = await supabase
+    .from("org_events")
+    .select("invites")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  let invites = data.invites;
+
+  if (invites) {
+    invites = invites.filter((invite: string) => invite !== email);
+  }
+
+  const { error: updateError } = await supabase
+    .from("org_events")
+    .update({ invites })
+    .eq("org_id", org_id)
+    .eq("event_id", event_id);
+
+  if (updateError) throw updateError;
+}
+
+export async function checkUserInvitedToOrgEvent(org_id: number, event_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("org_events")
+    .select("invites")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .single();
+  if (error) throw error;
+  
+  return data.invites.includes(email);
+}
+
 export async function addCoachToOrganization(coach_id: string, org_id: number) {
   const { data, error } = await supabase
     .from("org_coaches")
@@ -123,7 +184,7 @@ export async function getOrganizationTeams(org_id: number, event_id: number) {
 export async function ifOrgEvent(event_id: number, org_id: number) {
   const { data, error } = await supabase
     .from("org_events")
-    .select("*")
+    .select("*, event:events(*)")
     .eq("event_id", event_id)
     .eq("org_id", org_id)
     .maybeSingle();

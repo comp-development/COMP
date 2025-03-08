@@ -1,6 +1,11 @@
 <script lang="ts">
   import { handleError } from "$lib/handleError";
-  import { getHostAdmins, removeAdminFromHost, getHostInformation } from "$lib/supabase";
+  import {
+    getHostAdmins,
+    removeAdminFromHost,
+    getHostInformation,
+    inviteUserToHost,
+  } from "$lib/supabase";
   import Loading from "$lib/components/Loading.svelte";
   import TableName from "$lib/components/TableName.svelte";
   import { page } from "$app/stores";
@@ -37,7 +42,7 @@
         return a.person.first_name
           .toLowerCase()
           .localeCompare(b.person.first_name.toLowerCase());
-        });
+      });
       roles = users;
       loading = false;
     } catch (error) {
@@ -47,9 +52,7 @@
 
   async function handleDeleteAdmin() {
     try {
-      roles = [
-        ...roles.filter((admin) => admin.admin_id !== deleteUserId),
-      ];
+      roles = [...roles.filter((admin) => admin.admin_id !== deleteUserId)];
       await removeAdminFromHost(deleteUserId, host_id);
       updateTrigger += 1;
     } catch (error) {
@@ -60,27 +63,33 @@
   async function handleSubmit() {
     try {
       const host = await getHostInformation(host_id);
+      await inviteUserToHost(host_id, newResponses.email);
 
-      const response = await fetch("/api/hash_data", {
+      const response = await fetch("/api/sendmail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: newResponses.email, id: host_id })
-      });
-      const data = await response.json();
-      if (data.error) throw data.error;
-
-      const response2 = await fetch('/api/sendmail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           email: newResponses.email,
           subject: `Join ${host.host_name} on COMP`,
-          message: `You have been invited to join ${host.host_name} on COMP! To accept the invitation, click on <a href="https://comp.mt/join-host?hashed_host_id=${data.hash}&host_id=${host_id}&email=${newResponses.email}">the following link</a>.`
-        })
+          message: `
+        <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
+          <h2 style="color: black;">You're Invited to ${host.host_name} on COMP!</h2>
+          <p>You have been invited to become an admin on <strong>${host.host_name}</strong> on COMP!</p>
+          <p>To accept the invitation, click the button below:</p>
+          <a href="https://comp.mt/join-host?host_id=${host_id}&email=${newResponses.email}" 
+             style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
+             Accept Invitation
+          </a>
+          <p>If the button doesn't work, you can also click <a href="https://comp.mt/join-host?host_id=${host_id}&email=${newResponses.email}" style="color: black;">this link</a>.</p>
+        </div>
+      `,
+        }),
       });
 
-      const data2 = await response2.json();
-      if (data2.error) { throw data2.error; }
+      const data = await response.json();
+      if (data.error) {
+        throw data.error;
+      }
 
       toast.success("Email sent successfully");
       isModalOpen = false;
@@ -110,16 +119,16 @@
         actionType="delete"
         action={handleDeleteAdmin}
         columns={[
-            {
+          {
             label: "First Name",
             value: (item) => item.person.first_name,
             sortable: true,
-            },
-            {
+          },
+          {
             label: "Last Name",
             value: (item) => item.person.last_name,
             sortable: true,
-            }
+          },
         ]}
         bind:deleteUserId
       />
