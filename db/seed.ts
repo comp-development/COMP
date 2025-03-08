@@ -2,6 +2,7 @@ import { SeedClient, createSeedClient } from "@snaplet/seed";
 import { copycat, type Input } from "@snaplet/copycat";
 import "dotenv/config";
 import { env } from "process";
+import type { Tables } from "./database.types";
 
 enum UserType {
   Superadmin = 1,
@@ -227,6 +228,11 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
             "cs_test_" + copycat.times(ctx.seed, 20, copycat.char).join(""),
         },
       },
+      custom_fields: {
+        data: {
+          regex_error_message: null,
+        },
+      },
     },
   });
 
@@ -339,6 +345,51 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
   for (const [i, event] of events.entries()) {
     // No one could have joined if event weren't published.
     if (!event.published) continue;
+
+    // Add custom fields.
+    const custom_fields = [
+      {
+        key: "height",
+        label: "Height (in)",
+        regex: "^\\d+(\\.\\d+)?$",
+        required: true,
+        editable: true,
+        hidden: false,
+        custom_field_type: "text",
+        custom_field_table: "students",
+      },
+      {
+        key: "cat_count",
+        label: "# Cats",
+        regex: "^\\d+$",
+        required: true,
+        editable: true,
+        hidden: false,
+        custom_field_type: "text",
+        custom_field_table: "students",
+        regex_error_message: "must be an integer number of cats",
+      },
+      {
+        key: "parent_email",
+        label: "Parent/Guardian Email",
+        required: true,
+        editable: true,
+        hidden: false,
+        custom_field_type: "email",
+        custom_field_table: "students",
+        placeholder: "minty@gmail.com",
+      },
+    ] satisfies Partial<Tables<"custom_fields">>[];
+    await seed.event_custom_fields(
+      custom_fields.map((v, i) => ({
+        // TODO: check 1 indexed?
+        ordering: i + 1,
+        custom_fields: v,
+      })),
+      {
+        connect: { events: [event] },
+      },
+    );
 
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(
