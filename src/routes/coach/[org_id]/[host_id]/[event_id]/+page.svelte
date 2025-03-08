@@ -526,10 +526,6 @@
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
           </Button>
-          <Button pill outline color="primary" onclick={() => { /*to be implemented*/ }}>
-            <UserAddSolid class="w-4 h-4 me-2" />
-            Invite Student
-          </Button>
         </ButtonGroup>
       </div>
 
