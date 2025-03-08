@@ -64,7 +64,7 @@
       const response = await fetch("/api/hash_data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: newResponses.email, host_id: host_id })
+        body: JSON.stringify({ email: newResponses.email, id: host_id })
       });
       const data = await response.json();
       if (data.error) throw data.error;
