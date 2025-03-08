@@ -196,7 +196,7 @@
     event={event_details}
     editable={false}
   />
-
+  <hr/>
   {#if !student_event}
     {#if transaction_stored}
       <p>

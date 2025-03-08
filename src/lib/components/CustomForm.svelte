@@ -235,7 +235,7 @@
                 class="w-5 h-5 text-gray-500 dark:text-gray-400"
               />
             </Input>
-          {:else if field.custom_field_type.includes("password")}
+          {:else if field.custom_field_type?.includes("password")}
             <ButtonGroup class="w-full">
               <Input
                 id={key}
