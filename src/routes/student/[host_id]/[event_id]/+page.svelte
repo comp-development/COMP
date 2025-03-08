@@ -258,12 +258,14 @@
         
       </div>
     {:else}
+      <br><br>
       <div class="registrationForm">
         <Tabs tabStyle="pill">
           <TabItem
             onclick={() => (selectedOption = "join_org")}
             open={selectedOption === "join_org"}
             title="Join Organization"
+            divClass=""
           >
             <h2>Join Organization</h2>
             <p>
