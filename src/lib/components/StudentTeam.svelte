@@ -221,7 +221,7 @@
 
 <style>
   .team {
-    border: 3px solid var(--primary-tint);
+    border: 2px solid var(--primary-light);
     padding: 10px;
     border-radius: 15px;
     position: relative;

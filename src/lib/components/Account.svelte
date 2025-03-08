@@ -65,6 +65,9 @@
           );
           logInState = "LOGIN";
         } catch (error) {
+          if (error.code === "weak_password"){
+            error.message = "Password must contain at least 6 characters, a letter, and a number.";
+          }
           throw error;
         }
       } else {
@@ -108,7 +111,7 @@
       label: "Password",
       editable: true,
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "current-password",
       placeholder: "Password",
     },
   ];
@@ -145,7 +148,7 @@
       label: "Password",
       editable: true,
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "new-password",
       placeholder: "Password",
     },
     {
@@ -153,7 +156,7 @@
       label: "Retype Password",
       editable: true,
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "new-password",
       placeholder: "Retype Password",
     },
   ];

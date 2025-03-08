@@ -12,14 +12,14 @@
       name: "password",
       label: "Password",
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "new-password",
       placeholder: "Password",
     },
     {
       name: "retypePassword",
       label: "Retype Password",
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "new-password",
       placeholder: "Retype Password",
     },
   ];

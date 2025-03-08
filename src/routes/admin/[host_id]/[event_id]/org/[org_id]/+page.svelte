@@ -446,6 +446,6 @@
   .unassigned-students {
     padding: 20px;
     border-radius: 15px;
-    border: 2px solid var(--primary-tint);
+    border: 2px solid var(--primary-light);
   }
 </style>

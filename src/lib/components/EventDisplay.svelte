@@ -96,24 +96,26 @@
               {newResponses.event_date || "None"}
             {/if}
           </span>
-          <span
-            class="mr-2 flex {editable ? 'editableField' : ''}"
-            onclick={() => editable && (editingField = "published")}
-          >
-            {#if editingField === "published"}
-              <Checkbox
-                bind:checked={newResponses.published}
-                on:change={handleEdit}
-                onmouseleave={() => (editingField = null)}
-              >
-                Public
-              </Checkbox>
-            {:else if newResponses.published}
-              <Badge large color="green">Public</Badge>
-            {:else}
-              <Badge large color="red">Not Public</Badge>
-            {/if}
-          </span>
+          {#if editable}
+            <span
+              class="mr-2 flex {editable ? 'editableField' : ''}"
+              onclick={() => editable && (editingField = "published")}
+            >
+              {#if editingField === "published"}
+                <Checkbox
+                  bind:checked={newResponses.published}
+                  on:change={handleEdit}
+                  onmouseleave={() => (editingField = null)}
+                >
+                  Public
+                </Checkbox>
+              {:else if newResponses.published}
+                <Badge large color="green">Public</Badge>
+              {:else}
+                <Badge large color="red">Not Public</Badge>
+              {/if}
+            </span>
+          {/if}
         </h2>
       {:else}
         <h1

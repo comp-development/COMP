@@ -235,7 +235,7 @@
                 class="w-5 h-5 text-gray-500 dark:text-gray-400"
               />
             </Input>
-          {:else if field.custom_field_type === "password"}
+          {:else if field.custom_field_type?.includes("password")}
             <ButtonGroup class="w-full">
               <Input
                 id={key}
@@ -244,6 +244,7 @@
                 bind:value={newResponses[key]}
                 type={show ? "text" : "password"}
                 placeholder="Password"
+                autocomplete={field.custom_field_type === "new-password" ? "new-password" : "current-password"}
               />
               <InputAddon>
                 <button type="button" onclick={() => (show = !show)}>
@@ -331,7 +332,7 @@
 
   /* Only apply the border when showBorder is true */
   form.bordered {
-    border: 3px solid var(--primary-tint);
+    border: 3px solid var(--primary-light);
   }
 
   :global(#datepicker-dropdown) {
