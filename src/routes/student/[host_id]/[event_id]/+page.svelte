@@ -157,7 +157,7 @@
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
-    team?.student_event.sort((a, b) => {
+    team?.student_event.sort((a: StudentEvent, b: StudentEvent) => {
       const aValues = [
         a?.front_id ?? "",
         a?.student?.first_name ?? "",
@@ -196,7 +196,7 @@
     event={event_details}
     editable={false}
   />
-
+  <hr/>
   {#if !student_event}
     {#if transaction_stored}
       <p>
@@ -219,7 +219,7 @@
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
             <span class="font-medium">Not assigned to a team!</span>
-            Your regsitration is not complete until you are assigned to a team - reach out to
+            Your registration is not complete until you are assigned to a team - reach out to
             your coach to assign you to a team.
           </Alert>
         {:else}
@@ -236,7 +236,7 @@
               org_id={team?.org_id}
               team={{
                 ...team,
-                teamMembers: team?.student_event?.map((member) => ({
+                teamMembers: team?.student_event?.map((member: StudentEvent) => ({
                   ...member,
                   person: member.student,
                 })),
@@ -246,7 +246,6 @@
               onDrop={() => {}}
               onDragStart={() => {}}
               onDeleteStudent={() => {}}
-              openEditModal={() => {}}
               handleDragOver={() => {}}
               handleDragLeave={() => {}}
               maxTeamSize={event_details?.max_team_size}
@@ -258,12 +257,14 @@
         
       </div>
     {:else}
+      <br><br>
       <div class="registrationForm">
         <Tabs tabStyle="pill">
           <TabItem
             onclick={() => (selectedOption = "join_org")}
             open={selectedOption === "join_org"}
             title="Join Organization"
+            divClass="bg-[var(--background)]"
           >
             <h2>Join Organization</h2>
             <p>
@@ -290,53 +291,57 @@
               handleSubmit={orgJoinSubmit}
             />
           </TabItem>
-          <TabItem
-            onclick={() => (selectedOption = "join_team")}
-            open={selectedOption === "join_team"}
-            title="Join Independent Team"
-          >
-            <h2>Join Independent Team</h2>
-            <p>
-              Get the code from an already registered team member.
-            </p>
-            <CustomForm
-              fields={[
-                {
-                  event_custom_field_id: "team_join_code",
-                  key: "team_join_code",
-                  name: "team_join_code",
-                  label: "Team Join Code",
-                  required: true,
-                  regex: /^[A-Za-z0-9]{6}$/,
-                  placeholder: "ABC123",
-                  value: null,
-                  choices: null,
-                  editable: true,
-                  hidden: false,
-                },
-              ]}
-              custom_fields={[]}
-              bind:newResponses={teamJoinFormResponses}
-              bind:validationErrors={teamJoinFormErrors}
-              handleSubmit={() => {
-                if (event_details?.eventbrite_event_id && !transaction_stored) {
-                  openEventbriteWidget(
-                    false,
-                    teamJoinFormResponses["team_join_code"],
-                  );
-                } else {
-                  document.location.assign(
-                    `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`,
-                  );
-                }
-              }}
-            />
-            <div id="eventbrite-widget-container"></div>
-          </TabItem>
+          {#if event_details?.event_id !== 12}
+            <TabItem
+              onclick={() => (selectedOption = "join_team")}
+              open={selectedOption === "join_team"}
+              title="Join Independent Team"
+              divClass="bg-[var(--background)]"
+            >
+              <h2>Join Independent Team</h2>
+              <p>
+                Get the code from an already registered team member.
+              </p>
+              <CustomForm
+                fields={[
+                  {
+                    event_custom_field_id: "team_join_code",
+                    key: "team_join_code",
+                    name: "team_join_code",
+                    label: "Team Join Code",
+                    required: true,
+                    regex: /^[A-Za-z0-9]{6}$/,
+                    placeholder: "ABC123",
+                    value: null,
+                    choices: null,
+                    editable: true,
+                    hidden: false,
+                  },
+                ]}
+                custom_fields={[]}
+                bind:newResponses={teamJoinFormResponses}
+                bind:validationErrors={teamJoinFormErrors}
+                handleSubmit={() => {
+                  if (event_details?.eventbrite_event_id && !transaction_stored) {
+                    openEventbriteWidget(
+                      false,
+                      teamJoinFormResponses["team_join_code"],
+                    );
+                  } else {
+                    document.location.assign(
+                      `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`,
+                    );
+                  }
+                }}
+              />
+              <div id="eventbrite-widget-container"></div>
+            </TabItem>
+          {/if}
           <TabItem
             onclick={() => (selectedOption = "create_team")}
             open={selectedOption === "create_team"}
             title="Create Independent Team"
+            divClass="bg-[var(--background)]"
           >
             <h2>Create Independent Team</h2>
             <p>

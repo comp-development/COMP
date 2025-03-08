@@ -557,17 +557,15 @@
                   {/if}
                 </div>
               </svelte:fragment>
-              {#if step === stepNumber && description}
-                <div class="border-box">
-                  <p
-                    class="text-base font-normal text-gray-500 dark:text-gray-400 text-left"
-                  >
-                    {description}
-                  </p>
-                </div>
-              {/if}
-            </TimelineItem>
-          </div>
+                {#if step === stepNumber && description}
+                  <div class="border-box">
+                    <p class="text-base font-normal text-gray-800 dark:text-gray-400 text-left">
+                      {description}
+                    </p>
+                  </div>
+                {/if}
+          </TimelineItem>
+        </div>
         {/each}
       </Timeline>
     </div>
@@ -603,15 +601,6 @@
           >
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
-          </Button>
-          <Button
-            pill
-            outline
-            color="primary"
-            onclick={() => (isModalOpen = true)}
-          >
-            <UserAddSolid class="w-4 h-4 me-2" />
-            Invite Student
           </Button>
         </ButtonGroup>
       </div>
@@ -762,6 +751,6 @@
   .border-box {
     padding: 20px;
     border-radius: 15px;
-    border: 2px solid var(--primary-tint);
+    border: 2px solid var(--primary-light);
   }
 </style>

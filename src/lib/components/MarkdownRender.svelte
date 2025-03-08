@@ -9,7 +9,7 @@
 
 <style>
   .summary {
-    border: 3px solid var(--primary-tint);
+    border: 3px solid var(--primary-light);
     padding: 20px;
     margin: 10px;
     margin-top: 0px;

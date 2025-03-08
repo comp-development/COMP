@@ -153,7 +153,7 @@
 
   :global(.problemContainer) {
     background-color: white;
-    border: 3px solid var(--primary-tint);
+    border: 3px solid var(--primary-light);
     padding: 20px;
     height: 100%;
     border-radius: 20px;
