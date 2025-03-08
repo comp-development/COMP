@@ -37,7 +37,7 @@
 
       await upsertCustomFieldResponses(
         customFieldResponses,
-        org.event.org_event_id,
+        org.org_event_id,
         "orgs",
       );
       window.location.reload();
