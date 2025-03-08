@@ -169,6 +169,44 @@
   >
     <span class="text-xs font-bold p-0 m-0y">{team.front_id}</span>
   </div>
+
+  <div class="modalExterior">
+    <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
+      <div class="specificModalMax">
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white text-center">
+          Select Student
+        </h3>
+        <div class="tableMaxHeight">
+          <TableName
+            actionType="select_student"
+            items={studentsWithoutTeams}
+            action={selectStudent}
+            {org_id}
+          />
+        </div>
+      </div>
+    </Modal>
+  </div>
+  
+  <div class="modalExterior">
+    <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
+      <div class="specificModalMax">
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white text-center">
+          Edit Team
+        </h3>
+        <TeamForm
+          title=""
+          {event_id}
+          {org_id}
+          {team}
+          afterSubmit={async (team) => {
+            await handleChangeTeam(team);
+          }}
+          editing={true}
+        />
+      </div>
+    </Modal>
+  </div>
 </div>
 
 <ConfirmationModal
@@ -180,44 +218,6 @@
   }}
   onConfirm={handleDeleteTeam}
 />
-
-<div class="modalExterior">
-  <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
-    <div class="specificModalMax">
-      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-        Select Student
-      </h3>
-      <div class="tableMaxHeight">
-        <TableName
-          actionType="select_student"
-          items={studentsWithoutTeams}
-          action={selectStudent}
-          {org_id}
-        />
-      </div>
-    </div>
-  </Modal>
-</div>
-
-<div class="modalExterior">
-  <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
-    <div class="specificModalMax">
-      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-        Edit Team
-      </h3>
-      <TeamForm
-        title=""
-        {event_id}
-        {org_id}
-        {team}
-        afterSubmit={async (team) => {
-          await handleChangeTeam(team);
-        }}
-        editing={true}
-      />
-    </div>
-  </Modal>
-</div>
 
 <style>
   .team {
