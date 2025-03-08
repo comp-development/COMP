@@ -23,7 +23,7 @@
   const transition = (n: Element) => fade(n, { duration: 300 });
 </script>
 
-<div style="z-index: 2000">
+<div>
   {#if status == "success"}
     <Toast {dismissable} {transition} toastStatus={$toastStatus} color="green">
       <svelte:fragment slot="icon">
@@ -50,3 +50,9 @@
     </Toast>
   {/if}
 </div>
+
+<style>
+  :global(div[role=alert]) {
+    z-index: 2000 !important;
+  }
+</style>

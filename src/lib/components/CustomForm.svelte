@@ -159,7 +159,7 @@
             class="block mb-2"
             color={validationErrors[key]
               ? "red"
-              : !field.editable && field?.value !== null
+              : !field.editable && field?.value != null
                 ? "disabled"
                 : "base"}
           >
@@ -177,7 +177,7 @@
             <Select
               class="mt-2"
               required={field.required}
-              disabled={!field.editable && field?.value !== null}
+              disabled={!field.editable && field?.value != null}
               items={[
                 ...(field.required ? [] : [{ value: null, name: "None" }]),
                 ...field.choices.map((choice) => ({
@@ -193,7 +193,7 @@
               bind:value={newResponses[key]}
               required={field.required}
               placeholder={field.placeholder}
-              disabled={!field.editable && field?.value !== null}
+              disabled={!field.editable && field?.value != null}
               on:blur={() =>
                 validateInput(key, newResponses[key], typePatterns.date)}
             />
@@ -203,7 +203,7 @@
               id={key}
               placeholder={field.placeholder ?? "handle@domain.com"}
               bind:value={newResponses[key]}
-              disabled={field.disabled}
+              disabled={!field.editable && field.value != null}
               required={field.required}
               on:blur={() =>
                 validateInput(key, newResponses[key], typePatterns.email)}
@@ -226,7 +226,7 @@
                 telephoneValues[key] = formattedValue;
               }}
               required={field.required}
-              disabled={field.disabled}
+              disabled={!field.editable && field.value != null}
               on:blur={() =>
                 validateInput(key, newResponses[key], typePatterns.tel)}
             >
@@ -239,7 +239,7 @@
             <ButtonGroup class="w-full">
               <Input
                 id={key}
-                disabled={field.disabled}
+                disabled={!field.editable && field.value != null}
                 required={field.required}
                 bind:value={newResponses[key]}
                 type={show ? "text" : "password"}
@@ -261,6 +261,7 @@
                 <Radio
                   bind:group={newResponses[key]}
                   value={choice}
+                  disabled={!field.editable && field.value != null}
                   label={choice}>{choice}</Radio
                 >
               </div>
@@ -282,7 +283,7 @@
               bind:value={newResponses[key]}
               placeholder={field.placeholder}
               required={field.required}
-              disabled={!field.editable && field?.value !== null}
+              disabled={!field.editable && field?.value != null}
               rows={5}
             />
           {:else}
@@ -291,7 +292,7 @@
               bind:value={newResponses[key]}
               type="text"
               required={field.required}
-              disabled={!field.editable && field?.value !== null}
+              disabled={!field.editable && field?.value != null}
               placeholder={field.placeholder}
               color={validationErrors[key] ? "red" : "base"}
               on:blur={() => {
