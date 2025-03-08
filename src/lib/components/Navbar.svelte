@@ -121,7 +121,7 @@
   };
 </script>
 
-<div style="background-color: var(--primary-dark);">
+<div class="exteriorNavBar">
   <Navbar rounded color="transparent">
     <NavBrand href="/">
       <div class="me-3 p-1">
@@ -272,7 +272,7 @@
             </DropdownItem>
           {/each}
         </Dropdown> -->
-
+        
         <NavLi class="cursor-pointer">
           <CodeForkSolid class="h-6 text-primary-800 dark:text-white inline" />
           {#if selectedHost}{selectedHost.host_name}{:else}Choose Host{/if}
@@ -347,10 +347,31 @@
 </div>
 
 <style>
+  .exteriorNavBar {
+    background-color: var(--primary-dark);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
   :global(nav div.flex) {
     justify-content: space-between;
     margin: 0;
     min-width: 100% !important;
+    position: relative;
+  }
+
+  :global(.navigationList) {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  :global(.navigationList ul),
+  :global(.navigationList ul li),
+  :global(.navigationList ul li button) {
+    min-width: fit-content !important;
   }
 
   :global(.cursor-pointer) {
@@ -383,6 +404,10 @@
   }
 
   @media only screen and (max-width: 800px) {
+    :global(.navigationList) {
+      position: relative;
+    }
+
     :global(.navigationList ul) {
       background-color: var(--primary);
     }

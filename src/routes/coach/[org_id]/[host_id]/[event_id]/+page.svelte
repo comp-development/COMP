@@ -464,7 +464,7 @@
   
   <div class="flex justify-center">
     <div class="mx-10">
-      <Timeline order="horizontal">
+      <Timeline order="horizontal" class="timeline">
         {#each [
           { title: "Register", step: 1, description: "Fill out the registration form below." },
           { title: "Create Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
@@ -525,10 +525,6 @@
           <Button pill outline color="primary" id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} onclick={event_details.eventbrite_event_id ? openEventbriteWidget : openPurchaseModal}>
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
-          </Button>
-          <Button pill outline color="primary" onclick={() => { /*to be implemented*/ }}>
-            <UserAddSolid class="w-4 h-4 me-2" />
-            Invite Student
           </Button>
         </ButtonGroup>
       </div>
@@ -645,6 +641,12 @@
   @media only screen and (max-width: 900px) {
     .grid-container {
       grid-template-columns: 100%;
+    }
+  }
+
+  @media only screen and (max-width: 650px) {
+    :global(.timeline h3) {
+      text-align: center !important;
     }
   }
 

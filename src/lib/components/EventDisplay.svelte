@@ -197,7 +197,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="otherContainer">
     {#if editable}
       <div class="flex" style="justify-content: end;">
         <InfoToolTip text="To edit, click on the text that you want to change and update the input field." />
@@ -280,11 +280,15 @@
 
 <style>
   .grid {
-    grid-template-columns: 35% auto;
+    grid-template-columns: 35% minmax(0, 1fr);
     column-gap: 40px;
     width: 100%;
     padding: 40px;
     padding-top: 20px;
+  }
+
+  .otherContainer {
+    max-width: 100%;
   }
 
   .navigationalWidth {
