@@ -7,10 +7,13 @@ import { supabase, type AsyncReturnType } from "../supabaseClient";
  * @param email string
  * @param password string
  */
-export async function createAccount(email: string, password: string) {
+export async function createAccount(email: string, password: string, redirect: string = "/") {
   const { data, error } = await supabase.auth.signUp({
     email: email,
     password: password,
+    options: {
+      emailRedirectTo: redirect
+    }
   });
   console.log("DATA", data);
   console.log("ERROR", error)
