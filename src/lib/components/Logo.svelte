@@ -7,7 +7,10 @@
     height = "40px",
     class: customClass = "",
   } = $props();
-  let windowWidth = window.innerWidth;
+  let windowWidth = 1000;
+  if (typeof window !== 'undefined') {
+    windowWidth = window.innerWidth;
+  }
 </script>
 
 {#if windowWidth > 850}
