@@ -20,7 +20,13 @@
 
   let loaded = $state(false);
 
-  let maintenanceMode = $state(true);
+  // Check if the URL has host_id=1 and set maintenance mode accordingly
+  const maintenanceMode = $derived(() => {
+    const url = new URL($page.url);
+    const hostId = $page.params.host_id;
+    console.log("HOSTID", hostId);
+    return hostId === '1';
+  });
 
   let hasAccount = $state(true);
   if ($page.route.id?.includes("/signup")) {
@@ -28,7 +34,7 @@
   }
 
   supabase.auth.onAuthStateChange((_, session) => {
-    user.set(session?.user);
+    user.set(session?.user ?? null); // Use null coalescing to handle undefined
   });
 
   onMount(async () => {
@@ -60,13 +66,13 @@
 </svelte:head>
 
 <main>
-  {#if maintenanceMode}
+  {#if maintenanceMode()}
     <div class="maintenance-mode center-vertical flex-dir-col">
       <div style="display: flex; justify-content: center; align-items: center; border-radius: 5px; padding: 5px">
         <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
       </div>
-      <h1>🚧 Oops! We're under maintenance. 🚧</h1>
-      <i class="check-back-message">Check back soon!</i>
+      <h1>🚧 Oops! This page is under maintenance. 🚧</h1>
+      <i class="check-back-message">Check back very soon!</i>
     </div>
   {:else}
     <div class="absolute flex items-center mt-3 w-full">
