@@ -10,6 +10,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { defaultSettings, fetchSettings } from "$lib/supabase/settings";
+  import Logo from "$lib/components/Logo.svelte";
   interface Props {
     children?: import("svelte").Snippet;
   }
@@ -18,6 +19,8 @@
   let scheme: any = defaultSettings; // Initialize scheme variable
 
   let loaded = $state(false);
+
+  let maintenanceMode = $state(true);
 
   let hasAccount = $state(true);
   if ($page.route.id?.includes("/signup")) {
@@ -57,36 +60,46 @@
 </svelte:head>
 
 <main>
-  <div class="absolute flex items-center mt-3 w-full">
-    <Toaster></Toaster>
-  </div>
-  {#if !loaded}
-    <div class="loadingPage flex">
-      <Loading />
-    </div>
-  {:else if !$user && $page.route.id && !$page.route.id.includes("/scores")}
-    <Account />
-  {:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores"}
-    <div class="flex-dir-col">
-      <div class="verify-email">
-        <h2>Verify Your Email</h2>
-        <br />
-        <p>
-          Check your email for a verification link. You won't be able to access
-          the platform until your email is verified.
-        </p>
+  {#if maintenanceMode}
+    <div class="maintenance-mode center-vertical flex-dir-col">
+      <div style="display: flex; justify-content: center; align-items: center; border-radius: 5px; padding: 5px">
+        <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
       </div>
+      <h1>🚧 Oops! We're under maintenance. 🚧</h1>
+      <i class="check-back-message">Check back soon!</i>
     </div>
   {:else}
-    {#if $page.route.id != "/scores" && $page.route.id != "/password-request" && $page.route.id != "/password-reset"}
-      <NavBar />
-      <br />
-    {/if}
-    <div>
-      {@render children?.()}
+    <div class="absolute flex items-center mt-3 w-full">
+      <Toaster></Toaster>
     </div>
+    {#if !loaded}
+      <div class="loadingPage flex">
+        <Loading />
+      </div>
+    {:else if !$user && $page.route.id && !$page.route.id.includes("/scores")}
+      <Account />
+    {:else if $user && !$user.email_confirmed_at && !$page.route.id != "/scores"}
+      <div class="flex-dir-col">
+        <div class="verify-email">
+          <h2>Verify Your Email</h2>
+          <br />
+          <p>
+            Check your email for a verification link. You won't be able to access
+            the platform until your email is verified.
+          </p>
+        </div>
+      </div>
+    {:else}
+      {#if $page.route.id != "/scores" && $page.route.id != "/password-request" && $page.route.id != "/password-reset"}
+        <NavBar />
+        <br />
+      {/if}
+      <div>
+        {@render children?.()}
+      </div>
+    {/if}
+    <br />
   {/if}
-  <br />
 </main>
 
 <style>
@@ -555,5 +568,11 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+  }
+
+  .check-back-message {
+    font-size: 24px;
+    margin-top: 12px;
+    color: var(--secondary-dark);
   }
 </style>
