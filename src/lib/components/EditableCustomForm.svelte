@@ -40,6 +40,7 @@
   let showCustomFieldModal = $state(false);
   let availableCustomFields = $state([]);
   let originalCustomFields = $state([]);
+  let hideComponent = $state(true);
 
   async function onLoad() {
     availableCustomFields = await getCustomFields(host_id, table);
@@ -259,6 +260,8 @@
 
 {#if loading}
   <Loading />
+{:else if hideComponent}
+  <p>This component is currently not available for use.</p>
 {:else}
   <div class="space-y-2">
     <h2>Custom Field Builder</h2>
