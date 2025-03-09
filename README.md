@@ -129,6 +129,10 @@ development, certain features require third party integrations and thus addition
 Create your own Stripe account and get the API key for a sandbox.
 Store in `.env` as `STRIPE_SECRET_API_KEY=fill_in_your_key_here`.
 
+To generate promo codes/discounts, go to `Dashboard > Product Catalog > Coupons`
+and create a new coupon. Then click on that new coupon and add a promotion code. 
+Distribute that promotion code to students/coaches.
+
 ### Eventbrite
 
 Create your own Eventbrite account and get an API key for your account.
