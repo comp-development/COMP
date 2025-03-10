@@ -340,6 +340,8 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     // No one could have joined if event weren't published.
     if (!event.published) continue;
 
+    // problems, test problems, test takers, tests
+
     // Choose some organizations to join event.
     const org_choices = copycat.someOf(
       [1, orgs.length],
