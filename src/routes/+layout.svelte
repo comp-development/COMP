@@ -66,7 +66,7 @@
 </svelte:head>
 
 <main>
-  {#if maintenanceMode()}
+  {#if false && maintenanceMode()}
     <div class="maintenance-mode center-vertical flex-dir-col">
       <div style="display: flex; justify-content: center; align-items: center; border-radius: 5px; padding: 5px">
         <Logo class="logo" height="90px" text_color="#000" light_color="var(--primary-light)" dark_color="var(--primary)"/>
