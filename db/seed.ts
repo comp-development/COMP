@@ -424,6 +424,40 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     },
   );
 
+  const example_problems = [
+    {
+      problem_latex: "How many fingers do you have?",
+      answer_latex: "10",
+      solution_latex:
+        "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
+      answer_type: "Integer",
+    },
+    {
+      problem_latex: "what is thirteen plus fourteen minus two",
+      answer_latex: "25",
+      solution_latex:
+        "compute it.",
+      answer_type: "Integer",
+    },
+    {
+      problem_latex: "Suppose $X$ is a random variable taking values in ${ 1 , dots.h , n }$ such that $\\bb{E} X = n \\/ 2$. Prove that $X \\geq n \\/ 10$ with probability at least $1 \\/ 10$.",
+      answer_latex: "Inequality gives proof.",
+      solution_latex: "do it",
+      answer_type: "Text",
+    },
+    {
+      problem_latex: "integral of $\\int_{-\infty}^\infty \\frac{\\sin(x)}{x} d x$",
+      answer_latex: "pi",
+      solution_latex: "look up stack exchange",
+      answer_type: "AsciiMath",
+    },
+    {
+      problem_latex: "how many ways are there to arrange the letters in the word allergies",
+      answer_latex: "(9!)/2",
+      solution_latex: "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
+      answer_type: "AsciiMath",
+    },
+  ] satisfies Partial<Tables<"problems">>[];
   const { events } = await seed.events(
     (x) =>
       x(hosts.length * 4, ({ seed }) => {
