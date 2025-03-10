@@ -151,6 +151,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           quantity,
         },
       ],
+      allow_promotion_codes: true,
       metadata: {
         purchasing_user_id: user.id,
         event_id,
