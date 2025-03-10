@@ -696,3 +696,75 @@ export async function upsertHostCustomFields(
 
   return [...insertedCustomFields, ...updatedCustomFields];
 }
+
+export async function getCustomFieldResponsesBatch(
+  event_custom_fields: any[],
+  entity_ids: number[],
+  custom_field_table: "orgs" | "students" | "teams" = "students",
+) {
+  if (!entity_ids.length || !event_custom_fields.length) {
+    return {};
+  }
+
+  // Determine the column to filter by based on the custom_field_table
+  const tableColumn =
+    custom_field_table === "students"
+      ? "student_event_id"
+      : custom_field_table === "teams"
+        ? "team_id"
+        : "org_event_id";
+
+  // Get the list of event custom field IDs to fetch
+  const eventCustomFieldIds = event_custom_fields.map(
+    (field) => field.event_custom_field_id
+  );
+
+  // Fetch all relevant custom field values in one query for all entities
+  const { data, error } = await supabase
+    .from("custom_field_values")
+    .select(`${tableColumn}, event_custom_field_id, value`)
+    .in("event_custom_field_id", eventCustomFieldIds)
+    .in(tableColumn, entity_ids);
+
+  if (error) {
+    console.error("Error fetching custom field values:", error);
+    return {};
+  }
+
+  // Create a mapping of entity_id -> field_id -> value
+  const valueMap: Record<string, string> = {};
+  
+  if (data) {
+    data.forEach((row) => {
+      const entityId = row[tableColumn];
+      const fieldId = row.event_custom_field_id;
+      
+      // Find the corresponding custom field
+      const customField = event_custom_fields.find(
+        (field) => field.event_custom_field_id === fieldId
+      );
+      
+      if (customField) {
+        const key = `${custom_field_table.slice(0, -1)}_${entityId}_${customField.custom_field_id}`;
+        valueMap[key] = row.value || '-';
+      }
+    });
+  }
+
+  return valueMap;
+}
+
+export async function getEventTicketCount(event_id: number) {
+  // Query to get the sum of ticket quantities for the event
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("quantity")
+    .eq("event_id", event_id);
+    
+  if (error) throw error;
+  
+  // Calculate total by summing the quantities
+  const totalTickets = data.reduce((sum, order) => sum + order.quantity, 0);
+  
+  return totalTickets;
+}

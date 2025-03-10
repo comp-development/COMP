@@ -25,13 +25,25 @@ export async function getOrganizationDetails(org_id: number, event_id: number) {
     .single();
   if (error) throw error;
 
+  const { data: coachData, error: coachError } = await supabase
+    .from("org_coaches")
+    .select("*, person:coaches(*)")
+    .eq("org_id", org_id);
+  if (coachError) throw coachError;
+
+  const orgData = data as any;
+  
+  orgData.coaches = coachData;
+
+  console.log(`Fetched coaches for org ${org_id}:`, coachData);
+
   const teams = await getOrganizationTeams(org_id, event_id);
-  data.teams = teams;
+  orgData.teams = teams;
 
   const events = await ifOrgEvent(event_id, org_id);
-  data.event = events;
+  orgData.event = events;
 
-  return data;
+  return orgData;
 }
 
 export async function getCoachOrganization(
