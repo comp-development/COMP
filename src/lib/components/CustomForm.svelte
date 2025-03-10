@@ -28,7 +28,7 @@
     validationErrors = $bindable({}),
     newResponses = $bindable({}),
     handleSubmit,
-    buttonText="Submit",
+    buttonText = "Submit",
   } = $props();
 
   let initialResponses: any = $state({});
@@ -59,6 +59,12 @@
     tel: /^\d{10}$/,
   };
 
+  const validationMessages = {
+    date: "Please follow the format: YYYY-MM-DD",
+    email: "Please follow the format: username@domain.com",
+    tel: "Please follow the format: NNN-NNN-NNNN",
+  };
+
   function format_phone(input: string): [string | null, string | null] {
     if (!input) {
       return [null, null];
@@ -78,14 +84,18 @@
       formattedValue = `(${areaCode}`;
     }
     return [rawValue, formattedValue];
-    
   }
 
-  function validateInput(key, value, regex) {
+  function validateInput(
+    key,
+    value,
+    regex: string | RegExp | null,
+    error_message: string | null,
+  ) {
     if (regex && value) {
       const pattern = new RegExp(regex);
       validationErrors[key] = !pattern.test(value)
-        ? `Please follow the format: ${regex}`
+        ? (error_message ?? `Please follow the format: ${regex}`)
         : null;
     } else {
       validationErrors[key] = null;
@@ -161,7 +171,7 @@
               ? "red"
               : !field.editable && field?.value != null
                 ? "disabled"
-                : "base"}
+                : "gray"}
           >
             {field.label}
             {#if field.required}
@@ -195,7 +205,12 @@
               placeholder={field.placeholder}
               disabled={!field.editable && field?.value != null}
               on:blur={() =>
-                validateInput(key, newResponses[key], typePatterns.date)}
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.date,
+                  validationMessages.date,
+                )}
             />
           {:else if field.custom_field_type === "email"}
             <Input
@@ -206,7 +221,12 @@
               disabled={!field.editable && field.value != null}
               required={field.required}
               on:blur={() =>
-                validateInput(key, newResponses[key], typePatterns.email)}
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.email,
+                  validationMessages.email,
+                )}
             >
               <EnvelopeSolid
                 slot="left"
@@ -220,15 +240,21 @@
               placeholder={field.placeholder ?? "123-456-7890"}
               bind:value={telephoneValues[key]}
               on:input={(e) => {
-
-                const [rawValue, formattedValue] = format_phone((e.target as any).value);
+                const [rawValue, formattedValue] = format_phone(
+                  (e.target as any).value,
+                );
                 newResponses[key] = rawValue;
                 telephoneValues[key] = formattedValue;
               }}
               required={field.required}
               disabled={!field.editable && field.value != null}
               on:blur={() =>
-                validateInput(key, newResponses[key], typePatterns.tel)}
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.tel,
+                  validationMessages.tel,
+                )}
             >
               <PhoneSolid
                 slot="left"
@@ -263,7 +289,7 @@
                   bind:group={newResponses[key]}
                   value={choice}
                   disabled={!field.editable && field.value != null}
-                  label={choice}>{choice}</Radio
+                  >{choice}</Radio
                 >
               </div>
             {/each}
@@ -272,7 +298,11 @@
               <div style="display: flex; align-items: left">
                 <Checkbox
                   disabled={!field.editable && field.value != null}
-                  checked={(newResponses[key] || "").split(",").map((x) => x.trim()).filter((v)=>v).includes(choice)}
+                  checked={(newResponses[key] || "")
+                    .split(",")
+                    .map((x) => x.trim())
+                    .filter((v) => v)
+                    .includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
                   {choice}
@@ -300,7 +330,12 @@
                 newResponses[key] = newResponses[key]
                   ? newResponses[key].trim()
                   : newResponses[key];
-                validateInput(key, newResponses[key], field.regex);
+                validateInput(
+                  key,
+                  newResponses[key],
+                  field.regex,
+                  field.regex_error_message,
+                );
               }}
             />
           {/if}

@@ -1,9 +1,8 @@
 <script lang="ts">
   import {
+timeline-messaging
     Tabs,
-    TabItem,
-    Badge,
-    Button
+    TabItem
   } from "flowbite-svelte";
   import { 
     getEventStudents, 
@@ -12,6 +11,7 @@
     getCustomFieldResponsesBatch,
     getEventTicketCount
   } from "$lib/supabase/events";
+
   import { getOrganizationDetails, getTicketCount } from "$lib/supabase/orgs";
   import { onMount } from "svelte";
   import type { Tables } from "../../../db/database.types";
@@ -19,6 +19,7 @@
 
   // Define types for our extended data structures
   // Updated to use array structures instead of dictionaries
+
   type StudentRowData = {
     student_id: string;
     student_event_id: number;
@@ -97,6 +98,7 @@
         email: string;
         first_name: string;
         last_name: string;
+
       }
     }>;
   };
@@ -116,6 +118,7 @@
   let activeTab = $state(0);
   let totalPurchasedTickets = $state(0);
   
+
   // Column definitions for CustomTable
   const studentColumns = [
     { key: 'student_id', label: 'Student ID', visible: true, searchable: true, dataType: 'string' as const },
@@ -218,6 +221,7 @@
     { key: 'registeredAt', label: 'Registered At', visible: true, searchable: false, dataType: 'date' as const }
   ];
 
+
   // Fetch data on mount
   onMount(async () => {
     try {
@@ -243,6 +247,7 @@
       // Store ticket count
       totalPurchasedTickets = ticketCount;
       
+
       // Process students data into array
       students = studentsData.map(student => ({
         student_id: student.student_id,
@@ -287,10 +292,12 @@
       teamsData.forEach((team, index) => {
         if ('created_at' in team) {
           teams[index].createdAt = new Date(team.created_at as string).toLocaleString();
+
         }
       });
       
       // Count students per team and update team_name in students
+
       teams.forEach(team => {
         // Count students for this team
         team.studentCount = students.filter(s => s.team_id === team.team_id).length;
@@ -301,6 +308,7 @@
             student.team_name = team.team_name;
           }
         });
+
       });
       
       // Store custom fields
@@ -308,6 +316,7 @@
       teamCustomFields = teamCustomFieldsData;
       orgCustomFields = orgCustomFieldsData;
       
+
       // First fetch organizations, then fetch custom field values
       await fetchOrganizations();
       await fetchCustomFieldValues();
@@ -324,16 +333,19 @@
     try {
       // Get unique org IDs from students and teams
       const orgIds = Array.from(new Set([
+
         ...students.map(s => s.org_id).filter(id => id !== null),
         ...teams.map(t => t.org_id).filter(id => id !== null)
       ])) as number[];
       
       if (orgIds.length === 0) {
         orgs = [];
+
         return;
       }
       
       // Fetch org details in parallel
+
       const orgPromises = orgIds.map(async (orgId) => {
         try {
           const orgData = await getOrganizationDetails(orgId, event_id) as OrgDataFromAPI;
@@ -387,6 +399,7 @@
       const orgResults = await Promise.all(orgPromises);
       orgs = orgResults.filter((org): org is OrgRowData => org !== null);
       
+
     } catch (error) {
       console.error("Error fetching organizations:", error);
     }
@@ -396,6 +409,7 @@
   async function fetchCustomFieldValues() {
     try {
       // Prepare entity IDs for batch fetching
+
       const studentIds = students.map(s => s.student_event_id);
       const teamIds = teams.map(t => t.team_id);
       
@@ -404,6 +418,7 @@
         .filter(o => o.event && o.event.org_event_id !== undefined)
         .map(o => o.event?.org_event_id)
         .filter(id => id !== undefined) as number[];
+
       
       // Fetch custom field values in parallel for all entity types
       const [studentValues, teamValues, orgValues] = await Promise.all([
@@ -421,6 +436,7 @@
       
       // Add custom field values to each entity with the requested format
       studentCustomFields.forEach(field => {
+
         // Determine the appropriate dataType based on custom_field_type
         
         field.dataType = mapCustomFieldTypeToDataType(field.custom_field_type);
@@ -429,6 +445,7 @@
         }
 
         students.forEach(student => {
+
           const key = `student_${student.student_event_id}_${field.custom_field_id}`;
           const value = studentValues[key] || '';
           student[`custom_field.${field.key}`] = value;
@@ -436,10 +453,12 @@
       });
       
       teamCustomFields.forEach(field => {
+
         // Determine the appropriate dataType based on custom_field_type
         field.dataType = mapCustomFieldTypeToDataType(field.custom_field_type);
         
         teams.forEach(team => {
+
           const key = `team_${team.team_id}_${field.custom_field_id}`;
           const value = teamValues[key] || '';
           team[`custom_field.${field.key}`] = value;
@@ -447,10 +466,12 @@
       });
       
       orgCustomFields.forEach(field => {
+
         // Determine the appropriate dataType based on custom_field_type
         field.dataType = mapCustomFieldTypeToDataType(field.custom_field_type);
         
         orgs.forEach(org => {
+
           if (org.event?.org_event_id) {
             const key = `org_${org.event.org_event_id}_${field.custom_field_id}`;
             const value = orgValues[key] || '';
@@ -463,6 +484,7 @@
       console.error("Error fetching custom field values:", error);
     }
   }
+
 
   // Helper function to map custom_field_type to dataType
   function mapCustomFieldTypeToDataType(fieldType: string): 'string' | 'number' | 'date' | 'boolean' {
@@ -484,13 +506,16 @@
     }
   }
 
+
   // Helper function to get custom field value
   function getCustomFieldValue(entityId: number, fieldId: number, entityType: string): string {
     let key;
     
     if (entityType === 'org') {
       // For organizations, find the org_event_id using the org_id
+
       const org = orgs.find(o => o.org_id === entityId);
+
       if (org?.event?.org_event_id) {
         key = `${entityType}_${org.event.org_event_id}_${fieldId}`;
       } else {
@@ -503,10 +528,12 @@
     const value = customFieldValues[key] || '-';
     return value;
   }
+
 </script>
 
 <div class="w-full">
   <div class="mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+
     <!-- Title in its own section -->
     <div class="w-full mb-4 border-b pb-2">
       <h3 class="text-xl font-medium text-gray-900">Event Registration Summary</h3>
@@ -529,6 +556,7 @@
       <div class="flex flex-col items-center text-center px-4 py-2 bg-amber-100 rounded-lg">
         <span class="text-sm text-gray-600">Tickets Purchased</span>
         <span class="text-xl font-semibold text-amber-600">{totalPurchasedTickets}</span>
+
       </div>
     </div>
   </div>
@@ -566,6 +594,7 @@
         isLoading={loading}
         event_id={event_id}
       />
+
     </TabItem>
   </Tabs>
 </div>
