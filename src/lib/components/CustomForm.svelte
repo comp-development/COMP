@@ -190,10 +190,12 @@
               disabled={!field.editable && field?.value != null}
               items={[
                 ...(field.required ? [] : [{ value: null, name: "None" }]),
-                ...field.choices.map((choice) => ({
-                  value: choice,
-                  name: choice,
-                })),
+                ...(Array.isArray(field.choices) ? field.choices : []).map(
+                  (choice) => ({
+                    value: choice,
+                    name: choice,
+                  }),
+                ),
               ]}
               bind:value={newResponses[key]}
             />
@@ -270,7 +272,9 @@
                 bind:value={newResponses[key]}
                 type={show ? "text" : "password"}
                 placeholder="Password"
-                autocomplete={field.custom_field_type === "new-password" ? "new-password" : "current-password"}
+                autocomplete={field.custom_field_type === "new-password"
+                  ? "new-password"
+                  : "current-password"}
               />
               <InputAddon>
                 <button type="button" onclick={() => (show = !show)}>
@@ -373,6 +377,8 @@
 
   .checkbox {
     margin-bottom: 5px;
+    display: flex;
+    justify-content: left;
   }
 
   :global(.checkbox label) {
