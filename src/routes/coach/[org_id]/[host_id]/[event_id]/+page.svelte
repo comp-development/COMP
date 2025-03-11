@@ -504,7 +504,6 @@
              style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
              Accept Invitation
           </a>
-          <p>If the button doesn't work, you can also click <a href="https://comp.mt/join-org?org_id=${org_id}&event_id=${event_id}&email=${newResponses2.email}" style="color: black;">this link</a>.</p>
         </div>
       `,
         }),
