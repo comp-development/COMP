@@ -152,7 +152,8 @@
   <br />
   {#if failure?.reason == "payment not complete"}
     <p>Payment was started but not completed.</p>
-    <Button onclick={event_details.eventbrite_event_id ? openEventbriteWidget : document.location.assign(failure?.stripe_url)} id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'}>Click here to complete payment.</Button>
+    <Button onclick={event_details.eventbrite_event_id ? openEventbriteWidget : document.location.assign(failure?.stripe_url)} id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} pill>Click here to complete payment.</Button>
+    <br />
   {/if}
   {#if failure?.reason == "joined org, insufficient org tickets"}
     <p>
@@ -177,9 +178,10 @@
     <p>Return to the event to open a new payment session.</p>
   {/if}
   {#if failure}
-    <p>Failed to join team.</p>
+    <h2>Failed to Join Team</h2>
+    <p>{failure?.reason}</p>
     <br />
-    <Button href=".." pill>Return to event.</Button>
+    <Button href=".." pill>Return to event</Button>
   {/if}
 {/if}
 

@@ -14,6 +14,7 @@
   let {
     event_id,
     org_id,
+    host_id=null,
     team = $bindable(),
     onDrop,
     onDragStart,
@@ -147,6 +148,12 @@
   </div>
 
   {#if showTeamCode}
+    <div class="flex" style="justify-content: flex-start">
+      <InfoToolTip
+        text="Send this link to your teammates to join your team!"
+      />
+      Team Join Link: <CopyText text={`https://comp.mt/student/${host_id}/${event_id}/join-team/${team.join_code}`} />
+    </div>
     <div class="flex" style="justify-content: flex-start">
       <InfoToolTip
         text="Send this code to your teammates to join your team!"

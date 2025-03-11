@@ -233,6 +233,7 @@
           <div class="teamContainer">
             <StudentTeam
               {event_id}
+              {host_id}
               org_id={team?.org_id}
               team={{
                 ...team,
