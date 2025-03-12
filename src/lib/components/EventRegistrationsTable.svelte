@@ -514,10 +514,10 @@
       } else {
         return ''; // No org_event_id found
       }
-    } else {
-      key = `${entityType}_${entityId}_${fieldId}`;
+      
+      const value = customFieldValues[key] || '-';
+      return value;
     }
-    
     const value = customFieldValues[key] || '';
     return value;
   }
