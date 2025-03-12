@@ -35,7 +35,6 @@
       host = await getHostInformation(hostId);
       teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
       event_information = await getEventInformation(eventId);
-
       organizations = await getEventOrganizations(eventId);
       students = await getEventStudents(eventId);
       independentTeams = await getEventIndependentTeams(eventId);
@@ -62,7 +61,7 @@
   <hr>
 
   <div class="mt-4">
-    <EventRegistrationsTable event_id={eventId} host_id={hostId} />
+    <EventRegistrationsTable event_id={eventId} host_id={hostId} event_name={event_information.event_name} />
   </div>
 {/if}
 

@@ -35,6 +35,7 @@
     entityType: 'student' | 'team' | 'org';
     isLoading: boolean;
     event_id: number;
+    event_name?: string; // Added event_name as an optional prop
     idField?: string; // Field to use as unique ID, defaults to primary key of entity
   }>();
 
@@ -351,10 +352,15 @@
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     
-    // Set filename
-    const date = new Date().toISOString().split('T')[0];
+    // Set filename - include event name if available
+    const now = new Date();
+    const date = now.toISOString().split('T')[0].replaceAll('-','.');
+    const time = now.toISOString().substr(11, 8).replaceAll(':', ''); // Extract HHMM in GMT (no colon)
     const exportType = exportAllColumns ? 'all' : 'visible';
-    const filename = `${props.entityType}_${exportType}_columns_${date}.csv`;
+    const eventNamePart = props.event_name 
+      ? `${props.event_name.toLowerCase().replace(/\s+/g, '-')}_` 
+      : '';
+    const filename = `${eventNamePart}${props.entityType}_${date}.${time}.csv`;
     
     // Trigger download
     link.setAttribute('href', url);

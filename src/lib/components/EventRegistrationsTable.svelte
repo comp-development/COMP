@@ -103,7 +103,7 @@
   };
 
   // Props
-  let { event_id, host_id } = $props();
+  let { event_id, host_id, event_name } = $props();
 
   // State variables - changed from objects to arrays
   let students = $state<StudentRowData[]>([]);
@@ -348,9 +348,6 @@
       const orgPromises = orgIds.map(async (orgId) => {
         try {
           const orgData = await getOrganizationDetails(orgId, event_id) as OrgDataFromAPI;
-          // Debug log to see what's coming from the API
-          console.log(`Org ${orgId} data:`, orgData);
-          console.log(`Org ${orgId} coaches:`, orgData.coaches);
           
           // Fetch ticket count for this organization
           const orgTicketCount = await getTicketCount(event_id, orgId);
@@ -439,9 +436,6 @@
         // Determine the appropriate dataType based on custom_field_type
         
         field.dataType = mapCustomFieldTypeToDataType(field.custom_field_type);
-        if (field.key === "dob") {
-            console.log("DOB", field.custom_field_type, field.dataType)
-        }
 
         students.forEach(student => {
 
@@ -569,11 +563,11 @@
         entityType="student"
         isLoading={loading}
         event_id={event_id}
+        event_name={event_name}
       />
     </TabItem>
     
     <TabItem open={activeTab === 1} title="Teams" class="tab-item" activeClasses="tab-active">
-        {console.log("TEAMS", teams)}
       <CustomTable 
         data={teams}
         columns={teamColumns}
@@ -581,6 +575,7 @@
         entityType="team"
         isLoading={loading}
         event_id={event_id}
+        event_name={event_name}
       />
     </TabItem>
     
@@ -592,6 +587,7 @@
         entityType="org"
         isLoading={loading}
         event_id={event_id}
+        event_name={event_name}
       />
 
     </TabItem>
