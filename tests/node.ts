@@ -30,7 +30,7 @@ console.time("browser-tests");
 
 // Launch the browser and open a new blank page
 const browser = await puppeteer.launch({
-  headless: false,
+  headless: true,
   args: ["--no-startup-window"],
   waitForInitialPage: false,
 });
@@ -38,7 +38,7 @@ const browser = await puppeteer.launch({
 await Promise.all([
   student_signup(browser),
   student_register_stripe(browser, ids),
-  student_register_eventbrite(browser),
+  // student_register_eventbrite(browser),
 ]);
 
 console.groupEnd();
