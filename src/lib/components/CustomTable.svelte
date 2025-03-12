@@ -49,19 +49,55 @@
   // Get the ID field to use for each row
   const idField = $derived(props.idField || `${props.entityType}_id`);
 
+  // A unified array that combines regular columns and custom fields
+  interface UnifiedColumn {
+    key: string;
+    label: string;
+    visible: boolean;
+    type: 'regular' | 'custom';
+    displayKey: string;
+    dataKey: string;
+    displayLabel: string;
+    custom_field_id?: number;
+    format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+    searchable?: boolean;
+    dataType?: 'string' | 'number' | 'date' | 'boolean';
+  }
+
+  let allColumns = $state<UnifiedColumn[]>([]);
+
+  $effect(() => {
+    // Map regular columns
+    const regularColumns = props.columns.map((column: any) => ({
+      ...column,
+      type: 'regular' as const,
+      displayKey: column.key, // The key as displayed/used in the component
+      dataKey: column.key, // The key used to access data in the row object
+      displayLabel: column.label // The label displayed in the header
+    }));
+    
+    // Map custom fields
+    const customFieldColumns = props.customFields.map((field: any) => ({
+      ...field,
+      type: 'custom' as const,
+      displayKey: `custom_field.${field.key}`, // The key as displayed/used in the component
+      dataKey: `custom_field.${field.key}`, // The key used to access data in the row object
+      displayLabel: field.key, // The label displayed in the header
+      visible: true // Custom fields are visible by default
+    }));
+    
+    // Update allColumns
+    allColumns = [...regularColumns, ...customFieldColumns];
+  });
+
   // Initialize visibility from columns' visible property
   function initializeVisibility() {
     const initial: Record<string, boolean> = {};
     
-    // Set default visibility from column definitions
-    props.columns.forEach((column: { key: string; visible: boolean }) => {
-      initial[column.key] = column.visible;
-    });
-    
-    // Set all custom fields to be visible by default
-    props.customFields.forEach((field: { key: string }) => {
-      initial[`custom_field.${field.key}`] = true;
-    });
+    // Initialize all columns using the unified approach
+    for (const column of allColumns) {
+      initial[column.displayKey] = column.type === 'regular' ? column.visible : true;
+    }
     
     return initial;
   }
@@ -84,19 +120,10 @@
 
   // Get the data type for a column
   function getColumnDataType(columnKey: string): 'string' | 'number' | 'date' | 'boolean' {
-    // Check if it's a regular column
-    const column = props.columns.find((col: { key: string; dataType?: 'string' | 'number' | 'date' | 'boolean' }) => col.key === columnKey);
+    // Find the column in our unified array
+    const column = allColumns.find(col => col.displayKey === columnKey);
     if (column && column.dataType) {
       return column.dataType;
-    }
-
-    // Check if it's a custom field
-    if (columnKey.startsWith('custom_field.')) {
-      const fieldKey = columnKey.replace('custom_field.', '');
-      const customField = props.customFields.find((field: { key: string; dataType?: 'string' | 'number' | 'date' | 'boolean' }) => field.key === fieldKey);
-      if (customField && customField.dataType) {
-        return customField.dataType;
-      }
     }
 
     // Default to string if type isn't specified
@@ -175,15 +202,18 @@
 
   // Get formatted value for display
   function getFormattedValue(column: any, row: any) {
-    if (column.format) {
-      const formatted = column.format(row[column.key], row);
+    // Handle regular columns with formatters
+    if (column.type === 'regular' && column.format) {
+      const formatted = column.format(row[column.dataKey], row);
       if (typeof formatted === 'string') {
-        return { text: formatted, isBadge: false };
+        return { text: formatted || '-', isBadge: false };
       }
       return formatted;
     }
     
-    return { text: row[column.key]?.toString() || '-', isBadge: false };
+    // Handle regular columns without formatters or custom fields
+    const value = row[column.dataKey];
+    return { text: (value === null || value === undefined || value === '') ? '-' : value.toString(), isBadge: false };
   }
 
   // Function to filter data with explicit return type - updated for arrays
@@ -288,6 +318,66 @@
     saveTableState();
   }
 
+  // Function to export table data to CSV
+  function exportToCSV(exportAllColumns = false) {
+    // Get columns for the headers - either all or only visible ones using the unified approach
+    const columnsToExport = exportAllColumns 
+      ? allColumns 
+      : allColumns.filter(col => internalVisibleColumns[col.displayKey]);
+    
+    // Create headers array
+    const headers = columnsToExport.map(col => col.displayLabel);
+    
+    // Create rows arrays for each data item
+    const rows = filteredData.map(row => {
+      return columnsToExport.map(col => {
+        // Get the value using the unified approach
+        const value = row[col.dataKey];
+        // For CSV export, we don't want to include the dash for empty values
+        return (value === null || value === undefined || value === '') ? '' : 
+               (col.type === 'regular' && col.format) ? getFormattedValue(col, row).text : 
+               String(value);
+      });
+    });
+    
+    // Combine headers and rows
+    const csvContent = [
+      headers.map(escapeCSVValue).join(','),
+      ...rows.map(row => row.map(escapeCSVValue).join(','))
+    ].join('\n');
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    // Set filename
+    const date = new Date().toISOString().split('T')[0];
+    const exportType = exportAllColumns ? 'all' : 'visible';
+    const filename = `${props.entityType}_${exportType}_columns_${date}.csv`;
+    
+    // Trigger download
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+  
+  // Helper function to escape CSV values
+  function escapeCSVValue(value: any): string {
+    if (value === null || value === undefined) return '';
+    
+    const stringValue = String(value);
+    // If value contains comma, newline or double-quote, enclose in double quotes
+    if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
+      // Replace double quotes with two double quotes
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  }
+
   // Initialize when component mounts
   onMount(() => {
     // Load all table state from localStorage
@@ -308,59 +398,53 @@
   <div class="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
     <Search size="md" placeholder={`Search ${props.entityType}s...`} class="search-input" bind:value={searchTerm} />
     
-    <div class="relative">
-      <Button color="light" class="btn-primary">Show/Hide Columns</Button>
-      <Dropdown class="w-48">
-        {#each props.columns as column}
-          <DropdownItem class="flex items-center gap-2">
-            <Checkbox checked={internalVisibleColumns[column.key]} on:change={() => toggleColumn(column.key)}>
-              {column.label}
-            </Checkbox>
+    <div class="flex items-center gap-2">
+      <div class="relative">
+        <Button color="primary">Export to CSV</Button>
+        <Dropdown class="w-52">
+          <DropdownItem on:click={() => exportToCSV(false)}>
+            Export Visible Columns
           </DropdownItem>
-        {/each}
-        {#each props.customFields as field}
-          <DropdownItem class="flex items-center gap-2">
-            <Checkbox checked={internalVisibleColumns[`custom_field.${field.key}`]} on:change={() => toggleColumn(`custom_field.${field.key}`)}>
-              {field.key}
-            </Checkbox>
+          <DropdownItem on:click={() => exportToCSV(true)}>
+            Export All Columns
           </DropdownItem>
-        {/each}
-      </Dropdown>
+        </Dropdown>
+      </div>
+      <div class="relative">
+        <Button color="light" class="btn-primary">Show/Hide Columns</Button>
+        <Dropdown class="w-64">
+          {#each allColumns as column}
+            <DropdownItem class="px-2 py-1">
+              <Checkbox checked={internalVisibleColumns[column.displayKey]} on:change={() => toggleColumn(column.displayKey)} class="text-left w-full">
+                <span class="text-sm break-words whitespace-normal">{column.displayLabel}</span>
+              </Checkbox>
+            </DropdownItem>
+          {/each}
+        </Dropdown>
+      </div>
     </div>
   </div>
   
   <div class="overflow-x-auto">
     <Table striped={false} hoverable={true} class="table-compact themed-table">
-      <TableHead class="border-b">
-        {#each props.columns as column}
-          {#if internalVisibleColumns[column.key]}
+      <TableHead class="border-b" theadClass="text-xs uppercase align-middle">
+        {#each allColumns as column}
+          {#if internalVisibleColumns[column.displayKey]}
             <TableHeadCell 
-              on:click={() => handleSort(column.key)}
+              on:click={() => handleSort(column.displayKey)}
+              padding="px-6 py-3"
+              class="align-middle select-none sortable-header"
             >
-                {column.label}
-                {#if (sortColumn === column.key)}
-                  {#if (sortDirection == 'asc')}
-                    <span class="text-sm">▲</span>
-                  {:else}
-                    <span class="text-sm">▼</span>
+                <span class="inline-flex items-center select-none header-label">
+                  {column.displayLabel}
+                  {#if (sortColumn === column.displayKey)}
+                    {#if (sortDirection == 'asc')}
+                      <span class="ml-1">▲</span>
+                    {:else}
+                      <span class="text-sm ml-1">▼</span>
+                    {/if}
                   {/if}
-                {/if}
-            </TableHeadCell>
-          {/if}
-        {/each}
-        {#each props.customFields as field}
-          {#if internalVisibleColumns[`custom_field.${field.key}`]}
-            <TableHeadCell 
-              on:click={() => handleSort(`custom_field.${field.key}`)}
-            >
-                {field.key} 
-                {#if (sortColumn === `custom_field.${field.key}`)}
-                  {#if (sortDirection == 'asc')}
-                    <span class="text-sm">▲</span>
-                  {:else}
-                    <span class="text-sm">▼</span>
-                  {/if}
-                {/if}
+                </span>
             </TableHeadCell>
           {/if}
         {/each}
@@ -368,23 +452,16 @@
       <TableBody>
         {#each filteredData as row (row[idField])}
           <TableBodyRow>
-            {#each props.columns as column}
-              {#if internalVisibleColumns[column.key]}
+            {#each allColumns as column}
+              {#if internalVisibleColumns[column.displayKey]}
                 <TableBodyCell>
-                  {#if getFormattedValue(column, row).isBadge}
+                  {#if column.type === 'regular' && getFormattedValue(column, row).isBadge}
                     <Badge color={getFormattedValue(column, row).color || "blue"}>
                       {getFormattedValue(column, row).text}
                     </Badge>
                   {:else}
                     {getFormattedValue(column, row).text}
                   {/if}
-                </TableBodyCell>
-              {/if}
-            {/each}
-            {#each props.customFields as field}
-              {#if internalVisibleColumns[`custom_field.${field.key}`]}
-                <TableBodyCell>
-                  {row[`custom_field.${field.key}`] || '-'}
                 </TableBodyCell>
               {/if}
             {/each}
@@ -397,4 +474,17 @@
 
 <style>
   /* Styles will be inherited from parent component */
+  
+  /* Table header hover effects */
+  :global(.sortable-header) {
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  :global(.sortable-header:hover .header-label) {
+    font-weight: bold;
+    font-size: 110%;
+    color: var(--primary-tint);
+    transition: all 0.2s ease-in-out;
+  }
 </style> 

@@ -1,6 +1,5 @@
 <script lang="ts">
   import {
-timeline-messaging
     Tabs,
     TabItem
   } from "flowbite-svelte";
@@ -142,7 +141,7 @@ timeline-messaging
         if (row.team_id) {
           return { text: value || `Team #${row.team_id}`, isBadge: true, color: 'green' };
         }
-        return '-';
+        return '';
       }
     },
     { 
@@ -155,7 +154,7 @@ timeline-messaging
         if (row.org_id) {
           return { text: value || `Org #${row.org_id}`, isBadge: true, color: 'purple' };
         }
-        return '-';
+        return '';
       }
     },
     { key: 'registeredAt', label: 'Registered At', visible: true, searchable: false, dataType: 'date' as const }
@@ -176,7 +175,7 @@ timeline-messaging
         if (row.org_id) {
           return { text: value || `Org #${row.org_id}`, isBadge: true, color: 'purple' };
         }
-        return '-';
+        return '';
       }
     },
     { key: 'studentCount', label: 'Students', visible: true, searchable: false, dataType: 'number' as const },
@@ -197,7 +196,7 @@ timeline-messaging
         if (value && value.length > 0) {
           return { text: value, isBadge: true, color: 'blue' };
         }
-        return '-';
+        return '';
       }
     },
     { 
@@ -206,7 +205,7 @@ timeline-messaging
       visible: true,
       searchable: false,
       dataType: 'string' as const,
-      format: (value: any) => value ? JSON.stringify(value) : '-'
+      format: (value: any) => value ? JSON.stringify(value) : ''
     },
     { key: 'studentCount', label: 'Students', visible: true, searchable: false, dataType: 'number' as const },
     { key: 'teamCount', label: 'Teams', visible: true, searchable: false, dataType: 'number' as const },
@@ -519,13 +518,13 @@ timeline-messaging
       if (org?.event?.org_event_id) {
         key = `${entityType}_${org.event.org_event_id}_${fieldId}`;
       } else {
-        return '-'; // No org_event_id found
+        return ''; // No org_event_id found
       }
     } else {
       key = `${entityType}_${entityId}_${fieldId}`;
     }
     
-    const value = customFieldValues[key] || '-';
+    const value = customFieldValues[key] || '';
     return value;
   }
 
