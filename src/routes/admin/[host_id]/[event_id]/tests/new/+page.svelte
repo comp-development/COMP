@@ -13,6 +13,9 @@
     TimePickerSelect,
     SelectItem,
     TextInput,
+    TextArea,
+    Select,
+    Checkbox,
     FileUploader,
   } from "carbon-components-svelte";
   import { z } from "zod";
@@ -32,7 +35,7 @@
   import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
   import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
   import { handleError } from "$lib/handleError";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import {
     getThisUser,
     getEventTests,
@@ -40,12 +43,14 @@
     updateTest,
     insertTest,
   } from "$lib/supabase";
+  // import { Checkbox } from "flowbite-svelte";
 
   let loading = $state(true);
 
   let open = $state(false);
   let instructions = "";
   let name = "";
+  let description = "";
 
   let availableTests = [];
   let testStatusMap = $state({});
@@ -211,60 +216,131 @@
   }
 
   // Add CSV schema validation
-  const CSVSchema = z.object({
-    test_name: z.string().min(1),
-    problem_question: z.string().min(1),
-    problem_answer: z.string().min(1),
-    problem_order: z.number().int().positive(),
-  });
+  const CSVSchema = z
+    .object({
+      problem_latex: z.string(),
+      answer_latex: z.string(),
+      problem_number: z.number().int().positive(),
+    })
+    .passthrough(); // Allow for any other headers, which will be ignored
 
   // Add state variables
   let csvData = $state<any[]>([]);
   let csvErrors = $state<string[]>([]);
   let isUploading = $state(false);
+  let isSubmitting = $state(false);
+  let fileUploaderRef;
+
+  async function createTestSubmit() {
+    try {
+      const { data, error } = await insertTest({
+        name,
+        description,
+        event_id: $page.params.event_id,
+      });
+
+      if (error) throw error;
+
+      toast.success("Test added successfully!");
+      await getTests(); // Refresh the test list
+    } catch (error) {
+      handleError(error);
+    }
+  }
+
+  // Create a key to force re-render
+  let fileUploaderKey = 0;
+
+  onMount(() => {
+    // Get a reference to the actual file input element
+    fileInputElement = document.querySelector(".bx--file-input");
+  });
 
   // Add CSV handler function
   async function handleCSVUpload(event: CustomEvent<{ files: FileList }>) {
+    console.log("Handling CSV upload...");
     isUploading = true;
     csvData = [];
     csvErrors = [];
     console.log(event.detail);
     const file = event.detail[0];
-    if (!file) return;
+    if (!file) {
+      isUploading = false;
+      return;
+    }
 
     Papa.parse(file, {
       header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
-      complete: (results) => {
+
+      // Do the following upon completion
+      complete: async (results) => {
         console.log(results.data);
         if (results.errors.length > 0) {
           console.log("errors: " + results.errors);
           csvErrors = results.errors.map((e) => `Row ${e.row}: ${e.message}`);
           toast.error(csvErrors.join("\n"));
           isUploading = false;
+          clearFileInput();
           return;
         }
 
         const validationErrors = validateCSV(results.data);
         if (validationErrors.length > 0) {
           csvErrors = validationErrors;
-          toast.error("Validation Failed" + csvErrors.join("\n"));
+          isUploading = false;
+          toast.error(csvErrors[0] + "\nReload the page and try again");
+
+          // Force re-render the FileUploader
+          isUploading = false;
+          await tick();
+          fileUploaderKey++;
         } else {
           csvData = results.data;
+          toast.success("CSV uploaded and validated successfully!");
+          isUploading = false;
         }
-
-        isUploading = false;
+      },
+      error: () => {
+        toast.error("An error occurred while parsing the CSV file.");
+        isUploading = false; // Reset on parsing failure
       },
     });
+  }
+
+  // Function to clear the file input
+  function clearFileInput() {
+    // Find and click the close button
+    const closeButton = document.querySelector(".bx--file-close");
+    if (closeButton) {
+      closeButton.click();
+    }
+
+    // As a fallback, also clear the input value using DataTransfer
+    if (fileInputElement) {
+      // Create an empty DataTransfer object
+      const dt = new DataTransfer();
+      // Set the files property to the empty DataTransfer files
+      fileInputElement.files = dt.files;
+    }
   }
 
   function validateCSV(data: any[]) {
     const errors: string[] = [];
 
-    if (!data[0]?.test_name) errors.push("Missing test_name header");
-    if (!data[0]?.problem_question)
+    if (!data[0]?.problem_latex) {
+      console.log("Missing test_name header");
+      errors.push("Missing test_name header");
+    }
+    if (!data[0]?.answer_latex) {
+      console.log("Missing problem_question header");
       errors.push("Missing problem_question header");
+    }
+    if (!data[0]?.problem_number) {
+      console.log("Missing problem_number header");
+      errors.push("Missing problem_number header");
+    }
 
     data.forEach((row, index) => {
       try {
@@ -278,22 +354,41 @@
         }
       }
     });
-
     return errors;
   }
 
-  // Add submission handler
-  async function submitCSV() {
+  async function submitCSVToSupabase() {
+    if (csvData.length === 0) {
+      toast.error("Please upload a valid CSV file first");
+      return;
+    }
+
+    if (!name || !description) {
+      toast.error("Test name and description are required");
+      return;
+    }
+
+    isSubmitting = true;
+
     try {
-      const { data: testData, error: testError } = await insertTest();
+      // 1. Create a new test
+      const { data: testData, error: testError } = await insertTest({
+        name,
+        description,
+        event_id: $page.params.event_id,
+        // Add any other test properties you need
+      });
 
       if (testError) throw testError;
 
-      const problems = csvData.map((problem) => ({
-        question: problem.problem_question,
-        answer: problem.problem_answer,
-        order: problem.problem_order,
-        test_id: testData[0].id,
+      const testId = testData[0].id;
+
+      // 2. Create problems from CSV data
+      const problems = csvData.map((row) => ({
+        test_id: testId,
+        problem_latex: row.problem_latex,
+        answer_latex: row.answer_latex,
+        problem_number: row.problem_number,
       }));
 
       const { error: problemsError } = await supabase
@@ -302,225 +397,86 @@
 
       if (problemsError) throw problemsError;
 
-      toast.success("Test imported successfully!");
-      await getTests(); // Refresh the test list
+      // 3. Success handling
+      toast.success("Test and problems successfully created!");
+
+      // 4. Reset form
+      name = "";
+      description = "";
+      csvData = [];
+      fileUploaderKey++; // Reset file uploader
+
+      // 5. Refresh tests list
+      await getTests();
     } catch (error) {
       handleError(error);
+    } finally {
+      isSubmitting = false;
     }
   }
+
+  async function handleImgUpload(event: CustomEvent<{ files: FileList }>) {}
 </script>
 
 <br />
-<h1>Tests</h1>
+<h1>Add Test</h1>
 <br />
 <div>
-  {#if loading}
-    <Loading />
-  {:else if tests.length === 0}
-    <p>No available tests!</p>
-  {:else}
-    <div style="padding: 15px;">
-      <a href="./tests/new">
-        <button class="test-button full">Create New Test</button>
-      </a>
-    </div>
-    <!-- <div class="csv-container">
-      <div class="csv-upload-section">
-        <FileUploader
-          labelTitle="Upload CSV File"
-          labelDescription="Only .csv files accepted (max 1MB)"
-          buttonLabel="Upload CSV"
-          accept={[".csv"]}
-          multiple={false}
-          on:change={handleCSVUpload}
-          disabled={isUploading}
-        />
-
-        {#if csvErrors.length > 0}
-          <div class="validation-errors">
-            {#each csvErrors as error}
-              <p class="error-message">• {error}</p>
-            {/each}
-          </div>
-        {/if}
-
-        {#if csvData.length > 0}
-          <div class="csv-preview">
-            <h4>Preview (First 5 Rows)</h4>
-            <table>
-              <thead>
-                <tr>
-                  {#each Object.keys(csvData[0]) as header}
-                    <th>{header}</th>
-                  {/each}
-                </tr>
-              </thead>
-              <tbody>
-                {#each csvData.slice(0, 5) as row, i}
-                  <tr>
-                    {#each Object.values(row) as value}
-                      <td>{value}</td>
-                    {/each}
-                  </tr>
-                {/each}
-              </tbody>
-            </table>
-            <Button on:click={submitCSV} disabled={isUploading}>
-              {isUploading ? "Importing..." : "Confirm Import"}
-            </Button>
-          </div>
-        {/if}
-      </div>
-    </div> -->
-
-    <div class="buttonContainer">
-      {#each Object.values(testStatusMap).sort((a, b) => {
-        // Sort by opening_time first
-        const openingTimeComparison = new Date(a.opening_time) - new Date(b.opening_time);
-        if (openingTimeComparison !== 0) return openingTimeComparison;
-
-        // Then sort by test_name
-        const nameComparison = a.test_name.localeCompare(b.test_name);
-        if (nameComparison !== 0) return nameComparison;
-
-        // Finally sort by test_division
-        return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
-      }) as test}
-        <div>
-          <div class="problemContainer">
-            <div>
-              <div
-                class="flex"
-                style="align-items: center; justify-content: left;"
-              >
-                <h4>
-                  {test.test_name}
-                </h4>
-                <Tag type="green">{test.is_team ? "Team" : "Individual"}</Tag>
-                {#if test.division}
-                  <Tag type="green">{test.division}</Tag>
-                {/if}
-              </div>
-              {#if test.status == "Not Open" && test.opening_time}
-                <p>
-                  Start Time: {new Date(test.opening_time).toLocaleString([], {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              {/if}
-              <p style="text-align: left;">Duration: {test.length / 60} mins</p>
-              <p style="text-align: left;">
-                Buffer: {test.buffer_time / 60} mins
-              </p>
-            </div>
-            <div class="flex" style="gap: 5px">
-              <p style="margin-right: 5px;">
-                {test.countdown}
-              </p>
-              <!--
-								<Toggle
-									labelText="Visible"
-									on:toggle={(e) => console.log(e.detail)}
-								/>
-							-->
-
-              <div class="tooltip-container">
-                <a href="./tests/{test.test_id}">
-                  <button class="test-button empty">
-                    <Edit />
-                  </button>
-                  <span class="tooltip">Edit Test</span>
-                </a>
-              </div>
-              <div class="tooltip-container">
-                <a href="./tests/{test.test_id}/grade">
-                  <button class="test-button empty">
-                    <ListCheckedMirror />
-                  </button>
-                  <span class="tooltip">Grade Test</span>
-                </a>
-              </div>
-              <div class="tooltip-container">
-                <a href="./tests/{test.test_id}/results">
-                  <button class="test-button empty">
-                    <TableSplit />
-                  </button>
-                  <span class="tooltip">Results</span>
-                </a>
-              </div>
-              <button
-                class="test-button full"
-                onclick={(e) => {
-                  curTest = test;
-                  setupTime(
-                    curTest.openingTime
-                      ? new Date(curTest.openingTime)
-                      : new Date()
-                  );
-                  open = true;
-                }}
-              >
-                Open
-              </button>
-            </div>
-          </div>
-        </div>
-      {/each}
+  <form on:submit|preventDefault style="padding: 20px;">
+    <TextInput
+      bind:value={name}
+      class="textInput"
+      label="Test Name"
+      placeholder="Test Name (required)"
+      required
+    />
+    <br />
+    <TextArea
+      bind:value={description}
+      label="Test Description"
+      class="textArea"
+      placeholder="Test Description (required)"
+      required
+    />
+    <br />
+    <div>
+      <Checkbox labelText="Is this a team test?" />
     </div>
     <br />
-    <Modal
-      bind:open
-      modalHeading={name}
-      on:open
-      on:close
-      primaryButtonText="Save"
-      secondaryButtonText="Cancel"
-      size="lg"
-      on:click:button--secondary={() => (open = false)}
-      on:submit={async () => {
-        open = false;
-        await handleSubmit();
-      }}
-    >
-      Set open time:
-      <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
-        <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
-      </DatePicker>
-
-      <TimePicker
-        labelText="Time"
-        placeholder="hh:mm"
-        bind:value={curTest.time}
-      >
-        <TimePickerSelect bind:value={curTest.amPm}>
-          <SelectItem value="am" text="AM" />
-          <SelectItem value="pm" text="PM" />
-        </TimePickerSelect>
-      </TimePicker>
-
-      <Button
-        action={() => {
-          setupTime(new Date());
-        }}
-        title={"Now"}
+    <div class="csv-container">
+      <FileUploader
+        key={fileUploaderKey}
+        accept={[".csv"]}
+        labelTitle="Upload CSV"
+        labelDescription=".csv files only. Only one file will be accepted."
+        buttonLabel="Add CSV file"
+        on:add={handleCSVUpload}
+        status={isUploading
+          ? "loading"
+          : csvErrors.length > 0
+            ? "error"
+            : "complete"}
+        required
       />
-
-      <TextInput
-        labelText="Buffer Time (seconds)"
-        bind:value={curTest.buffer_time}
-        invalid={isInvalid}
-        invalidText="Input must be a nonnegative integer"
-        on:input={validateInput}
+      <!-- </div>
+    <div class="img-container"> -->
+      <FileUploader
+        accept={[".txt"]}
+        labelTitle="Upload Text File of Image Links"
+        labelDescription=".txt files only. Only one file will be accepted."
+        buttonLabel="Add .txt file"
+        on:add={handleImgUpload}
+        status={isUploading ? "uploading" : "complete"}
+        required
       />
-
-      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br
-      /><br /><br />
-    </Modal>
-  {/if}
+    </div>
+    <br />
+    <Button
+      action={submitCSVToSupabase}
+      title={isSubmitting ? "Creating Test..." : "Create Test"}
+      disabled={isSubmitting || csvData.length === 0}
+    />
+  </form>
 </div>
 
 <style>
