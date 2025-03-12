@@ -35,8 +35,6 @@ export async function getOrganizationDetails(org_id: number, event_id: number) {
   
   orgData.coaches = coachData;
 
-  console.log(`Fetched coaches for org ${org_id}:`, coachData);
-
   const teams = await getOrganizationTeams(org_id, event_id);
   orgData.teams = teams;
 
