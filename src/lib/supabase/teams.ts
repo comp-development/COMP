@@ -80,6 +80,74 @@ export async function deleteStudentTeam(student_event_id: number) {
   if (error) throw error;
 }
 
+export async function inviteUserToTeam(team_id: number, emails: string[]) {
+  const { data, error } = await supabase
+    .from("teams")
+    .select("invites")
+    .eq("team_id", team_id)
+    .single();
+
+  if (error) throw error;
+
+  let invites = data.invites;
+  let newInvites = [];
+
+  if (!invites) {
+    invites = emails;
+  } else {
+    emails.forEach((email) => {
+      const trimmed = email.trim();
+      if (!invites.includes(trimmed)) {
+        invites.push(trimmed);
+        newInvites.push(trimmed);
+      }
+    });
+  }
+
+  const { error: updateError } = await supabase
+    .from("teams")
+    .update({ invites })
+    .eq("team_id", team_id);
+
+  if (updateError) throw updateError;
+
+  return newInvites;
+}
+
+export async function removeUserInvitationFromTeam(team_id: number, email: string) {
+  const { data, error: fetchError } = await supabase
+    .from("teams")
+    .select("invites")
+    .eq("team_id", team_id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  let invites = data.invites;
+
+  if (invites) {
+    invites = invites.filter((invite: string) => invite !== email);
+  }
+
+  const { error: updateError } = await supabase
+    .from("teams")
+    .update({ invites })
+    .eq("team_id", team_id);
+
+  if (updateError) throw updateError;
+}
+
+export async function checkUserInvitedToTeam(team_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("teams")
+    .select("invites")
+    .eq("team_id", team_id)
+    .single();
+  if (error) throw error;
+  
+  return data.invites.includes(email);
+}
+
 export async function upsertTeam(
   event_id: number,
   teamData?: {

@@ -629,7 +629,7 @@
           </Button>
           <Button pill outline color="primary" onclick={() => (isModalOpen = true)}>
             <UserAddSolid class="w-4 h-4 me-2" />
-            Invite Student
+            Invite Students
           </Button>
         </ButtonGroup>
       </div>

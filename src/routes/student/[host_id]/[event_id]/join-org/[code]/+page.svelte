@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { supabase } from "$lib/supabaseClient";
-  import { getEventInformation } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import { Button } from "flowbite-svelte";
   import Loading from "$lib/components/Loading.svelte";
@@ -11,7 +10,6 @@
   const join_code = $page.params.code;
 
   let loading = $state(true);
-  let event_details = $state(null);
   let token: string | null = null;
 
   let failure: { reason: string } | null = $state(null);
@@ -22,17 +20,7 @@
       handleError(error);
     }
     token = data.session?.access_token ?? null;
-
-    event_details = await getEventInformation(event_id);
-
-    if (event_details?.eventbrite_event_id) {
-      // Load the Eventbrite widget
-      const script = document.createElement('script');
-      script.src = 'https://www.eventbrite.com/static/widgets/eb_widgets.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-
+    
     let body = {
       event_id,
       token,
@@ -61,7 +49,6 @@
 {#if loading}
   <Loading />
 {:else}
-  <br />
   {#if failure}
     <h2>Failed to Join Organization</h2>
     <p>{failure?.reason}</p>

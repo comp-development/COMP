@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { Button, Badge, Tabs, TabItem } from "flowbite-svelte";
+  import { Button, Tabs, TabItem } from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { Alert } from "flowbite-svelte";
@@ -33,8 +33,8 @@
     $state(null);
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
-  import CopyText from "$lib/components/CopyText.svelte";
   import StudentTeam from "$lib/components/StudentTeam.svelte";
+
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
@@ -244,6 +244,8 @@
               }}
               showTeamCode={org_event ? false : true}
               editableFeatures={false}
+              user={student}
+              {event_details}
               onDrop={() => {}}
               onDragStart={() => {}}
               onDeleteStudent={() => {}}

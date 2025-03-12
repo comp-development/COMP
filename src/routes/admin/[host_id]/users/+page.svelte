@@ -129,7 +129,7 @@
   <br />
   <Button outline pill color="primary" onclick={() => (isModalOpen = true)}>
     <CirclePlusSolid class="w-4 h-4 me-2" />
-    Add Admin
+    Invite Admin
   </Button>
 
   <div style="max-width: 600px; margin: 10px auto;">
