@@ -4,6 +4,7 @@
   import { getEventInformation } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import { Button } from "flowbite-svelte";
+  import Loading from "$lib/components/Loading.svelte";
 
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
@@ -147,7 +148,7 @@
 </script>
 
 {#if loading}
-  <p>Loading...</p>
+  <Loading />
 {:else}
   <br />
   {#if failure?.reason == "payment not complete"}

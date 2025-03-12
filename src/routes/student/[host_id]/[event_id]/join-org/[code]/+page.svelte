@@ -1,0 +1,71 @@
+<script lang="ts">
+  import { page } from "$app/stores";
+  import { supabase } from "$lib/supabaseClient";
+  import { getEventInformation } from "$lib/supabase";
+  import { handleError } from "$lib/handleError";
+  import { Button } from "flowbite-svelte";
+  import Loading from "$lib/components/Loading.svelte";
+
+  const host_id = parseInt($page.params.host_id);
+  const event_id = parseInt($page.params.event_id);
+  const join_code = $page.params.code;
+
+  let loading = $state(true);
+  let event_details = $state(null);
+  let token: string | null = null;
+
+  let failure: { reason: string } | null = $state(null);
+
+  (async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error != null) {
+      handleError(error);
+    }
+    token = data.session?.access_token ?? null;
+
+    event_details = await getEventInformation(event_id);
+
+    if (event_details?.eventbrite_event_id) {
+      // Load the Eventbrite widget
+      const script = document.createElement('script');
+      script.src = 'https://www.eventbrite.com/static/widgets/eb_widgets.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    let body = {
+      event_id,
+      token,
+      join_code,
+    };
+    
+    const response = await fetch(`./${join_code}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const json: {
+      failure: { reason: string } | null;
+    } = await response.json();
+    if (response.ok) {
+      document.location.assign(`/student/${host_id}/${event_id}/`);
+    } else {
+      handleError(new Error(json.failure?.reason));
+      failure = json.failure!;
+    }
+
+    loading = false;
+  })();
+</script>
+
+{#if loading}
+  <Loading />
+{:else}
+  <br />
+  {#if failure}
+    <h2>Failed to Join Organization</h2>
+    <p>{failure?.reason}</p>
+    <br />
+    <Button href=".." pill>Return to event</Button>
+  {/if}
+{/if}

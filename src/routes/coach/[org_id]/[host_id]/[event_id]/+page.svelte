@@ -587,6 +587,12 @@
         />
         Org Join Code: <CopyText text={organizationDetails.event.join_code} />
       </div>
+      <div class="flex">
+        <InfoToolTip
+          text="Send this link to your students and they will be able to join your organization after they create an account"
+        />
+        Org Join Link: <CopyText text={`https://comp.mt/student/${host_id}/${event_id}/join-org/${organizationDetails.event.join_code}`} />
+      </div>
 
       <div style="margin: 10px 0;">
         <ButtonGroup>
