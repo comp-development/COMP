@@ -88,7 +88,7 @@ export async function getCoachOrganizations(coach_id: string) {
   return data;
 }
 
-export async function inviteUserToOrgEvent(org_id: number, event_id: number, email: string) {
+export async function inviteUserToOrgEvent(org_id: number, event_id: number, emails: string[]) {
   const { data, error } = await supabase
     .from("org_events")
     .select("invites")
@@ -99,9 +99,19 @@ export async function inviteUserToOrgEvent(org_id: number, event_id: number, ema
   if (error) throw error;
 
   let invites = data.invites;
+  let newInvites = [];
 
-  if (!invites) { invites = [email]; } 
-  else { invites.push(email); }
+  if (!invites) {
+    invites = emails;
+  } else {
+    emails.forEach((email) => {
+      const trimmed = email.trim();
+      if (!invites.includes(trimmed)) {
+        invites.push(trimmed);
+        newInvites.push(trimmed);
+      }
+    });
+  }
 
   const { error: updateError } = await supabase
     .from("org_events")
@@ -110,6 +120,8 @@ export async function inviteUserToOrgEvent(org_id: number, event_id: number, ema
     .eq("event_id", event_id);
 
   if (updateError) throw updateError;
+
+  return newInvites;
 }
 
 export async function removeUserInvitationFromOrgEvent(org_id: number, event_id: number, email: string) {

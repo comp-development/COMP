@@ -14,7 +14,6 @@
     getStudentsWithoutTeam,
     removeStudentFromOrganization,
     getTicketCount,
-    getOrganizationDetails,
     getOrganization,
     inviteUserToOrgEvent,
   } from "$lib/supabase";
@@ -50,11 +49,8 @@
 
   let studentsWithoutTeams = $state([]);
   let isTeamModalOpen = $state(false);
-  let teamName = $state("");
-  let editingTeamId: number | null = $state(null);
 
   let isPurchaseModalOpen = $state(false);
-  let ticketQuantity = $state(0);
   let newResponses = $state({});
 
   let showDeleteTeamConfirmation = $state(false);
@@ -72,11 +68,11 @@
   const fields = [
     {
       name: "email",
-      label: "Student Email",
+      label: "Student Emails",
       required: false,
       editable: true,
-      custom_field_type: "email",
-      placeholder: "Enter student email",
+      custom_field_type: "text",
+      placeholder: "",
       value: newResponses2.email || "",
     }
   ];
@@ -486,38 +482,55 @@
 
   async function handleSubmit() {
     try {
+      let emails = newResponses2.email.split(";");
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      for (const email of emails) {
+        if (!emailRegex.test(email.trim())) {
+          throw new Error("One or more of the emails are invalid");
+        }
+      }
+
       const org = await getOrganization(org_id);
-      await inviteUserToOrgEvent(org_id, event_id, newResponses2.email);
+      emails = await inviteUserToOrgEvent(org_id, event_id, emails);
 
-      const response = await fetch("/api/sendmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: newResponses2.email,
-          subject: `Join ${org.name} on COMP`,
-          message: `
-        <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
-          <h2 style="color: black;">You're Invited to ${org.name} on COMP!</h2>
-          <p>You have been invited to compete for <strong>${org.name}</strong> during ${event_details?.event_name} on COMP!</p>
-          <p>To accept the invitation, click the button below:</p>
-          <a href="https://comp.mt/join-org?org_id=${org_id}&event_id=${event_id}&email=${newResponses2.email}" 
-             style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
-             Accept Invitation
-          </a>
-        </div>
-      `,
-        }),
-      });
+      for (let email of emails) {
+        email = email.trim();
 
-      const data = await response.json();
-      if (data.error) {
-        throw data.error;
+        const response = await fetch("/api/sendmail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email,
+            subject: `Join ${org.name} on COMP`,
+            message: `
+          <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <img src=${event_details?.logo} width="100px" style="border-radius: 50px; margin-left: auto; margin-right: auto;" />
+            </div>
+            <h2 style="color: black;">You're Invited to ${org.name} on COMP!</h2>
+            <p>You have been invited to compete for <strong>${org.name}</strong> during <strong>${event_details?.event_name}</strong> by <strong>${coach.first_name} ${coach.last_name}</strong> on COMP!</p>
+            <p>To accept the invitation, click the button below:</p>
+            <a href="https://comp.mt/student/${host_id}/${event_id}/join-org?org_id=${org_id}&email=${email}" 
+              style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
+              Accept Invitation
+            </a>
+          </div>
+        `,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.error) {
+          throw data.error;
+        }
       }
 
       toast.success("Email sent successfully");
       isModalOpen = false;
     } catch (e) {
       handleError(e);
+      isModalOpen = false;
     }
   }
 </script>
@@ -681,6 +694,7 @@
       <h3 class="text-xl font-medium text-gray-900 dark:text-white">
         Add User
       </h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400">Multiple emails should be separated by a semi-colon</p>
       <CustomForm
         {fields}
         bind:newResponses={newResponses2}

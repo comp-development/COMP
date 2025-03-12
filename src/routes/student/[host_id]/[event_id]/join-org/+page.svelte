@@ -11,14 +11,13 @@
   let org = $state(null);
   let email = $state(null);
   let org_id = $state(null);
-  let event_id = $state(null);
+  let event_id = parseInt($page.params.event_id);
   let student_event_id = $state(null);
 
  (async () => {
     try {
       email = $page.url.searchParams.get('email');
       org_id = parseInt($page.url.searchParams.get('org_id'));
-      event_id = parseInt($page.url.searchParams.get('event_id'));
 
       let user = await getThisUser();
       if (user.email != email) {
@@ -28,11 +27,6 @@
       let isInvited = await checkUserInvitedToOrgEvent(org_id, event_id, email);
       if (!isInvited) {
         throw new Error("User is not invited to this organization.");
-      }
-
-      let userType = await isType("student", user.id);
-      if (!userType) {
-        throw new Error("You must have a student account to join this organization.");
       }
 
       let student_event = await getStudentEvent(user.id, event_id);

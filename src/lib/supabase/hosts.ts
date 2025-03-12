@@ -98,7 +98,7 @@ export async function userJoinAsHostAdmin(user_id: string, host_id: number) {
   await addAdminToHost(user_id, host_id);
 }
 
-export async function inviteUserToHost(host_id: number, email: string) {
+export async function inviteUserToHost(host_id: number, emails: string[]) {
   const { data, error } = await supabase
     .from("hosts")
     .select("invites")
@@ -108,9 +108,19 @@ export async function inviteUserToHost(host_id: number, email: string) {
   if (error) throw error;
 
   let invites = data.invites;
+  let newInvites = [];
 
-  if (!invites) { invites = [email]; } 
-  else { invites.push(email); }
+  if (!invites) {
+    invites = emails;
+  } else {
+    emails.forEach((email) => {
+      const trimmed = email.trim();
+      if (!invites.includes(trimmed)) {
+        invites.push(trimmed);
+        newInvites.push(trimmed);
+      }
+    });
+  }
 
   const { error: updateError } = await supabase
     .from("hosts")
@@ -118,6 +128,8 @@ export async function inviteUserToHost(host_id: number, email: string) {
     .eq("host_id", host_id);
 
   if (updateError) throw updateError;
+
+  return newInvites;
 }
 
 export async function removeUserInvitationFromHost(host_id: number, email: string) {
