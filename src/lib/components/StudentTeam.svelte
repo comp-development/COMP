@@ -10,7 +10,8 @@
   import TableName from "$lib/components/TableName.svelte";
   import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
   import TeamForm from "$lib/components/TeamForm.svelte";
-  import CustomForm from "./CustomForm.svelte";
+  import CustomForm from "$lib/components/CustomForm.svelte";
+  import InvitedUser from "$lib/components/InvitedUser.svelte";
 
   let {
     event_id,
@@ -36,6 +37,8 @@
   let isModalOpen = $state(false);
   let newResponses = $state({});
   let validationErrors = $state({});
+
+  let invites = $state(team.invites);
 
   const fields = [
     {
@@ -137,7 +140,9 @@
         );
       }
 
-      emails = await inviteUserToTeam(team.team_id, emails);
+      const data = await inviteUserToTeam(team.team_id, emails);
+      emails = data.newInvites;
+      invites = data.invites;
 
       for (let email of emails) {
         email = email.trim();
@@ -253,6 +258,12 @@
     />
   {/each}
 
+  {#if showTeamCode}
+    {#each invites as invitation}
+      <InvitedUser email={invitation} type="independentTeam" id={team.team_id} {event_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
+    {/each}
+  {/if}
+
   <div
     class="flex-shrink-0 rounded-full border-2 border-white dark:border-gray-800 bg-gray-200 inline-flex items-center justify-center absolute top-0 end-0 translate-x-1/3 rtl:-translate-x-1/3 -translate-y-1/3 px-1"
   >
@@ -334,5 +345,9 @@
     position: relative;
     text-align: left;
     transition: background-color 0.2s ease;
+  }
+
+  :global(.specificModalMax .registrationForm) {
+    padding: 0px;
   }
 </style>

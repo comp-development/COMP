@@ -36,6 +36,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { supabase } from "$lib/supabaseClient";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+    import InvitedUser from "$lib/components/InvitedUser.svelte";
 
   let loading = $state(true);
   let coach: any = $state();
@@ -64,6 +65,8 @@
   let isModalOpen = $state(false);
   let newResponses2 = $state({});
   let validationErrors = $state({});
+
+  let invites = $state([]);
 
   const fields = [
     {
@@ -95,6 +98,8 @@
       event_id,
       org_id,
     );
+
+    invites = organizationDetails.event.invites;
 
     console.log("ORG", organizationDetails);
     ticketCount = await getTicketCount(event_id, org_id);
@@ -492,7 +497,10 @@
       }
 
       const org = await getOrganization(org_id);
-      emails = await inviteUserToOrgEvent(org_id, event_id, emails);
+      const data = await inviteUserToOrgEvent(org_id, event_id, emails);
+
+      emails = data.newInvites;
+      invites = data.invites;
 
       for (let email of emails) {
         email = email.trim();
@@ -674,6 +682,9 @@
                 handleDeletingStudent(student);
               }}
             />
+          {/each}
+          {#each invites as invitation}
+            <InvitedUser email={invitation} type="coachOrg" id={org_id} {event_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
           {/each}
         </div>
       </div>

@@ -111,7 +111,7 @@ export async function inviteUserToTeam(team_id: number, emails: string[]) {
 
   if (updateError) throw updateError;
 
-  return newInvites;
+  return { newInvites, invites };
 }
 
 export async function removeUserInvitationFromTeam(team_id: number, email: string) {

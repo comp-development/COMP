@@ -15,6 +15,7 @@
   import { CirclePlusSolid } from "flowbite-svelte-icons";
   import toast from "$lib/toast.svelte";
     import { user } from "$lib/sessionStore";
+    import InvitedUser from "$lib/components/InvitedUser.svelte";
 
   let host_id = Number($page.params.host_id);
   let admin: any = $state();
@@ -25,6 +26,7 @@
   let isModalOpen = $state(false);
   let newResponses = $state({});
   let validationErrors = $state({});
+  let invites = $state([]);
 
   const fields = [
     {
@@ -42,6 +44,10 @@
     try {
       admin = await getAdmin($user!.id);
       let users = await getHostAdmins(host_id);
+
+      let host = await getHostInformation(host_id);
+      invites = host.invites;
+
       users.sort((a, b) => {
         return a.person.first_name
           .toLowerCase()
@@ -76,7 +82,9 @@
       }
 
       const host = await getHostInformation(host_id);
-      emails = await inviteUserToHost(host_id, emails);
+      const data = await inviteUserToHost(host_id, emails);
+      emails = data.newInvites;
+      invites = data.invites;
 
       for (let email of emails) {
         email = email.trim();
@@ -133,6 +141,17 @@
   </Button>
 
   <div style="max-width: 600px; margin: 10px auto;">
+    <div style="padding: 20px">
+      <h3>Invited</h3>
+      {#each invites as invitation}
+        <InvitedUser email={invitation} type="admin" id={host_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
+      {/each}
+      {#if invites.length == 0}
+        <p>No outgoing invitations</p>
+      {/if}
+    </div>
+
+    <h3>Members</h3>
     {#key updateTrigger}
       <TableName
         items={roles}

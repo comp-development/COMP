@@ -129,7 +129,7 @@ export async function inviteUserToHost(host_id: number, emails: string[]) {
 
   if (updateError) throw updateError;
 
-  return newInvites;
+  return { newInvites, invites };
 }
 
 export async function removeUserInvitationFromHost(host_id: number, email: string) {

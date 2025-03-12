@@ -119,7 +119,7 @@ export async function inviteUserToOrgEvent(org_id: number, event_id: number, ema
 
   if (updateError) throw updateError;
 
-  return newInvites;
+  return { newInvites, invites };
 }
 
 export async function removeUserInvitationFromOrgEvent(org_id: number, event_id: number, email: string) {
