@@ -94,7 +94,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Join ${host.host_name} on COMP`,
+            subject: `Become an Admin for ${host.host_name} on COMP`,
             message: `
           <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
             <div style="display: flex; align-items: center; justify-content: center;">

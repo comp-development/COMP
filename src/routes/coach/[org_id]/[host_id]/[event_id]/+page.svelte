@@ -510,7 +510,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Join ${org.name} on COMP`,
+            subject: `Join Organization ${org.name} on COMP for ${event_details?.event_name}`,
             message: `
           <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
             <div style="display: flex; align-items: center; justify-content: center;">

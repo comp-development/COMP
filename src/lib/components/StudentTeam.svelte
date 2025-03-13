@@ -152,7 +152,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Join ${team_information.team_name} on COMP`,
+            subject: `Join Team ${team_information.team_name} on COMP for ${event_details?.event_name}`,
             message: `
           <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
             <h2 style="color: black;">You're Invited to ${team_information.team_name} on COMP!</h2>
