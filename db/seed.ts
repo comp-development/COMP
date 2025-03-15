@@ -8,6 +8,8 @@ import "dotenv/config";
 import { env } from "process";
 import type { Tables } from "./database.types";
 
+const EXAMPLE_IMAGE_PATH = "smile.png";
+
 const example_problems = [
   {
     problem_latex: "How many fingers do you have?",
@@ -38,7 +40,7 @@ const example_problems = [
   },
   {
     problem_latex:
-      "how many ways are there to arrange the letters in the word allergies",
+      `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
     answer_latex: "(9!)/2",
     solution_latex:
       "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
@@ -111,6 +113,7 @@ async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
         {
           test_name: "Example Test",
           buffer_time: 60 * 60 * 24,
+          length: 60 * 20,
           opening_time: new Date(),
           division: null,
           is_team: true,
@@ -328,6 +331,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     "!net.*",
     "!pgsodium.*",
     "!realtime.*",
+    "!storage.*",
   ]);
 
   await create_user(
@@ -618,6 +622,10 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
       { connect: { events: [event] } },
     );
   }
+
+  // TODO: resolve importing supabase client properly
+  // supabase.storage.from("problem-images").upload(EXAMPLE_IMAGE_PATH, createReadStream('./example.png'));
+  
   if (!dryRun) {
     console.log("Successfully seeded database!");
   }
