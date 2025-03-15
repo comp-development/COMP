@@ -1,4 +1,8 @@
-import { SeedClient, createSeedClient } from "@snaplet/seed";
+import {
+  SeedClient,
+  createSeedClient,
+  type studentsScalars,
+} from "@snaplet/seed";
 import { copycat, type Input } from "@snaplet/copycat";
 import "dotenv/config";
 import { env } from "process";
@@ -51,6 +55,48 @@ async function create_user(
   } else if (type == UserType.Student) {
     return await seed.students([data]);
   }
+}
+
+// Seed an event and test with explicit parameters for ease of testing.
+async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
+  // Put the student in an event with a test that opens now.
+  const {
+    events: [event],
+  } = await seed.events([
+    {
+      event_name: "Example Event",
+      event_date: new Date(),
+      published: true,
+      summary: "debug event for testing",
+      eventbrite_event_id: null,
+      tests: [
+        {
+          test_name: "Example Test",
+          buffer_time: 60 * 60 * 24,
+          opening_time: new Date(),
+          division: null,
+          settings: null,
+          is_team: true,
+          visible: true,
+          test_mode: "Standard",
+          access_rules: null,
+        },
+      ],
+      ticket_orders: [
+        {
+          ticket_service: "stripe",
+          student_id: student.student_id,
+          quantity: 1,
+        },
+      ],
+    },
+  ]);
+  await seed.teams([
+    {
+      event_id: event.event_id,
+      student_events: [{ event_id: event.event_id, ...student }],
+    },
+  ]);
 }
 
 function permute<T>(
@@ -283,6 +329,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     {},
   );
   const debug_student = seed.$store.students[0];
+  await seed_debug_student(seed, debug_student);
   const debug_coach = seed.$store.coaches[0];
   const debug_admin = seed.$store.admins[0];
   const debug_superadmin = seed.$store.superadmins[0];
