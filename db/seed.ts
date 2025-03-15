@@ -8,6 +8,44 @@ import "dotenv/config";
 import { env } from "process";
 import type { Tables } from "./database.types";
 
+const example_problems = [
+  {
+    problem_latex: "How many fingers do you have?",
+    answer_latex: "10",
+    solution_latex:
+      "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
+    answer_type: "Integer",
+  },
+  {
+    problem_latex: "what is thirteen plus fourteen minus two",
+    answer_latex: "25",
+    solution_latex: "compute it.",
+    answer_type: "Integer",
+  },
+  {
+    problem_latex:
+      "Suppose $X$ is a random variable taking values in ${ 1 , \\ldots , n }$ such that $\\mathbb{E} X = n / 2$. Prove that $X \\geq n / 10$ with probability at least $1 / 10$.",
+    answer_latex: "Inequality gives proof.",
+    solution_latex: "do it",
+    answer_type: "Text",
+  },
+  {
+    problem_latex:
+      "integral of $\\int_{-\\infty}^\\infty \\frac{\\sin(x)}{x} d x$",
+    answer_latex: "pi",
+    solution_latex: "look up stack exchange",
+    answer_type: "AsciiMath",
+  },
+  {
+    problem_latex:
+      "how many ways are there to arrange the letters in the word allergies",
+    answer_latex: "(9!)/2",
+    solution_latex:
+      "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
+    answer_type: "AsciiMath",
+  },
+] satisfies Partial<Tables<"problems">>[];
+
 enum UserType {
   Superadmin = 1,
   Admin,
@@ -75,11 +113,11 @@ async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
           buffer_time: 60 * 60 * 24,
           opening_time: new Date(),
           division: null,
-          settings: null,
           is_team: true,
           visible: true,
           test_mode: "Standard",
           access_rules: null,
+          test_problems: example_problems.map((p) => ({ problems: p })),
         },
       ],
       ticket_orders: [
@@ -265,7 +303,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
           buffer_time: (ctx) => copycat.int(ctx.seed, { min: 0, max: 10 }) * 60,
           length: (ctx) => copycat.int(ctx.seed, { min: 10, max: 60 }) * 60,
           division: null,
-          access_rules: {},
+          access_rules: null,
         },
       },
       ticket_orders: {
@@ -370,40 +408,6 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     },
   );
 
-  const example_problems = [
-    {
-      problem_latex: "How many fingers do you have?",
-      answer_latex: "10",
-      solution_latex:
-        "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
-      answer_type: "Integer",
-    },
-    {
-      problem_latex: "what is thirteen plus fourteen minus two",
-      answer_latex: "25",
-      solution_latex:
-        "compute it.",
-      answer_type: "Integer",
-    },
-    {
-      problem_latex: "Suppose $X$ is a random variable taking values in ${ 1 , dots.h , n }$ such that $\\bb{E} X = n \\/ 2$. Prove that $X \\geq n \\/ 10$ with probability at least $1 \\/ 10$.",
-      answer_latex: "Inequality gives proof.",
-      solution_latex: "do it",
-      answer_type: "Text",
-    },
-    {
-      problem_latex: "integral of $\\int_{-\infty}^\infty \\frac{\\sin(x)}{x} d x$",
-      answer_latex: "pi",
-      solution_latex: "look up stack exchange",
-      answer_type: "AsciiMath",
-    },
-    {
-      problem_latex: "how many ways are there to arrange the letters in the word allergies",
-      answer_latex: "(9!)/2",
-      solution_latex: "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
-      answer_type: "AsciiMath",
-    },
-  ] satisfies Partial<Tables<"problems">>[];
   const { events } = await seed.events(
     (x) =>
       x(hosts.length * 4, ({ seed }) => ({
