@@ -265,6 +265,7 @@
             open={selectedOption === "join_org"}
             title="Join Organization"
             divClass="bg-[var(--background)]"
+            style="border: 2px solid var(--primary); padding: 10px 16px;"
           >
             <h2>Join Organization</h2>
             <p>
@@ -304,6 +305,7 @@
               open={selectedOption === "join_team"}
               title="Join Independent Team"
               divClass="bg-[var(--background)]"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <h2>Join Independent Team</h2>
               <p>
@@ -349,6 +351,7 @@
             open={selectedOption === "create_team"}
             title="Create Independent Team"
             divClass="bg-[var(--background)]"
+            style="border: 2px solid var(--primary); padding: 10px 16px;"
           >
             <h2>Create Independent Team</h2>
             <p>
