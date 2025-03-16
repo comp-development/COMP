@@ -35,6 +35,7 @@
   let coach: any = $state();
   let organizationDetails: any = $state(null);
   let ticketCount: number = $state(0);
+
   let event_details: Tables<"events"> | null = $state(null);
   const event_id = parseInt($page.params.event_id);
   const org_id = parseInt($page.params.org_id);
@@ -525,6 +526,10 @@
           <Button pill outline color="primary" id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} onclick={event_details.eventbrite_event_id ? openEventbriteWidget : openPurchaseModal}>
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
+          </Button>
+          <Button pill outline color="primary" href={`/coach/${$page.params.org_id}/${$page.params.host_id}/${$page.params.event_id}/refund-event`}>
+            <CartSolid class="w-4 h-4 me-2" />
+            Request Ticket Refund
           </Button>
         </ButtonGroup>
       </div>

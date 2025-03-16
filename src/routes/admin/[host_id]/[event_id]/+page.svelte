@@ -12,28 +12,47 @@
   import Loading from "$lib/components/Loading.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
   import TableName from "$lib/components/TableName.svelte";
-  import { Button, Modal, TabItem, Tabs } from "flowbite-svelte";
+  import { Button, Modal, TabItem, Tabs, Badge } from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
+  import type { Tables } from "../../../../../db/database.types";
+
+  interface StudentEventWithPerson extends Tables<"student_events"> {
+    person: Tables<"students">;
+  }
 
   let hostId = Number($page.params.host_id);
   let eventId = Number($page.params.event_id);
-  let teams = $state([]);
-  let students = $state([]);
-  let host = $state([]);
-  let event_information = $state({});
+  let teams: Tables<"teams">[] = $state([]);
+  let students: StudentEventWithPerson[] = $state([]);
+  let host: Tables<"hosts"> = $state({
+    email: null,
+    host_id: 0,
+    host_name: "",
+    logo: null,
+    styles: null,
+    summary: null,
+  });
+  let event_information: Tables<"events"> = $state({} as Tables<"events">);
   let loading = $state(true);
-  let organizations = $state([]);
-  let independentTeams = $state([]);
+  let organizations: (Tables<"org_events"> & {
+    org?: Tables<"orgs"> & {
+      ticket_orders?: Tables<"ticket_orders">[];
+    };
+  })[] = $state([]);
+  let independentTeams: Tables<"teams">[] = $state([]);
   let selectedTab = $state("student");
 
   let isEditModalOpen = $state(false);
-  let letEditableStudent = $state(null);
+  let letEditableStudent = $state<StudentEventWithPerson | null>(null);
 
   async function loadInformation() {
     try {
-      teams = await getEventTeams(eventId);
+      const fetchedTeams = await getEventTeams(eventId);
+      teams = fetchedTeams.map(team => ({
+        ...team,
+        team_id: team.team_id,
+      }));
       host = await getHostInformation(hostId);
-      teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
       event_information = await getEventInformation(eventId);
 
       organizations = await getEventOrganizations(eventId);
@@ -42,7 +61,11 @@
 
       loading = false;
     } catch (error) {
-      handleError(error);
+      if (error instanceof Error) {
+        handleError(error);
+      } else {
+        handleError(new Error(String(error)));
+      }
     }
   }
 
@@ -58,6 +81,19 @@
     event={event_information}
     editable={true}
   />
+
+  <div class="flex justify-end mb-4 mt-4">
+    <Button
+      color="red"
+      pill
+      href={`/admin/${hostId}/${eventId}/refund-requests`}
+    >
+      View Refund Requests
+      {#if organizations.some(org => org.org?.ticket_orders?.some(order => order.refund_status === "REQUESTED"))}
+        <Badge color="red" class="ml-2">!</Badge>
+      {/if}
+    </Button>
+  </div>
 
   <Tabs tabStyle="pill">
     <TabItem

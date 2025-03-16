@@ -1609,6 +1609,7 @@ export type Database = {
           org_id: number | null
           quantity: number
           student_id: string | null
+          refund_status: Database["public"]["Enums"]["refund_status_enum"]
           ticket_service: Database["public"]["Enums"]["ticket_service_enum"]
         }
         Insert: {
@@ -1938,6 +1939,7 @@ export type Database = {
         | "dropdown"
       test_mode: "Standard" | "Puzzle" | "Guts" | "Meltdown"
       ticket_service_enum: "stripe" | "eventbrite"
+      refund_status_enum: "NONE" | "REQUESTED" | "APPROVED" | "DENIED"
     }
     CompositeTypes: {
       add_test_taker_result: {

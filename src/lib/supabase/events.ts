@@ -327,6 +327,8 @@ export async function getStudentTicketOrder(
   return data;
 }
 
+// once approved, just delete the entry, and store in another table just to be safe?
+
 export async function isEventPublished(event_id: number, host_id: number) {
   const { data, error } = await supabase
     .from("events")
@@ -695,4 +697,14 @@ export async function upsertHostCustomFields(
   }
 
   return [...insertedCustomFields, ...updatedCustomFields];
+}
+
+export async function getEventTickets(event_id: number) {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*, student:student_id(*), org:org_id(*)")
+    .eq("event_id", event_id)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }

@@ -1,5 +1,4 @@
 import { supabase } from "../supabaseClient";
-
 export async function getOrganization(org_id: number) {
   const { data, error } = await supabase
     .from("orgs")
@@ -56,6 +55,73 @@ export async function getCoachOrganization(
 }
 
 export async function getTicketCount(event_id: number, org_id: number) {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("quantity")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .not("refund_status","eq", "APPROVED")
+    .not("refund_status", "eq", "REQUESTED");
+  if (error) throw error;
+  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+  console.log("SUM", sum)
+  return sum(data.map((to) => to.quantity));
+}
+
+export async function getEventRefundRequests(event_id: number) {
+  try {
+    console.log("Fetching refund requests for event:", event_id);
+    
+    const { data, error } = await supabase
+      .from("ticket_orders")
+      .select("*")
+      .eq("event_id", event_id)
+      .not("refund_status", "eq", "NONE");
+
+    if (error) {
+      console.error("Error in getEventRefundRequests:", error);
+      throw error;
+    }
+
+    console.log("Refund requests data: ", data);
+    return data || [];
+  } catch (error) {
+    console.error("Error getting refund requests:", error);
+    throw error;
+  }
+}
+
+export async function getOrganizationActiveTickets(event_id: number, org_id: number) {
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .not("refund_status","eq", "APPROVED")
+    .not("refund_status", "eq", "REQUESTED");
+  if (error) throw error;
+  return data;
+  
+}
+
+export async function getOrganizationFinishedTickets(event_id: number, org_id: number) {
+  // go to org
+  const { data, error } = await supabase
+    .from("ticket_orders")
+    .select("*")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .or("refund_status.eq.APPROVED,refund_status.eq.REQUESTED");
+  if (error) throw error;
+  return data;
+  
+}
+
+// still needs to be made, don't call for now
+export async function getUsedTicketCount(event_id: number, org_id: number) {
+  // unimplemented();
+  throw new Error()
+  // error('This function has not been implemented yet.');
   const { data, error } = await supabase
     .from("ticket_orders")
     .select("quantity")
