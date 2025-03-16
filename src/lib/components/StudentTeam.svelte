@@ -2,7 +2,7 @@
   import { PenSolid, TrashBinSolid, UserAddSolid } from "flowbite-svelte-icons";
   import DraggableStudent from "./DraggableStudent.svelte";
   import CopyText from "./CopyText.svelte";
-  import { getTeam, inviteUserToTeam, updateStudentTeam } from "$lib/supabase";
+  import { getHostInformation, getTeam, inviteUserToTeam, updateStudentTeam } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import toast from "$lib/toast.svelte";
   import { Button, Modal } from "flowbite-svelte";
@@ -12,6 +12,7 @@
   import TeamForm from "$lib/components/TeamForm.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import InvitedUser from "$lib/components/InvitedUser.svelte";
+    import { generateEmail } from "$lib/emailTemplate";
 
   let {
     event_id,
@@ -123,6 +124,8 @@
       let emails = newResponses.email.split(";");
       const team_information = await getTeam(team.team_id);
 
+      const host = await getHostInformation(host_id);
+
       const data = await inviteUserToTeam(team.team_id, emails, team_information?.teamMembers.length, event_details?.max_team_size);
       emails = data.newInvites;
       invites = data.invites;
@@ -136,16 +139,7 @@
           body: JSON.stringify({
             email: email,
             subject: `Join Team '${team_information.team_name}' on COMP for ${event_details?.event_name}`,
-            message: `
-          <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
-            <h2 style="color: black;">You're Invited to '${team_information.team_name}' on COMP!</h2>
-            <p>You have been invited to compete for '<strong>${team_information.team_name}</strong>' during <strong>${event_details?.event_name}</strong> by <strong>${user.first_name} ${user.last_name}</strong> on COMP!</p>
-            <p>To accept the invitation, click the button below:</p>
-            <a href="https://comp.mt/student/${host_id}/${event_id}/join-team/${team.join_code}" style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              Accept Invitation
-            </a>
-          </div>
-        `,
+            message: generateEmail('team_invite', { host, host_id, event_id, user, team_information, event_details, team }),
           }),
         });
 

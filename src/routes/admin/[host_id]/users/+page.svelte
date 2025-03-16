@@ -16,6 +16,7 @@
   import toast from "$lib/toast.svelte";
     import { user } from "$lib/sessionStore";
     import InvitedUser from "$lib/components/InvitedUser.svelte";
+    import { generateEmail } from "$lib/emailTemplate";
 
   let host_id = Number($page.params.host_id);
   let admin: any = $state();
@@ -78,30 +79,15 @@
       emails = data.newInvites;
       invites = data.invites;
 
+      console.log(host);
+
       for (let email of emails) {
         email = email.trim();
 
         const response = await fetch("/api/sendmail", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email,
-            subject: `Become an Admin for '${host.host_name}' on COMP`,
-            message: `
-          <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
-            <div style="display: flex; align-items: center; justify-content: center;">
-              <img src=${host.logo} width="100px" style="border-radius: 50px; margin-left: auto; margin-right: auto;" />
-            </div>
-            <h2 style="color: black;">You're Invited to '${host.host_name}' on COMP!</h2>
-            <p>You have been invited to become an admin on '<strong>${host.host_name}</strong>' on COMP by <strong>${admin.first_name} ${admin.last_name}</strong>!</p>
-            <p>To accept the invitation, click the button below:</p>
-            <a href="https://comp.mt/join-host?host_id=${host_id}&email=${email}" 
-              style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
-              Accept Invitation
-            </a>
-          </div>
-        `,
-          }),
+          body: generateEmail('admin_invite', { host, host_id, email, admin })
         });
 
         const data = await response.json();
