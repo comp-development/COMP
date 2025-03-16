@@ -89,7 +89,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         .eq("event_id", event_id)
         .maybeSingle();
     wrap_supabase_error(
-      "You are not registered for this tournament. You must register before joining this team",
+      "You are not registered for this tournament",
       student_event_details,
       details_error,
     );

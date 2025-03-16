@@ -52,8 +52,11 @@
     } else {
       handleError(new Error(json.failure?.reason));
       failure = json.failure!;
+      
       if (failure.reason == "missing payment session") {
         await purchase_ticket();
+      } else if (failure.reason.includes("not registered for this tournament")) {
+        document.location.assign(`/student/${host_id}/${event_id}?team_join_code=${join_code}`);
       }
     }
 

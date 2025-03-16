@@ -49,17 +49,6 @@
   let selectedOption: "join_org" | "join_team" | "create_team" =
     $state("join_org");
 
-  const afterTeamSubmit = async () => {
-    // If this callback is called, then the student must've been in the event => student_event is non-null.
-    // Also, we assume the TeamForm component created a team => team is not null.
-    await updateStudentTeam(
-      student_event!.student_event_id,
-      team!.team_id,
-      team!.org_id,
-    );
-    student_event!.team = team!;
-  };
-
   const orgJoinSubmit = async (_: Event) => {
     try {
       org_event = await getOrgEventByJoinCode(
@@ -397,6 +386,21 @@
     user={{ ...student, ...$user }}
     {event_id}
     editing={student_event ? true : false}
+    afterSubmit={() => {
+      let org_join_code = $page.url.searchParams.get("org_join_code");
+      if (org_join_code) {
+        document.location.assign(
+          `/student/${$page.params.host_id}/${$page.params.event_id}/join-org/${org_join_code}`,
+        );
+      }
+      
+      let team_join_code = $page.url.searchParams.get("team_join_code");
+      if (team_join_code) {
+        document.location.assign(
+          `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${team_join_code}`,
+        );
+      }
+    }}
   />
 {/if}
 
