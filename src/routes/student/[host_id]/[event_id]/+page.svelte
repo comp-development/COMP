@@ -154,6 +154,8 @@
     host = await getHostInformation(host_id);
     student_event = await getStudentEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
+    console.log("ticket_order", ticket_order);
+    console.log("hello");
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
@@ -207,12 +209,42 @@
     {/if}
   {/if}
 
+  <!-- // need to ensure that the ticket they bought is theres -->
+  <!-- // need to make sure they are not already in a team -->
+   <!-- If we request a refund on the ticket, will be removed from the team -->
   {#if student_event}
     {#if team || org_event}
       <div class="team_info">
         {#if org_event}
           <h2>{org_event.org.name}</h2>
           <br />
+        {/if}
+        <!-- Student can only request refund if they are on an independant team --> 
+         <!-- Once requesting refund for the event, need to kick them out of the team -->
+          <!-- Can only rejoin the team once they buy another ticket, or request gets denied -->
+           <!-- Student also needs a page to see the status of their refund -->
+        {#if team && ticket_order?.ticket_service == "eventbrite"}
+        <div class="flex">
+          <Button
+            href={`/student/${$page.params.host_id}/${$page.params.event_id}/refund-request`}
+            pill>Request Refund</Button
+          >
+        </div>
+        <br />
+        {:else if team && ticket_order?.ticket_service == "stripe"}
+          <div class="flex">
+            <Button
+              href={`/student/${$page.params.host_id}/${$page.params.event_id}/refund-request`}
+              pill>Request Refund</Button
+            >
+          </div>
+          <br />
+        {:else}
+        <Alert border color="red">
+          <InfoCircleSolid slot="icon" class="w-5 h-5" />
+          <span class="font-medium">Not assigned to a team!</span>
+          Error, you are not registered for this event?
+        </Alert>
         {/if}
 
         {#if !team}
