@@ -60,7 +60,7 @@
       if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
         return;
       }
-      log("keypress", e.key);
+      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + e.key);
     });
     window.addEventListener("paste", (e) => {
       log("paste", e.clipboardData?.getData("text") ?? "unknown");
