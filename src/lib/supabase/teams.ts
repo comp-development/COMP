@@ -1,3 +1,4 @@
+import toast from "$lib/toast.svelte";
 import { supabase } from "../supabaseClient";
 
 export async function getTeam(team_id: number) {
@@ -80,7 +81,7 @@ export async function deleteStudentTeam(student_event_id: number) {
   if (error) throw error;
 }
 
-export async function inviteUserToTeam(team_id: number, emails: string[]) {
+export async function inviteUserToTeam(team_id: number, emails: string[], teamSize: number, maxSize: number) {
   const { data, error } = await supabase
     .from("teams")
     .select("invites")
@@ -89,19 +90,60 @@ export async function inviteUserToTeam(team_id: number, emails: string[]) {
 
   if (error) throw error;
 
-  let invites = data.invites;
+  let invites = data.invites || [];
   let newInvites = [];
+  let allValid = true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!invites) {
-    invites = emails;
-  } else {
-    emails.forEach((email) => {
-      const trimmed = email.trim();
+  // Check for invalid emails
+  emails.forEach((email) => {
+    const trimmed = email.trim();
+    if (emailRegex.test(trimmed)) {
       if (!invites.includes(trimmed)) {
         invites.push(trimmed);
         newInvites.push(trimmed);
       }
-    });
+    } else {
+      allValid = false;
+    }
+  });
+
+  if (!allValid) {
+    toast.error("One or more of the emails are invalid and were not added");
+  }
+
+  // Fetch student data and check if they are already in a team or org
+  const { data: students, error: studentsError } = await supabase
+    .from("students")
+    .select("student_id, email")
+    .in("email", invites);
+
+  if (studentsError) throw studentsError;
+
+  const studentIds = students.map(student => student.student_id);
+
+  const { data: studentEvents, error: studentEventsError } = await supabase
+    .from("student_events")
+    .select("student_id, team_id, org_id")
+    .in("student_id", studentIds);
+
+  if (studentEventsError) throw studentEventsError;
+
+  const duplicateEmails = studentEvents
+    .filter(event => event.team_id || event.org_id)
+    .map(event => students.find(student => student.student_id === event.student_id)?.email);
+
+  if (duplicateEmails.length > 0) {
+    toast.error("Some students are already in a team or organization");
+    newInvites = newInvites.filter(email => !duplicateEmails.includes(email));
+    invites = invites.filter(email => !duplicateEmails.includes(email));
+  }
+
+  // Check if the team max size is met
+  if (teamSize + invites.length > maxSize) {
+    toast.error(`You can only have ${maxSize} members on a team`);
+    invites = invites.slice(0, maxSize - teamSize);
+    newInvites = newInvites.slice(0, maxSize - teamSize);
   }
 
   const { error: updateError } = await supabase

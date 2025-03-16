@@ -110,16 +110,28 @@ export async function inviteUserToHost(host_id: number, emails: string[]) {
   let invites = data.invites;
   let newInvites = [];
 
+  let allValid = true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   if (!invites) {
     invites = emails;
   } else {
     emails.forEach((email) => {
       const trimmed = email.trim();
-      if (!invites.includes(trimmed)) {
-        invites.push(trimmed);
-        newInvites.push(trimmed);
+
+      if (emailRegex.test(trimmed)) {
+        if (!invites.includes(trimmed)) {
+          invites.push(trimmed);
+          newInvites.push(trimmed);
+        }
+      } else {
+        allValid = false;
       }
     });
+  }
+
+  if (!allValid) {
+    toast.error("One or more of the emails are invalid and were not added");
   }
 
   const { error: updateError } = await supabase

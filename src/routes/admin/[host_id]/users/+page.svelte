@@ -73,14 +73,6 @@
   async function handleSubmit() {
     try {
       let emails = newResponses.email.split(";");
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      for (const email of emails) {
-        if (!emailRegex.test(email.trim())) {
-          throw new Error("One or more of the emails are invalid");
-        }
-      }
-
       const host = await getHostInformation(host_id);
       const data = await inviteUserToHost(host_id, emails);
       emails = data.newInvites;
@@ -94,14 +86,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Become an Admin for ${host.host_name} on COMP`,
+            subject: `Become an Admin for '${host.host_name}' on COMP`,
             message: `
           <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
             <div style="display: flex; align-items: center; justify-content: center;">
               <img src=${host.logo} width="100px" style="border-radius: 50px; margin-left: auto; margin-right: auto;" />
             </div>
-            <h2 style="color: black;">You're Invited to ${host.host_name} on COMP!</h2>
-            <p>You have been invited to become an admin on <strong>${host.host_name}</strong> on COMP by <strong>${admin.first_name} ${admin.last_name}</strong>!</p>
+            <h2 style="color: black;">You're Invited to '${host.host_name}' on COMP!</h2>
+            <p>You have been invited to become an admin on '<strong>${host.host_name}</strong>' on COMP by <strong>${admin.first_name} ${admin.last_name}</strong>!</p>
             <p>To accept the invitation, click the button below:</p>
             <a href="https://comp.mt/join-host?host_id=${host_id}&email=${email}" 
               style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
@@ -118,7 +110,6 @@
         }
       }
 
-      toast.success("Emails sent successfully");
       isModalOpen = false;
     } catch (e) {
       handleError(e);

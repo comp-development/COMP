@@ -36,7 +36,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { supabase } from "$lib/supabaseClient";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
-    import InvitedUser from "$lib/components/InvitedUser.svelte";
+  import InvitedUser from "$lib/components/InvitedUser.svelte";
 
   let loading = $state(true);
   let coach: any = $state();
@@ -488,14 +488,6 @@
   async function handleSubmit() {
     try {
       let emails = newResponses2.email.split(";");
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      for (const email of emails) {
-        if (!emailRegex.test(email.trim())) {
-          throw new Error("One or more of the emails are invalid");
-        }
-      }
-
       const org = await getOrganization(org_id);
       const data = await inviteUserToOrgEvent(org_id, event_id, emails);
 
@@ -510,16 +502,16 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Join Organization ${org.name} on COMP for ${event_details?.event_name}`,
+            subject: `Join Organization '${org.name}' on COMP for ${event_details?.event_name}`,
             message: `
           <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
             <div style="display: flex; align-items: center; justify-content: center;">
               <img src=${event_details?.logo} width="100px" style="border-radius: 50px; margin-left: auto; margin-right: auto;" />
             </div>
-            <h2 style="color: black;">You're Invited to ${org.name} on COMP!</h2>
-            <p>You have been invited to compete for <strong>${org.name}</strong> during <strong>${event_details?.event_name}</strong> by <strong>${coach.first_name} ${coach.last_name}</strong> on COMP!</p>
+            <h2 style="color: black;">You're Invited to '${org.name}' on COMP!</h2>
+            <p>You have been invited to compete for '<strong>${org.name}</strong>' during <strong>${event_details?.event_name}</strong> by <strong>${coach.first_name} ${coach.last_name}</strong> on COMP!</p>
             <p>To accept the invitation, click the button below:</p>
-            <a href="https://comp.mt/student/${host_id}/${event_id}/join-org?org_id=${org_id}&email=${email}" 
+            <a href="https://comp.mt/student/${host_id}/${event_id}/join-org/${organizationDetails.event.join_code}" 
               style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
               Accept Invitation
             </a>
@@ -534,7 +526,6 @@
         }
       }
 
-      toast.success("Email sent successfully");
       isModalOpen = false;
     } catch (e) {
       handleError(e);
@@ -604,15 +595,9 @@
     <div class="organization">
       <div class="flex">
         <InfoToolTip
-          text="Send this code to your students and they will be able to join your organization after they create an account"
-        />
-        Org Join Code: <CopyText text={organizationDetails.event.join_code} />
-      </div>
-      <div class="flex">
-        <InfoToolTip
           text="Send this link to your students and they will be able to join your organization after they create an account"
         />
-        Org Join Link: <CopyText text={`https://comp.mt/student/${host_id}/${event_id}/join-org/${organizationDetails.event.join_code}`} />
+        Org Join Code: <CopyText frontText={organizationDetails.event.join_code} text={`https://comp.mt/student/${host_id}/${event_id}/join-org/${organizationDetails.event.join_code}`} successMessage="Successfully copied join link to clipboard" />
       </div>
 
       <div style="margin: 10px 0;">
@@ -683,9 +668,13 @@
               }}
             />
           {/each}
+          <h3 class="text-lg font-semibold mt-2 mb-2 flex">Invited</h3>
           {#each invites as invitation}
             <InvitedUser email={invitation} type="coachOrg" id={org_id} {event_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
           {/each}
+          {#if invites.length == 0}
+            <p>No students invited</p>
+          {/if}
         </div>
       </div>
     </div>

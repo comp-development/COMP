@@ -1,8 +1,7 @@
 import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { adminSupabase } from "$lib/adminSupabaseClient";
 import { env } from "$env/dynamic/private";
-
-const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
+import { getThisUser, removeUserInvitationFromOrgEvent } from "$lib/supabase";
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
@@ -114,6 +113,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       { onConflict: "event_id, student_id" },
     );
     wrap_supabase_error("adding student to organization error", 0, error);
+
+    await removeUserInvitationFromOrgEvent(Number(organization_data.org_id), Number(event_id), user.email + "");
 
     return construct_response({ success: { team_join_code: join_code } });
   } catch (e: any) {

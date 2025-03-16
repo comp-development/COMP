@@ -2,6 +2,7 @@ import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { Stripe } from "stripe";
 import { adminSupabase } from "$lib/adminSupabaseClient";
 import { env } from "$env/dynamic/private";
+import { removeUserInvitationFromTeam } from "$lib/supabase";
 
 const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
@@ -220,6 +221,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         { onConflict: "student_id, event_id" },
       );
     wrap_supabase_error("adding student to team", 0, student_team_error);
+
+    await removeUserInvitationFromTeam(Number(team_data!.team_id), user.email + "");
 
     return construct_response({ success: { team_join_code: join_code } });
   } catch (e: any) {

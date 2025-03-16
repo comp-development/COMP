@@ -3,35 +3,23 @@
   import { onDestroy } from "svelte";
   import Button from "$lib/components/Button.svelte";
   import AsciiMath from "$lib/components/AsciiMath.svelte";
-  import MathJax from "$lib/components/MathJax.svelte";
   import FormattedTimeLeft from "$lib/components/FormattedTimeLeft.svelte";
-  import {
-    Tooltip,
-    TooltipIcon,
-    TextInput,
-    Dropdown,
-    Modal,
-  } from "carbon-components-svelte";
+  import { TooltipIcon, TextInput, Modal } from "carbon-components-svelte";
   import Information from "carbon-icons-svelte/lib/Information.svelte";
-  import { page } from "$app/stores";
   import { supabase } from "$lib/supabaseClient";
-  import { createEventDispatcher } from "svelte";
   import { formatDuration } from "$lib/dateUtils";
 
   import { handleError } from "$lib/handleError";
   import {
-    getTestProblems,
     getTestAnswers,
     upsertTestAnswer,
     getProblemClarification,
     changePage,
     fetchTestProblems,
   } from "$lib/supabase";
-  import { mathlifier } from "mathlifier";
   import Problem from "./Problem.svelte";
+  import type { Database } from "../../../db/database.types";
 
-  let pages = settings.pages;
-  let meltTime = settings.meltTime;
   interface Props {
     test_taker: any;
     settings: any;
@@ -39,6 +27,8 @@
   }
 
   let { test_taker = $bindable(), settings, is_team = false }: Props = $props();
+  let pages = settings.pages;
+  let meltTime = settings.meltTime;
   //console.log("TESTAKER", test_taker);
   let answers = [];
   let problems = $state([]);
@@ -55,6 +45,36 @@
   let endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
   let startTimeMs = new Date(startTime).getTime();
   let curPage = $state(test_taker.page_number);
+
+  onMount(() => {
+    async function log(
+      event_type: Database["public"]["Enums"]["test_event"],
+      data: string,
+    ) {
+      // Ignore errors
+      await supabase
+        .from("test_logs")
+        .insert({ test_taker_id: test_taker.test_taker_id, event_type, data });
+    }
+    window.addEventListener("keydown", (e) => {
+      if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
+        return;
+      }
+      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + e.key);
+    });
+    window.addEventListener("paste", (e) => {
+      log("paste", e.clipboardData?.getData("text") ?? "unknown");
+    });
+    window.addEventListener("focus", () => {
+      log("focus", document.hasFocus().toString());
+    });
+    window.addEventListener("blur", () => {
+      log("blur", document.hasFocus().toString());
+    });
+    window.addEventListener("visibilitychange", () => {
+      log("visibility_change", document.hidden.toString());
+    });
+  });
 
   let test_answers_channel;
   let problem_clarifications_channel;
@@ -317,6 +337,35 @@
   })();
 </script>
 
+<div class="panel">
+  <div style="display:flex align-items:center">
+    <TooltipIcon
+      tooltipText="Answers are automatically submitted when time runs out."
+      icon={Information}
+      direction="left"
+      style="margin-right: 4px"
+    />
+    <p>
+      <FormattedTimeLeft
+        timeLeft={timeRemaining / 1000}
+        totalTime={(endTimeMs - startTimeMs) / 1000}
+      >
+        Time left: {formattedTime}
+      </FormattedTimeLeft>
+    </p>
+    <!--Make tooltip in line with time remaining-->
+  </div>
+
+  {#if test_taker.page_number < pages.length}
+    <Button
+      action={(e) => {
+        open = true;
+        curPage = test_taker.page_number;
+      }}
+      title={"Continue"}
+    />
+  {/if}
+</div>
 <div class="test-div">
   <div class="inner-div">
     {#if loading}
@@ -407,35 +456,6 @@
     {/if}
   </div>
 </div>
-<div class="panel">
-  <div style="display:flex align-items:center">
-    <TooltipIcon
-      tooltipText="Answers are automatically submitted when time runs out."
-      icon={Information}
-      direction="left"
-      style="margin-right: 4px"
-    />
-    <p>
-      <FormattedTimeLeft
-        timeLeft={timeRemaining / 1000}
-        totalTime={(endTimeMs - startTimeMs) / 1000}
-      >
-        Time left: {formattedTime}
-      </FormattedTimeLeft>
-    </p>
-    <!--Make tooltip in line with time remaining-->
-  </div>
-
-  {#if test_taker.page_number < pages.length}
-    <Button
-      action={(e) => {
-        open = true;
-        curPage = test_taker.page_number;
-      }}
-      title={"Continue"}
-    />
-  {/if}
-</div>
 
 <Modal
   bind:open
@@ -482,11 +502,12 @@
   }
 
   .panel {
-    position: fixed;
+    position: sticky;
     right: 0;
     top: 0;
     margin: 10px;
     padding: 10px;
+    z-index: 1000;
     background-color: var(--text-color-light);
     border: 1px solid black;
   }

@@ -229,6 +229,7 @@
               onclick={() => (selectedOption = "student")}
               open={selectedOption === "student"}
               title="Student"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <div class="no-padding">
                 <CustomForm
@@ -244,6 +245,7 @@
               onclick={() => (selectedOption = "coach")}
               open={selectedOption === "coach"}
               title="Coach"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <div class="no-padding">
                 <CustomForm
@@ -316,11 +318,6 @@
   :global(.tabs [role="tabpanel"]) {
     padding: 0px;
     background: transparent;
-  }
-
-  :global([role=presentation] :not(.active)) {
-    border: 2px solid var(--primary);
-    padding: 10px 16px;
   }
 
   @media only screen and (max-width: 700px) {

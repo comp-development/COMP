@@ -16,7 +16,7 @@
   let {
     event_id,
     org_id,
-    host_id=null,
+    host_id = null,
     team = $bindable(),
     onDrop,
     onDragStart,
@@ -24,8 +24,8 @@
     handleDragOver,
     editableFeatures = true,
     showTeamCode = false,
-    event_details=null,
-    user=null,
+    event_details = null,
+    user = null,
     handleDragLeave,
     studentsWithoutTeams = $bindable(),
     maxTeamSize,
@@ -38,7 +38,7 @@
   let newResponses = $state({});
   let validationErrors = $state({});
 
-  let invites = $state(team.invites);
+  let invites = $state(team.invites ?? []);
 
   const fields = [
     {
@@ -49,7 +49,7 @@
       custom_field_type: "text",
       placeholder: "",
       value: newResponses.email || "",
-    }
+    },
   ];
 
   let isStudentModalOpen = $state(false);
@@ -81,7 +81,6 @@
         org_id,
       );
 
-      
       team = {
         ...team,
         teamMembers: [...team.teamMembers, newStudent],
@@ -109,11 +108,9 @@
   async function handleChangeTeam(newTeamData) {
     try {
       console.log("CHANGE TEAM", newTeamData);
-      team = newTeamData
+      team = newTeamData;
 
-      toast.success(
-        `Team Updated Succesfully`,
-      );
+      toast.success(`Team Updated Succesfully`);
       // Close the modal and reset the input
       isTeamModalOpen = false;
     } catch (error) {
@@ -124,23 +121,9 @@
   async function handleSubmit() {
     try {
       let emails = newResponses.email.split(";");
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      for (const email of emails) {
-        if (!emailRegex.test(email.trim())) {
-          throw new Error("One or more of the emails are invalid");
-        }
-      }
-
       const team_information = await getTeam(team.team_id);
 
-      if (emails.length + team_information?.teamMembers.length > event_details.max_team_size) {
-        throw new Error(
-          `You can only have ${event_details?.max_team_size} members on a team`,
-        );
-      }
-
-      const data = await inviteUserToTeam(team.team_id, emails);
+      const data = await inviteUserToTeam(team.team_id, emails, team_information?.teamMembers.length, event_details?.max_team_size);
       emails = data.newInvites;
       invites = data.invites;
 
@@ -152,13 +135,13 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Join Team ${team_information.team_name} on COMP for ${event_details?.event_name}`,
+            subject: `Join Team '${team_information.team_name}' on COMP for ${event_details?.event_name}`,
             message: `
           <div style="font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 1px solid black; border-radius: 10px;">
-            <h2 style="color: black;">You're Invited to ${team_information.team_name} on COMP!</h2>
-            <p>You have been invited to compete for <strong>${team_information.team_name}</strong> during <strong>${event_details?.event_name}</strong> by <strong>${user.first_name} ${user.last_name}</strong> on COMP!</p>
+            <h2 style="color: black;">You're Invited to '${team_information.team_name}' on COMP!</h2>
+            <p>You have been invited to compete for '<strong>${team_information.team_name}</strong>' during <strong>${event_details?.event_name}</strong> by <strong>${user.first_name} ${user.last_name}</strong> on COMP!</p>
             <p>To accept the invitation, click the button below:</p>
-            <a href="https://comp.mt/student/${host_id}/${event_id}/join-team?team_id=${team.team_id}&email=${email}" style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
+            <a href="https://comp.mt/student/${host_id}/${event_id}/join-team/${team.join_code}" style="display: inline-block; padding: 10px 20px; margin: 10px 0; color: white; background-color: black; text-decoration: none; border-radius: 5px; font-weight: bold;">
               Accept Invitation
             </a>
           </div>
@@ -172,7 +155,6 @@
         }
       }
 
-      toast.success("Email sent successfully");
       isModalOpen = false;
     } catch (e) {
       handleError(e);
@@ -230,16 +212,12 @@
 
   {#if showTeamCode}
     <div class="flex" style="justify-content: flex-start">
-      <InfoToolTip
-        text="Send this link to your teammates to join your team!"
+      <InfoToolTip text="Send this link to your teammates to join your team!" />
+      Team Join Code: <CopyText
+        frontText={team.join_code}
+        text={`https://comp.mt/student/${host_id}/${event_id}/join-team/${team.join_code}`}
+        successMessage="Successfully copied join link to clipboard"
       />
-      Team Join Link: <CopyText text={`https://comp.mt/student/${host_id}/${event_id}/join-team/${team.join_code}`} />
-    </div>
-    <div class="flex" style="justify-content: flex-start">
-      <InfoToolTip
-        text="Send this code to your teammates to join your team!"
-      />
-      Team Join Code: <CopyText text={team.join_code} />
     </div>
     <div style="padding: 10px 0px;">
       <Button pill outline color="primary" onclick={() => (isModalOpen = true)}>
@@ -260,7 +238,15 @@
 
   {#if showTeamCode}
     {#each invites as invitation}
-      <InvitedUser email={invitation} type="independentTeam" id={team.team_id} {event_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
+      <InvitedUser
+        email={invitation}
+        type="independentTeam"
+        id={team.team_id}
+        {event_id}
+        onDeleteAction={() => {
+          invites = invites.filter((invite: string) => invite !== invitation);
+        }}
+      />
     {/each}
   {/if}
 
@@ -273,7 +259,9 @@
   <div class="modalExterior">
     <Modal bind:open={isStudentModalOpen} size="md" autoclose={false}>
       <div class="specificModalMax">
-        <h3 class="text-xl font-medium text-gray-900 dark:text-white text-center">
+        <h3
+          class="text-xl font-medium text-gray-900 dark:text-white text-center"
+        >
           Select Student
         </h3>
         <div class="tableMaxHeight">
@@ -287,11 +275,13 @@
       </div>
     </Modal>
   </div>
-  
+
   <div class="modalExterior">
     <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
       <div class="specificModalMax">
-        <h3 class="text-xl font-medium text-gray-900 dark:text-white text-center">
+        <h3
+          class="text-xl font-medium text-gray-900 dark:text-white text-center"
+        >
           Edit Team
         </h3>
         <TeamForm
@@ -307,6 +297,26 @@
       </div>
     </Modal>
   </div>
+
+  <div class="modalExterior">
+    <Modal bind:open={isModalOpen} size="md" autoclose={false}>
+      <div class="specificModalMax">
+        <h3 class="text-xl font-medium text-gray-900 dark:text-white text-center">
+          Add User
+        </h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 text-center">
+          Multiple emails should be separated by a semi-colon
+        </p>
+        <CustomForm
+          {fields}
+          bind:newResponses
+          bind:validationErrors
+          {handleSubmit}
+          showBorder={false}
+        />
+      </div>
+    </Modal>
+  </div>
 </div>
 
 <ConfirmationModal
@@ -318,24 +328,6 @@
   }}
   onConfirm={handleDeleteTeam}
 />
-
-<div class="modalExterior">
-  <Modal bind:open={isModalOpen} size="md" autoclose={false}>
-    <div class="specificModalMax">
-      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-        Add User
-      </h3>
-      <p class="text-sm text-gray-600 dark:text-gray-400">Multiple emails should be separated by a semi-colon</p>
-      <CustomForm
-        {fields}
-        bind:newResponses={newResponses}
-        bind:validationErrors
-        {handleSubmit}
-        showBorder={false}
-      />
-    </div>
-  </Modal>
-</div>
 
 <style>
   .team {

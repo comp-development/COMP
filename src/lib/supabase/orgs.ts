@@ -32,7 +32,7 @@ export async function getOrganizationDetails(org_id: number, event_id: number) {
   if (coachError) throw coachError;
 
   const orgData = data as any;
-  
+
   orgData.coaches = coachData;
 
   const teams = await getOrganizationTeams(org_id, event_id);
@@ -99,18 +99,59 @@ export async function inviteUserToOrgEvent(org_id: number, event_id: number, ema
   let invites = data.invites;
   let newInvites = [];
 
+  //Check if emails are valid
+  let allValid = true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   if (!invites) {
     invites = emails;
   } else {
     emails.forEach((email) => {
       const trimmed = email.trim();
-      if (!invites.includes(trimmed)) {
-        invites.push(trimmed);
-        newInvites.push(trimmed);
+
+      if (emailRegex.test(trimmed)) {
+        if (!invites.includes(trimmed)) {
+          invites.push(trimmed);
+          newInvites.push(trimmed);
+        }
+      } else {
+        allValid = false;
       }
     });
   }
 
+  if (!allValid) {
+    toast.error("One or more of the emails are invalid and were not added");
+  }
+
+  // Fetch student data and check if they are already in a team or org
+  const { data: students, error: studentsError } = await supabase
+    .from("students")
+    .select("student_id, email")
+    .in("email", invites);
+
+  if (studentsError) throw studentsError;
+
+  const studentIds = students.map(student => student.student_id);
+
+  const { data: studentEvents, error: studentEventsError } = await supabase
+    .from("student_events")
+    .select("student_id, team_id, org_id")
+    .in("student_id", studentIds);
+
+  if (studentEventsError) throw studentEventsError;
+
+  const duplicateEmails = studentEvents
+    .filter(event => event.team_id || event.org_id)
+    .map(event => students.find(student => student.student_id === event.student_id)?.email);
+
+  if (duplicateEmails.length > 0) {
+    toast.error("Some students are already in a team or organization");
+    newInvites = newInvites.filter(email => !duplicateEmails.includes(email));
+    invites = invites.filter(email => !duplicateEmails.includes(email));
+  }
+
+  // Insert invitations
   const { error: updateError } = await supabase
     .from("org_events")
     .update({ invites })
@@ -133,18 +174,21 @@ export async function removeUserInvitationFromOrgEvent(org_id: number, event_id:
   if (fetchError) throw fetchError;
 
   let invites = data.invites;
+  let newInvites;
 
   if (invites) {
-    invites = invites.filter((invite: string) => invite !== email);
+    newInvites = invites.filter((invite: string) => invite !== email);
   }
 
-  const { error: updateError } = await supabase
-    .from("org_events")
-    .update({ invites })
-    .eq("org_id", org_id)
-    .eq("event_id", event_id);
+  if (invites && newInvites.length != invites.length) {
+    const { error: updateError } = await supabase
+      .from("org_events")
+      .update({ invites: newInvites })
+      .eq("org_id", org_id)
+      .eq("event_id", event_id);
 
-  if (updateError) throw updateError;
+    if (updateError) throw updateError;
+  }
 }
 
 export async function checkUserInvitedToOrgEvent(org_id: number, event_id: number, email: string) {
@@ -155,7 +199,7 @@ export async function checkUserInvitedToOrgEvent(org_id: number, event_id: numbe
     .eq("event_id", event_id)
     .single();
   if (error) throw error;
-  
+
   return data.invites.includes(email);
 }
 

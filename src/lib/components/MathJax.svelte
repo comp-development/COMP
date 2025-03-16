@@ -1,5 +1,6 @@
 <!-- @migration-task Error while migrating Svelte code: Can't migrate code with afterUpdate. Please migrate by hand. -->
-<script>
+<script lang="ts">
+  import { supabase } from "$lib/supabaseClient";
   import { onMount, afterUpdate } from "svelte";
 
   export let math = "";
@@ -7,10 +8,18 @@
   let container;
   let mathJaxScriptLoaded = false;
 
+  function replaceImage(html: string) {
+    return html.replaceAll(
+      /\\image\{([^\\}]+)\}/g,
+      (_, m) =>
+        `<img src=${supabase.storage.from("problem-images").getPublicUrl(m).data.publicUrl}></img>`,
+    );
+  }
+
   function renderMath() {
     if (window.MathJax && window.MathJax.Hub) {
       if (container) {
-        container.innerHTML = math;
+        container.innerHTML = replaceImage(math);
         window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, container]);
       }
     }
