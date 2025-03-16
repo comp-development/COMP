@@ -12,6 +12,7 @@ import {
   import { env } from "$env/dynamic/private";
   
   const eventbriteToken = env.EVENTBRITE_TOKEN;
+  const alternateEventbriteToken = env.ALTERNATE_EVENTBRITE_TOKEN;
   
   export const POST: RequestHandler = async (request: RequestEvent) => {
     let body: any | null = null;
@@ -120,18 +121,26 @@ import {
         let hasMoreItems = true;
 
         while (hasMoreItems) {
-            const eventbriteResponse = await fetch(`https://www.eventbriteapi.com/v3/orders/${eventbrite_order_id}/attendees/?token=${eventbriteToken}&page=${pageNumber}`, {
+          let eventbriteResponse;
+          try {
+            eventbriteResponse = await fetch(`https://www.eventbriteapi.com/v3/orders/${eventbrite_order_id}/attendees/?token=${eventbriteToken}&page=${pageNumber}`, {
                 method: "GET",
             });
-            console.log("Log3", eventbriteResponse);
-            const data = await eventbriteResponse.json();
-            if (!data || data.error) {
-                throw Error("Failed to fetch attendees from Eventbrite");
-            }
+            
+          } catch {
+             eventbriteResponse = await fetch(`https://www.eventbriteapi.com/v3/orders/${eventbrite_order_id}/attendees/?token=${alternateEventbriteToken}&page=${pageNumber}`, {
+                method: "GET",
+            });
+          }
+          console.log("Log3", eventbriteResponse);
+          const data = await eventbriteResponse.json();
+          if (!data || data.error) {
+              throw Error("Failed to fetch attendees from Eventbrite");
+          }
 
-            attendeesData = attendeesData.concat(data.attendees); // Combine current page attendees with the total
-            hasMoreItems = data.pagination.has_more_items; // Check if there are more pages
-            pageNumber++; // Increment page number for the next request
+          attendeesData = attendeesData.concat(data.attendees); // Combine current page attendees with the total
+          hasMoreItems = data.pagination.has_more_items; // Check if there are more pages
+          pageNumber++; // Increment page number for the next request
         }
 
         const existingOrder = await adminSupabase
