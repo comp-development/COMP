@@ -270,6 +270,13 @@
             <p>
               Get your organization join code from your organization's coach.
             </p>
+            <p>
+              <em>
+                If you are registering as an individual, or want to create a
+                team independent of an organization (without a coach), please
+                <strong>create an independent team</strong> instead.
+              </em>
+            </p>
             <CustomForm
               fields={[
                 {
@@ -346,7 +353,14 @@
             <h2>Create Independent Team</h2>
             <p>
               If you're an individual, or you want to create a team independent of an org, then create an independent team.
-            </p><br>
+            </p>
+            <p>
+              <em>
+                If you want to register as part of an organization with a coach,
+                please <strong>create an organization</strong> instead.
+              </em>
+            </p>
+            <br>
             <div class="flex">
               <Button
                 on:click={()=> {
