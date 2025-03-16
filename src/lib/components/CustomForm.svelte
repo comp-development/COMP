@@ -138,7 +138,7 @@
 
   function handleCheckboxChange(key, value) {
     let selectedValues = (newResponses[key] || "")
-      .split(",")
+      .split(";")
       .map((v) => v.trim())
       .filter((v) => v);
 
@@ -150,7 +150,7 @@
       selectedValues.push(value);
     }
 
-    newResponses[key] = selectedValues.join(",");
+    newResponses[key] = selectedValues.join(";");
   }
 </script>
 
@@ -304,7 +304,7 @@
                 <Checkbox
                   disabled={!field.editable && field.value != null}
                   checked={(newResponses[key] || "")
-                    .split(",")
+                    .split(";")
                     .map((x) => x.trim())
                     .filter((v) => v)
                     .includes(choice)}
