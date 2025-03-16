@@ -3,32 +3,22 @@
   import { onDestroy } from "svelte";
   import Button from "$lib/components/Button.svelte";
   import AsciiMath from "$lib/components/AsciiMath.svelte";
-  import MathJax from "$lib/components/MathJax.svelte";
   import FormattedTimeLeft from "$lib/components/FormattedTimeLeft.svelte";
-  import {
-    Tooltip,
-    TooltipIcon,
-    TextInput,
-    Dropdown,
-    Modal,
-  } from "carbon-components-svelte";
+  import { TooltipIcon, TextInput, Modal } from "carbon-components-svelte";
   import Information from "carbon-icons-svelte/lib/Information.svelte";
-  import { page } from "$app/stores";
   import { supabase } from "$lib/supabaseClient";
-  import { createEventDispatcher } from "svelte";
   import { formatDuration } from "$lib/dateUtils";
 
   import { handleError } from "$lib/handleError";
   import {
-    getTestProblems,
     getTestAnswers,
     upsertTestAnswer,
     getProblemClarification,
     changePage,
     fetchTestProblems,
   } from "$lib/supabase";
-  import { mathlifier } from "mathlifier";
   import Problem from "./Problem.svelte";
+  import type { Database } from "../../../db/database.types";
 
   interface Props {
     test_taker: any;
@@ -55,6 +45,36 @@
   let endTimeMs = new Date(endTime).getTime(); // Test end time in milliseconds
   let startTimeMs = new Date(startTime).getTime();
   let curPage = $state(test_taker.page_number);
+
+  onMount(() => {
+    async function log(
+      event_type: Database["public"]["Enums"]["test_event"],
+      data: string,
+    ) {
+      // Ignore errors
+      await supabase
+        .from("test_logs")
+        .insert({ test_taker_id: test_taker.test_taker_id, event_type, data });
+    }
+    window.addEventListener("keydown", (e) => {
+      if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
+        return;
+      }
+      log("keypress", e.key);
+    });
+    window.addEventListener("paste", (e) => {
+      log("paste", e.clipboardData?.getData("text") ?? "unknown");
+    });
+    window.addEventListener("focus", () => {
+      log("focus", document.hasFocus().toString());
+    });
+    window.addEventListener("blur", () => {
+      log("blur", document.hasFocus().toString());
+    });
+    window.addEventListener("visibilitychange", () => {
+      log("visibility_change", document.hidden.toString());
+    });
+  });
 
   let test_answers_channel;
   let problem_clarifications_channel;
