@@ -1,3 +1,4 @@
+import toast from "$lib/toast.svelte";
 import { supabase } from "../supabaseClient";
 import { isType, transferUser } from "./users";
 

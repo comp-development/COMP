@@ -1,3 +1,4 @@
+import toast from "$lib/toast.svelte";
 import { supabase } from "../supabaseClient";
 
 export async function getOrganization(org_id: number) {

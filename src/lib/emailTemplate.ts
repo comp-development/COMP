@@ -30,9 +30,6 @@ export function generateEmail(type, params) {
 
   return `
     <div style="position: relative; font-family: Arial, sans-serif; color: black; text-align: center; padding: 20px; border: 2px solid ${host.styles.primary}; border-radius: 10px;">
-      <div style="--text-color: #FFF; --light-color: ${host.styles.primary}; --dark-color: ${host.styles.primary};">
-        ${logo}
-      </div>
       ${imageUrl ? `<div style="display: flex; align-items: center; justify-content: center;">
         <img src=${imageUrl} width="100px" style="border-radius: 50px; margin-left: auto; margin-right: auto;" />
       </div>` : ''}
