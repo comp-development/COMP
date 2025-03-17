@@ -1,7 +1,7 @@
 <script>
   import { Tabs, TabItem } from "flowbite-svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
-  import { getEventCustomFields, upsertEventCustomFields } from "$lib/supabase";
+  import { getEventCustomFields, upsertEventCustomFields, upsertHostCustomFields } from "$lib/supabase";
   import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
   import { page } from "$app/stores";
 
@@ -15,6 +15,9 @@
   let studentCustomFields = $state([]);
   let orgCustomFields = $state([]);
   let teamCustomFields = $state([]);
+  let waiverCustomFields = $state([]);
+  let waiversResponses = $state([]);
+  let waiversValidationErrors = $state([]);
 
   // Get the event_id from the URL
   const event_id = parseInt($page.params.event_id);
@@ -98,10 +101,25 @@
     },
   ];
 
+  const waiverFields = [
+    {
+      key: "waivers",
+      label: "Waiver",
+      required: true,
+      regex: null,
+      placeholder: null,
+      value: null,
+      choices: null,
+      editable: true,
+      hidden: false,
+    },
+  ];
+
   (async () => {
     studentCustomFields = await getEventCustomFields(event_id, "students");
     orgCustomFields = await getEventCustomFields(event_id, "orgs");
     teamCustomFields = await getEventCustomFields(event_id, "teams");
+    waiverCustomFields = await getEventCustomFields(event_id, "waivers");
   })();
 </script>
 
@@ -192,6 +210,35 @@
           custom_fields={teamCustomFields}
           bind:newResponses={teamResponses}
           bind:validationErrors={teamValidationErrors}
+          handleSubmit={() => {}}
+        />
+      </div>
+    </div>
+  </TabItem>
+  <TabItem
+  open={selectedTab === "waivers"}
+  title="Waivers"
+  onclick={() => (selectedTab = "waivers")}
+  >
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <EditableCustomForm
+          bind:custom_fields={waiverCustomFields}
+          editableHostFields={true}
+          table="waivers"
+          action={async () => {
+            await upsertHostCustomFields(waiverCustomFields, "waivers", host_id);
+          }}
+          {host_id}
+        />
+      </div>
+      <div>
+        <CustomForm
+          title="Waivers Preview"
+          fields={[waiverFields]}
+          custom_fields={waiverCustomFields}
+          bind:newResponses={waiversResponses}
+          bind:validationErrors={waiversValidationErrors}
           handleSubmit={() => {}}
         />
       </div>
