@@ -11,6 +11,7 @@
     Checkbox,
     ButtonGroup,
     InputAddon,
+    Toggle,
   } from "flowbite-svelte";
   import {
     EnvelopeSolid,
@@ -18,7 +19,6 @@
     EyeSlashOutline,
     PhoneSolid,
   } from "flowbite-svelte-icons";
-  import { onMount } from "svelte";
 
   let {
     title = null,
@@ -164,20 +164,22 @@
       {@const key = field.event_custom_field_id ?? field.name}
       {#if !field.hidden}
         <div class="text-left mb-6">
-          <Label
-            for={key}
-            class="block mb-2"
-            color={validationErrors[key]
-              ? "red"
-              : !field.editable && field?.value != null
-                ? "disabled"
-                : "gray"}
-          >
-            {field.label}
-            {#if field.required}
-              <span class="text-red-600">*</span>
-            {/if}
-          </Label>
+          {#if field.custom_field_type !== "toggle"}
+            <Label
+              for={key}
+              class="block mb-2"
+              color={validationErrors[key]
+                ? "red"
+                : !field.editable && field?.value != null
+                  ? "disabled"
+                  : "gray"}
+            >
+              {field.label}
+              {#if field.required}
+                <span class="text-red-600">*</span>
+              {/if}
+            </Label>
+          {/if}
 
           {#if field.help_text !== null}
             <Helper class="mb-3">{field.help_text}</Helper>
@@ -212,6 +214,22 @@
                   newResponses[key],
                   typePatterns.date,
                   validationMessages.date,
+                )}
+            />
+          {:else if field.custom_field_type === "datetime"}
+            <input
+              type="datetime-local"
+              class="w-full min-w-[300px] block disabled:cursor-not-allowed disabled:opacity-50 rtl:text-right p-2.5 focus:border-primary-500 focus:ring-primary-500 dark:focus:border-primary-500 dark:focus:ring-primary-500 bg-gray-50 text-gray-900 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 border border-gray-300 dark:border-gray-500 text-sm rounded-lg"
+              bind:value={newResponses[key]}
+              required={field.required}
+              placeholder={field.placeholder}
+              disabled={!field.editable && field?.value != null}
+              onblur={() =>
+                validateInput(
+                  key,
+                  newResponses[key],
+                  typePatterns.datetime,
+                  validationMessages.datetime,
                 )}
             />
           {:else if field.custom_field_type === "email"}
@@ -314,6 +332,25 @@
                 </Checkbox>
               </div>
             {/each}
+          {:else if field.custom_field_type === "toggle"}
+            <div class="toggle">
+              <Toggle
+                disabled={!field.editable && field.value != null}
+                checked={newResponses[key]}
+                on:change={() => {
+                  newResponses[key] = !newResponses[key];
+                }}
+              >
+                <svelte:fragment slot="offLabel">
+                  <span>
+                    {field.label}
+                    {#if field.required}
+                      <span class="text-red-600">*</span>
+                    {/if}
+                  </span>
+                </svelte:fragment>
+              </Toggle>
+            </div>
           {:else if field.custom_field_type === "paragraph"}
             <Textarea
               bind:value={newResponses[key]}
@@ -384,6 +421,10 @@
   :global(.checkbox label) {
     display: flex;
     align-items: flex-start;
+  }
+
+  :global(.toggle label) {
+    padding: 0;
   }
 
   :global(.checkbox label p) {

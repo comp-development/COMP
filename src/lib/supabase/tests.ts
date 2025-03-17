@@ -1,5 +1,16 @@
 import { supabase } from "../supabaseClient";
 
+export async function createTest(testData: {}) {
+  const { data, error } = await supabase
+    .from("tests")
+    .insert([testData])
+    .select("*")
+    .single();
+
+  if (error) { throw error; }
+  return data;
+}
+
 /** Fetches test problems given a test id. Ordered by problem number
  *
  * @param test_id number

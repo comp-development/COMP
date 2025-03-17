@@ -1,12 +1,7 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
-
   import { page } from "$app/stores";
-  import Button from "$lib/components/Button.svelte";
   import {
-    Toggle,
-    Tag,
-    Modal,
     DatePicker,
     DatePickerInput,
     TimePicker,
@@ -15,46 +10,37 @@
     TextInput,
   } from "carbon-components-svelte";
   import {
-    formatTime,
     formatDuration,
     addTime,
-    subtractTime,
-    isBefore,
     isAfter,
     diffBetweenDates,
   } from "$lib/dateUtils";
   import Loading from "$lib/components/Loading.svelte";
-  import Document from "carbon-icons-svelte/lib/Document.svelte";
   import Edit from "carbon-icons-svelte/lib/Edit.svelte";
   import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
   import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
   import { handleError } from "$lib/handleError";
-  import { onDestroy, onMount } from "svelte";
-  import {
-    getThisUser,
-    getEventTests,
-    getTeamId,
-    updateTest,
-  } from "$lib/supabase";
+  import { getThisUser, getEventTests, updateTest, createTest } from "$lib/supabase";
+  import { Badge, Button, Modal } from "flowbite-svelte";
+  import CustomForm from "$lib/components/CustomForm.svelte";
+    import toast from "$lib/toast.svelte";
 
   let loading = $state(true);
-
   let open = $state(false);
-  let instructions = "";
   let name = "";
-
-  let availableTests = [];
   let testStatusMap = $state({});
   let tests;
+
   run(() => {
     tests = Object.values(testStatusMap);
   });
+
   let user = null;
-  let teamId = null;
-
   let curTest = $state({});
-
   let isInvalid = $state(false);
+  let isModalOpen = $state(false);
+  let newResponses = $state({});
+  let validationErrors = $state({});
 
   function setupTime(date) {
     let month, day, year, hours, minutes, currentAmPm;
@@ -116,7 +102,6 @@
                 test.length + test.buffer_time,
                 "seconds",
               ),
-              "seconds",
             ),
           ),
         );
@@ -205,11 +190,54 @@
       handleError(error);
     }
   }
+
+  const fields = [
+    { name: "test_name", label: "Test Name", custom_field_type: "text", required: true },
+    { name: "buffer_time", label: "Buffer Time (seconds)", custom_field_type: "number", required: true },
+    { name: "instructions", label: "Instructions", custom_field_type: "paragraph", required: true },
+    { name: "opening_time", label: "Opening Time", custom_field_type: "datetime", required: true },
+    { name: "division", label: "Division", custom_field_type: "text", required: true },
+    { name: "length", label: "Length (minutes)", custom_field_type: "number", required: true },
+    { name: "is_team", label: "Is Team", custom_field_type: "toggle", required: true },
+    { name: "visible", label: "Visible", custom_field_type: "toggle", required: true },
+    { name: "test_mode", label: "Test Mode", custom_field_type: "dropdown", required: true, choices: ["Standard", "Puzzle", "Guts", "Meltdown"] },
+  ];
+
+  async function handleFormSubmit(event) {
+    try {
+      event.preventDefault();
+
+      const openingDate = new Date(newResponses.opening_time);
+
+      const testData = {
+        ...newResponses,
+        is_team: newResponses.is_team ?? false,
+        visible: newResponses.visible ?? false,
+        event_id: $page.params.event_id,
+        opening_time: openingDate.toISOString(),
+        settings: { pages: [""] },
+        release_results: false,
+        access_rules: null,
+      };
+
+      const newTest = await createTest(testData);
+      testStatusMap[newTest.test_id] = newTest;
+      toast.success("Test created successfully!");
+      isModalOpen = false;
+    } catch (e) {
+      handleError(e);
+    }
+  }
 </script>
 
-<br />
 <h1>Tests</h1>
 <br />
+<Button
+  pill
+  color="primary"
+  onclick={() => { isModalOpen = true; }}>Create Test</Button
+>
+<br /><br />
 <div>
   {#if loading}
     <Loading />
@@ -239,9 +267,11 @@
                 <h4>
                   {test.test_name}
                 </h4>
-                <Tag type="green">{test.is_team ? "Team" : "Individual"}</Tag>
+                <Badge color="primary" rounded
+                  >{test.is_team ? "Team" : "Individual"}</Badge
+                >
                 {#if test.division}
-                  <Tag type="green">{test.division}</Tag>
+                  <Badge color="primary" rounded>{test.division}</Badge>
                 {/if}
               </div>
               {#if test.status == "Not Open" && test.opening_time}
@@ -265,11 +295,11 @@
                 {test.countdown}
               </p>
               <!--
-								<Toggle
-									labelText="Visible"
-									on:toggle={(e) => console.log(e.detail)}
-								/>
-							-->
+                                <Toggle
+                                    labelText="Visible"
+                                    on:toggle={(e) => console.log(e.detail)}
+                                />
+                            -->
 
               <div class="tooltip-container">
                 <a href="./tests/{test.test_id}">
@@ -315,55 +345,60 @@
       {/each}
     </div>
     <br />
-    <Modal
-      bind:open
-      modalHeading={name}
-      on:open
-      on:close
-      primaryButtonText="Save"
-      secondaryButtonText="Cancel"
-      size="lg"
-      onclick:button--secondary={() => (open = false)}
-      on:submit={async () => {
-        open = false;
-        await handleSubmit();
-      }}
-    >
-      Set open time:
-      <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
-        <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
-      </DatePicker>
+    <div class="modalExterior">
+      <Modal bind:open={open} size="lg" autoclose={false}>
+        <div class="specificModalMax">
+          <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+            {name}
+          </h3>
+          <div>
+            Set open time:
+            <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
+              <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
+            </DatePicker>
 
-      <TimePicker
-        labelText="Time"
-        placeholder="hh:mm"
-        bind:value={curTest.time}
-      >
-        <TimePickerSelect bind:value={curTest.amPm}>
-          <SelectItem value="am" text="AM" />
-          <SelectItem value="pm" text="PM" />
-        </TimePickerSelect>
-      </TimePicker>
+            <TimePicker
+              labelText="Time"
+              placeholder="hh:mm"
+              bind:value={curTest.time}
+            >
+              <TimePickerSelect bind:value={curTest.amPm}>
+                <SelectItem value="am" text="AM" />
+                <SelectItem value="pm" text="PM" />
+              </TimePickerSelect>
+            </TimePicker>
 
-      <Button
-        action={() => {
-          setupTime(new Date());
-        }}
-        title={"Now"}
-      />
+            <Button color="primary" onclick={() => { setupTime(new Date()); }} pill>Now</Button>
 
-      <TextInput
-        labelText="Buffer Time (seconds)"
-        bind:value={curTest.buffer_time}
-        invalid={isInvalid}
-        invalidText="Input must be a nonnegative integer"
-        on:input={validateInput}
-      />
-
-      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br
-      /><br /><br />
-    </Modal>
+            <TextInput
+              labelText="Buffer Time (seconds)"
+              bind:value={curTest.buffer_time}
+              invalid={isInvalid}
+              invalidText="Input must be a nonnegative integer"
+              on:input={validateInput}
+            />
+          </div>
+        </div>
+      </Modal>
+    </div>
   {/if}
+</div>
+
+<div class="modalExterior">
+  <Modal bind:open={isModalOpen} size="md" autoclose={false}>
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Create Test
+      </h3>
+      <CustomForm
+        {fields}
+        bind:newResponses
+        bind:validationErrors
+        handleSubmit={handleFormSubmit}
+        showBorder={false}
+      />
+    </div>
+  </Modal>
 </div>
 
 <style>
@@ -381,8 +416,7 @@
     padding: 10px 10px;
   }
 
-  button:disabled,
-  button[disabled] {
+  button:disabled {
     cursor: not-allowed;
   }
 
@@ -397,5 +431,9 @@
 
   .empty:not([disabled]):hover {
     border: 2px solid #494949;
+  }
+
+  :global(.specificModalMax .registrationForm) {
+    padding: 0px;
   }
 </style>

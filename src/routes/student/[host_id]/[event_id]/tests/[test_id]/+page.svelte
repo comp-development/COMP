@@ -1,15 +1,9 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import toast from "$lib/toast.svelte";
   import { ExpandableTile } from "carbon-components-svelte";
-  import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
-
   import TestView from "$lib/components/TestView.svelte";
   import MathJax from "$lib/components/MathJax.svelte";
-  import Button from "$lib/components/Button.svelte";
-  import { handleError } from "$lib/handleError";
   import { getTestTaker, getTest, getTeamId } from "$lib/supabase";
-  import { TextSubscript } from "carbon-icons-svelte";
   import { user } from "$lib/sessionStore";
 
   let loading = $state(true);
