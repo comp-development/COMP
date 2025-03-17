@@ -39,14 +39,55 @@ export function formatDate(date, format = "YYYY-MM-DD HH:mm:ss") {
  */
 
 /**
+ * Formats a duration in seconds as a human-readable string
+ * @param {Number} seconds - The duration in seconds
+ * @returns {String} - Human-readable duration (e.g., "5 mins", "1 hour 30 mins")
+ */
+export function formatDurationHumanReadable(seconds) {
+  if (!seconds || seconds <= 0) return "0 mins";
+  
+  const duration = moment.duration(seconds, 'seconds');
+  const hours = Math.floor(duration.asHours());
+  const minutes = duration.minutes();
+  
+  if (hours === 0) {
+    return `${minutes} ${minutes === 1 ? 'min' : 'mins'}`;
+  } else if (minutes === 0) {
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+  } else {
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${minutes} ${minutes === 1 ? 'min' : 'mins'}`;
+  }
+}
+
+/**
  * Formats a duration given in seconds to a specific format
  * @param {Number} seconds - The duration in seconds
  * @param {String} format - The format string (default is 'HH:mm:ss')
  * @returns {String} - The formatted duration
  */
-export function formatDuration(seconds, format = "HH:mm:ss") {
+export function formatDuration(seconds,) {
+  if (!seconds) return "00:00";
+  
   const duration = moment.duration(seconds, "seconds");
-  return moment.utc(duration.asMilliseconds()).format(format);
+  const days = duration.days();
+  const hours = duration.hours();
+  const minutes = padZeros(duration.minutes(), 2);
+  const secs = padZeros(duration.seconds(), 2);
+  
+  let result = "";
+  
+  // Only add days if non-zero
+  if (days > 0) {
+    result += `${days}:`;
+  }
+  
+  // Only add hours if non-zero or if days are shown
+  if (hours > 0 || days > 0) {
+    result += `${padZeros(hours, 2)}:`;
+  }
+  
+  // Always show minutes and seconds with leading zeros
+  return `${result}${minutes}:${secs}`;
 }
 
 export function diffBetweenDates(date1, date2, unit = "days") {
