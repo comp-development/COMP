@@ -17,12 +17,14 @@ const example_problems = [
     solution_latex:
       "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
     answer_type: "Integer",
+    host_id: 1,
   },
   {
     problem_latex: "what is thirteen plus fourteen minus two",
     answer_latex: "25",
     solution_latex: "compute it.",
     answer_type: "Integer",
+    host_id: 1,
   },
   {
     problem_latex:
@@ -30,6 +32,7 @@ const example_problems = [
     answer_latex: "Inequality gives proof.",
     solution_latex: "do it",
     answer_type: "Text",
+    host_id: 1,
   },
   {
     problem_latex:
@@ -37,6 +40,7 @@ const example_problems = [
     answer_latex: "pi",
     solution_latex: "look up stack exchange",
     answer_type: "AsciiMath",
+    host_id: 1,
   },
   {
     problem_latex:
@@ -45,6 +49,7 @@ const example_problems = [
     solution_latex:
       "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
     answer_type: "AsciiMath",
+    host_id: 1,
   },
 ] satisfies Partial<Tables<"problems">>[];
 
