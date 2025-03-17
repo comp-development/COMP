@@ -37,6 +37,7 @@
   let openAddProblemModal: boolean = $state(false);
   let newProblemModal: boolean = $state(false);
 
+  let host_id = Number($page.params.host_id);
   let test_id = Number($page.params.test_id);
   let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
 
@@ -51,7 +52,7 @@
     user = await getThisUser();
     test = await getTest(test_id);
     problems = await getTestProblems(test_id, null, "*, problems(*)");
-    allProblems = await getAllProblems();
+    allProblems = await getAllProblems(host_id);
     allProblems.forEach((problem) => {
       problem.id = problem.problem_id;
     });
@@ -537,6 +538,7 @@
       modalProblem = null;
       newProblemModal = true;
     }}
+    host_id={host_id}
     closeModal={() => (modalProblem = null)}
     onSelect={async (row) => {
       try {
@@ -564,6 +566,7 @@
     closeModal={() => {
       openAddProblemModal = false;
     }}
+    host_id={host_id}
     onSelect={async (row) => {
       console.log("ROW", row);
       await addNewProblemToTest(row);
@@ -572,6 +575,7 @@
 
   <CreateProblemModal
     open={newProblemModal}
+    host_id={host_id}
     changeNewProblem={() => {
       newProblemModal = true;
     }}

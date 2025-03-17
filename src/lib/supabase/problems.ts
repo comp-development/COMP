@@ -13,8 +13,8 @@ export async function addProblem(problem) {
   return data;
 }
 
-export async function getAllProblems(customSelect: string = "*") {
-  const { data, error } = await supabase.from("problems").select("*");
+export async function getAllProblems(host_id: number, customSelect: string = "*") {
+  const { data, error } = await supabase.from("problems").select("*").eq("host_id", host_id);
 
   if (error) throw error;
   return data;
