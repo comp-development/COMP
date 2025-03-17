@@ -13,7 +13,6 @@
 
   import { getOrganizationDetails, getTicketCount } from "$lib/supabase/orgs";
   import { onMount } from "svelte";
-  import type { Tables } from "../../../db/database.types";
   import CustomTable from './CustomTable.svelte';
 
   // Define types for our extended data structures
@@ -102,6 +101,16 @@
     }>;
   };
 
+  // Define a generic column type
+  type TableColumn = {
+    key: string;
+    label: string;
+    visible: boolean;
+    searchable?: boolean;
+    dataType?: 'string' | 'number' | 'date' | 'boolean';
+    format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+  };
+
   // Props
   let { event_id, host_id, event_name } = $props();
 
@@ -132,6 +141,13 @@
       format: (value: string) => ({ text: value, isBadge: true, color: 'blue' })
     },
     { 
+      key: 'team_id', 
+      label: 'Team ID', 
+      visible: true,
+      searchable: true,
+      dataType: 'number' as const
+    },
+    { 
       key: 'team_name', 
       label: 'Team', 
       visible: true,
@@ -143,6 +159,13 @@
         }
         return '';
       }
+    },
+    { 
+      key: 'org_id', 
+      label: 'Org ID', 
+      visible: true,
+      searchable: true,
+      dataType: 'number' as const
     },
     { 
       key: 'org_name', 
@@ -165,6 +188,13 @@
     { key: 'front_id', label: 'Team #', visible: true, searchable: true, dataType: 'string' as const },
     { key: 'team_name', label: 'Name', visible: true, searchable: true, dataType: 'string' as const },
     { key: 'join_code', label: 'Join Code', visible: true, searchable: true, dataType: 'string' as const },
+    { 
+      key: 'org_id', 
+      label: 'Org ID', 
+      visible: true,
+      searchable: true,
+      dataType: 'number' as const
+    },
     { 
       key: 'org_name', 
       label: 'Organization', 
@@ -220,6 +250,54 @@
     { key: 'registeredAt', label: 'Registered At', visible: true, searchable: false, dataType: 'date' as const }
   ];
 
+  // Computed properties for merged columns
+  function getMergedStudentColumns(): TableColumn[] {
+    // Start with regular columns
+    const regularColumns = [...studentColumns];
+    
+    // Add custom field columns
+    const customColumns = studentCustomFields.map(field => ({
+      key: `custom_field.${field.key}`,
+      label: field.key,
+      visible: true,
+      searchable: true,
+      dataType: field.dataType || 'string' as const
+    }));
+    
+    return [...regularColumns, ...customColumns];
+  }
+
+  function getMergedTeamColumns(): TableColumn[] {
+    // Start with regular columns
+    const regularColumns = [...teamColumns];
+    
+    // Add custom field columns
+    const customColumns = teamCustomFields.map(field => ({
+      key: `custom_field.${field.key}`,
+      label: field.key,
+      visible: true,
+      searchable: true,
+      dataType: field.dataType || 'string' as const
+    }));
+    
+    return [...regularColumns, ...customColumns];
+  }
+
+  function getMergedOrgColumns(): TableColumn[] {
+    // Start with regular columns
+    const regularColumns = [...orgColumns];
+    
+    // Add custom field columns
+    const customColumns = orgCustomFields.map(field => ({
+      key: `custom_field.${field.key}`,
+      label: field.key,
+      visible: true,
+      searchable: true,
+      dataType: field.dataType || 'string' as const
+    }));
+    
+    return [...regularColumns, ...customColumns];
+  }
 
   // Fetch data on mount
   onMount(async () => {
@@ -248,7 +326,7 @@
       
 
       // Process students data into array
-      students = studentsData.map(student => ({
+      students = studentsData.map((student: any) => ({
         student_id: student.student_id,
         student_event_id: student.student_event_id,
         event_id: student.event_id,
@@ -266,7 +344,7 @@
       }));
       
       // Add created_at if available
-      studentsData.forEach((student, index) => {
+      studentsData.forEach((student: any, index: number) => {
         // Use type assertion to handle the 'created_at' property
         const studentData = student as any;
         if (studentData.created_at) {
@@ -275,7 +353,7 @@
       });
       
       // Process teams data into array
-      teams = teamsData.map(team => ({
+      teams = teamsData.map((team: any) => ({
         team_id: team.team_id,
         event_id: team.event_id,
         team_name: team.team_name,
@@ -288,10 +366,9 @@
       }));
       
       // Add created_at if available
-      teamsData.forEach((team, index) => {
+      teamsData.forEach((team: any, index: number) => {
         if ('created_at' in team) {
           teams[index].createdAt = new Date(team.created_at as string).toLocaleString();
-
         }
       });
       
@@ -502,11 +579,10 @@
 
   // Helper function to get custom field value
   function getCustomFieldValue(entityId: number, fieldId: number, entityType: string): string {
-    let key;
+    let key = '';
     
     if (entityType === 'org') {
       // For organizations, find the org_event_id using the org_id
-
       const org = orgs.find(o => o.org_id === entityId);
 
       if (org?.event?.org_event_id) {
@@ -514,10 +590,11 @@
       } else {
         return ''; // No org_event_id found
       }
-      
-      const value = customFieldValues[key] || '-';
-      return value;
+    } else {
+      // For other entity types
+      key = `${entityType}_${entityId}_${fieldId}`;
     }
+    
     const value = customFieldValues[key] || '';
     return value;
   }
@@ -558,38 +635,40 @@
     <TabItem open={activeTab === 0} title="Students" class="tab-item" activeClasses="tab-active">
       <CustomTable 
         data={students}
-        columns={studentColumns}
-        customFields={studentCustomFields}
+        columns={getMergedStudentColumns()}
         entityType="student"
         isLoading={loading}
         event_id={event_id}
         event_name={event_name}
+        tableId={`event_${event_id}_students`}
+        idField="student_id"
       />
     </TabItem>
     
     <TabItem open={activeTab === 1} title="Teams" class="tab-item" activeClasses="tab-active">
       <CustomTable 
         data={teams}
-        columns={teamColumns}
-        customFields={teamCustomFields}
+        columns={getMergedTeamColumns()}
         entityType="team"
         isLoading={loading}
         event_id={event_id}
         event_name={event_name}
+        tableId={`event_${event_id}_teams`}
+        idField="team_id"
       />
     </TabItem>
     
     <TabItem open={activeTab === 2} title="Organizations" class="tab-item" activeClasses="tab-active">
       <CustomTable 
         data={orgs}
-        columns={orgColumns}
-        customFields={orgCustomFields}
+        columns={getMergedOrgColumns()}
         entityType="org"
         isLoading={loading}
         event_id={event_id}
         event_name={event_name}
+        tableId={`event_${event_id}_orgs`}
+        idField="org_id"
       />
-
     </TabItem>
   </Tabs>
 </div>
@@ -607,6 +686,8 @@
 
   :global(.table-compact) {
     border-collapse: collapse;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
   }
   
   :global(.table-compact th),
@@ -689,13 +770,5 @@
   :global(.dropdown-toggle) {
     background-color: var(--primary);
     color: white;
-  }
-
-  /* Add a subtle box shadow for depth */
-  :global(.table-compact) {
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-    border-radius: 0.375rem;
-    overflow: hidden;
-    margin-bottom: 1rem;
   }
 </style>

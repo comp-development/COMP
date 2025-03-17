@@ -1,11 +1,5 @@
 <script lang="ts">
   import {
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell,
     Search,
     Checkbox,
     Dropdown,
@@ -45,17 +39,13 @@
       searchable?: boolean;
       dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for sorting
     }[];
-    customFields: { 
-      custom_field_id: number; 
-      label: string; 
-      key: string;
-      dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for custom fields
-    }[];
-    entityType: 'student' | 'team' | 'org';
+    entityType: string; // Changed from enum to string to make it more generic
     isLoading: boolean;
-    event_id: number;
+    event_id?: number; // Made optional
     event_name?: string; // Added event_name as an optional prop
     idField?: string; // Field to use as unique ID, defaults to primary key of entity
+    selectable?: boolean; // New prop to control if checkboxes should be shown
+    tableId?: string; // Optional unique identifier for the table (for localStorage)
   }>();
 
   console.log("PROPS", props)
@@ -66,7 +56,7 @@
   let sortDirection = $state<'asc' | 'desc'>('asc');
   
   // Get the ID field to use for each row
-  const idField = $derived(props.idField || `${props.entityType}_id`);
+  const idField = $derived(props.idField || 'id');
 
   // Filter related states
   interface FilterCondition {
@@ -83,16 +73,14 @@
   let activeFilterId = $state<string | null>(null);
   let showFilterEditor = $state(false);
 
-  // A unified array that combines regular columns and custom fields
+  // A simplified column interface that doesn't distinguish between regular and custom columns
   interface UnifiedColumn {
     key: string;
     label: string;
     visible: boolean;
-    type: 'regular' | 'custom';
     displayKey: string;
     dataKey: string;
     displayLabel: string;
-    custom_field_id?: number;
     format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
     searchable?: boolean;
     dataType?: 'string' | 'number' | 'date' | 'boolean';
@@ -104,37 +92,83 @@
   let exportVisibleColumnsOnly = $state(false);
   let exportFilteredRowsOnly = $state(false);
 
+  // Derived filtered data - updated to use the new filter system
+  const filteredData = $derived<any[]>(
+    sortData(applyFilters(props.data, filters), sortColumn, sortDirection)
+  );
+  
+  // New state for selected rows - moved here after filteredData is defined
+  let selectedRows = $state<Set<string | number>>(new Set());
+  
+  // Track if all rows are selected
+  const allRowsSelected = $derived(
+    filteredData.length > 0 && selectedRows.size === filteredData.length
+  );
+  
+  // Track if some but not all rows are selected
+  const someRowsSelected = $derived(
+    selectedRows.size > 0 && selectedRows.size < filteredData.length
+  );
+
+  // Check if a specific row is selected
+  function isRowSelected(rowId: string | number): boolean {
+    return selectedRows.has(rowId);
+  }
+  
+  // Toggle selection for a single row
+  function toggleRowSelection(rowId: string | number): void {
+    const newSelectedRows = new Set(selectedRows);
+    
+    if (newSelectedRows.has(rowId)) {
+      newSelectedRows.delete(rowId);
+    } else {
+      newSelectedRows.add(rowId);
+    }
+    
+    selectedRows = newSelectedRows;
+  }
+  
+  // Toggle selection for all rows
+  function toggleAllRows(): void {
+    if (allRowsSelected) {
+      // Deselect all rows
+      selectedRows = new Set();
+    } else {
+      // Select all rows
+      const newSelectedRows = new Set<string | number>();
+      filteredData.forEach((row, index) => {
+        const rowId = row[idField] !== undefined ? row[idField] : `row_${index}`;
+        newSelectedRows.add(rowId);
+      });
+      selectedRows = newSelectedRows;
+    }
+  }
+  
+  // Helper function to get selected row objects
+  function getSelectedRowData(): any[] {
+    return filteredData.filter((row, index) => {
+      const rowId = row[idField] !== undefined ? row[idField] : `row_${index}`;
+      return selectedRows.has(rowId);
+    });
+  }
+
   $effect(() => {
-    // Map regular columns
-    const regularColumns = props.columns.map((column: any) => ({
+    // Map columns to unified format
+    allColumns = props.columns.map((column: any) => ({
       ...column,
-      type: 'regular' as const,
       displayKey: column.key, // The key as displayed/used in the component
       dataKey: column.key, // The key used to access data in the row object
       displayLabel: column.label // The label displayed in the header
     }));
-    
-    // Map custom fields
-    const customFieldColumns = props.customFields.map((field: any) => ({
-      ...field,
-      type: 'custom' as const,
-      displayKey: `custom_field.${field.key}`, // The key as displayed/used in the component
-      dataKey: `custom_field.${field.key}`, // The key used to access data in the row object
-      displayLabel: field.key, // The label displayed in the header
-      visible: true // Custom fields are visible by default
-    }));
-    
-    // Update allColumns
-    allColumns = [...regularColumns, ...customFieldColumns];
   });
 
   // Initialize visibility from columns' visible property
   function initializeVisibility() {
     const initial: Record<string, boolean> = {};
     
-    // Initialize all columns using the unified approach
+    // Initialize all columns
     for (const column of allColumns) {
-      initial[column.displayKey] = column.type === 'regular' ? column.visible : true;
+      initial[column.displayKey] = column.visible;
     }
     
     return initial;
@@ -330,15 +364,10 @@
     });
   }
 
-  // Derived filtered data - updated to use the new filter system
-  const filteredData = $derived<any[]>(
-    sortData(applyFilters(props.data, filters), sortColumn, sortDirection)
-  );
-
   // Get formatted value for display
   function getFormattedValue(column: any, row: any) {
-    // Handle regular columns with formatters
-    if (column.type === 'regular' && column.format) {
+    // Handle columns with formatters
+    if (column.format) {
       const formatted = column.format(row[column.dataKey], row);
       if (typeof formatted === 'string') {
         return { text: formatted || '-', isBadge: false };
@@ -346,7 +375,7 @@
       return formatted;
     }
     
-    // Handle regular columns without formatters or custom fields
+    // Handle columns without formatters
     const value = row[column.dataKey];
     return { text: (value === null || value === undefined || value === '') ? '-' : value.toString(), isBadge: false };
   }
@@ -428,21 +457,25 @@
   // Save table state to localStorage (columns visibility, sorting, and filtering)
   function saveTableState() {
     try {
-      if (props.event_id && props.entityType) {
+      // Generate a table identifier
+      const tableId = props.tableId || 
+        (props.event_id && props.entityType ? `event_${props.event_id}_${props.entityType}` : null);
+      
+      if (tableId) {
         // Save column visibility
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_columns`, JSON.stringify(internalVisibleColumns));
+        localStorage.setItem(`${tableId}_columns`, JSON.stringify(internalVisibleColumns));
         
         // Save sorting state
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_sort`, JSON.stringify({
+        localStorage.setItem(`${tableId}_sort`, JSON.stringify({
           column: sortColumn,
           direction: sortDirection
         }));
         
         // Save filters
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_filters`, JSON.stringify(filters));
+        localStorage.setItem(`${tableId}_filters`, JSON.stringify(filters));
         
         // Save export settings
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_export_settings`, JSON.stringify({
+        localStorage.setItem(`${tableId}_export_settings`, JSON.stringify({
           visibleColumnsOnly: exportVisibleColumnsOnly,
           filteredRowsOnly: exportFilteredRowsOnly
         }));
@@ -455,9 +488,13 @@
   // Load table state from localStorage
   function loadTableState() {
     try {
-      if (props.event_id && props.entityType) {
+      // Generate a table identifier
+      const tableId = props.tableId || 
+        (props.event_id && props.entityType ? `event_${props.event_id}_${props.entityType}` : null);
+      
+      if (tableId) {
         // Load column visibility
-        const savedColumns = localStorage.getItem(`event_${props.event_id}_${props.entityType}_columns`);
+        const savedColumns = localStorage.getItem(`${tableId}_columns`);
         if (savedColumns) {
           internalVisibleColumns = { ...JSON.parse(savedColumns) };
         } else {
@@ -465,7 +502,7 @@
         }
         
         // Load sorting state
-        const savedSorting = localStorage.getItem(`event_${props.event_id}_${props.entityType}_sort`);
+        const savedSorting = localStorage.getItem(`${tableId}_sort`);
         if (savedSorting) {
           const { column, direction } = JSON.parse(savedSorting);
           sortColumn = column;
@@ -474,13 +511,13 @@
         }
         
         // Load filters
-        const savedFilters = localStorage.getItem(`event_${props.event_id}_${props.entityType}_filters`);
+        const savedFilters = localStorage.getItem(`${tableId}_filters`);
         if (savedFilters) {
           filters = JSON.parse(savedFilters);
         }
         
         // Load export settings
-        const savedExportSettings = localStorage.getItem(`event_${props.event_id}_${props.entityType}_export_settings`);
+        const savedExportSettings = localStorage.getItem(`${tableId}_export_settings`);
         if (savedExportSettings) {
           const { visibleColumnsOnly, filteredRowsOnly } = JSON.parse(savedExportSettings);
           exportVisibleColumnsOnly = visibleColumnsOnly;
@@ -524,11 +561,11 @@
     // Create rows arrays for each data item
     const rows = rowsToExport.map((row: Record<string, any>) => {
       return columnsToExport.map(col => {
-        // Get the value using the unified approach
+        // Get the value
         const value = row[col.dataKey];
         // For CSV export, we don't want to include the dash for empty values
         return (value === null || value === undefined || value === '') ? '' : 
-               (col.type === 'regular' && col.format) ? getFormattedValue(col, row as Record<string, any>).text : 
+               (col.format) ? getFormattedValue(col, row as Record<string, any>).text : 
                String(value);
       });
     });
@@ -536,7 +573,7 @@
     // Combine headers and rows
     const csvContent = [
       headers.map(escapeCSVValue).join(','),
-      ...rows.map(row => row.map(escapeCSVValue).join(','))
+      ...rows.map((row: Record<string, any>) => row.map(escapeCSVValue).join(','))
     ].join('\n');
     
     // Create download link
@@ -607,22 +644,32 @@
     
     <!-- Table skeleton -->
     <div class="overflow-x-auto">
-      <div class="w-full border-b border-[color:var(--primary-tint)] border-opacity-20 dark:border-opacity-20">
-        <!-- Skeleton header -->
-        <div class="grid grid-cols-4 gap-4 py-3 bg-[color:var(--primary-tint)] bg-opacity-10 dark:bg-opacity-10">
-          {#each Array(4) as _, i}
-            <div class="h-6 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
-          {/each}
-        </div>
-        
-        <!-- Skeleton rows -->
-        {#each Array(5) as _, i}
-          <div class="grid grid-cols-4 gap-4 py-4 border-b border-[color:var(--primary-tint)] border-opacity-10 dark:border-opacity-10">
-            {#each Array(4) as _, j}
-              <div class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"></div>
+      <div class="max-h-[650px] overflow-y-auto">
+        <table class="w-full text-sm text-left border-collapse table-compact themed-table">
+          <!-- Skeleton header -->
+          <thead class="sticky top-0 z-10 bg-[color:var(--primary)] text-white sticky">
+            <tr class="bg-[color:var(--primary-tint)] bg-opacity-10 dark:bg-opacity-10">
+              {#each Array(4) as _, i}
+                <th class="py-3 whitespace-nowrap">
+                  <div class="h-6 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
+                </th>
+              {/each}
+            </tr>
+          </thead>
+          
+          <!-- Skeleton rows -->
+          <tbody>
+            {#each Array(5) as _, i}
+              <tr class="border-b border-[color:var(--primary-tint)] border-opacity-10 dark:border-opacity-10">
+                {#each Array(4) as _, j}
+                  <td class="py-4 whitespace-nowrap">
+                    <div class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"></div>
+                  </td>
+                {/each}
+              </tr>
             {/each}
-          </div>
-        {/each}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -785,76 +832,101 @@
   </Modal>
   
   <div class="overflow-x-auto">
-    <Table striped={false} hoverable={false} class="table-compact themed-table">
-      <TableHead class="border-b" theadClass="text-xs uppercase align-middle">
+    <div class="max-h-[650px] overflow-y-auto">
+      <table class="w-full text-sm text-left border-collapse table-compact themed-table table-auto">
+        <thead class="text-xs uppercase border-b align-middle sticky top-0 z-10 bg-[color:var(--primary)] text-white sticky">
+          <tr>
+            {#if props.selectable !== false}
+              <th class="w-4 px-4 py-3 whitespace-nowrap align-middle">
+                <Checkbox checked={allRowsSelected} indeterminate={someRowsSelected} on:change={toggleAllRows} class="header-checkbox checkbox" />
+              </th>
+            {/if}
         {#each allColumns as column}
           {#if internalVisibleColumns[column.displayKey]}
-            <TableHeadCell 
+                <th 
               on:click={() => handleSort(column.displayKey)}
-              padding="px-6 py-3"
-              class="align-middle select-none sortable-header"
+                  class="px-6 py-3 align-middle select-none sortable-header whitespace-nowrap"
             >
                 <span class="inline-flex items-center select-none header-label">
                   {column.displayLabel}
                   {#if (sortColumn === column.displayKey)}
                     {#if (sortDirection == 'asc')}
-                      <CaretUpSolid class="w-3 h-3 ml-1" />
+                          <CaretUpSolid class="w-3 h-3 ml-1" />
+                        {:else}
+                          <CaretDownSolid class="w-3 h-3 ml-1" />
+                        {/if}
+                      {/if}
+                    </span>
+                </th>
+              {/if}
+            {/each}
+          </tr>
+        </thead>
+        <tbody>
+          {#if filteredData.length === 0}
+            <tr class="hover:bg-transparent no-hover">
+              <td colspan={Object.values(internalVisibleColumns).filter(v => v).length + (props.selectable !== false ? 1 : 0)} class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <div class="flex flex-col items-center justify-center">
+                  {#if props.data.length === 0}
+                    <!-- No data at all -->
+                    <div class="mb-2 text-[color:var(--primary-tint)] opacity-40">
+                      <ClockSolid class="w-10 h-10" />
+                    </div>
+                    <p class="font-medium">
+                      {#if props.entityType === 'student'}
+                        No students registered yet, check back later!
+                      {:else if props.entityType === 'team'}
+                        No teams created yet, check back later!
+                      {:else if props.entityType === 'org'}
+                        No organizations available yet, check back later!
+                      {:else}
+                        No data available yet, check back later!
+                      {/if}
+                    </p>
                     {:else}
-                      <CaretDownSolid class="w-3 h-3 ml-1" />
+                    <!-- Data exists but filtered out -->
+                    <div class="mb-2 text-[color:var(--primary-light)] opacity-40">
+                      <FilterSolid class="w-10 h-10" />
+                    </div>
+                    <p class="font-medium">No rows to display</p>
+                    {#if filters.length > 0}
+                      <p class="text-sm mt-1">Try adjusting your filter criteria</p>
                     {/if}
                   {/if}
-                </span>
-            </TableHeadCell>
-          {/if}
-        {/each}
-      </TableHead>
-      <TableBody>
-        {#if filteredData.length === 0}
-          <TableBodyRow class="hover:bg-transparent no-hover">
-            <TableBodyCell colspan={Object.values(internalVisibleColumns).filter(v => v).length || 1} class="text-center py-8 text-gray-500 dark:text-gray-400">
-              <div class="flex flex-col items-center justify-center">
-                {#if props.data.length === 0}
-                  <!-- No data at all -->
-                  <div class="mb-2 text-[color:var(--primary-light)] opacity-40">
-                    <ClockSolid class="w-10 h-10" />
-                  </div>
-                  <p class="font-medium">
-                    No {props.entityType}s registered yet, check back later!
-                  </p>
-                {:else}
-                  <!-- Data exists but filtered out -->
-                  <div class="mb-2 text-[color:var(--primary-light)] opacity-40">
-                    <FilterSolid class="w-10 h-10" />
-                  </div>
-                  <p class="font-medium">No rows to display</p>
-                  {#if filters.length > 0}
-                    <p class="text-sm mt-1">Try adjusting your filter criteria</p>
-                  {/if}
+                </div>
+              </td>
+            </tr>
+          {:else}
+            {#each filteredData as row, index (row[idField] !== undefined ? row[idField] : `row_${index}`)}
+              <tr class="border-b border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">
+                {#if props.selectable !== false}
+                  <td class="w-4 px-4 py-3 whitespace-nowrap align-middle">
+                    <Checkbox 
+                      checked={isRowSelected(row[idField] !== undefined ? row[idField] : `row_${index}`)} 
+                      on:change={() => toggleRowSelection(row[idField] !== undefined ? row[idField] : `row_${index}`)} 
+                      class="checkbox"
+                    />
+                  </td>
                 {/if}
-              </div>
-            </TableBodyCell>
-          </TableBodyRow>
-        {:else}
-          {#each filteredData as row (row[idField])}
-            <TableBodyRow>
-              {#each allColumns as column}
-                {#if internalVisibleColumns[column.displayKey]}
-                  <TableBodyCell>
-                    {#if column.type === 'regular' && getFormattedValue(column, row).isBadge}
-                      <Badge color={getFormattedValue(column, row).color || "blue"}>
-                        {getFormattedValue(column, row).text}
-                      </Badge>
-                    {:else}
+            {#each allColumns as column}
+              {#if internalVisibleColumns[column.displayKey]}
+                    <td class="px-6 py-3 whitespace-nowrap">
+                  {#if getFormattedValue(column, row).isBadge}
+                    <Badge color={getFormattedValue(column, row).color || "blue"}>
                       {getFormattedValue(column, row).text}
-                    {/if}
-                  </TableBodyCell>
-                {/if}
-              {/each}
-            </TableBodyRow>
-          {/each}
-        {/if}
-      </TableBody>
-    </Table>
+                    </Badge>
+                  {:else}
+                    {getFormattedValue(column, row).text}
+                  {/if}
+                    </td>
+              {/if}
+                {/each}
+              </tr>
+            {/each}
+          {/if}
+        </tbody>
+      </table>
+    </div>
   </div>
 {/if}
 
@@ -881,5 +953,69 @@
   
   :global(tr.no-hover:hover td) {
     background-color: transparent !important;
+  }
+  
+  /* Custom styling for the header checkbox */
+  :global(.header-checkbox) :global(input[type="checkbox"]) {
+    /* Removed styling for the unchecked state */
+  }
+  
+  :global(.header-checkbox) :global(input[type="checkbox"]:checked),
+  :global(.header-checkbox) :global(input[type="checkbox"]:indeterminate) {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+  
+  :global(.header-checkbox) :global(input[type="checkbox"]:focus) {
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-dark-rgb), 0.5);
+    border-color: var(--primary-dark);
+  }
+
+  /* Checkbox vertical alignment */
+  :global(table th), :global(table td) {
+    vertical-align: middle;
+  }
+  
+  :global(table .checkbox) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Table layout to ensure cells fit content without wrapping */
+  :global(.table-auto) {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+  
+  :global(.table-auto th),
+  :global(.table-auto td) {
+    width: max-content;
+    white-space: nowrap;
+    overflow: visible;
+  }
+  
+  /* Sticky header styles */
+  :global(thead.sticky) {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  :global(thead.sticky th) {
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* For dark mode compatibility with the sticky header */
+  :global(.dark thead.sticky) {
+    background-color: var(--primary-dark);
+  }
+  
+  /* Ensure checkboxes remain clickable when header is sticky */
+  :global(thead.sticky .checkbox) {
+    position: relative;
+    z-index: 11;
   }
 </style> 
