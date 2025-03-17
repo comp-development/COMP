@@ -403,7 +403,7 @@
       <div class="text-center">
         <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-auto flex items-center"
-          on:click={() => createOpen = true}
+          onclick={() => createOpen = true}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
@@ -413,7 +413,7 @@
       <div class="flex justify-between items-center mb-6">
         <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
-          on:click={() => createOpen = true}
+          onclick={() => createOpen = true}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
@@ -530,13 +530,13 @@
           <div class="flex justify-center gap-4 mt-8">
             <button 
               class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeSettingsModal}
+              onclick={closeSettingsModal}
             >
               Cancel
             </button>
             <button 
               class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={saveSettingsAndClose}
+              onclick={saveSettingsAndClose}
             >
               Save
             </button>
@@ -573,123 +573,127 @@
           <div class="flex justify-center gap-4 mt-6">
             <button 
               class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeModal}
+              onclick={closeModal}
             >
               Cancel
             </button>
             <button 
               class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={saveAndClose}
+              onclick={saveAndClose}
             >
               Save
             </button>
           </div>
         </div>
       </Modal>
-      
-      <!-- Create Test Modal -->
+    {/if}
+
+    <div class="modalExterior">
       <Modal bind:open={createOpen} size="xl" autoclose={false} class="w-full max-w-4xl">
-        <div class="text-center">
-          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Create New Test</h3>
-          
-          <!-- Form layout using centered columns -->
-          <div class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8">
-            <!-- Row 1: Test Name and Visibility -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Test Name <span class="text-red-500">*</span>
-                </span>
-                <div class="w-64">
-                  <Input 
-                    type="text" 
-                    bind:value={newTest.test_name} 
-                    required 
-                    color={createNameError ? "red" : "base"}
-                  />
-                  {#if createNameError}
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">Test name cannot be empty</p>
-                  {/if}
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Visibility</span>
-                <div class="w-64 flex items-center justify-center">
-                  <Toggle bind:checked={newTest.visible} />
-                  <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">
-                    {newTest.visible ? 'Visible' : 'Hidden'}
+        <div class="specificModalMax">
+          <div class="text-center">
+            <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Create New Test</h3>
+            
+            <!-- Form layout using centered columns -->
+            <div class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8">
+              <!-- Row 1: Test Name and Visibility -->
+              <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
+                <div class="flex flex-col items-center">
+                  <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                    Test Name <span class="text-red-500">*</span>
                   </span>
+                  <div class="w-64">
+                    <Input 
+                      type="text" 
+                      bind:value={newTest.test_name} 
+                      required 
+                      color={createNameError ? "red" : "base"}
+                    />
+                    {#if createNameError}
+                      <p class="mt-2 text-sm text-red-600 dark:text-red-500">Test name cannot be empty</p>
+                    {/if}
+                  </div>
                 </div>
-              </div>
-            </div>
-            
-            <!-- Row 2: Test Type and Test Mode -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Type</span>
-                <div class="w-64 flex items-center justify-center">
-                  <Toggle bind:checked={newTest.is_team} />
-                  <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">
-                    {newTest.is_team ? 'Team' : 'Individual'}
-                  </span>
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
-                <div class="w-64">
-                  <Select class="w-full" bind:value={newTest.test_mode}>
-                    <option value="standard">Standard</option>
-                    <option value="guts">Guts</option>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 3: Test Length and Buffer Time -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Length (seconds)</span>
-                <div class="w-64">
-                  <Input type="number" bind:value={newTest.length} />
+                
+                <div class="flex flex-col items-center">
+                  <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Visibility</span>
+                  <div class="w-64 flex items-center justify-center">
+                    <Toggle bind:checked={newTest.visible} />
+                    <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">
+                      {newTest.visible ? 'Visible' : 'Hidden'}
+                    </span>
+                  </div>
                 </div>
               </div>
               
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
-                <div class="w-64">
-                  <Input type="number" bind:value={newTest.buffer_time} />
+              <!-- Row 2: Test Type and Test Mode -->
+              <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
+                <div class="flex flex-col items-center">
+                  <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Type</span>
+                  <div class="w-64 flex items-center justify-center">
+                    <Toggle bind:checked={newTest.is_team} />
+                    <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">
+                      {newTest.is_team ? 'Team' : 'Individual'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="flex flex-col items-center">
+                  <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
+                  <div class="w-64">
+                    <Select class="w-full" bind:value={newTest.test_mode}>
+                      <option value="standard">Standard</option>
+                      <option value="guts">Guts</option>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Row 3: Test Length and Buffer Time -->
+              <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
+                <div class="flex flex-col items-center">
+                  <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Length (seconds)</span>
+                  <div class="w-64">
+                    <Input type="number" bind:value={newTest.length} />
+                  </div>
+                </div>
+                
+                <div class="flex flex-col items-center">
+                  <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
+                  <div class="w-64">
+                    <Input type="number" bind:value={newTest.buffer_time} />
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Row 4: Instructions -->
+              <div class="w-full flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Instructions</span>
+                <div class="w-full max-w-2xl">
+                  <Textarea rows={5} bind:value={newTest.instructions} />
                 </div>
               </div>
             </div>
             
-            <!-- Row 4: Instructions -->
-            <div class="w-full flex flex-col items-center">
-              <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Instructions</span>
-              <div class="w-full max-w-2xl">
-                <Textarea rows={5} bind:value={newTest.instructions} />
-              </div>
+            <div class="flex justify-center gap-4 mt-8">
+              <button 
+                class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
+                onclick={closeCreateModal}
+              >
+                Cancel
+              </button>
+              <button 
+                class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+                onclick={createNewTest}
+              >
+                Create
+              </button>
             </div>
-          </div>
-          
-          <div class="flex justify-center gap-4 mt-8">
-            <button 
-              class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeCreateModal}
-            >
-              Cancel
-            </button>
-            <button 
-              class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={createNewTest}
-            >
-              Create
-            </button>
+            <br /><br />
           </div>
         </div>
       </Modal>
-    {/if}
+    </div>
   </div>
 </div>
 

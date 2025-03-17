@@ -220,29 +220,7 @@
   title="Waivers"
   onclick={() => (selectedTab = "waivers")}
   >
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <EditableCustomForm
-          bind:custom_fields={waiverCustomFields}
-          editableHostFields={true}
-          table="waivers"
-          action={async () => {
-            await upsertHostCustomFields(waiverCustomFields, "waivers", host_id);
-          }}
-          {host_id}
-        />
-      </div>
-      <div>
-        <CustomForm
-          title="Waivers Preview"
-          fields={[waiverFields]}
-          custom_fields={waiverCustomFields}
-          bind:newResponses={waiversResponses}
-          bind:validationErrors={waiversValidationErrors}
-          handleSubmit={() => {}}
-        />
-      </div>
-    </div>
+    <!--Insert waiver stuff-->
   </TabItem>
 </Tabs>
 
