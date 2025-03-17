@@ -62,9 +62,6 @@
 
   let loading = $state(true);
 
-  let titleEditable = $state(false);
-  let lengthEditable = $state(false);
-  let bufferEditable = $state(false);
   let instructionsEditable = false;
 
   let modalProblem: number | null = $state(null);
@@ -154,30 +151,6 @@
         (a: TestProblem, b: TestProblem) =>
           a.page_number - b.page_number || a.problem_number - b.problem_number,
       );
-    }
-  }
-
-  async function updateTitle(event: { target: HTMLElement }) {
-    titleEditable = false;
-    if (test) {
-      test.test_name = event.target.innerText;
-      await updateTest(test.test_id, test);
-    }
-  }
-
-  async function updateLength(event: { target: HTMLElement }) {
-    lengthEditable = false;
-    if (test) {
-      test.length = parseInt(event.target.innerText);
-      await updateTest(test.test_id, test);
-    }
-  }
-
-  async function updateBuffer(event: { target: HTMLElement }) {
-    bufferEditable = false;
-    if (test) {
-      test.buffer_time = parseInt(event.target.innerText);
-      await updateTest(test.test_id, test);
     }
   }
 
@@ -294,60 +267,12 @@
   <p>Loading...</p>
 {:else}
   <br />
-  <h1
-    contenteditable={titleEditable}
-    class:editable={titleEditable}
-    onclick={() => {
-      titleEditable = true;
-    }}
-    onblur={async (e) => {
-      await updateTitle(e);
-    }}
-    onkeypress={async (e) => {
-      e.key == "Enter" && (await updateTitle(e));
-    }}
-  >
-    {test.test_name}
+  <h1>
+    {test?.test_name}
   </h1>
-  {#if test.division}
+  {#if test?.division}
     <h2>{test.division}</h2>
   {/if}
-  <div>
-    Test Length (seconds):<br />
-    <p
-      contenteditable={lengthEditable}
-      class:editable={lengthEditable}
-      onclick={() => {
-        lengthEditable = true;
-      }}
-      onblur={async (e) => {
-        await updateLength(e);
-      }}
-      onkeypress={async (e) => {
-        e.key == "Enter" && (await updateLength(e));
-      }}
-    >
-      {test.length}
-    </p>
-  </div>
-  <div>
-    Test Buffer (seconds):<br />
-    <p
-      contenteditable={bufferEditable}
-      class:editable={bufferEditable}
-      onclick={() => {
-        bufferEditable = true;
-      }}
-      onblur={async (e) => {
-        await updateBuffer(e);
-      }}
-      onkeypress={async (e) => {
-        e.key == "Enter" && (await updateBuffer(e));
-      }}
-    >
-      {test.buffer_time}
-    </p>
-  </div>
   <br />
   <Button title="Grade Test" href={$page.url.pathname + "/grade"} />
   <br /><br />
@@ -644,12 +569,6 @@
 <style>
   h1 {
     text-align: center;
-    cursor: pointer;
-  }
-
-  h1.editable {
-    border: 1px dashed #000000;
-    outline: none;
   }
 
   .box {
