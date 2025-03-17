@@ -79,15 +79,17 @@
       emails = data.newInvites;
       invites = data.invites;
 
-      console.log(host);
-
       for (let email of emails) {
         email = email.trim();
 
         const response = await fetch("/api/sendmail", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: generateEmail('admin_invite', { host, host_id, email, admin })
+          body: JSON.stringify({
+            email: email,
+            subject: `Become an Admin for '${host.host_name}' on COMP`,
+            message: generateEmail('admin_invite', { host, host_id, email, admin }),
+          }),
         });
 
         const data = await response.json();
