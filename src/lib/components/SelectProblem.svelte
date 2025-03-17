@@ -21,14 +21,15 @@
     onSelect: any;
     closeModal: any;
     changeNewProblem: any;
+    host_id: number;
   }
 
-  let { open, onSelect, closeModal, changeNewProblem }: Props = $props();
+  let { open, onSelect, closeModal, changeNewProblem, host_id }: Props = $props();
 
   let allProblems = $state();
 
   (async () => {
-    allProblems = await getAllProblems();
+    allProblems = await getAllProblems(host_id);
     allProblems.forEach((problem) => {
       problem.id = problem.problem_id;
     });

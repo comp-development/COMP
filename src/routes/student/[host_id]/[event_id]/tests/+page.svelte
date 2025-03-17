@@ -21,6 +21,24 @@
   import Loading from "$lib/components/Loading.svelte";
   import { supabase } from "$lib/supabaseClient";
   import { user } from "$lib/sessionStore";
+  import TestCard from "$lib/components/TestCard.svelte";
+
+  // Define test interface
+  interface TestData {
+    test_id: string;
+    test_name: string;
+    is_team: boolean;
+    division?: string;
+    opening_time?: string;
+    length: number;
+    buffer_time: number;
+    status?: string;
+    countdown?: string;
+    disabled?: boolean;
+    instructions?: string;
+    start_time?: string;
+    end_time?: string;
+  }
 
   let loading = $state(true);
 
@@ -28,18 +46,19 @@
   let instructions = $state("");
   let name = $state("");
 
-  let currentTime;
+  let currentTime: Date;
 
-  let availableTests = [];
-  let testStatusMap = $state({});
+  let availableTests: TestData[] = [];
+  let testStatusMap: Record<string, TestData> = $state({});
   let tests = $derived(Object.values(testStatusMap));
   let teamId: number | null = null;
   let eventId = Number($page.params.event_id);
 
-  let subscription;
+  let subscription: any;
+  let statusUpdateInterval: any;
 
-  const handleTestUpdate = (payload) => {
-    console.log("TIME PAYLOAD", payload.new);
+  const handleTestUpdate = (payload: any) => {
+    console.log("TEST PAYLOAD", payload.new);
     testStatusMap[payload.new.test_id] = {
       ...testStatusMap[payload.new.test_id],
       ...payload.new,
@@ -47,7 +66,7 @@
     return;
   };
 
-  const handleTestTakerUpdate = (payload) => {
+  const handleTestTakerUpdate = (payload: any) => {
     console.log("TAKER PAYLOAD", payload.new);
     testStatusMap[payload.new.test_id] = {
       ...testStatusMap[payload.new.test_id],
@@ -80,7 +99,7 @@
           event: "INSERT",
           schema: "public",
           table: "test_takers",
-          filter: "student_id=eq." + teamId,
+          filter: "student_id=eq." + $user!.id,
         },
         handleTestTakerUpdate,
       )
@@ -90,6 +109,7 @@
           event: "UPDATE",
           schema: "public",
           table: "tests",
+          filter: "event_id=eq." + eventId,
         },
         handleTestUpdate,
       )
@@ -99,6 +119,7 @@
           event: "INSERT",
           schema: "public",
           table: "tests",
+          filter: "event_id=eq." + eventId,
         },
         handleTestUpdate,
       )
@@ -107,10 +128,10 @@
 
   onDestroy(async () => {
     subscription ?? subscription.unsubscribe();
-    interval ?? clearInterval(interval);
+    statusUpdateInterval ?? clearInterval(statusUpdateInterval);
   });
 
-  const updateStatus = (test) => {
+  const updateStatus = (test: TestData) => {
     currentTime = new Date();
     const newStatus = {
       status: "Closed",
@@ -150,7 +171,7 @@
     } else if (
       isAfter(
         addTime(
-          new Date(test.opening_time),
+          new Date(test.opening_time || ""),
           test.length + test.buffer_time,
           "seconds",
         ),
@@ -168,7 +189,7 @@
               diffBetweenDates(
                 currentTime,
                 addTime(
-                  new Date(test.opening_time),
+                  new Date(test.opening_time || ""),
                   test.length + test.buffer_time,
                   "seconds",
                 ),
@@ -185,11 +206,11 @@
     };
   };
 
-  const interval = setInterval(() => {
+  statusUpdateInterval = setInterval(() => {
     Object.values(testStatusMap).forEach(updateStatus);
   }, 1000);
 
-  async function handleTestStart(test) {
+  async function handleTestStart(test: TestData) {
     console.log("START TEST", test);
     console.log("");
     let res;
@@ -209,7 +230,7 @@
 
   async function getTests() {
     try {
-      const testList = (await getEventTests($page.params.event_id)) ?? [];
+      const testList = (await getEventTests(Number($page.params.event_id), false)) ?? [];
       for (const test of testList) {
         const testTaker =
           (await getTestTaker(
@@ -218,108 +239,92 @@
             test.is_team,
           )) ?? {};
         console.log("TAKER", testTaker, test);
-        //test.start_time = testTaker ? testTaker.start_time : null
-        //test.end_time = testTaker ? testTaker.end_time : null
         testStatusMap[test.test_id] = { ...test, ...testTaker };
         updateStatus(test);
       }
     } catch (error) {
-      handleError(error);
+      handleError(error as Error);
     }
+  }
+
+  function handleInstructionsClick(test: TestData) {
+    open = true;
+    instructions = test.instructions || "";
+    name = test.test_name;
   }
 </script>
 
 <br />
-<h1 style="text-align: center;">Tests</h1>
-<br />
-<div>
-  {#if loading}
-    <Loading />
-  {:else if tests.length === 0}
-    <p>No available tests!</p>
-  {:else}
-    <div class="buttonContainer">
-      {#each Object.values(testStatusMap).sort((a, b) => {
-        // Sort by status priority first
-        const statusOrder = { Continue: 1, Start: 2, "Not Open": 3, Closed: 4 };
-        const statusComparison = statusOrder[a.status] - statusOrder[b.status];
-        if (statusComparison !== 0) return statusComparison;
+<div class="page-container">
+  <h1 class="page-title">Tests</h1>
+  <br />
+  <div>
+    {#if loading}
+      <Loading />
+    {:else if tests.length === 0}
+      <p>No available tests!</p>
+    {:else}
+      <div class="test-grid">
+        {#each tests.sort((a, b) => {
+          // Sort by status priority first
+          const statusOrder: Record<string, number> = { Continue: 1, Start: 2, "Not Open": 3, Closed: 4 };
+          const statusComparison = (statusOrder[a.status || ""] || 0) - (statusOrder[b.status || ""] || 0);
+          if (statusComparison !== 0) return statusComparison;
 
-        // Then sort by opening_time
-        return new Date(a.opening_time) - new Date(b.opening_time);
-      }) as test}
-        <div>
-          <div class="problemContainer">
-            <div>
-              <div
-                class="flex"
-                style="align-items: center; justify-content: left;"
-              >
-                <h4>
-                  {test.test_name}
-                </h4>
-                <Badge rounded color="green"
-                  >{test.is_team ? "Team" : "Individual"}</Badge
-                >
-                {#if test.division}
-                  <Badge rounded color="green">{test.division}</Badge>
-                {/if}
-              </div>
-              {#if test.status == "Not Open" && test.opening_time}
-                <p>
-                  Start Time: {new Date(test.opening_time).toLocaleString([], {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              {/if}
-              <p style="text-align: left;">Duration: {test.length / 60} mins</p>
-            </div>
-            <div class="flex" style="gap: 5px">
-              <p style="margin-right: 5px;">
-                {test.countdown}
-              </p>
-              <Button
-                class="test-button full"
-                disabled={test.disabled}
-                onclick={async (e) => {
-                  e.preventDefault();
-                  await handleTestStart(test);
-                  window.location.href = `./tests/${test.test_id}`;
-                }}
-              >
-                {test.status}
-              </Button>
-              <div class="tooltip-container">
-                <Button
-                  pill
-                  outline
-                  class="!p-2"
-                  onclick={() => {
-                    open = true;
-                    instructions = test.instructions;
-                    name = test.test_name;
-                  }}
-                  disabled={!test.instructions}
-                >
-                  <FileLinesSolid class="w-6 h-6 text-primary-700" />
-                </Button>
-                <span class="tooltip"
-                  >{#if test.instructions}View Instructions{:else}No
-                    Instructions{/if}</span
-                >
-              </div>
-            </div>
+          // Then sort by opening_time
+          const timeA = a.opening_time ? new Date(a.opening_time).getTime() : 0;
+          const timeB = b.opening_time ? new Date(b.opening_time).getTime() : 0;
+          return timeA - timeB;
+        }) as test}
+          <div class="test-card-container">
+            <TestCard 
+              test={test}
+              isHostView={false}
+              onOpenClick={(e) => {
+                if (e) e.preventDefault();
+                handleTestStart(test);
+              }}
+              onInstructionsClick={() => handleInstructionsClick(test)}
+            />
           </div>
-        </div>
-      {/each}
-    </div>
-    <br />
-    <Modal passiveModal bind:open modalHeading={name} on:open on:close>
-      <div style="text-align:left"><MathJax math={instructions} /></div>
-    </Modal>
-  {/if}
+        {/each}
+      </div>
+      <br />
+      <Modal bind:open title={name} on:open on:close>
+        <div style="text-align:left"><MathJax math={instructions} /></div>
+      </Modal>
+    {/if}
+  </div>
 </div>
+
+<style>
+  .page-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .page-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .test-card-container {
+    height: 100%;
+  }
+
+  @media (max-width: 640px) {
+    .test-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

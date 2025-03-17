@@ -43,12 +43,18 @@ export async function getEventInformation(event_id: number) {
   return data;
 }
 
-export async function getEventTests(event_id: number) {
-  let { data, error } = await supabase
+export async function getEventTests(event_id: number, isAdmin: boolean = false) {
+  let query = supabase
     .from("tests")
     .select("*")
-    .eq("event_id", event_id)
-    .order("test_name");
+    .eq("event_id", event_id);
+  
+  // Only filter by visibility if the user is not an admin
+  if (!isAdmin) {
+    query = query.eq("visible", true);
+  }
+  
+  let { data, error } = await query.order("test_name");
   if (error) throw error;
   return data;
 }

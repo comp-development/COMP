@@ -23,13 +23,31 @@
 
   onMount(() => {
     container.innerHTML = tex;
+    // Ensure content is not focusable
+    makeUnfocusable();
   });
+  
   run(() => {
     tex = renderMath(parser.parse(value));
     if (container) {
       container.innerHTML = tex;
+      // Ensure content is not focusable after updates
+      makeUnfocusable();
     }
   });
+  
+  // Make all elements inside unfocusable
+  function makeUnfocusable() {
+    if (!container) return;
+    
+    // Get all focusable elements
+    const elements = container.querySelectorAll('*');
+    elements.forEach(el => {
+      if (el instanceof HTMLElement) {
+        el.setAttribute('tabindex', '-1');
+      }
+    });
+  }
 </script>
 
-<div bind:this={container} style="font-size: {size};"></div>
+<div bind:this={container} style="font-size: {size};" tabindex="-1"></div>

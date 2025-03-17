@@ -19,6 +19,8 @@
     EyeSlashOutline,
     PhoneSolid,
   } from "flowbite-svelte-icons";
+  import { onMount } from "svelte";
+  import CustomDatePicker from "./CustomDatePicker.svelte";
 
   let {
     title = null,
@@ -34,36 +36,103 @@
   let initialResponses: any = $state({});
   let show = $state(false);
   let telephoneValues: any = $state({});
+  let dateValues: any = $state({});
+  
+  // Initialize default values for required fields
+  function initializeResponses() {
+    const allFields = [...fields, ...custom_fields];
+    
+    for (let field of allFields) {
+      const key = field.event_custom_field_id ?? field.name;
+      
+      if (field.custom_field_type === "date") {
+        // Pre-initialize all date fields with a value to avoid binding undefined
+        if (!dateValues[key]) {
+          const now = new Date();
+          const [formattedDate, _] = format_date(now);
+          dateValues[key] = now;
+          newResponses[key] = formattedDate;
+        }
+      }
+    }
+  }
+  
+  // Run initialization once at component startup
+  onMount(() => {
+    initializeResponses();
+  });
 
+  // Then process the actual field values
   $effect(() => {
     for (var field of [...fields, ...custom_fields]) {
       const key = field.event_custom_field_id ?? field.name;
+      
       if (field.custom_field_type == "phone") {
         telephoneValues[key] = format_phone(field?.value)[1];
       } else if (field.custom_field_type == "date") {
-        if (!field.value) {
-          continue;
+        if (field.value) {
+          // If the field has a value, it will be in MM/DD/YYYY format from the database
+          const [rawValue, dateObj] = format_date(field.value);
+          initialResponses[key] = rawValue;
+          newResponses[key] = rawValue;
+          dateValues[key] = dateObj;
         }
-        const date = new Date(field?.value);
-        initialResponses[key] = date;
-        newResponses[key] = date;
         continue;
       }
+      
       initialResponses[key] = field?.value;
       newResponses[key] = field?.value;
     }
   });
   const typePatterns = {
-    date: /^\d{4}-\d{2}-\d{2}$/,
+    date: /^\d{2}\/\d{2}\/\d{4}$/,
     email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     tel: /^\d{10}$/,
   };
 
   const validationMessages = {
-    date: "Please follow the format: YYYY-MM-DD",
+    date: "Please select a date of the form MM/DD/YYYY",
     email: "Please follow the format: username@domain.com",
     tel: "Please follow the format: NNN-NNN-NNNN",
   };
+
+  function format_date(input: Date | string | null | undefined): [string | null, Date | null] {
+    if (!input) {
+      return [null, null];
+    }
+    
+    try {
+      // If input is a string in MM/DD/YYYY format, convert to Date
+      if (typeof input === 'string') {
+        const [month, day, year] = input.split('/').map(Number);
+        if (isNaN(month) || isNaN(day) || isNaN(year)) {
+          return [null, null];
+        }
+        const dateObj = new Date(year, month - 1, day);
+        if (isNaN(dateObj.getTime())) {
+          return [null, null];
+        }
+        return [input, dateObj];
+      }
+      
+      // If input is a Date, convert to MM/DD/YYYY string
+      if (input instanceof Date) {
+        if (isNaN(input.getTime())) {
+          return [null, null];
+        }
+        const month = String(input.getMonth() + 1).padStart(2, '0');
+        const day = String(input.getDate()).padStart(2, '0');
+        const year = input.getFullYear();
+        const formattedString = `${month}/${day}/${year}`;
+        return [formattedString, input];
+      }
+      
+      return [null, null];
+    } catch (e) {
+      console.error('Error formatting date:', e);
+      return [null, null];
+    }
+  }
 
   function format_phone(input: string): [string | null, string | null] {
     if (!input) {
@@ -87,11 +156,12 @@
   }
 
   function validateInput(
-    key,
-    value,
+    key: string,
+    value: any,
     regex: string | RegExp | null,
     error_message: string | null,
   ) {
+    console.log(regex, value);
     if (regex && value) {
       const pattern = new RegExp(regex);
       validationErrors[key] = !pattern.test(value)
@@ -128,7 +198,7 @@
     return !Object.values(validationErrors).some((error) => error !== null);
   }
 
-  async function handleFormSubmit(event) {
+  async function handleFormSubmit(event: Event) {
     event.preventDefault();
 
     if (validateForm()) {
@@ -136,16 +206,16 @@
     }
   }
 
-  function handleCheckboxChange(key, value) {
+  function handleCheckboxChange(key: string, value: string) {
     let selectedValues = (newResponses[key] || "")
       .split(";")
-      .map((v) => v.trim())
-      .filter((v) => v);
+      .map((v: string) => v.trim())
+      .filter((v: string) => v);
 
     value = value.trim();
 
     if (selectedValues.includes(value)) {
-      selectedValues = selectedValues.filter((v) => v !== value);
+      selectedValues = selectedValues.filter((v: string) => v !== value);
     } else {
       selectedValues.push(value);
     }
@@ -192,22 +262,20 @@
               disabled={!field.editable && field?.value != null}
               items={[
                 ...(field.required ? [] : [{ value: null, name: "None" }]),
-                ...(Array.isArray(field.choices) ? field.choices : []).map(
-                  (choice) => ({
-                    value: choice,
-                    name: choice,
-                  }),
-                ),
+                ...field.choices.map((choice: string) => ({
+                  value: choice,
+                  name: choice,
+                })),
               ]}
               bind:value={newResponses[key]}
             />
           {:else if field.custom_field_type === "date"}
-            <Datepicker
-              inputClass="w-full min-w-[300px]"
-              bind:value={newResponses[key]}
+            <CustomDatePicker
+              bind:value={dateValues[key]}
               required={field.required}
               placeholder={field.placeholder}
               disabled={!field.editable && field?.value != null}
+              showLabel={false}
               on:blur={() =>
                 validateInput(
                   key,
@@ -215,22 +283,10 @@
                   typePatterns.date,
                   validationMessages.date,
                 )}
-            />
-          {:else if field.custom_field_type === "datetime"}
-            <input
-              type="datetime-local"
-              class="w-full min-w-[300px] block disabled:cursor-not-allowed disabled:opacity-50 rtl:text-right p-2.5 focus:border-primary-500 focus:ring-primary-500 dark:focus:border-primary-500 dark:focus:ring-primary-500 bg-gray-50 text-gray-900 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400 border border-gray-300 dark:border-gray-500 text-sm rounded-lg"
-              bind:value={newResponses[key]}
-              required={field.required}
-              placeholder={field.placeholder}
-              disabled={!field.editable && field?.value != null}
-              onblur={() =>
-                validateInput(
-                  key,
-                  newResponses[key],
-                  typePatterns.datetime,
-                  validationMessages.datetime,
-                )}
+              on:dateChange={(e) => {
+                const [formattedDate, dateObj] = format_date(e.detail.date);
+                newResponses[key] = formattedDate;
+              }}
             />
           {:else if field.custom_field_type === "email"}
             <Input
@@ -323,8 +379,8 @@
                   disabled={!field.editable && field.value != null}
                   checked={(newResponses[key] || "")
                     .split(";")
-                    .map((x) => x.trim())
-                    .filter((v) => v)
+                    .map((x: string) => x.trim())
+                    .filter((v: string) => v)
                     .includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
