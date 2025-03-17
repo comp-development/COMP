@@ -602,7 +602,7 @@ export async function upsertEventCustomFields(
 
 export async function upsertHostCustomFields(
   custom_fields: any[],
-  table: "orgs" | "students" | "teams",
+  table: "orgs" | "students" | "teams" | "waivers",
   host_id: number,
 ) {
   console.log("upsertHostCustomFields", custom_fields);
