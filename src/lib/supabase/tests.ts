@@ -11,6 +11,18 @@ export async function createTest(testData: {}) {
   return data;
 }
 
+export async function editTest(test_id: number, testData: {}) {
+  const { data, error } = await supabase
+    .from("tests")
+    .update(testData)
+    .eq("test_id", test_id)
+    .select("*")
+    .single();
+
+  if (error) { throw error; }
+  return data;
+}
+
 /** Fetches test problems given a test id. Ordered by problem number
  *
  * @param test_id number

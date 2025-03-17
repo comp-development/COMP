@@ -1,29 +1,15 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
   import { page } from "$app/stores";
-  import {
-    DatePicker,
-    DatePickerInput,
-    TimePicker,
-    TimePickerSelect,
-    SelectItem,
-    TextInput,
-  } from "carbon-components-svelte";
-  import {
-    formatDuration,
-    addTime,
-    isAfter,
-    diffBetweenDates,
-  } from "$lib/dateUtils";
   import Loading from "$lib/components/Loading.svelte";
   import Edit from "carbon-icons-svelte/lib/Edit.svelte";
   import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
   import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
   import { handleError } from "$lib/handleError";
-  import { getThisUser, getEventTests, updateTest, createTest } from "$lib/supabase";
+  import { getThisUser, getEventTests, createTest, editTest } from "$lib/supabase";
   import { Badge, Button, Modal } from "flowbite-svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
-    import toast from "$lib/toast.svelte";
+  import toast from "$lib/toast.svelte";
 
   let loading = $state(true);
   let open = $state(false);
@@ -36,25 +22,13 @@
   });
 
   let user = null;
-  let curTest = $state({});
-  let isInvalid = $state(false);
+  let curTest = $state();
   let isModalOpen = $state(false);
   let newResponses = $state({});
   let validationErrors = $state({});
 
-  function setupTime(date) {
-    let month, day, year, hours, minutes, currentAmPm;
-    year = date.getFullYear();
-    month = String(date.getMonth() + 1).padStart(2, "0"); // months are zero-indexed
-    day = String(date.getDate()).padStart(2, "0");
-    hours = date.getHours();
-    currentAmPm = hours >= 12 ? "pm" : "am";
-    hours = String(hours % 12 || 12).padStart(2, "0");
-    minutes = String(date.getMinutes()).padStart(2, "0");
-    curTest.date = `${month}/${day}/${year}`;
-    curTest.time = `${hours}:${minutes}`;
-    curTest.amPm = currentAmPm;
-  }
+  let editResponses = $state({});
+  let editValidationErrors = $state({});
 
   (async () => {
     user = await getThisUser();
@@ -64,127 +38,12 @@
     loading = false;
   })();
 
-  const updateStatus = (test) => {
-    const currentTime = new Date();
-    const newStatus = {
-      status: "Closed",
-      countdown: "",
-    };
-    if (!test.opening_time || currentTime < new Date(test.opening_time)) {
-      newStatus.status = "Not Open";
-      const timeTillTest = diffBetweenDates(
-        test.opening_time,
-        currentTime,
-        "seconds",
-      );
-      if (test.opening_time && timeTillTest < 86400) {
-        newStatus.countdown = "Time till open: " + formatDuration(timeTillTest);
-      }
-    } else if (
-      isAfter(
-        addTime(
-          new Date(test.opening_time),
-          test.length + test.buffer_time,
-          "seconds",
-        ),
-        currentTime,
-      )
-    ) {
-      newStatus.status = "Open";
-      newStatus.countdown =
-        "Time remaining: " +
-        formatDuration(
-          Math.abs(
-            diffBetweenDates(
-              currentTime,
-              addTime(
-                new Date(test.opening_time),
-                test.length + test.buffer_time,
-                "seconds",
-              ),
-            ),
-          ),
-        );
-    }
-    testStatusMap[test.test_id] = {
-      ...testStatusMap[test.test_id],
-      ...newStatus,
-    };
-  };
-
-  const interval = setInterval(() => {
-    Object.values(testStatusMap).forEach(updateStatus);
-  }, 1000);
-
-  async function handleSubmit() {
-    curTest.buffer_time = parseInt(curTest.buffer_time);
-    let [hours, minutes] = curTest.time.split(":");
-    if (curTest.amPm === "pm" && hours !== "12") {
-      hours = parseInt(hours) + 12;
-    } else if (curTest.amPm === "am" && hours === "12") {
-      hours = "00"; // Handle midnight
-    }
-
-    const splitDate = curTest.date.split("/");
-    console.log(splitDate);
-    const year2 = splitDate[2];
-    const month2 = splitDate[0];
-    const day2 = splitDate[1];
-
-    const dateTimeString = `${year2}-${month2}-${day2}T${hours}:${minutes}:00`;
-    console.log(dateTimeString);
-    const timestampz = new Date(dateTimeString).toISOString(); // Supabase expects ISO format for timestamptz
-    console.log(timestampz);
-    const data = {
-      opening_time: timestampz,
-      buffer_time: curTest.buffer_time,
-    };
-
-    await updateTest(curTest.test_id, data);
-    curTest.opening_time = timestampz;
-    console.log("CUR", curTest);
-    console.log("TEST", testStatusMap[curTest.test_id]);
-    console.log(
-      new Date(curTest.opening_time),
-      curTest.length,
-      curTest.buffer_time,
-    );
-    console.log(
-      addTime(
-        new Date(curTest.opening_time),
-        curTest.length + curTest.buffer_time,
-        "seconds",
-      ),
-    );
-    console.log(
-      formatDuration(
-        Math.abs(
-          diffBetweenDates(
-            new Date(),
-            addTime(
-              new Date(curTest.opening_time),
-              curTest.length + curTest.buffer_time,
-              "seconds",
-            ),
-            "seconds",
-          ),
-        ),
-      ),
-    );
-  }
-
-  function validateInput() {
-    // Check if the value is a nonnegative integer using regex
-    isInvalid = !/^\d+$/.test(curTest.buffer_time);
-  }
-
   async function getTests() {
     try {
       tests = await getEventTests($page.params.event_id);
       console.log(tests);
       for (const test of tests) {
         testStatusMap[test.test_id] = { ...test };
-        updateStatus(test);
       }
     } catch (error) {
       handleError(error);
@@ -201,6 +60,11 @@
     { name: "is_team", label: "Is Team", custom_field_type: "toggle", required: true },
     { name: "visible", label: "Visible", custom_field_type: "toggle", required: true },
     { name: "test_mode", label: "Test Mode", custom_field_type: "dropdown", required: true, choices: ["Standard", "Puzzle", "Guts", "Meltdown"] },
+  ];
+
+  const editFields = [
+    { name: "opening_time", label: "Opening Time", custom_field_type: "datetime", required: true, editable: true },
+    { name: "buffer_time", label: "Buffer Time (seconds)", custom_field_type: "number", required: true, editable: true },
   ];
 
   async function handleFormSubmit(event) {
@@ -227,6 +91,37 @@
     } catch (e) {
       handleError(e);
     }
+  }
+
+  async function handleEditSubmit(event) {
+    try {
+      event.preventDefault();
+
+      const openingDate = new Date(editResponses.opening_time);
+
+      const testData = {
+        ...editResponses,
+        opening_time: openingDate.toISOString()
+      };
+
+      let newTest = await editTest(curTest, testData);
+      testStatusMap[curTest] = newTest;
+      
+      toast.success("Test updated successfully!");
+      open = false;
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
+  function formatDateTimeLocal(dateTimeString: string) {
+    const date = new Date(dateTimeString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 </script>
 
@@ -267,11 +162,11 @@
                 <h4>
                   {test.test_name}
                 </h4>
-                <Badge color="primary" rounded
+                <Badge color="green" rounded
                   >{test.is_team ? "Team" : "Individual"}</Badge
                 >
                 {#if test.division}
-                  <Badge color="primary" rounded>{test.division}</Badge>
+                  <Badge color="green" rounded>{test.division}</Badge>
                 {/if}
               </div>
               {#if test.status == "Not Open" && test.opening_time}
@@ -328,12 +223,9 @@
               <button
                 class="test-button full"
                 onclick={(e) => {
-                  curTest = test;
-                  setupTime(
-                    curTest.openingTime
-                      ? new Date(curTest.openingTime)
-                      : new Date(),
-                  );
+                  editFields[0].value = formatDateTimeLocal(test.opening_time);
+                  editFields[1].value = test.buffer_time;
+                  curTest = test.test_id;
                   open = true;
                 }}
               >
@@ -346,38 +238,18 @@
     </div>
     <br />
     <div class="modalExterior">
-      <Modal bind:open={open} size="lg" autoclose={false}>
+      <Modal bind:open={open} size="md" autoclose={false}>
         <div class="specificModalMax">
           <h3 class="text-xl font-medium text-gray-900 dark:text-white">
-            {name}
+            Edit Opening Time
           </h3>
-          <div>
-            Set open time:
-            <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
-              <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
-            </DatePicker>
-
-            <TimePicker
-              labelText="Time"
-              placeholder="hh:mm"
-              bind:value={curTest.time}
-            >
-              <TimePickerSelect bind:value={curTest.amPm}>
-                <SelectItem value="am" text="AM" />
-                <SelectItem value="pm" text="PM" />
-              </TimePickerSelect>
-            </TimePicker>
-
-            <Button color="primary" onclick={() => { setupTime(new Date()); }} pill>Now</Button>
-
-            <TextInput
-              labelText="Buffer Time (seconds)"
-              bind:value={curTest.buffer_time}
-              invalid={isInvalid}
-              invalidText="Input must be a nonnegative integer"
-              on:input={validateInput}
-            />
-          </div>
+          <CustomForm
+            fields={editFields}
+            bind:newResponses={editResponses}
+            bind:validationErrors={editValidationErrors}
+            handleSubmit={handleEditSubmit}
+            showBorder={false}
+          />
         </div>
       </Modal>
     </div>
