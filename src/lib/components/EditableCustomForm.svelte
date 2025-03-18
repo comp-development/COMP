@@ -33,6 +33,7 @@
     action,
     host_id,
     table,
+    title="Custom Field Builder",
     editableHostFields,
   } = $props();
 
@@ -40,11 +41,39 @@
   let showCustomFieldModal = $state(false);
   let availableCustomFields = $state([]);
   let originalCustomFields = $state([]);
-  let hideComponent = $state(true);
+  let hideComponent = $state(false);
+
+  let inputTypes = [
+    { icon: TextSizeOutline, type: "text", tooltip: "Text" },
+    { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
+    { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
+    { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
+    {
+      icon: ListOutline,
+      type: "multiple_choice",
+      tooltip: "Multiple Choice",
+    },
+    { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
+    { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
+    { icon: PhoneOutline, type: "phone", tooltip: "Number" },
+  ];
 
   async function onLoad() {
-    availableCustomFields = await getCustomFields(host_id, table);
-    originalCustomFields = await JSON.parse(await JSON.stringify(custom_fields));
+    if (table) {
+      availableCustomFields = await getCustomFields(host_id, table);
+      inputTypes = [
+        ...inputTypes,
+        {
+          icon: CirclePlusSolid,
+          type: "add_existing",
+          tooltip: "Add Existing Field",
+          onClick: openCustomFieldModal,
+        },
+      ];
+    }
+    originalCustomFields = await JSON.parse(
+      await JSON.stringify(custom_fields),
+    );
     loading = false;
   }
 
@@ -59,27 +88,6 @@
       handleError(error);
     }
   }
-
-  const inputTypes = [
-    { icon: TextSizeOutline, type: "text", tooltip: "Text" },
-    { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
-    { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
-    { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
-    {
-      icon: ListOutline,
-      type: "multiple_choice",
-      tooltip: "Multiple Choice",
-    },
-    { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
-    { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
-    { icon: PhoneOutline, type: "phone", tooltip: "Number" },
-    {
-      icon: CirclePlusSolid,
-      type: "add_existing",
-      tooltip: "Add Existing Field",
-      onClick: openCustomFieldModal,
-    },
-  ];
 
   // Generate unique IDs for each button
   const buttonIds = inputTypes.map(
@@ -238,7 +246,9 @@
         showConfirmDeleteModal = true;
       } else {
         await action();
-        originalCustomFields = await JSON.parse(await JSON.stringify(custom_fields));
+        originalCustomFields = await JSON.parse(
+          await JSON.stringify(custom_fields),
+        );
         toast.success("Custom fields saved successfully");
       }
     } catch (error) {
@@ -264,7 +274,7 @@
   <p>This component is currently not available for use.</p>
 {:else}
   <div class="space-y-2">
-    <h2>Custom Field Builder</h2>
+    <h2>{title}</h2>
     {#if hasChanges()}
       <Button pill onclick={handleSubmit}>Submit</Button>
     {/if}

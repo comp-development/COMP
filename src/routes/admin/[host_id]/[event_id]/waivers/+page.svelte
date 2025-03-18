@@ -7,8 +7,10 @@
   import Loading from "$lib/components/Loading.svelte";
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
+  import MarkdownRendererForm from "$lib/components/MarkdownRenderForm.svelte";
 
   const event_id = parseInt($page.params.event_id);
+
   let event = $state({});
   let waiverType = $state(null);
   let newWaiverType = $state(null);
@@ -17,10 +19,13 @@
 
   let externalResponses = $state({});
   let externalValidationErrors = $state({});
+  let compResponses = $state({});
+  let compValidationErrors = $state({});
+  let compCustomFields = $state([]);
 
   const externalFields = [
     {
-      key: "instructions",
+      name: "instructions",
       label: "Instructions",
       custom_field_type: "paragraph",
       required: true,
@@ -33,9 +38,26 @@
     },
   ];
 
+  const compFields = [
+    {
+      name: "waiver",
+      label: "Waiver",
+      custom_field_type: "paragraph",
+      required: true,
+      regex: null,
+      placeholder: null,
+      choices: null,
+      editable: true,
+      hidden: false,
+    },
+  ];
+
   (async () => {
     event = await getEventInformation(event_id);
     waiverType = event.waivers?.type || "none";
+    compCustomFields = event.waivers?.custom_fields || [];
+    compFields[0].value = event.waivers?.waiver || "";
+    compResponses.waiver = event.waivers?.waiver || "";
     loading = false;
   })();
 
@@ -58,17 +80,27 @@
   }
 
   async function handleSubmit() {
+    loading = true;
     try {
-      console.log(externalResponses);
+      let updatedWaivers = { type: waiverType };
 
-      event = await updateEvent(event_id, {
-        waivers: { type: waiverType, ...externalResponses },
+      if (waiverType === "external") {
+        updatedWaivers = { ...updatedWaivers, ...externalResponses };
+      } else if (waiverType === "comp") {
+        updatedWaivers = { ...updatedWaivers, ...compResponses };
+      }
+
+      await updateEvent(event_id, {
+        waivers: updatedWaivers,
       });
       
-      toast.success("Waiver type updated successfully");
+      compFields[0].value = compResponses.waiver ?? "";
+
+      toast.success("Waiver details updated successfully");
     } catch (e) {
       handleError(e);
     }
+    loading = false;
   }
 </script>
 
@@ -102,14 +134,37 @@
     </div>
   {:else if waiverType == "external"}
     <CustomForm
-      fields={externalFields}
+      fields={[]}
+      custom_fields={externalFields}
       bind:newResponses={externalResponses}
       bind:validationErrors={externalValidationErrors}
       {handleSubmit}
       showBorder={true}
     />
-  {:else}
-    <p>COMP Waiver is required for this event</p>
+  {:else if waiverType == "comp"}
+    <div class="grid grid-cols-2 gap-4 mr-2">
+      <div>
+        <div class="customForm">
+          <CustomForm
+            fields={[]}
+            custom_fields={compFields}
+            bind:newResponses={compResponses}
+            bind:validationErrors={compValidationErrors}
+            {handleSubmit}
+            showBorder={false}
+          />
+        </div>
+      </div>
+      <div>
+        <MarkdownRendererForm 
+          bind:source={compResponses.waiver} 
+          custom_fields={compCustomFields}
+          bind:newResponses={compResponses}
+          bind:validationErrors={compValidationErrors}
+          handleSubmit={() => {}}
+        />
+      </div>
+    </div>
   {/if}
 {/if}
 
@@ -133,5 +188,27 @@
 
   :global(.waiverDropdown select) {
     margin-top: 0px;
+  }
+
+  .grid {
+    grid-template-columns: 49% 50%;
+  }
+
+  @media only screen and (max-width: 900px) {
+    .grid {
+      grid-template-columns: auto;
+    }
+  }
+
+  :global([role="tabpanel"]) {
+    background-color: transparent;
+  }
+
+  :global(.customForm .registrationForm) {
+    padding: 0px;
+  }
+
+  :global(.customForm textarea) {
+    min-height: 300px;
   }
 </style>
