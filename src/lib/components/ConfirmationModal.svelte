@@ -3,6 +3,7 @@
 
   export let isShown = false;
   export let actionName = "Are you sure?";
+  export let warning = "";
   export let color = "red";
   export let onCancel = () => {};
   export let onConfirm = () => {};
@@ -13,6 +14,7 @@
     <h3 class="text-lg font-medium text-gray-900 dark:text-white">
       Are you sure you want to {actionName}?
     </h3>
+    <p>{warning}</p>
     <br />
     <div class="flex justify-center gap-4">
       <Button color="alternative" onclick={onCancel}>Cancel</Button>

@@ -346,11 +346,14 @@ export async function isEventPublished(event_id: number, host_id: number) {
 }
 
 export async function updateEvent(event_id: number, eventData: any) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("events")
     .update(eventData)
+    .select("*")
     .eq("event_id", event_id);
   if (error) throw error;
+
+  return data;
 }
 
 export async function getEventOrganizations(event_id: number) {
@@ -406,6 +409,7 @@ export async function createEvent(eventData: {
     .insert({
       ...eventData,
       published: eventData.published ?? false,
+      waivers: { "type": "none" }
     })
     .select()
     .single();
