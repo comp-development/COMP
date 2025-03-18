@@ -7,7 +7,7 @@
   import Loading from "$lib/components/Loading.svelte";
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
-  import MarkdownRendererForm from "$lib/components/MarkdownRenderForm.svelte";
+  import MarkdownRenderForm from "$lib/components/MarkdownRenderForm.svelte";
 
   const event_id = parseInt($page.params.event_id);
 
@@ -21,7 +21,6 @@
   let externalValidationErrors = $state({});
   let compResponses = $state({});
   let compValidationErrors = $state({});
-  let compCustomFields = $state([]);
 
   const externalFields = [
     {
@@ -55,7 +54,6 @@
   (async () => {
     event = await getEventInformation(event_id);
     waiverType = event.waivers?.type || "none";
-    compCustomFields = event.waivers?.custom_fields || [];
     compFields[0].value = event.waivers?.waiver || "";
     compResponses.waiver = event.waivers?.waiver || "";
     loading = false;
@@ -156,11 +154,9 @@
         </div>
       </div>
       <div>
-        <MarkdownRendererForm 
+        <MarkdownRenderForm 
           bind:source={compResponses.waiver} 
-          custom_fields={compCustomFields}
           bind:newResponses={compResponses}
-          bind:validationErrors={compValidationErrors}
           handleSubmit={() => {}}
         />
       </div>

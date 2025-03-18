@@ -1,8 +1,13 @@
 <script lang="ts">
-  import { Badge} from "flowbite-svelte";
+  import { Badge, Popover } from "flowbite-svelte";
   import Modal from "./Modal.svelte";
-  import { PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
-  import StudentForm from "./StudentForm.svelte";
+  import {
+    PenSolid,
+    TrashBinSolid,
+    FileCheckSolid,
+    FilePenSolid,
+  } from "flowbite-svelte-icons";
+  import StudentForm from "$lib/components/StudentForm.svelte";
 
   const {
     team_member,
@@ -10,6 +15,8 @@
     onDeleteStudent,
     editableFeatures = true,
   } = $props();
+
+  console.log(team_member);
 
   let isEditModalOpen = $state(false);
 
@@ -30,11 +37,23 @@
 >
   <div class="ml-2">
     <div class="flex">
-      {#if team_member.front_id}
-        <Badge rounded large color="dark">{team_member.front_id}</Badge>
-      {/if}
+      <span id="waiverIcon">
+        <Badge rounded large color={team_member.waiver ? "green" : "red"}>
+          {#if team_member.front_id}
+            {team_member.front_id}
+          {/if}
+          {#if team_member.waiver}
+            <FileCheckSolid class="w-5 h-5" />
+          {:else}
+            <FilePenSolid class="w-5 h-5" />
+          {/if}
+        </Badge>
+      </span>
       <div class="ml-2">
-        <p class="font-bold text-gray-800">
+        <p
+          class="font-bold text-gray-800"
+          style="display: flex; align-items: center; justify-content: left;"
+        >
           {team_member.person.first_name}
           {team_member.person.last_name}
         </p>
@@ -66,9 +85,7 @@
 </div>
 
 <div class="modalExterior secondPlaneModal">
-  <Modal 
-    bind:open={isEditModalOpen}
-  >
+  <Modal bind:open={isEditModalOpen}>
     <div class="specificModalMax">
       <h3 class="text-xl font-medium text-gray-900 dark:text-white">
         Edit Student
@@ -116,6 +133,4 @@
     pointer-events: all;
     z-index: 99999999;
   }
-
 </style>
-
