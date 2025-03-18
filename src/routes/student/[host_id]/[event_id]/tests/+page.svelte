@@ -213,14 +213,13 @@
 
   async function handleTestStart(test: TestData) {
     console.log("START TEST", test);
-    console.log("");
     let res;
     if (!test.start_time || !test.end_time) {
       res = await addTestTaker(test.test_id);
     }
     if (
       !res ||
-      res == "A test taker entry for this taker already exists" ||
+      res == "A test taker entry for this taker already exists." ||
       res == "Inserted test_taker"
     ) {
       window.location.href = `./tests/${test.test_id}`;
