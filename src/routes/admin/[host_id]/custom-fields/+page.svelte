@@ -38,11 +38,12 @@
           table="students"
           editableHostFields={true}
           action={async () => {
-            await upsertHostCustomFields(
+            const results = await upsertHostCustomFields(
               studentCustomFields,
               "students",
               host_id,
             );
+            return results;
           }}
           {host_id}
         />
@@ -71,7 +72,8 @@
           editableHostFields={true}
           table="orgs"
           action={async () => {
-            await upsertHostCustomFields(orgCustomFields, "orgs", host_id);
+            const results = await upsertHostCustomFields(orgCustomFields, "orgs", host_id);
+            return results;
           }}
           {host_id}
         />
@@ -100,7 +102,8 @@
           editableHostFields={true}
           table="teams"
           action={async () => {
-            await upsertHostCustomFields(teamCustomFields, "teams", host_id);
+            const results = await upsertHostCustomFields(teamCustomFields, "teams", host_id);
+            return results;
           }}
           {host_id}
         />

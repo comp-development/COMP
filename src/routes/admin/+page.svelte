@@ -6,13 +6,13 @@
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
   import { getAdmin, getAdminHosts } from "$lib/supabase";
 
-  let student: any = $state();
+  let admin: any = $state();
   let hosts = $state([]);
   let loading = $state(true);
 
   (async () => {
     try {
-      student = await getAdmin($user!.id);
+      admin = await getAdmin($user!.id);
       hosts = await getAdminHosts($user!.id);
       loading = false;
     } catch (error) {
@@ -24,7 +24,7 @@
 {#if loading}
   <Loading />
 {:else}
-  <h1>Welcome, {student.first_name} {student.last_name}</h1>
+  <h1>Welcome, {admin.first_name} {admin.last_name}</h1>
   <h2 style="font-weight: 500">{$user?.email}</h2>
   <br /><br />
   <h3 class="text-xl font-medium text-gray-900 dark:text-white flex">

@@ -16,10 +16,6 @@
   const openEditModal = () => {
     isEditModalOpen = true;
   };
-
-  const closeEditModal = () => {
-    isEditModalOpen = false;
-  };
 </script>
 
 <div
@@ -33,7 +29,7 @@
       {#if team_member.front_id}
         <Badge rounded large color="dark">{team_member.front_id}</Badge>
       {/if}
-      <div class="ml-2">
+      <div class="ml-2 text-left">
         <p class="font-bold text-gray-800">
           {team_member.person.first_name}
           {team_member.person.last_name}
@@ -85,7 +81,7 @@
 </div>
 
 <style>
-  .teamMember {
+  :global(.teamMember) {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -97,7 +93,7 @@
     transition: transform 0.2s ease;
   }
 
-  .teamMember:hover {
+  :global(.teamMember:hover) {
     transform: scale(1.01);
   }
 

@@ -52,7 +52,7 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" type="image/png" href="./favicon.png" />
+  <link rel="icon" type="image/png" href="./favicon.svg" />
   <link
     rel="og:image"
     type="image/png"

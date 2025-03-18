@@ -4,10 +4,11 @@
   import { getEventInformation } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import { Button } from "flowbite-svelte";
+  import Loading from "$lib/components/Loading.svelte";
 
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
-  const join_code = $page.params.joining_team_code;
+  const join_code = $page.params.code;
 
   let loading = $state(true);
   let event_details = $state(null);
@@ -51,8 +52,11 @@
     } else {
       handleError(new Error(json.failure?.reason));
       failure = json.failure!;
+      
       if (failure.reason == "missing payment session") {
         await purchase_ticket();
+      } else if (failure.reason.includes("not registered for this tournament")) {
+        document.location.assign(`/student/${host_id}/${event_id}?team_join_code=${join_code}`);
       }
     }
 
@@ -147,12 +151,13 @@
 </script>
 
 {#if loading}
-  <p>Loading...</p>
+  <Loading />
 {:else}
   <br />
   {#if failure?.reason == "payment not complete"}
     <p>Payment was started but not completed.</p>
-    <Button onclick={event_details.eventbrite_event_id ? openEventbriteWidget : document.location.assign(failure?.stripe_url)} id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'}>Click here to complete payment.</Button>
+    <Button onclick={event_details.eventbrite_event_id ? openEventbriteWidget : document.location.assign(failure?.stripe_url)} id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} pill>Click here to complete payment.</Button>
+    <br />
   {/if}
   {#if failure?.reason == "joined org, insufficient org tickets"}
     <p>
@@ -177,9 +182,10 @@
     <p>Return to the event to open a new payment session.</p>
   {/if}
   {#if failure}
-    <p>Failed to join team.</p>
+    <h2>Failed to Join Team</h2>
+    <p>{failure?.reason}</p>
     <br />
-    <Button href=".." pill>Return to event.</Button>
+    <Button href=".." pill>Return to event</Button>
   {/if}
 {/if}
 

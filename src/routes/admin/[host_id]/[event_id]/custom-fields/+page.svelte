@@ -118,13 +118,15 @@
           table="students"
           editableHostFields={false}
           action={async () => {
-            await upsertEventCustomFields(
+            const results = await upsertEventCustomFields(
               studentCustomFields,
               "students",
               event_id,
             );
+            return results;
           }}
           {host_id}
+          is_event_fields
         />
       </div>
       <div>
@@ -151,9 +153,11 @@
           table="orgs"
           editableHostFields={false}
           action={async () => {
-            await upsertEventCustomFields(orgCustomFields, "orgs", event_id);
+            const results = await upsertEventCustomFields(orgCustomFields, "orgs", event_id);
+            return results;
           }}
           {host_id}
+          is_event_fields
         />
       </div>
       <div>
@@ -180,9 +184,11 @@
           table="teams"
           editableHostFields={false}
           action={async () => {
-            await upsertEventCustomFields(teamCustomFields, "teams", event_id);
+            const results = await upsertEventCustomFields(teamCustomFields, "teams", event_id);
+            return results;
           }}
           {host_id}
+          is_event_fields
         />
       </div>
       <div>

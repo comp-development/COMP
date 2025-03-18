@@ -11,6 +11,7 @@
     Checkbox,
     ButtonGroup,
     InputAddon,
+    Toggle,
   } from "flowbite-svelte";
   import {
     EnvelopeSolid,
@@ -207,7 +208,7 @@
 
   function handleCheckboxChange(key: string, value: string) {
     let selectedValues = (newResponses[key] || "")
-      .split(",")
+      .split(";")
       .map((v: string) => v.trim())
       .filter((v: string) => v);
 
@@ -219,7 +220,7 @@
       selectedValues.push(value);
     }
 
-    newResponses[key] = selectedValues.join(",");
+    newResponses[key] = selectedValues.join(";");
   }
 </script>
 
@@ -233,20 +234,22 @@
       {@const key = field.event_custom_field_id ?? field.name}
       {#if !field.hidden}
         <div class="text-left mb-6">
-          <Label
-            for={key}
-            class="block mb-2"
-            color={validationErrors[key]
-              ? "red"
-              : !field.editable && field?.value != null
-                ? "disabled"
-                : "gray"}
-          >
-            {field.label}
-            {#if field.required}
-              <span class="text-red-600">*</span>
-            {/if}
-          </Label>
+          {#if field.custom_field_type !== "toggle"}
+            <Label
+              for={key}
+              class="block mb-2"
+              color={validationErrors[key]
+                ? "red"
+                : !field.editable && field?.value != null
+                  ? "disabled"
+                  : "gray"}
+            >
+              {field.label}
+              {#if field.required}
+                <span class="text-red-600">*</span>
+              {/if}
+            </Label>
+          {/if}
 
           {#if field.help_text !== null}
             <Helper class="mb-3">{field.help_text}</Helper>
@@ -343,7 +346,9 @@
                 bind:value={newResponses[key]}
                 type={show ? "text" : "password"}
                 placeholder="Password"
-                autocomplete={field.custom_field_type === "new-password" ? "new-password" : "current-password"}
+                autocomplete={field.custom_field_type === "new-password"
+                  ? "new-password"
+                  : "current-password"}
               />
               <InputAddon>
                 <button type="button" onclick={() => (show = !show)}>
@@ -357,31 +362,51 @@
             </ButtonGroup>
           {:else if field.custom_field_type === "multiple_choice"}
             {#each field.choices as choice}
-              <div style="display: flex; align-items: left">
+              <div class="checkbox">
                 <Radio
                   bind:group={newResponses[key]}
                   value={choice}
                   disabled={!field.editable && field.value != null}
-                  >{choice}</Radio
                 >
+                  <p>{choice}</p>
+                </Radio>
               </div>
             {/each}
           {:else if field.custom_field_type === "checkboxes"}
             {#each field.choices as choice}
-              <div style="display: flex; align-items: left">
+              <div class="checkbox">
                 <Checkbox
                   disabled={!field.editable && field.value != null}
                   checked={(newResponses[key] || "")
-                    .split(",")
+                    .split(";")
                     .map((x: string) => x.trim())
                     .filter((v: string) => v)
                     .includes(choice)}
                   on:change={() => handleCheckboxChange(key, choice)}
                 >
-                  {choice}
+                  <p>{choice}</p>
                 </Checkbox>
               </div>
             {/each}
+          {:else if field.custom_field_type === "toggle"}
+            <div class="toggle">
+              <Toggle
+                disabled={!field.editable && field.value != null}
+                checked={newResponses[key]}
+                on:change={() => {
+                  newResponses[key] = !newResponses[key];
+                }}
+              >
+                <svelte:fragment slot="offLabel">
+                  <span>
+                    {field.label}
+                    {#if field.required}
+                      <span class="text-red-600">*</span>
+                    {/if}
+                  </span>
+                </svelte:fragment>
+              </Toggle>
+            </div>
           {:else if field.custom_field_type === "paragraph"}
             <Textarea
               bind:value={newResponses[key]}
@@ -441,6 +466,28 @@
   /* Only apply the border when showBorder is true */
   form.bordered {
     border: 3px solid var(--primary-light);
+  }
+
+  .checkbox {
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: left;
+  }
+
+  :global(.checkbox label) {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  :global(.toggle label) {
+    padding: 0;
+  }
+
+  :global(.checkbox label p) {
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    font-size: 14px;
   }
 
   :global(#datepicker-dropdown) {

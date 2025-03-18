@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { Button, Badge, Tabs, TabItem } from "flowbite-svelte";
+  import { Button, Tabs, TabItem } from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { Alert } from "flowbite-svelte";
@@ -33,8 +33,8 @@
     $state(null);
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
-  import CopyText from "$lib/components/CopyText.svelte";
   import StudentTeam from "$lib/components/StudentTeam.svelte";
+
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
@@ -48,17 +48,6 @@
   let host = $state();
   let selectedOption: "join_org" | "join_team" | "create_team" =
     $state("join_org");
-
-  const afterTeamSubmit = async () => {
-    // If this callback is called, then the student must've been in the event => student_event is non-null.
-    // Also, we assume the TeamForm component created a team => team is not null.
-    await updateStudentTeam(
-      student_event!.student_event_id,
-      team!.team_id,
-      team!.org_id,
-    );
-    student_event!.team = team!;
-  };
 
   const orgJoinSubmit = async (_: Event) => {
     try {
@@ -101,7 +90,7 @@
 
     return async (data: any) => {
       // TODO: check that data has quantity 1.
-      console.log("eventbrite", data)
+      console.log("eventbrite", data);
       let body = {
         event_id,
         host_id: event_details!.host_id,
@@ -133,16 +122,21 @@
     const eventbriteEventId = event_details?.eventbrite_event_id; // Replace with your actual Eventbrite event ID
     if (eventbriteEventId) {
       // Check if the event ID is valid
-       (window as any).EBWidgets.createWidget({
+      (window as any).EBWidgets.createWidget({
         widgetType: "checkout",
         eventId: eventbriteEventId,
         modal: true,
         modalTriggerElementId: "eventbrite-widget-container",
         iFrameContainerId: "modalTriggerElementId",
-        onOrderComplete: await eventbritePurchase(creating_team, joining_team_code),
+        onOrderComplete: await eventbritePurchase(
+          creating_team,
+          joining_team_code,
+        ),
         promoCode: "student",
       });
-      (document.querySelector("#eventbrite-widget-container") as HTMLElement).click();
+      (
+        document.querySelector("#eventbrite-widget-container") as HTMLElement
+      ).click();
     }
   }
 
@@ -189,14 +183,11 @@
 {#if loading}
   <Loading />
 {:else}
-  <script src="https://www.eventbrite.com/static/widgets/eb_widgets.js"></script>
-  <EventDisplay
-    id={event_id}
-    host={host}
-    event={event_details}
-    editable={false}
-  />
-  <hr/>
+  <script
+    src="https://www.eventbrite.com/static/widgets/eb_widgets.js"
+  ></script>
+  <EventDisplay id={event_id} {host} event={event_details} editable={false} />
+  <hr />
   {#if !student_event}
     {#if transaction_stored}
       <p>
@@ -219,8 +210,8 @@
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
             <span class="font-medium">Not assigned to a team!</span>
-            Your registration is not complete until you are assigned to a team - reach out to
-            your coach to assign you to a team.
+            Your registration is not complete until you are assigned to a team -
+            reach out to your coach to assign you to a team.
           </Alert>
         {:else}
           <div class="flex">
@@ -233,16 +224,21 @@
           <div class="teamContainer">
             <StudentTeam
               {event_id}
+              {host_id}
               org_id={team?.org_id}
               team={{
                 ...team,
-                teamMembers: team?.student_event?.map((member: StudentEvent) => ({
-                  ...member,
-                  person: member.student,
-                })),
+                teamMembers: team?.student_event?.map(
+                  (member: StudentEvent) => ({
+                    ...member,
+                    person: member.student,
+                  }),
+                ),
               }}
               showTeamCode={org_event ? false : true}
               editableFeatures={false}
+              user={student}
+              {event_details}
               onDrop={() => {}}
               onDragStart={() => {}}
               onDeleteStudent={() => {}}
@@ -253,11 +249,9 @@
             />
           </div>
         {/if}
-
-        
       </div>
     {:else}
-      <br><br>
+      <br /><br />
       <div class="registrationForm">
         <Tabs tabStyle="pill">
           <TabItem
@@ -299,9 +293,7 @@
               divClass="bg-[var(--background)]"
             >
               <h2>Join Independent Team</h2>
-              <p>
-                Get the code from an already registered team member.
-              </p>
+              <p>Get the code from an already registered team member.</p>
               <CustomForm
                 fields={[
                   {
@@ -322,7 +314,10 @@
                 bind:newResponses={teamJoinFormResponses}
                 bind:validationErrors={teamJoinFormErrors}
                 handleSubmit={() => {
-                  if (event_details?.eventbrite_event_id && !transaction_stored) {
+                  if (
+                    event_details?.eventbrite_event_id &&
+                    !transaction_stored
+                  ) {
                     openEventbriteWidget(
                       false,
                       teamJoinFormResponses["team_join_code"],
@@ -345,22 +340,23 @@
           >
             <h2>Create Independent Team</h2>
             <p>
-              If you're an individual, or you want to create a team independent of an org, then create an independent team.
-            </p><br>
+              If you're an individual, or you want to create a team independent
+              of an org, then create an independent team.
+            </p>
+            <br />
             <div class="flex">
               <Button
-                on:click={()=> {
-                  if (event_details?.eventbrite_event_id && !transaction_stored) {
-                    openEventbriteWidget(
-                      true,
-                      null,
-                    );
+                on:click={() => {
+                  if (
+                    event_details?.eventbrite_event_id &&
+                    !transaction_stored
+                  ) {
+                    openEventbriteWidget(true, null);
                   } else {
                     document.location.assign(
                       `/student/${$page.params.host_id}/${$page.params.event_id}/create-team`,
                     );
                   }
-                  
                 }}
                 pill
               >
@@ -390,6 +386,21 @@
     user={{ ...student, ...$user }}
     {event_id}
     editing={student_event ? true : false}
+    afterSubmit={() => {
+      let org_join_code = $page.url.searchParams.get("org_join_code");
+      if (org_join_code) {
+        document.location.assign(
+          `/student/${$page.params.host_id}/${$page.params.event_id}/join-org/${org_join_code}`,
+        );
+      }
+      
+      let team_join_code = $page.url.searchParams.get("team_join_code");
+      if (team_join_code) {
+        document.location.assign(
+          `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${team_join_code}`,
+        );
+      }
+    }}
   />
 {/if}
 
