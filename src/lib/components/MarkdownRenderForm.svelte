@@ -13,6 +13,8 @@
   let signatures = $state({});
   let isModalOpen = $state(false);
   let activeModalId = $state(null);
+  let drawing = $state(false);
+  let canvasElements = $state({});
 
   function parseMarkdownWithInputs(markdown) {
     let regex =
@@ -35,13 +37,21 @@
           }
 
           if (!(id in newResponses)) {
-            newResponses[id] = null;
+            if (inputType == "signature") {
+              newResponses[id] = {
+                name: null,
+                signature: null,
+                checked: false,
+              };
+            } else {
+              newResponses[id] = null;
+            }
           }
 
           if (inputType == "signature") {
             signatures[id] = {
-              name: newResponses[id] ?? "",
-              checked: newResponses[id] ? true : false,
+              name: newResponses[id].name ?? "",
+              checked: newResponses[id].checked ? true : false,
             };
           }
 
@@ -67,56 +77,83 @@
 
   let parsedMarkdown = parseMarkdownWithInputs(source ?? "");
 
-  function setupSignatureCanvas(id) {
-    let canvas = document.getElementById(id);
-    if (!canvas) return;
+  function createDrawing() {
+    let ctx = canvasElements[activeModalId].getContext("2d");
 
-    let ctx = canvas.getContext("2d");
-    let drawing = false;
+    if (
+      newResponses[activeModalId] &&
+      newResponses[activeModalId].signature?.startsWith("data:image")
+    ) {
+      let img = new Image();
+      img.src = newResponses[activeModalId].signature;
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0);
+      };
+    }
+  }
 
-    function startDrawing(event) {
+  function startDrawing(event) {
+    let ctx = canvasElements[activeModalId].getContext("2d");
+
+    ctx.lineWidth = 4;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "black";
+
+    if (event.button === 0) {
       drawing = true;
       ctx.beginPath();
-      ctx.moveTo(event.offsetX, event.offsetY);
     }
+  }
 
-    function draw(event) {
-      if (!drawing) return;
-      ctx.lineTo(event.offsetX, event.offsetY);
-      ctx.stroke();
-    }
+  function draw(event) {
+    if (!drawing) return;
 
-    function stopDrawing() {
-      drawing = false;
-    }
+    let ctx = canvasElements[activeModalId].getContext("2d");
 
-    // Attach event listeners
-    canvas.addEventListener("mousedown", startDrawing);
-    canvas.addEventListener("mousemove", draw);
-    canvas.addEventListener("mouseup", stopDrawing);
-    canvas.addEventListener("mouseleave", stopDrawing);
+    let rect = canvasElements[activeModalId].getBoundingClientRect();
+    let scaleX = canvasElements[activeModalId].width / rect.width;
+    let scaleY = canvasElements[activeModalId].height / rect.height;
+
+    let x = (event.clientX - rect.left) * scaleX;
+    let y = (event.clientY - rect.top) * scaleY;
+
+    ctx.lineTo(x, y);
+    ctx.moveTo(x, y);
+    ctx.stroke();
+  }
+
+  function clearDrawing() {
+    let ctx = canvasElements[activeModalId].getContext("2d");
+    ctx.clearRect(
+      0,
+      0,
+      canvasElements[activeModalId].width,
+      canvasElements[activeModalId].height,
+    );
+  }
+
+  function stopDrawing() {
+    drawing = false;
   }
 
   function checkSignature() {
     try {
-      let canvas = document.getElementById(activeModalId);
+      let blank = document.createElement("canvas");
+      blank.width = canvasElements[activeModalId].width;
+      blank.height = canvasElements[activeModalId].height;
 
-      if (canvas) {
-        let ctx = canvas.getContext("2d");
-        let blank = document.createElement("canvas");
-        blank.width = canvas.width;
-        blank.height = canvas.height;
-
-        if (canvas.toDataURL() !== blank.toDataURL()) {
-          newResponses[activeModalId] = canvas.toDataURL();
-          toast.success("Signature present!");
-          isModalOpen = false;
-          return;
-        }
+      if (canvasElements[activeModalId].toDataURL() !== blank.toDataURL()) {
+        newResponses[activeModalId] = {
+          signature: canvasElements[activeModalId].toDataURL(),
+        };
+        toast.success("Signature present!");
+        isModalOpen = false;
+        return;
       }
 
       if (signatures[activeModalId].name && signatures[activeModalId].checked) {
-        newResponses[activeModalId] = signatures[activeModalId].name;
+        newResponses[activeModalId] = signatures[activeModalId];
         toast.success("Signature present!");
         isModalOpen = false;
         return;
@@ -161,15 +198,26 @@
             </span>
           {:else if part.type === "signature"}
             <Button
-              color={newResponses[part.id] ? "green" : "red"}
+              color={(newResponses[part.id].name &&
+                newResponses[part.id].checked) ||
+              newResponses[part.id].signature
+                ? "green"
+                : "red"}
               onclick={() => {
                 isModalOpen = true;
                 activeModalId = part.id;
-                setupSignatureCanvas(part.id);
+
+                setTimeout(() => {
+                  clearDrawing();
+                  createDrawing();
+                }, 100);
               }}
               size="xs"
             >
-              {newResponses[part.id] ? "Signed" : "Sign"}
+              {(newResponses[part.id].name && newResponses[part.id].checked) ||
+              newResponses[part.id].signature
+                ? "Signed"
+                : "Sign"}
             </Button>
 
             <div class="modalExterior">
@@ -181,11 +229,20 @@
                     Signature
                   </h3>
                   <div class="flex mb-3">
-                    <span class="signature-input">
-                      <canvas id={activeModalId} width="100%" height="100px"
+                    <div class="signature-input">
+                      <canvas
+                        id={activeModalId}
+                        bind:this={canvasElements[activeModalId]}
+                        width="400px"
+                        height="100px"
+                        onmousedown={startDrawing}
+                        onmousemove={draw}
+                        onmouseleave={stopDrawing}
+                        onmouseup={stopDrawing}
                       ></canvas>
-                    </span>
+                    </div>
                   </div>
+                  <button onclick={clearDrawing}>Clear Drawing</button>
                   <h4 class="text-center mb-3">OR</h4>
                   <div class="flex mb-3">
                     <div>
