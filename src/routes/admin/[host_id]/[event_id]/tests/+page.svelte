@@ -359,7 +359,7 @@
       visible: false,
       length: 3600,
       buffer_time: 300,
-      test_mode: "standard",
+      test_mode: "Standard",
       instructions: ""
     } as TestData;
   }
