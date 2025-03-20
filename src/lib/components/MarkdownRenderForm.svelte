@@ -10,6 +10,7 @@
   let {
     source = $bindable(""),
     newResponses = $bindable({}),
+    logo = null,
     handleSubmit = () => {},
   } = $props();
 
@@ -151,14 +152,12 @@
         newResponses[activeModalId] = {
           signature: canvasElements[activeModalId].toDataURL(),
         };
-        toast.success("Signature present!");
         isModalOpen = false;
         return;
       }
 
       if (signatures[activeModalId].name && signatures[activeModalId].checked) {
         newResponses[activeModalId] = signatures[activeModalId];
-        toast.success("Signature present!");
         isModalOpen = false;
         return;
       }
@@ -171,15 +170,13 @@
 
   async function generatePDF() {
     try {
-      loading = true;
-
       // Create iframe
       const iframe = document.createElement("iframe");
       iframe.style.position = "absolute";
       iframe.style.left = "-9999px";
       iframe.style.visibility = "hidden";
       iframe.width = "859px";
-      iframe.height = "auto";
+      iframe.height = "fit-content";
 
       document.body.appendChild(iframe);
 
@@ -187,23 +184,25 @@
       doc.open();
       doc.write(`
         <html>
-        <head>
-          <style>
-            body {
-              width: 859px;
-              padding: 40px;
-              font-size: 20px;
-              box-sizing: border-box;
-              font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-              line-height: 1.5;
-              overflow: hidden;
-              text-align: left;
-            }
-          </style>
-        </head>
-        <body>
-          ${marked(source)}
-        </body>
+          <head>
+            <style>
+              body {
+                width: 859px;
+                padding: 0 40px;
+                font-size: 20px;
+                box-sizing: border-box;
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                line-height: 1.5;
+                overflow: hidden;
+                text-align: left;
+              }
+            </style>
+          </head>
+          <body>
+            <img src=${logo} style="width: 120px; height: auto; margin: 0 auto; display: block;" />
+            ${marked(source)}
+            <br />
+          </body>
         </html>
         `);
       doc.close();
@@ -214,13 +213,13 @@
         /:field{\s*#(\w+)\s+type="(\w+)"(?:\s+placeholder="([^"]+)")?\s*}/g,
         (match, id, type, placeholder) => {
           if (type === "signature" && newResponses[id]?.signature) {
-            return `<img src="${newResponses[id]?.signature}" style="border:1px solid black;width:200px;height:50px;">`;
+            return `<img src="${newResponses[id]?.signature}" style="border:1px solid black;width:200px;height:50px;display: inline-block; vertical-align: middle;">`;
           } else {
             let text =
               type === "signature"
                 ? newResponses[id]?.name
                 : (newResponses[id] ?? placeholder ?? "________");
-            return `<span style="border-bottom:1px solid black;padding:2px;">${text}</span>`;
+            return `<span style="border:1px solid black;padding:10px;padding-top: 0px;">${text}</span>`;
           }
         },
       );
@@ -230,7 +229,7 @@
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Capture iframe content
-      const canvas = await html2canvas(doc.body, {
+      const fullCanvas = await html2canvas(doc.body, {
         allowTaint: true,
         useCORS: true,
         scale: 2,
@@ -238,8 +237,7 @@
 
       document.body.removeChild(iframe); // Remove iframe after capture
 
-      // Generate PDF
-      const imgData = canvas.toDataURL("image/png");
+      // PDF Configuration
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "px",
@@ -248,34 +246,63 @@
 
       const margin = 50;
       const pageWidth = pdf.internal.pageSize.width;
-      const pageHeight = pdf.internal.pageSize.height - margin;
+      const pageHeight = 2050;
       const imgWidth = pageWidth;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let yOffset = 0;
+      let pageNum = 0;
+      const ctx = fullCanvas.getContext("2d");
 
-      let yPosition = 0;
+      while (yOffset < fullCanvas.height) {
+        let remainingHeight = fullCanvas.height - yOffset;
+        let sliceHeight = Math.min(pageHeight - margin, remainingHeight);
 
-      pdf.addImage(imgData, "PNG", 0, yPosition, imgWidth, imgHeight);
+        // Adjust sliceHeight to find a natural line break between two lines
+        for (let y = yOffset + sliceHeight; y > yOffset + 10; y--) {
+          let pixelRow = ctx.getImageData(0, y, fullCanvas.width, 1).data;
+          let isEmptyRow = pixelRow.every((value) => value > 240); // Adjust for near-white background
 
-      if (imgHeight > pageHeight) {
-        let currentHeight = imgHeight;
-        let startY = 0;
+          if (isEmptyRow) {
+            sliceHeight = y - yOffset; // Adjust sliceHeight to this line break
+            break;
+          }
+        }
 
-        while (currentHeight > pageHeight) {
+        // Create a new slice canvas for this page
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = fullCanvas.width;
+        sliceCanvas.height = sliceHeight;
+
+        const sliceCtx = sliceCanvas.getContext("2d");
+        sliceCtx.drawImage(fullCanvas, 0, -yOffset);
+
+        // Convert the slice to an image
+        const imgData = sliceCanvas.toDataURL("image/png");
+
+        pdf.addImage(
+          imgData,
+          "PNG",
+          0,
+          margin / 2,
+          imgWidth,
+          (sliceHeight * imgWidth) / sliceCanvas.width,
+        );
+
+        yOffset += sliceHeight;
+        pageNum++;
+
+        if (yOffset + 10 < fullCanvas.height) {
           pdf.addPage();
-          startY += (pageHeight - margin);
-          currentHeight -= (pageHeight - margin);
-          pdf.addImage(imgData, "PNG", 0, -startY, imgWidth, imgHeight);
         }
       }
 
-      pdf.save("waiver.pdf");
+      return pdf.output('blob');
     } catch (error) {
       handleError(error);
     }
-    loading = false;
   }
 
-  function handleSubmitWaiver() {
+  async function handleSubmitWaiver() {
+    loading = true;
     try {
       for (const key in newResponses) {
         if (newResponses[key] === null || newResponses[key] === "") {
@@ -283,12 +310,12 @@
         }
       }
 
-      generatePDF();
-
-      //handleSubmit(pdf);
+      let pdf = await generatePDF();
+      await handleSubmit(pdf);
     } catch (e) {
       handleError(e);
     }
+    loading = false;
   }
 </script>
 

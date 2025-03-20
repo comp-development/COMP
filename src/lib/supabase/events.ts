@@ -309,13 +309,24 @@ export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
     .select(
-      "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+      "*, student:students(*), team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
     )
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();
   console.log("getStudentEvent", data);
   if (error) throw error;
+  return data;
+}
+
+export async function updateStudentEvent(student_event_id: number, studentEventData: {}) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update(studentEventData)
+    .select("*")
+    .eq("student_event_id", student_event_id);
+  if (error) throw error;
+
   return data;
 }
 

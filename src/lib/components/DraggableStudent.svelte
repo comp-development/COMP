@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Badge, Popover } from "flowbite-svelte";
+  import { Badge } from "flowbite-svelte";
   import Modal from "./Modal.svelte";
   import {
     PenSolid,
@@ -8,6 +8,7 @@
     FilePenSolid,
   } from "flowbite-svelte-icons";
   import StudentForm from "$lib/components/StudentForm.svelte";
+  import { user } from "$lib/sessionStore";
 
   const {
     team_member,
