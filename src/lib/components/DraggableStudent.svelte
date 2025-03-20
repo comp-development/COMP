@@ -15,6 +15,7 @@
     onDragStart,
     onDeleteStudent,
     editableFeatures = true,
+    waiverType="none"
   } = $props();
 
   console.log(team_member);
@@ -39,14 +40,16 @@
   <div class="ml-2">
     <div class="flex">
       <span id="waiverIcon">
-        <Badge rounded large color={team_member.waiver ? "green" : "red"}>
+        <Badge rounded large color={waiverType != "none" ? (team_member.waiver ? "green" : "red") : "dark"}>
           {#if team_member.front_id}
             {team_member.front_id}
           {/if}
-          {#if team_member.waiver}
-            <FileCheckSolid class="w-5 h-5" />
-          {:else}
-            <FilePenSolid class="w-5 h-5" />
+          {#if waiverType != "none"}
+            {#if team_member.waiver}
+              <FileCheckSolid class="w-5 h-5" />
+            {:else}
+              <FilePenSolid class="w-5 h-5" />
+            {/if}
           {/if}
         </Badge>
       </span>

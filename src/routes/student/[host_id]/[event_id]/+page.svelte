@@ -261,6 +261,7 @@
                 ),
               }}
               showTeamCode={org_event ? false : true}
+              waiverType={event_details?.waivers.type ?? "none"}
               editableFeatures={false}
               onDrop={() => {}}
               onDragStart={() => {}}
