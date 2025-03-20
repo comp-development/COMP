@@ -85,7 +85,7 @@
     visible: false,
     length: 3600,
     buffer_time: 300,
-    test_mode: "standard",
+    test_mode: "Standard",
     instructions: ""
   } as TestData);
   let dateValue: Date = $state(new Date());
@@ -640,8 +640,10 @@
                 <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
                 <div class="w-64">
                   <Select class="w-full" bind:value={newTest.test_mode}>
-                    <option value="standard">Standard</option>
-                    <option value="guts">Guts</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Guts">Guts</option>
+                    <option value="Guts">Guts</option>
+                    <option value="Meltdown">Meltdown</option>
                   </Select>
                 </div>
               </div>
