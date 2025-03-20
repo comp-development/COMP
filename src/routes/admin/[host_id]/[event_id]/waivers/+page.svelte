@@ -86,12 +86,32 @@
         updatedWaivers = { ...updatedWaivers, ...externalResponses };
       } else if (waiverType === "comp") {
         updatedWaivers = { ...updatedWaivers, ...compResponses };
+
+        const fieldRegex = /:field{#(\w+)/g;
+        let matches = [...(compResponses.waiver?.matchAll(fieldRegex) || [])];
+        let fieldIds = matches.map((match) => match[1]);
+
+        // Check for duplicates
+        let uniqueIds = new Set();
+        let duplicateIds = fieldIds.filter((id) => {
+          if (uniqueIds.has(id)) {
+            return true;
+          }
+          uniqueIds.add(id);
+          return false;
+        });
+
+        if (duplicateIds.length > 0) {
+          throw new Error(
+            `Duplicate field IDs found: ${duplicateIds.join(", ")}. Each field ID must be unique.`,
+          );
+        }
       }
 
       await updateEvent(event_id, {
         waivers: updatedWaivers,
       });
-      
+
       compFields[0].value = compResponses.waiver ?? "";
 
       toast.success("Waiver details updated successfully");
@@ -154,8 +174,8 @@
         </div>
       </div>
       <div>
-        <MarkdownRenderForm 
-          bind:source={compResponses.waiver} 
+        <MarkdownRenderForm
+          bind:source={compResponses.waiver}
           bind:newResponses={compResponses}
           handleSubmit={() => {}}
         />

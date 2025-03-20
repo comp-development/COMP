@@ -52,7 +52,7 @@
     host = await getHostInformation(host_id);
     student_event = await getStudentEvent($user.id, event_id);
 
-    if (!event.waiver || event.waiver.type == "none" || student_event.waiver) {
+    if (!event.waivers || event.waivers.type == "none" || student_event.waiver) {
       toast.success("Waiver is already completed or does not exist for this event");
       document.location.href = `/student/${host_id}/${event_id}`;
       return;

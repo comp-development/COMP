@@ -160,6 +160,7 @@
     <DraggableStudent
       {team_member}
       {onDragStart}
+      {event_id}
       {waiverType}
       {onDeleteStudent}
       {editableFeatures}

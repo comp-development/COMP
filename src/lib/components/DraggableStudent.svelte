@@ -13,21 +13,16 @@
   const {
     team_member,
     onDragStart,
+    event_id,
     onDeleteStudent,
     editableFeatures = true,
     waiverType="none"
   } = $props();
 
-  console.log(team_member);
-
   let isEditModalOpen = $state(false);
 
   const openEditModal = () => {
     isEditModalOpen = true;
-  };
-
-  const closeEditModal = () => {
-    isEditModalOpen = false;
   };
 </script>
 
@@ -40,18 +35,20 @@
   <div class="ml-2">
     <div class="flex">
       <span id="waiverIcon">
-        <Badge rounded large color={waiverType != "none" ? (team_member.waiver ? "green" : "red") : "dark"}>
-          {#if team_member.front_id}
-            {team_member.front_id}
-          {/if}
-          {#if waiverType != "none"}
-            {#if team_member.waiver}
-              <FileCheckSolid class="w-5 h-5" />
-            {:else}
-              <FilePenSolid class="w-5 h-5" />
+        <a href={(waiverType != "none" && $user.id == team_member.student_id) ? (team_member.waiver ?? `./${event_id}/waiver`) : ""}>
+          <Badge rounded large color={waiverType != "none" ? (team_member.waiver ? "green" : "red") : "dark"}>
+            {#if team_member.front_id}
+              {team_member.front_id}
             {/if}
-          {/if}
-        </Badge>
+            {#if waiverType != "none"}
+              {#if team_member.waiver}
+                <FileCheckSolid class="w-5 h-5" />
+              {:else}
+                <FilePenSolid class="w-5 h-5" />
+              {/if}
+            {/if}
+          </Badge>
+        </a>
       </span>
       <div class="ml-2">
         <p
