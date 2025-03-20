@@ -10,9 +10,9 @@
   let newResponses = $state({});
   const event_id = parseInt($page.params.event_id);
 
-  function handleSubmit() {
+  function handleSubmit(pdf) {
     try {
-      // To be implemented
+      // To be implemented -> save to supabase
     } catch (e) {
       handleError(e);
     }
