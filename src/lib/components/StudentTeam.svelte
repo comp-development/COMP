@@ -25,6 +25,7 @@
     studentsWithoutTeams = $bindable(),
     maxTeamSize,
     handleDeleteTeam,
+    waiverType="none",
     showDeleteTeamConfirmation = $bindable(),
     deleteTeamId = $bindable(),
   } = $props();
@@ -159,6 +160,8 @@
     <DraggableStudent
       {team_member}
       {onDragStart}
+      {event_id}
+      {waiverType}
       {onDeleteStudent}
       {editableFeatures}
     />

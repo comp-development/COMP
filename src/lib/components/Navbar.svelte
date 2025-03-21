@@ -53,6 +53,7 @@
   const adminEventPages = [
     { name: "Home", route: "" },
     { name: "Tests", route: "tests" },
+    { name: "Waivers", route: "waivers" },
     { name: "Custom Fields", route: "custom-fields" },
   ];
 

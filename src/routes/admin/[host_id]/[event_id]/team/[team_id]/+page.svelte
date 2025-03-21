@@ -73,6 +73,7 @@
       org_id={team?.org_id}
       {team}
       editableFeatures={true}
+      waiverType={event_details?.waivers.type ?? "none"}
       bind:studentsWithoutTeams
       onDrop={() => {}}
       onDragStart={() => {}}
