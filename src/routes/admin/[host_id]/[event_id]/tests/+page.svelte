@@ -395,7 +395,7 @@
       <div class="text-center">
         <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-auto flex items-center"
-          on:click={() => openTestModal(false)}
+          onclick={() => openTestModal(false)}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
@@ -405,7 +405,7 @@
       <div class="flex justify-between items-center mb-6">
         <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
-          on:click={() => openTestModal(false)}
+          onclick={() => openTestModal(false)}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
@@ -526,13 +526,13 @@
           <div class="flex justify-center gap-4 mt-8">
             <button 
               class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeTestModal}
+              onclick={closeTestModal}
             >
               Cancel
             </button>
             <button 
               class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={saveTestAndClose}
+              onclick={saveTestAndClose}
             >
               {isEditMode ? 'Save' : 'Create'}
             </button>
