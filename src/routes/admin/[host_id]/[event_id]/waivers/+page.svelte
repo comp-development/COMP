@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import { Label, Select, Toggle } from "flowbite-svelte";
   import { getEventInformation, resetStudentWaivers, updateEvent } from "$lib/supabase";
   import { page } from "$app/stores";
@@ -8,20 +8,31 @@
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import MarkdownRenderForm from "$lib/components/MarkdownRenderForm.svelte";
-    import { updated } from "$app/state";
+  import { updated } from "$app/state";
 
   const event_id = parseInt($page.params.event_id);
 
-  let event = $state({});
-  let waiverType = $state(null);
-  let newWaiverType = $state(null);
+  // Define the event type
+  type EventType = {
+    waivers?: {
+      type?: string;
+      requireWaivers?: boolean;
+      waiver?: string;
+      instructions?: string;
+    };
+    [key: string]: any;
+  };
+
+  let event = $state<EventType>({});
+  let waiverType = $state<string | null>(null);
+  let newWaiverType = $state<string | null>(null);
   let showDeleteModal = $state(false);
   let loading = $state(false);
   let requireWaivers = $state(false);
 
-  let externalResponses = $state({});
+  let externalResponses = $state<{instructions?: string; [key: string]: any}>({});
   let externalValidationErrors = $state({});
-  let compResponses = $state({});
+  let compResponses = $state<{waiver?: string; [key: string]: any}>({});
   let compValidationErrors = $state({});
 
   const externalFields = [
@@ -32,7 +43,7 @@
       required: true,
       regex: null,
       placeholder: null,
-      value: null,
+      value: null as string | null,
       choices: null,
       editable: true,
       hidden: false,
@@ -47,7 +58,7 @@
       required: true,
       regex: null,
       placeholder: null,
-      value: null,
+      value: null as string | null,
       choices: null,
       editable: true,
       hidden: false,
@@ -87,8 +98,12 @@
 
       newWaiverType = null;
       toast.success("Waiver type updated successfully");
-    } catch (e) {
-      handleError(e);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        handleError(e);
+      } else {
+        handleError(new Error(String(e)));
+      }
     }
     showDeleteModal = false;
     loading = false;
@@ -109,8 +124,12 @@
       });
 
       toast.success("Setting updated successfully");
-    } catch (e) {
-      handleError(e);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        handleError(e);
+      } else {
+        handleError(new Error(String(e)));
+      }
     }
   }
 
@@ -156,8 +175,12 @@
       }
 
       toast.success("Waiver details updated successfully");
-    } catch (e) {
-      handleError(e);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        handleError(e);
+      } else {
+        handleError(new Error(String(e)));
+      }
     }
     loading = false;
   }
@@ -180,8 +203,10 @@
       ]}
       value={waiverType}
       on:change={(event) => {
-        newWaiverType = event.target.value;
-        event.target.value = waiverType;
+        if (event.target && event.target instanceof HTMLSelectElement) {
+          newWaiverType = event.target.value;
+          event.target.value = waiverType || '';
+        }
         showDeleteModal = true;
       }}
     />
@@ -227,6 +252,7 @@
             bind:source={compResponses.waiver}
             newResponses={{}}
             handleSubmit={() => {}}
+            isAdmin={true}
           />
         </div>
       </div>
