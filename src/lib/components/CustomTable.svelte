@@ -1,4 +1,7 @@
 <script lang="ts">
+    import { handleError } from "$lib/handleError";
+  import { updateStudentEvent } from "$lib/supabase";
+    import toast from "$lib/toast.svelte";
   import {
     Table,
     TableBody,
@@ -18,20 +21,20 @@
     Modal,
     Toggle,
   } from "flowbite-svelte";
-  
+
   // Import Flowbite Svelte Icons
-  import { 
-    FilterSolid, 
-    CloseOutline, 
-    PlusOutline, 
-    CaretDownSolid, 
+  import {
+    FilterSolid,
+    CloseOutline,
+    PlusOutline,
+    CaretDownSolid,
     CaretUpSolid,
     TableRowOutline,
     TableColumnOutline,
-    ClockSolid
+    ClockSolid,
   } from "flowbite-svelte-icons";
-  
-  import { onMount } from 'svelte';
+
+  import { onMount } from "svelte";
   // Using custom icons instead of svelte-heros-v2 to avoid dependency issues
 
   // Props definitions using runes API - updated to use arrays
@@ -41,30 +44,33 @@
       key: string;
       label: string;
       visible: boolean;
-      format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+      format?: (
+        value: any,
+        row: any,
+      ) => { text: string; isBadge: boolean; color?: string } | string;
       searchable?: boolean;
-      dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for sorting
+      dataType?: "string" | "number" | "date" | "boolean" | "link" | "checked"; // Added dataType for sorting
     }[];
-    customFields: { 
-      custom_field_id: number; 
-      label: string; 
+    customFields: {
+      custom_field_id: number;
+      label: string;
       key: string;
-      dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for custom fields
+      dataType?: "string" | "number" | "date" | "boolean" | "link" | "checked"; // Added dataType for custom fields
     }[];
-    entityType: 'student' | 'team' | 'org';
+    entityType: "student" | "team" | "org";
     isLoading: boolean;
     event_id: number;
     event_name?: string; // Added event_name as an optional prop
     idField?: string; // Field to use as unique ID, defaults to primary key of entity
   }>();
 
-  console.log("PROPS", props)
+  console.log("PROPS", props);
 
   // Internal states
   let internalVisibleColumns = $state<Record<string, boolean>>({});
   let sortColumn = $state<string | null>(null);
-  let sortDirection = $state<'asc' | 'desc'>('asc');
-  
+  let sortDirection = $state<"asc" | "desc">("asc");
+
   // Get the ID field to use for each row
   const idField = $derived(props.idField || `${props.entityType}_id`);
 
@@ -75,10 +81,10 @@
     operator: string;
     value: string;
   }
-  
+
   let filters = $state<FilterCondition[]>([]);
   let pendingFilters = $state<FilterCondition[]>([]);
-  let filterText = $state('');
+  let filterText = $state("");
   let showColumnDropdown = $state(false);
   let activeFilterId = $state<string | null>(null);
   let showFilterEditor = $state(false);
@@ -88,18 +94,21 @@
     key: string;
     label: string;
     visible: boolean;
-    type: 'regular' | 'custom';
+    type: "regular" | "custom";
     displayKey: string;
     dataKey: string;
     displayLabel: string;
     custom_field_id?: number;
-    format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+    format?: (
+      value: any,
+      row: any,
+    ) => { text: string; isBadge: boolean; color?: string } | string;
     searchable?: boolean;
-    dataType?: 'string' | 'number' | 'date' | 'boolean';
+    dataType?: "string" | "number" | "date" | "boolean" | "link" | "checked";
   }
 
   let allColumns = $state<UnifiedColumn[]>([]);
-  
+
   // Export settings
   let exportVisibleColumnsOnly = $state(false);
   let exportFilteredRowsOnly = $state(false);
@@ -108,22 +117,22 @@
     // Map regular columns
     const regularColumns = props.columns.map((column: any) => ({
       ...column,
-      type: 'regular' as const,
+      type: "regular" as const,
       displayKey: column.key, // The key as displayed/used in the component
       dataKey: column.key, // The key used to access data in the row object
-      displayLabel: column.label // The label displayed in the header
+      displayLabel: column.label, // The label displayed in the header
     }));
-    
+
     // Map custom fields
     const customFieldColumns = props.customFields.map((field: any) => ({
       ...field,
-      type: 'custom' as const,
+      type: "custom" as const,
       displayKey: `custom_field.${field.key}`, // The key as displayed/used in the component
       dataKey: `custom_field.${field.key}`, // The key used to access data in the row object
       displayLabel: field.key, // The label displayed in the header
-      visible: true // Custom fields are visible by default
+      visible: true, // Custom fields are visible by default
     }));
-    
+
     // Update allColumns
     allColumns = [...regularColumns, ...customFieldColumns];
   });
@@ -131,39 +140,42 @@
   // Initialize visibility from columns' visible property
   function initializeVisibility() {
     const initial: Record<string, boolean> = {};
-    
+
     // Initialize all columns using the unified approach
     for (const column of allColumns) {
-      initial[column.displayKey] = column.type === 'regular' ? column.visible : true;
+      initial[column.displayKey] =
+        column.type === "regular" ? column.visible : true;
     }
-    
+
     return initial;
   }
 
   // Get available operators based on column data type
-  function getOperatorsForDataType(dataType: 'string' | 'number' | 'date' | 'boolean'): { value: string; label: string }[] {
+  function getOperatorsForDataType(
+    dataType: "string" | "number" | "date" | "boolean" | "link" | "checked",
+  ): { value: string; label: string }[] {
     const commonOperators = [
-      { value: 'eq', label: 'Equals (=)' },
-      { value: 'neq', label: 'Not Equals (≠)' },
-      { value: 'contains', label: 'Contains' },
-      { value: 'startswith', label: 'Starts With' },
-      { value: 'endswith', label: 'Ends With' }
+      { value: "eq", label: "Equals (=)" },
+      { value: "neq", label: "Not Equals (≠)" },
+      { value: "contains", label: "Contains" },
+      { value: "startswith", label: "Starts With" },
+      { value: "endswith", label: "Ends With" },
     ];
-    
+
     const numberDateOperators = [
-      { value: 'gt', label: 'Greater Than (>)' },
-      { value: 'gte', label: 'Greater Than or Equal (≥)' },
-      { value: 'lt', label: 'Less Than (<)' },
-      { value: 'lte', label: 'Less Than or Equal (≤)' }
+      { value: "gt", label: "Greater Than (>)" },
+      { value: "gte", label: "Greater Than or Equal (≥)" },
+      { value: "lt", label: "Less Than (<)" },
+      { value: "lte", label: "Less Than or Equal (≤)" },
     ];
-    
+
     switch (dataType) {
-      case 'number':
-      case 'date':
+      case "number":
+      case "date":
         return [...commonOperators, ...numberDateOperators];
-      case 'boolean':
-        return [{ value: 'eq', label: 'Equals (=)' }];
-      case 'string':
+      case "boolean":
+        return [{ value: "eq", label: "Equals (=)" }];
+      case "string":
       default:
         return commonOperators;
     }
@@ -171,69 +183,84 @@
 
   // Handle column sorting
   function handleSort(columnKey: string) {
-    console.log("SORTING", columnKey)
+    console.log("SORTING", columnKey);
     if (sortColumn === columnKey) {
       // Toggle direction if same column is clicked again
-      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      sortDirection = sortDirection === "asc" ? "desc" : "asc";
     } else {
       // New column, set as ascending sort
       sortColumn = columnKey;
-      sortDirection = 'asc';
+      sortDirection = "asc";
     }
-    
+
     // Save sort settings to localStorage
     saveTableState();
   }
 
   // Get the data type for a column
-  function getColumnDataType(columnKey: string): 'string' | 'number' | 'date' | 'boolean' {
+  function getColumnDataType(
+    columnKey: string,
+  ): "string" | "number" | "date" | "boolean" | "link" | "checked" {
     // Find the column in our unified array
-    const column = allColumns.find(col => col.displayKey === columnKey);
+    const column = allColumns.find((col) => col.displayKey === columnKey);
     if (column && column.dataType) {
       return column.dataType;
     }
 
     // Default to string if type isn't specified
-    return 'string';
+    return "string";
   }
 
   // Compare values based on data type
-  function compareValues(valueA: any, valueB: any, dataType: 'string' | 'number' | 'date' | 'boolean', direction: 'asc' | 'desc'): number {
+  function compareValues(
+    valueA: any,
+    valueB: any,
+    dataType: "string" | "number" | "date" | "boolean" | "link" | "checked",
+    direction: "asc" | "desc",
+  ): number {
     // Handle undefined or null values
-    if (valueA === undefined || valueA === null) valueA = '';
-    if (valueB === undefined || valueB === null) valueB = '';
+    if (valueA === undefined || valueA === null) valueA = "";
+    if (valueB === undefined || valueB === null) valueB = "";
 
     let result: number;
 
     switch (dataType) {
-      case 'number':
+      case "number":
         // Convert to numbers for numerical comparison
         const numA = Number(valueA);
         const numB = Number(valueB);
-        result = isNaN(numA) && isNaN(numB) ? 0 : 
-                isNaN(numA) ? -1 : 
-                isNaN(numB) ? 1 : 
-                numA - numB;
+        result =
+          isNaN(numA) && isNaN(numB)
+            ? 0
+            : isNaN(numA)
+              ? -1
+              : isNaN(numB)
+                ? 1
+                : numA - numB;
         break;
 
-      case 'date':
+      case "date":
         // Convert to Date objects for date comparison
         const dateA = valueA ? new Date(valueA) : null;
         const dateB = valueB ? new Date(valueB) : null;
-        result = !dateA && !dateB ? 0 :
-                !dateA ? -1 :
-                !dateB ? 1 :
-                dateA.getTime() - dateB.getTime();
+        result =
+          !dateA && !dateB
+            ? 0
+            : !dateA
+              ? -1
+              : !dateB
+                ? 1
+                : dateA.getTime() - dateB.getTime();
         break;
 
-      case 'boolean':
+      case "boolean":
         // Convert to booleans
         const boolA = Boolean(valueA);
         const boolB = Boolean(valueB);
         result = boolA === boolB ? 0 : boolA ? 1 : -1;
         break;
 
-      case 'string':
+      case "string":
       default:
         // String comparison
         const strA = String(valueA).toLowerCase();
@@ -242,11 +269,15 @@
     }
 
     // Apply sort direction
-    return direction === 'asc' ? result : -result;
+    return direction === "asc" ? result : -result;
   }
 
   // Sort data function - updated for array data with type-aware sorting
-  function sortData(data: any[], column: string | null, direction: 'asc' | 'desc'): any[] {
+  function sortData(
+    data: any[],
+    column: string | null,
+    direction: "asc" | "desc",
+  ): any[] {
     if (!column || !data.length) return data;
 
     // Get the data type for this column
@@ -263,57 +294,59 @@
   // Apply a single filter condition
   function applyFilterCondition(row: any, filter: FilterCondition): boolean {
     const { column, operator, value } = filter;
-    
+
     // Get the actual value from the row
     let rowValue = row[column];
-    if (rowValue === null || rowValue === undefined) rowValue = '';
-    
+    if (rowValue === null || rowValue === undefined) rowValue = "";
+
     // Determine the data type for this column
     const dataType = getColumnDataType(column);
-    
+
     // Convert the value based on data type
     let typedRowValue: any = rowValue;
     let typedFilterValue: any = value;
-    
+
     switch (dataType) {
-      case 'number':
+      case "number":
         typedRowValue = Number(rowValue);
         typedFilterValue = Number(value);
         break;
-      case 'date':
+      case "date":
         typedRowValue = rowValue ? new Date(rowValue) : null;
         typedFilterValue = value ? new Date(value) : null;
         break;
-      case 'boolean':
+      case "boolean":
         typedRowValue = Boolean(rowValue);
-        typedFilterValue = value.toLowerCase() === 'true';
+        typedFilterValue = value.toLowerCase() === "true";
         break;
-      case 'string':
+      case "checked":
+      case "link":
+      case "string":
       default:
         typedRowValue = String(rowValue).toLowerCase();
         typedFilterValue = String(value).toLowerCase();
         break;
     }
-    
+
     // Apply the filter based on the operator
     switch (operator) {
-      case 'eq': // Equals
+      case "eq": // Equals
         return typedRowValue === typedFilterValue;
-      case 'neq': // Not Equals
+      case "neq": // Not Equals
         return typedRowValue !== typedFilterValue;
-      case 'gt': // Greater Than
+      case "gt": // Greater Than
         return typedRowValue > typedFilterValue;
-      case 'gte': // Greater Than or Equal
+      case "gte": // Greater Than or Equal
         return typedRowValue >= typedFilterValue;
-      case 'lt': // Less Than
+      case "lt": // Less Than
         return typedRowValue < typedFilterValue;
-      case 'lte': // Less Than or Equal
+      case "lte": // Less Than or Equal
         return typedRowValue <= typedFilterValue;
-      case 'contains': // Contains
+      case "contains": // Contains
         return String(typedRowValue).includes(typedFilterValue);
-      case 'startswith': // Starts With
+      case "startswith": // Starts With
         return String(typedRowValue).startsWith(typedFilterValue);
-      case 'endswith': // Ends With
+      case "endswith": // Ends With
         return String(typedRowValue).endsWith(typedFilterValue);
       default:
         return true;
@@ -323,64 +356,70 @@
   // Apply all filter conditions
   function applyFilters(data: any[], filters: FilterCondition[]): any[] {
     if (!filters.length) return data;
-    
-    return data.filter(row => {
+
+    return data.filter((row) => {
       // All conditions must be true (AND logic)
-      return filters.every(filter => applyFilterCondition(row, filter));
+      return filters.every((filter) => applyFilterCondition(row, filter));
     });
   }
 
   // Derived filtered data - updated to use the new filter system
-  const filteredData = $derived<any[]>(
-    sortData(applyFilters(props.data, filters), sortColumn, sortDirection)
+  let filteredData = $derived<any[]>(
+    sortData(applyFilters(props.data, filters), sortColumn, sortDirection),
   );
 
   // Get formatted value for display
   function getFormattedValue(column: any, row: any) {
     // Handle regular columns with formatters
-    if (column.type === 'regular' && column.format) {
+    if (column.type === "regular" && column.format) {
       const formatted = column.format(row[column.dataKey], row);
-      if (typeof formatted === 'string') {
-        return { text: formatted || '-', isBadge: false };
+      if (typeof formatted === "string") {
+        return { text: formatted || "-", isBadge: false };
       }
       return formatted;
     }
-    
+
     // Handle regular columns without formatters or custom fields
     const value = row[column.dataKey];
-    return { text: (value === null || value === undefined || value === '') ? '-' : value.toString(), isBadge: false };
+    return {
+      text:
+        value === null || value === undefined || value === ""
+          ? "-"
+          : value.toString(),
+      isBadge: false,
+    };
   }
 
   // Add a new filter condition without requiring column selection first
   function addFilter() {
     const id = Math.random().toString(36).substring(2, 9); // Generate a random ID
-    
+
     // Get the first available column as default
-    const defaultColumn = allColumns.length > 0 ? allColumns[0].displayKey : '';
-    
+    const defaultColumn = allColumns.length > 0 ? allColumns[0].displayKey : "";
+
     const newFilter: FilterCondition = {
       id,
       column: defaultColumn,
-      operator: 'eq', // Default to equals
-      value: ''
+      operator: "eq", // Default to equals
+      value: "",
     };
-    
+
     pendingFilters = [...pendingFilters, newFilter];
     activeFilterId = id;
     showColumnDropdown = false;
-    filterText = '';
+    filterText = "";
   }
 
   // Update a pending filter
   function updatePendingFilter(id: string, updates: Partial<FilterCondition>) {
-    pendingFilters = pendingFilters.map(filter => 
-      filter.id === id ? { ...filter, ...updates } : filter
+    pendingFilters = pendingFilters.map((filter) =>
+      filter.id === id ? { ...filter, ...updates } : filter,
     );
   }
 
   // Remove a pending filter
   function removePendingFilter(id: string) {
-    pendingFilters = pendingFilters.filter(filter => filter.id !== id);
+    pendingFilters = pendingFilters.filter((filter) => filter.id !== id);
     if (activeFilterId === id) {
       activeFilterId = null;
     }
@@ -402,7 +441,7 @@
     showFilterEditor = false;
     saveTableState();
   }
-  
+
   // Cancel filter editing
   function cancelFilterEditing() {
     pendingFilters = [...filters];
@@ -418,34 +457,46 @@
 
   // Get filtered columns for dropdown based on search text
   const filteredColumns = $derived(
-    filterText.trim() === '' 
+    filterText.trim() === ""
       ? allColumns
-      : allColumns.filter(col => 
-          col.displayLabel.toLowerCase().includes(filterText.toLowerCase())
-        )
+      : allColumns.filter((col) =>
+          col.displayLabel.toLowerCase().includes(filterText.toLowerCase()),
+        ),
   );
-  
+
   // Save table state to localStorage (columns visibility, sorting, and filtering)
   function saveTableState() {
     try {
       if (props.event_id && props.entityType) {
         // Save column visibility
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_columns`, JSON.stringify(internalVisibleColumns));
-        
+        localStorage.setItem(
+          `event_${props.event_id}_${props.entityType}_columns`,
+          JSON.stringify(internalVisibleColumns),
+        );
+
         // Save sorting state
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_sort`, JSON.stringify({
-          column: sortColumn,
-          direction: sortDirection
-        }));
-        
+        localStorage.setItem(
+          `event_${props.event_id}_${props.entityType}_sort`,
+          JSON.stringify({
+            column: sortColumn,
+            direction: sortDirection,
+          }),
+        );
+
         // Save filters
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_filters`, JSON.stringify(filters));
-        
+        localStorage.setItem(
+          `event_${props.event_id}_${props.entityType}_filters`,
+          JSON.stringify(filters),
+        );
+
         // Save export settings
-        localStorage.setItem(`event_${props.event_id}_${props.entityType}_export_settings`, JSON.stringify({
-          visibleColumnsOnly: exportVisibleColumnsOnly,
-          filteredRowsOnly: exportFilteredRowsOnly
-        }));
+        localStorage.setItem(
+          `event_${props.event_id}_${props.entityType}_export_settings`,
+          JSON.stringify({
+            visibleColumnsOnly: exportVisibleColumnsOnly,
+            filteredRowsOnly: exportFilteredRowsOnly,
+          }),
+        );
       }
     } catch (e) {
       console.error(`Error saving table state to localStorage:`, e);
@@ -457,36 +508,45 @@
     try {
       if (props.event_id && props.entityType) {
         // Load column visibility
-        const savedColumns = localStorage.getItem(`event_${props.event_id}_${props.entityType}_columns`);
+        const savedColumns = localStorage.getItem(
+          `event_${props.event_id}_${props.entityType}_columns`,
+        );
         if (savedColumns) {
           internalVisibleColumns = { ...JSON.parse(savedColumns) };
         } else {
           internalVisibleColumns = initializeVisibility();
         }
-        
+
         // Load sorting state
-        const savedSorting = localStorage.getItem(`event_${props.event_id}_${props.entityType}_sort`);
+        const savedSorting = localStorage.getItem(
+          `event_${props.event_id}_${props.entityType}_sort`,
+        );
         if (savedSorting) {
           const { column, direction } = JSON.parse(savedSorting);
           sortColumn = column;
           sortDirection = direction;
-          console.log("SORTING FROM STORAGE", sortColumn, sortDirection)
+          console.log("SORTING FROM STORAGE", sortColumn, sortDirection);
         }
-        
+
         // Load filters
-        const savedFilters = localStorage.getItem(`event_${props.event_id}_${props.entityType}_filters`);
+        const savedFilters = localStorage.getItem(
+          `event_${props.event_id}_${props.entityType}_filters`,
+        );
         if (savedFilters) {
           filters = JSON.parse(savedFilters);
         }
-        
+
         // Load export settings
-        const savedExportSettings = localStorage.getItem(`event_${props.event_id}_${props.entityType}_export_settings`);
+        const savedExportSettings = localStorage.getItem(
+          `event_${props.event_id}_${props.entityType}_export_settings`,
+        );
         if (savedExportSettings) {
-          const { visibleColumnsOnly, filteredRowsOnly } = JSON.parse(savedExportSettings);
+          const { visibleColumnsOnly, filteredRowsOnly } =
+            JSON.parse(savedExportSettings);
           exportVisibleColumnsOnly = visibleColumnsOnly;
           exportFilteredRowsOnly = filteredRowsOnly;
         }
-        
+
         return true;
       }
       return false;
@@ -499,9 +559,9 @@
   // Toggle column visibility
   function toggleColumn(columnKey: string) {
     // Create a new object to ensure reactivity
-    internalVisibleColumns = { 
-      ...internalVisibleColumns, 
-      [columnKey]: !internalVisibleColumns[columnKey] 
+    internalVisibleColumns = {
+      ...internalVisibleColumns,
+      [columnKey]: !internalVisibleColumns[columnKey],
     };
     saveTableState();
   }
@@ -510,66 +570,70 @@
   function exportToCSV() {
     // Get columns for the headers based on export settings
     const columnsToExport = exportVisibleColumnsOnly
-      ? allColumns.filter(col => internalVisibleColumns[col.displayKey])
+      ? allColumns.filter((col) => internalVisibleColumns[col.displayKey])
       : allColumns;
-    
+
     // Create headers array
-    const headers = columnsToExport.map(col => col.displayLabel);
-    
+    const headers = columnsToExport.map((col) => col.displayLabel);
+
     // Get rows based on export settings
-    const rowsToExport = exportFilteredRowsOnly 
-      ? filteredData 
-      : props.data;
-    
+    const rowsToExport = exportFilteredRowsOnly ? filteredData : props.data;
+
     // Create rows arrays for each data item
     const rows = rowsToExport.map((row: Record<string, any>) => {
-      return columnsToExport.map(col => {
+      return columnsToExport.map((col) => {
         // Get the value using the unified approach
         const value = row[col.dataKey];
         // For CSV export, we don't want to include the dash for empty values
-        return (value === null || value === undefined || value === '') ? '' : 
-               (col.type === 'regular' && col.format) ? getFormattedValue(col, row as Record<string, any>).text : 
-               String(value);
+        return value === null || value === undefined || value === ""
+          ? ""
+          : col.type === "regular" && col.format
+            ? getFormattedValue(col, row as Record<string, any>).text
+            : String(value);
       });
     });
-    
+
     // Combine headers and rows
     const csvContent = [
-      headers.map(escapeCSVValue).join(','),
-      ...rows.map(row => row.map(escapeCSVValue).join(','))
-    ].join('\n');
-    
+      headers.map(escapeCSVValue).join(","),
+      ...rows.map((row) => row.map(escapeCSVValue).join(",")),
+    ].join("\n");
+
     // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    
+    const link = document.createElement("a");
+
     // Set filename - include event name if available
     const now = new Date();
-    const date = now.toISOString().split('T')[0].replaceAll('-','.');
-    const time = now.toISOString().substr(11, 8).replaceAll(':', ''); // Extract HHMM in GMT (no colon)
-    const exportType = exportVisibleColumnsOnly ? 'visible' : 'all';
-    const eventNamePart = props.event_name 
-      ? `${props.event_name.toLowerCase().replace(/\s+/g, '-')}_` 
-      : '';
+    const date = now.toISOString().split("T")[0].replaceAll("-", ".");
+    const time = now.toISOString().substr(11, 8).replaceAll(":", ""); // Extract HHMM in GMT (no colon)
+    const exportType = exportVisibleColumnsOnly ? "visible" : "all";
+    const eventNamePart = props.event_name
+      ? `${props.event_name.toLowerCase().replace(/\s+/g, "-")}_`
+      : "";
     const filename = `${eventNamePart}${props.entityType}_${date}.${time}.csv`;
-    
+
     // Trigger download
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.display = 'none';
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.display = "none";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
-  
+
   // Helper function to escape CSV values
   function escapeCSVValue(value: any): string {
-    if (value === null || value === undefined) return '';
-    
+    if (value === null || value === undefined) return "";
+
     const stringValue = String(value);
     // If value contains comma, newline or double-quote, enclose in double quotes
-    if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
+    if (
+      stringValue.includes(",") ||
+      stringValue.includes("\n") ||
+      stringValue.includes('"')
+    ) {
       // Replace double quotes with two double quotes
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
@@ -597,29 +661,45 @@
     <!-- Table header skeleton -->
     <div class="mb-4 flex flex-row justify-between w-full">
       <div class="flex items-center gap-2">
-        <div class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
-        <div class="h-9 w-40 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
+        <div
+          class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+        ></div>
+        <div
+          class="h-9 w-40 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+        ></div>
       </div>
       <div class="flex items-center">
-        <div class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
+        <div
+          class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+        ></div>
       </div>
     </div>
-    
+
     <!-- Table skeleton -->
     <div class="overflow-x-auto">
-      <div class="w-full border-b border-[color:var(--primary-tint)] border-opacity-20 dark:border-opacity-20">
+      <div
+        class="w-full border-b border-[color:var(--primary-tint)] border-opacity-20 dark:border-opacity-20"
+      >
         <!-- Skeleton header -->
-        <div class="grid grid-cols-4 gap-4 py-3 bg-[color:var(--primary-tint)] bg-opacity-10 dark:bg-opacity-10">
+        <div
+          class="grid grid-cols-4 gap-4 py-3 bg-[color:var(--primary-tint)] bg-opacity-10 dark:bg-opacity-10"
+        >
           {#each Array(4) as _, i}
-            <div class="h-6 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
+            <div
+              class="h-6 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+            ></div>
           {/each}
         </div>
-        
+
         <!-- Skeleton rows -->
         {#each Array(5) as _, i}
-          <div class="grid grid-cols-4 gap-4 py-4 border-b border-[color:var(--primary-tint)] border-opacity-10 dark:border-opacity-10">
+          <div
+            class="grid grid-cols-4 gap-4 py-4 border-b border-[color:var(--primary-tint)] border-opacity-10 dark:border-opacity-10"
+          >
             {#each Array(4) as _, j}
-              <div class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"></div>
+              <div
+                class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"
+              ></div>
             {/each}
           </div>
         {/each}
@@ -630,14 +710,22 @@
   <div class="mb-4 flex flex-row justify-between w-full">
     <!-- Left-aligned buttons -->
     <div class="flex items-center gap-2">
-      <Button color="primary" class="btn-primary flex items-center gap-1" on:click={openFilterEditor}>
+      <Button
+        color="primary"
+        class="btn-primary flex items-center gap-1"
+        on:click={openFilterEditor}
+      >
         <FilterSolid class="w-4 h-4" />
         Filters
         {#if filters.length > 0}
-          <Badge color="none" class="ml-1 bg-[color:var(--primary-light)] text-white">{filters.length}</Badge>
+          <Badge
+            color="none"
+            class="ml-1 bg-[color:var(--primary-light)] text-white"
+            >{filters.length}</Badge
+          >
         {/if}
       </Button>
-      
+
       <div class="relative">
         <Button color="primary" class="btn-primary flex items-center gap-1">
           <TableColumnOutline class="w-4 h-4" />
@@ -646,15 +734,21 @@
         <Dropdown class="w-64">
           {#each allColumns as column}
             <DropdownItem class="px-2 py-1">
-              <Checkbox checked={internalVisibleColumns[column.displayKey]} on:change={() => toggleColumn(column.displayKey)} class="text-left w-full">
-                <span class="text-sm break-words whitespace-normal">{column.displayLabel}</span>
+              <Checkbox
+                checked={internalVisibleColumns[column.displayKey]}
+                on:change={() => toggleColumn(column.displayKey)}
+                class="text-left w-full"
+              >
+                <span class="text-sm break-words whitespace-normal"
+                  >{column.displayLabel}</span
+                >
               </Checkbox>
             </DropdownItem>
           {/each}
         </Dropdown>
       </div>
     </div>
-    
+
     <!-- Right-aligned buttons -->
     <div class="flex items-center ml-auto">
       <div class="relative">
@@ -665,40 +759,61 @@
         <Dropdown class="w-64 p-3">
           <div class="space-y-3">
             <div class="flex items-center gap-2">
-              <Toggle checked={exportVisibleColumnsOnly} on:change={() => {
-                exportVisibleColumnsOnly = !exportVisibleColumnsOnly;
-                saveTableState();
-              }} />
+              <Toggle
+                checked={exportVisibleColumnsOnly}
+                on:change={() => {
+                  exportVisibleColumnsOnly = !exportVisibleColumnsOnly;
+                  saveTableState();
+                }}
+              />
               <span class="text-sm">Include shown columns only</span>
             </div>
             <div class="flex items-center gap-2">
-              <Toggle checked={exportFilteredRowsOnly} on:change={() => {
-                exportFilteredRowsOnly = !exportFilteredRowsOnly;
-                saveTableState();
-              }} />
+              <Toggle
+                checked={exportFilteredRowsOnly}
+                on:change={() => {
+                  exportFilteredRowsOnly = !exportFilteredRowsOnly;
+                  saveTableState();
+                }}
+              />
               <span class="text-sm">Include filtered rows only</span>
             </div>
             <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
-              <Button size="sm" color="primary" class="w-full" on:click={exportToCSV}>Export to CSV</Button>
+              <Button
+                size="sm"
+                color="primary"
+                class="w-full"
+                on:click={exportToCSV}>Export to CSV</Button
+              >
             </div>
           </div>
         </Dropdown>
       </div>
     </div>
   </div>
-  
+
   <!-- Filter Editor Modal using Flowbite Modal component -->
-  <Modal title="Edit Filters" bind:open={showFilterEditor} size="xl" autoclose={false} classBody="w-full">
+  <Modal
+    title="Edit Filters"
+    bind:open={showFilterEditor}
+    size="xl"
+    autoclose={false}
+    classBody="w-full"
+  >
     <!-- Content -->
     <div class="w-full space-y-4">
       <!-- Add Filter Button -->
       <div class="mb-4">
-        <Button color="light" class="flex items-center gap-1" on:click={addFilter}>
+        <Button
+          color="light"
+          class="flex items-center gap-1"
+          on:click={addFilter}
+        >
           <PlusOutline class="w-4 h-4" />
           Add Filter
         </Button>
       </div>
-      
+
       <!-- Filter list -->
       {#if pendingFilters.length === 0}
         <div class="text-center p-4 text-gray-500 dark:text-gray-400">
@@ -711,7 +826,7 @@
               <div class="flex flex-row flex-nowrap items-center gap-2 w-full">
                 <!-- Column selector - approx 30% -->
                 <div class="w-[40%]">
-                  <Select 
+                  <Select
                     value={filter.column}
                     on:change={(e) => {
                       const target = e.target as HTMLSelectElement;
@@ -720,18 +835,22 @@
                     class="text-sm w-full"
                   >
                     {#each allColumns as column}
-                      <option value={column.displayKey}>{column.displayLabel}</option>
+                      <option value={column.displayKey}
+                        >{column.displayLabel}</option
+                      >
                     {/each}
                   </Select>
                 </div>
-                
+
                 <!-- Operator selector - approx 30% -->
                 <div class="w-[10%]">
-                  <Select 
+                  <Select
                     value={filter.operator}
                     on:change={(e) => {
                       const target = e.target as HTMLSelectElement;
-                      updatePendingFilter(filter.id, { operator: target.value });
+                      updatePendingFilter(filter.id, {
+                        operator: target.value,
+                      });
                     }}
                     class="text-sm w-full"
                   >
@@ -740,11 +859,13 @@
                     {/each}
                   </Select>
                 </div>
-                
+
                 <!-- Value input - approx 30% -->
                 <div class="w-[40%]">
-                  <Input 
-                    type={getColumnDataType(filter.column) === 'date' ? 'date' : 'text'}
+                  <Input
+                    type={getColumnDataType(filter.column) === "date"
+                      ? "date"
+                      : "text"}
                     value={filter.value}
                     on:input={(e) => {
                       const target = e.target as HTMLInputElement;
@@ -754,10 +875,10 @@
                     placeholder="Enter value"
                   />
                 </div>
-                
+
                 <!-- Remove button - approx 10% -->
                 <div class="flex-shrink-0 flex justify-center">
-                  <button 
+                  <button
                     class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 p-2"
                     on:click={() => removePendingFilter(filter.id)}
                     aria-label="Remove filter"
@@ -771,39 +892,46 @@
         </div>
       {/if}
     </div>
-    
+
     <!-- Modal actions -->
     <svelte:fragment slot="footer">
       <div class="flex w-full justify-between items-center">
         <div class="flex gap-3">
-          <Button color="red" on:click={clearAllFilters} disabled={pendingFilters.length === 0 && filters.length === 0}>Clear All Filters</Button>
-          <Button color="alternative" on:click={cancelFilterEditing}>Cancel</Button>
+          <Button
+            color="red"
+            on:click={clearAllFilters}
+            disabled={pendingFilters.length === 0 && filters.length === 0}
+            >Clear All Filters</Button
+          >
+          <Button color="alternative" on:click={cancelFilterEditing}
+            >Cancel</Button
+          >
           <Button color="primary" on:click={saveFilters}>Apply Filters</Button>
         </div>
       </div>
     </svelte:fragment>
   </Modal>
-  
+
   <div class="overflow-x-auto">
     <Table striped={false} hoverable={false} class="table-compact themed-table">
       <TableHead class="border-b" theadClass="text-xs uppercase align-middle">
         {#each allColumns as column}
           {#if internalVisibleColumns[column.displayKey]}
-            <TableHeadCell 
+            <TableHeadCell
               on:click={() => handleSort(column.displayKey)}
               padding="px-6 py-3"
               class="align-middle select-none sortable-header"
             >
-                <span class="inline-flex items-center select-none header-label">
-                  {column.displayLabel}
-                  {#if (sortColumn === column.displayKey)}
-                    {#if (sortDirection == 'asc')}
-                      <CaretUpSolid class="w-3 h-3 ml-1" />
-                    {:else}
-                      <CaretDownSolid class="w-3 h-3 ml-1" />
-                    {/if}
+              <span class="inline-flex items-center select-none header-label">
+                {column.displayLabel}
+                {#if sortColumn === column.displayKey}
+                  {#if sortDirection == "asc"}
+                    <CaretUpSolid class="w-3 h-3 ml-1" />
+                  {:else}
+                    <CaretDownSolid class="w-3 h-3 ml-1" />
                   {/if}
-                </span>
+                {/if}
+              </span>
             </TableHeadCell>
           {/if}
         {/each}
@@ -811,11 +939,17 @@
       <TableBody>
         {#if filteredData.length === 0}
           <TableBodyRow class="hover:bg-transparent no-hover">
-            <TableBodyCell colspan={Object.values(internalVisibleColumns).filter(v => v).length || 1} class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <TableBodyCell
+              colspan={Object.values(internalVisibleColumns).filter((v) => v)
+                .length || 1}
+              class="text-center py-8 text-gray-500 dark:text-gray-400"
+            >
               <div class="flex flex-col items-center justify-center">
                 {#if props.data.length === 0}
                   <!-- No data at all -->
-                  <div class="mb-2 text-[color:var(--primary-light)] opacity-40">
+                  <div
+                    class="mb-2 text-[color:var(--primary-light)] opacity-40"
+                  >
                     <ClockSolid class="w-10 h-10" />
                   </div>
                   <p class="font-medium">
@@ -823,12 +957,16 @@
                   </p>
                 {:else}
                   <!-- Data exists but filtered out -->
-                  <div class="mb-2 text-[color:var(--primary-light)] opacity-40">
+                  <div
+                    class="mb-2 text-[color:var(--primary-light)] opacity-40"
+                  >
                     <FilterSolid class="w-10 h-10" />
                   </div>
                   <p class="font-medium">No rows to display</p>
                   {#if filters.length > 0}
-                    <p class="text-sm mt-1">Try adjusting your filter criteria</p>
+                    <p class="text-sm mt-1">
+                      Try adjusting your filter criteria
+                    </p>
                   {/if}
                 {/if}
               </div>
@@ -840,10 +978,59 @@
               {#each allColumns as column}
                 {#if internalVisibleColumns[column.displayKey]}
                   <TableBodyCell>
-                    {#if column.type === 'regular' && getFormattedValue(column, row).isBadge}
-                      <Badge color={getFormattedValue(column, row).color || "blue"}>
+                    {#if column.type === "regular" && getFormattedValue(column, row).isBadge}
+                      <Badge
+                        color={getFormattedValue(column, row).color || "blue"}
+                      >
                         {getFormattedValue(column, row).text}
                       </Badge>
+                    {:else if column.dataType == "checked"}
+                      <div style="width: 100%; display: flex">
+                        <Checkbox
+                          checked={row.waiver == "Signed"}
+                          on:change={async () => {
+                            try {
+                              const newValue = row.waiver != "Signed"
+                                ? "Signed"
+                                : "Not Signed";
+
+                              row.waiver = newValue;
+
+                              const dataIndex = props.data.findIndex(
+                                (item) => item[idField] === row[idField]
+                              );
+                              if (dataIndex !== -1) {
+                                props.data[dataIndex].waiver = newValue;
+                              }
+
+                              await updateStudentEvent(row.student_event_id, {
+                                waiver: newValue,
+                              });
+
+                              toast.success(
+                                "Updated waiver status successfully",
+                              );
+                            } catch (e) {
+                              handleError(e);
+                            }
+                          }}
+                        >
+                          {row.waiver == "Signed" ? "Signed" : "Not Signed"}
+                        </Checkbox>
+                      </div>
+                    {:else if column.dataType == "link"}
+                      {#if getFormattedValue(column, row).text == "-"}
+                        {getFormattedValue(column, row).text}
+                      {:else}
+                        <a
+                          href={getFormattedValue(column, row).text}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="text-blue-600 dark:text-blue-400 underline"
+                        >
+                          Link
+                        </a>
+                      {/if}
                     {:else}
                       {getFormattedValue(column, row).text}
                     {/if}
@@ -860,13 +1047,13 @@
 
 <style>
   /* Styles will be inherited from parent component */
-  
+
   /* Table header hover effects */
   :global(.sortable-header) {
     cursor: pointer;
     transition: all 0.2s ease-in-out;
   }
-  
+
   :global(.sortable-header:hover .header-label) {
     font-weight: bold;
     font-size: 110%;
@@ -878,8 +1065,8 @@
   :global(.no-hover:hover) {
     background-color: transparent !important;
   }
-  
+
   :global(tr.no-hover:hover td) {
     background-color: transparent !important;
   }
-</style> 
+</style>

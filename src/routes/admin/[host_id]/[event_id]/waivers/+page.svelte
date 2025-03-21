@@ -1,6 +1,6 @@
 <script>
-  import { Label, Select } from "flowbite-svelte";
-  import { getEventInformation, updateEvent } from "$lib/supabase";
+  import { Label, Select, Toggle } from "flowbite-svelte";
+  import { getEventInformation, resetStudentWaivers, updateEvent } from "$lib/supabase";
   import { page } from "$app/stores";
   import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
   import { handleError } from "$lib/handleError";
@@ -8,6 +8,7 @@
   import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import MarkdownRenderForm from "$lib/components/MarkdownRenderForm.svelte";
+    import { updated } from "$app/state";
 
   const event_id = parseInt($page.params.event_id);
 
@@ -16,6 +17,7 @@
   let newWaiverType = $state(null);
   let showDeleteModal = $state(false);
   let loading = $state(false);
+  let requireWaivers = $state(false);
 
   let externalResponses = $state({});
   let externalValidationErrors = $state({});
@@ -45,6 +47,7 @@
       required: true,
       regex: null,
       placeholder: null,
+      value: null,
       choices: null,
       editable: true,
       hidden: false,
@@ -54,8 +57,16 @@
   (async () => {
     event = await getEventInformation(event_id);
     waiverType = event.waivers?.type || "none";
-    compFields[0].value = event.waivers?.waiver || "";
-    compResponses.waiver = event.waivers?.waiver || "";
+    requireWaivers = event.waivers?.requireWaivers ?? true;
+
+    if (waiverType === "comp") {
+      compFields[0].value = event.waivers?.waiver || "";
+      compResponses.waiver = event.waivers?.waiver || "";
+    } else if (waiverType === "external") {
+      externalFields[0].value = event.waivers?.instructions || "";
+      externalResponses.instructions = event.waivers?.instructions || "";
+    }
+
     loading = false;
   })();
 
@@ -65,8 +76,14 @@
       waiverType = newWaiverType;
 
       event = await updateEvent(event_id, {
-        waivers: { type: waiverType },
+        waivers: { type: waiverType, requireWaivers: requireWaivers ?? true },
       });
+
+      await resetStudentWaivers(event_id);
+
+      if (waiverType == "comp") {
+        compResponses = { waiver: "" };
+      }
 
       newWaiverType = null;
       toast.success("Waiver type updated successfully");
@@ -77,10 +94,30 @@
     loading = false;
   }
 
+  async function handleRequireWaiversToggle() {
+    try {
+      let updatedWaivers = { type: waiverType, requireWaivers: requireWaivers };
+
+      if (waiverType === "external") {
+        updatedWaivers = { ...updatedWaivers, ...externalResponses };
+      } else if (waiverType === "comp") {
+        updatedWaivers = { ...updatedWaivers, ...compResponses };
+      }
+
+      event = await updateEvent(event_id, {
+        waivers: updatedWaivers,
+      });
+
+      toast.success("Setting updated successfully");
+    } catch (e) {
+      handleError(e);
+    }
+  }
+
   async function handleSubmit() {
     loading = true;
     try {
-      let updatedWaivers = { type: waiverType };
+      let updatedWaivers = { type: waiverType, requireWaivers: requireWaivers };
 
       if (waiverType === "external") {
         updatedWaivers = { ...updatedWaivers, ...externalResponses };
@@ -112,7 +149,11 @@
         waivers: updatedWaivers,
       });
 
-      compFields[0].value = compResponses.waiver ?? "";
+      if (waiverType === "comp") {
+        compFields[0].value = compResponses.waiver ?? "";
+      } else if (waiverType === "external") {
+        externalFields[0].value = externalResponses.instructions ?? "";
+      }
 
       toast.success("Waiver details updated successfully");
     } catch (e) {
@@ -145,42 +186,51 @@
       }}
     />
   </div>
-
   {#if waiverType == "none"}
     <div style="padding: 20px;">
       <p style="text-align: left;">No waiver is required for this event</p>
     </div>
-  {:else if waiverType == "external"}
-    <CustomForm
-      fields={[]}
-      custom_fields={externalFields}
-      bind:newResponses={externalResponses}
-      bind:validationErrors={externalValidationErrors}
-      {handleSubmit}
-      showBorder={true}
-    />
-  {:else if waiverType == "comp"}
-    <div class="grid grid-cols-2 gap-4 mr-2">
-      <div>
-        <div class="customForm">
-          <CustomForm
-            fields={[]}
-            custom_fields={compFields}
-            bind:newResponses={compResponses}
-            bind:validationErrors={compValidationErrors}
-            {handleSubmit}
-            showBorder={false}
+  {:else}
+    <br />
+    <div class="waiverDropdown flex items-start">
+      <Label class="mr-2">Require Waivers to View Tests?</Label>
+      <Toggle
+        bind:checked={requireWaivers}
+        on:change={handleRequireWaiversToggle}
+      />
+    </div>
+    {#if waiverType == "external"}
+      <CustomForm
+        fields={[]}
+        custom_fields={externalFields}
+        bind:newResponses={externalResponses}
+        bind:validationErrors={externalValidationErrors}
+        {handleSubmit}
+        showBorder={true}
+      />
+    {:else if waiverType == "comp"}
+      <div class="grid grid-cols-2 gap-4 mr-2">
+        <div>
+          <div class="customForm">
+            <CustomForm
+              fields={[]}
+              custom_fields={compFields}
+              bind:newResponses={compResponses}
+              bind:validationErrors={compValidationErrors}
+              {handleSubmit}
+              showBorder={false}
+            />
+          </div>
+        </div>
+        <div>
+          <MarkdownRenderForm
+            bind:source={compResponses.waiver}
+            newResponses={{}}
+            handleSubmit={() => {}}
           />
         </div>
       </div>
-      <div>
-        <MarkdownRenderForm
-          bind:source={compResponses.waiver}
-          bind:newResponses={compResponses}
-          handleSubmit={() => {}}
-        />
-      </div>
-    </div>
+    {/if}
   {/if}
 {/if}
 
@@ -204,6 +254,10 @@
 
   :global(.waiverDropdown select) {
     margin-top: 0px;
+  }
+
+  :global(.waiverDropdown .cursor-pointer) {
+    background-color: transparent;
   }
 
   .grid {

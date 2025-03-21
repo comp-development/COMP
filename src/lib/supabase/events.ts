@@ -264,6 +264,16 @@ export async function getStudentTeams(student_id: string) {
   return data;
 }
 
+export async function resetStudentWaivers(event_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update({ waiver: null })
+    .eq("event_id", event_id);
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getStudentEvents(student_id: string) {
   const { data, error } = await supabase
     .from("student_events")

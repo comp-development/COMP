@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { Button, Badge, Tabs, TabItem } from "flowbite-svelte";
+  import { Button, Tabs, TabItem } from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { Alert } from "flowbite-svelte";
@@ -33,7 +33,6 @@
     $state(null);
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
-  import CopyText from "$lib/components/CopyText.svelte";
   import StudentTeam from "$lib/components/StudentTeam.svelte";
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
@@ -200,20 +199,6 @@
   <EventDisplay id={event_id} {host} event={event_details} editable={false} />
   <hr />
 
-  {#if student_event && event_details.waivers.type != "none" && !student_event.waiver}
-    <Alert border color="red">
-      <InfoCircleSolid slot="icon" class="w-5 h-5" />
-      <span class="font-medium">Sign Your Waiver!</span>
-      Your registration is not complete until you sign it.
-      {#if event_details.waivers.type == "external"}
-        <br />
-        Instructions: {event_details.waivers.instructions}
-      {:else}
-        Click <a href="/student/{host_id}/{event_id}/waiver">here</a> to sign the waiver
-      {/if}
-    </Alert>
-  {/if}
-
   {#if !student_event}
     {#if transaction_stored}
       <p>
@@ -232,6 +217,22 @@
           <br />
         {/if}
 
+        {#if student_event && event_details.waivers.type != "none" && !student_event.waiver}
+          <Alert border color="red">
+            <InfoCircleSolid slot="icon" class="w-5 h-5" />
+            <span class="font-medium">Sign Your Waiver!</span>
+            Your registration is not complete until you sign it.
+            {#if event_details.waivers.type == "external"}
+              <br />
+              Instructions: {event_details.waivers.instructions}
+            {:else}
+              Click <a href="/student/{host_id}/{event_id}/waiver">here</a> to sign
+              the waiver
+            {/if}
+          </Alert>
+          <br />
+        {/if}
+
         {#if !team}
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
@@ -240,13 +241,15 @@
             reach out to your coach to assign you to a team.
           </Alert>
         {:else}
-          <div class="flex">
-            <Button
-              href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`}
-              pill>Take Tests</Button
-            >
-          </div>
-          <br />
+          {#if !event_details.waivers.requireWaivers || event_details.waivers.type == "none" || student_event.waiver}            
+            <div class="flex">
+              <Button
+                href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`}
+                pill>Take Tests</Button
+              >
+            </div>
+            <br />
+          {/if}
           <div class="teamContainer">
             <StudentTeam
               {event_id}
