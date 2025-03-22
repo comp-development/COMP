@@ -362,11 +362,11 @@
         getEventTicketCount(event_id),
       ]);
 
-      if (event.waivers.type == "external") {
+      if (event.waivers?.type == "external") {
         let updatedColumns = [...studentColumns];
         updatedColumns[7].dataType = "checked" as const;
         studentColumns = updatedColumns;
-      } else if (event.waivers.type == "none") {
+      } else if (event.waivers?.type == "none") {
         let updatedColumns = [...studentColumns];
         updatedColumns.splice(7, 1);
         studentColumns = updatedColumns;

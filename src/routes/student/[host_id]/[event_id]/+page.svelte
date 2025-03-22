@@ -217,14 +217,14 @@
           <br />
         {/if}
 
-        {#if student_event && event_details.waivers.type != "none" && !student_event.waiver}
+        {#if student_event && event_details.waivers?.type != "none" && !student_event.waiver}
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
             <span class="font-medium">Sign Your Waiver!</span>
             Your registration is not complete until you sign it.
-            {#if event_details.waivers.type == "external"}
+            {#if event_details.waivers?.type == "external"}
               <br />
-              Instructions: {event_details.waivers.instructions}
+              Instructions: {event_details.waivers?.instructions}
             {:else}
               Click <a href="/student/{host_id}/{event_id}/waiver">here</a> to sign
               the waiver
@@ -241,7 +241,7 @@
             reach out to your coach to assign you to a team.
           </Alert>
         {:else}
-          {#if !event_details.waivers.requireWaivers || event_details.waivers.type == "none" || student_event.waiver}            
+          {#if !event_details.waivers?.requireWaivers || event_details.waivers?.type == "none" || student_event.waiver}            
             <div class="flex">
               <Button
                 href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`}
@@ -264,7 +264,7 @@
                 ),
               }}
               showTeamCode={org_event ? false : true}
-              waiverType={event_details?.waivers.type ?? "none"}
+              waiverType={event_details?.waivers?.type ?? "none"}
               editableFeatures={false}
               onDrop={() => {}}
               onDragStart={() => {}}
