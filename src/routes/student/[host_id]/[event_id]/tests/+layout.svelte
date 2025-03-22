@@ -19,8 +19,8 @@
 
       if (
         !(
-          !event_details.waivers.requireWaivers ||
-          event_details.waivers.type == "none" ||
+          !event_details.waivers?.requireWaivers ||
+          event_details.waivers?.type == "none" ||
           student_event.waiver
         )
       ) {
