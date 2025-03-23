@@ -13,6 +13,7 @@
   import { handleError } from "$lib/handleError";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
   import { supabase } from "$lib/supabaseClient";
+  import { onMount } from "svelte";
 
   type TicketWithDetails = Tables<"ticket_orders"> & {
     student: {
@@ -26,7 +27,7 @@
 
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
-  let loading = $state(true);
+  let loading = $state(false);
   let host = $state(null);
   let event_details: Tables<"events"> | null = $state(null);
   let tickets: TicketWithDetails[] = $state([]);
@@ -37,9 +38,7 @@
         .from("ticket_orders")
         .update({ refund_status: action })
         .eq("id", ticket.id);
-
       if (error) throw error;
-
       // Refresh tickets after action
       tickets = await getEventTickets(event_id);
     } catch (e) {
@@ -51,12 +50,18 @@
     }
   }
 
-  (async () => {
+  onMount(async () => {
+    console.log("LOADING", loading);
     host = await getHostInformation(host_id);
     event_details = await getEventInformation(event_id);
     tickets = await getEventTickets(event_id);
     loading = false;
-  })();
+    console.log("LOADING", loading);
+  });
+
+
+  
+
 </script>
 
 {#if loading}

@@ -1,0 +1,13 @@
+/**
+ * Copyright IBM Corp. 2024
+ *
+ * This source code is licensed under the Apache-2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import { css } from 'lit';
+
+var styles = css([".cds--icon-indicator,:host(cds-icon-indicator){color:var(--cds-text-secondary,#525252);display:flex;font-size:var(--cds-body-compact-01-font-size,.875rem);font-weight:var(--cds-body-compact-01-font-weight,400);letter-spacing:var(--cds-body-compact-01-letter-spacing,.16px);line-height:var(--cds-body-compact-01-line-height,1.28572)}.cds--icon-indicator svg,:host(cds-icon-indicator) svg{align-self:center;margin-inline-end:.5rem}.cds--icon-indicator--20,:host(cds-icon-indicator[size=\"20\"]){font-size:var(--cds-body-compact-02-font-size,1rem);font-weight:var(--cds-body-compact-02-font-weight,400);letter-spacing:var(--cds-body-compact-02-letter-spacing,0);line-height:var(--cds-body-compact-02-line-height,1.375)}.cds--icon-indicator--failed,:host(cds-icon-indicator[kind=failed]) svg{fill:var(--cds-status-red,#da1e28)}.cds--icon-indicator--caution-major,:host(cds-icon-indicator[kind=caution-major]) svg{fill:var(--cds-status-orange,#ff832b)}.cds--icon-indicator--caution-major path:first-of-type,:host(cds-icon-indicator[kind=caution-major]) svg path:first-of-type{fill:#000}.cds--icon-indicator--caution-minor,:host(cds-icon-indicator[kind=caution-minor]) svg{fill:var(--cds-status-yellow,#f1c21b)}.cds--icon-indicator--caution-minor path:first-of-type,:host(cds-icon-indicator[kind=caution-minor]) svg path:first-of-type{fill:#000}.cds--icon-indicator--undefined,:host(cds-icon-indicator[kind=undefined]) svg{fill:var(--cds-status-purple,#8a3ffc)}.cds--icon-indicator--succeeded,:host(cds-icon-indicator[kind=succeeded]) svg{fill:var(--cds-status-green,#24a148)}.cds--icon-indicator--normal,:host(cds-icon-indicator[kind=normal]) svg{fill:var(--cds-status-blue,#0043ce)}.cds--icon-indicator--in-progress,:host(cds-icon-indicator[kind=in-progress]) svg{fill:var(--cds-status-blue,#0043ce)}.cds--icon-indicator--incomplete,:host(cds-icon-indicator[kind=incomplete]) svg{fill:var(--cds-status-blue,#0043ce)}.cds--icon-indicator--not-started,:host(cds-icon-indicator[kind=not-started]) svg{fill:var(--cds-status-gray,#6f6f6f)}.cds--icon-indicator--pending,:host(cds-icon-indicator[kind=pending]) svg{fill:var(--cds-status-gray,#6f6f6f)}.cds--icon-indicator--unknown,:host(cds-icon-indicator[kind=unknown]) svg{fill:var(--cds-status-gray,#6f6f6f)}.cds--icon-indicator--informative,:host(cds-icon-indicator[kind=informative]) svg{fill:var(--cds-status-blue,#0043ce)}"]);
+
+export { styles as default };
+//# sourceMappingURL=icon-indicator.scss.js.map

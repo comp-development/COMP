@@ -67,7 +67,7 @@
 
     async function requestRefund(ticket_order: Tables<"ticket_orders">) {
       if (ticket_order && ticket_order.refund_status == "NONE") {
-        if (ticket_order.ticket_service == "eventbrite") {
+        if (ticket_order.ticket_service == "eventbrite" || ticket_order.ticket_service == "stripe") {
           const { data: authData, error } = await supabase.auth.getSession();
           if (error != null) {
             handleError(error);
@@ -94,8 +94,6 @@
           } else {
             handleError(new Error(text));
           }
-        } else if (ticket_order.ticket_service == "stripe") {
-          handleError(new Error("Refunds with stripe not yet supported"));
         } else {
           handleError(new Error("Ticket service not found"));
         }

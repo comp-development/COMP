@@ -42,16 +42,16 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   const user = user_response.data.user;
 
   // Verify the user is a coach
-  const is_coach =
+  const coach =
     (
       await adminSupabase
         .from("coaches")
         .select("*")
         .eq("coach_id", user.id)
         .maybeSingle()
-    ).data != null;
+    ).data;
 
-  if (!is_coach) {
+  if (coach == null) {
     return new Response("user is not a coach", {
       status: 400,
     });
@@ -69,7 +69,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     .select("*", { count: "exact" })
     .eq("org_id", org_id)
     .eq("event_id", event_id)
-    .eq("ticket_service", "eventbrite")
     .eq("order_id", eventbrite_order_id)
     .maybeSingle();
 
@@ -129,6 +128,62 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       `cannot refund tickets as too many tickets are in use`, 
       { status: 400 }
     );
+  }
+
+
+  if(ticket.data.ticket_service == "eventbrite") {
+    try {
+      // using event cancellation or covid19 as reason makes full refund go through
+      const refundRequestBody = {
+        from_email: coach?.email,
+        from_name: coach?.first_name + " " + coach?.last_name,
+        items: [
+          {
+            order_id: eventbrite_order_id,
+          },
+        ],
+        reason: "event_cancelled",
+        message: "Event is cancelled for the time being.",
+      };
+  
+      console.log("refundRequestBody", refundRequestBody);
+      const eventbriteResponse = await fetch(
+        `https://www.eventbriteapi.com/v3/refund_requests/?token=${eventbriteToken}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",  // Required header
+            // "Authorization": `Bearer ${eventbriteToken}` // Sometimes required
+          },
+          body: JSON.stringify(refundRequestBody),
+        }
+      );
+  
+      if (!eventbriteResponse.ok) {
+        const responseText = await eventbriteResponse.json();
+        if(responseText?.error_description == "The order is free.") {
+          throw new Error("No need to request refund, the ticket was free.");
+        }
+        console.log("eventbriteResponse", eventbriteResponse);
+        console.log("responseText", responseText);
+        throw new Error("Failed to request refund from eventbrite");
+      }
+
+      console.log("eventbriteResponse", eventbriteResponse);
+    } catch (e: any) {
+      console.log("ERROR", e);
+      console.error(e);
+      return new Response("failed to execute: " + e.message, { status: 400 });
+    }
+  }
+  else {
+    if(ticket.data.ticket_service != "stripe") {
+      {
+        return new Response("invalid ticket service", {
+          status: 400,
+        });
+      }
+    }
   }
 
   try {

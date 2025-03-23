@@ -1,0 +1,15 @@
+import type { OutlineProps } from './types';
+/**
+ * [Go to docs](https://flowbite-svelte-icons.codewithshin.com/)
+ * ## Props
+ * @prop size = ctx.size || 'md'
+ * @prop color = ctx.color || 'currentColor'
+ * @prop title
+ * @prop strokeWidth = ctx.strokeWidth || '2'
+ * @prop desc
+ * @prop class: className
+ * @prop ariaLabel = 'add column after outline'
+ * @prop ...restProps
+ */
+declare const AddColumnAfterOutline: import("svelte").Component<OutlineProps, {}, "">;
+export default AddColumnAfterOutline;

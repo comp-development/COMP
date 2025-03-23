@@ -1,8 +1,11 @@
 import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { adminSupabase } from "$lib/adminSupabaseClient";
 import { env } from "$env/dynamic/private";
+import { P } from "flowbite-svelte";
+import { Stripe } from "stripe";
 
-const eventbriteToken = env.EVENTBRITE_TOKEN;
+// const eventbriteToken = env.EVENTBRITE_TOKEN;
+const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
 export const POST: RequestHandler = async (request: RequestEvent) => {
   let body: any | null = null;
@@ -40,30 +43,37 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     return new Response("ticket is not in REQUESTED status", { status: 400 });
   }
 
+
+  if(status === "APPROVED") {
+    
+  }
+  if(ticket.ticket_service === "stripe") {
+      try {
+        const stripe = new Stripe(stripeSecretKey);
+        const session = await stripe.checkout.sessions.retrieve(ticket.order_id);
+        if (!session.payment_intent) throw new Error("No payment intent found");
+        let refund;
+          // Process refund via Stripe
+        refund = await stripe.refunds.create({
+          payment_intent: session.payment_intent as string,
+          reason: "requested_by_customer",
+        });
+      }
+      catch (stripeError: any) {
+        throw new Error(`Stripe refund failed: ${stripeError.message}`);
+      }
+  }
+  else {
+      if(ticket.ticket_service !== "eventbrite") {
+        throw Error("Unknown ticket service: " + ticket.ticket_service);
+     }
+     else {
+       // call eventbrite api, parse through compelted refunds nad make sure status is refunded
+     }
+  }
+
   try {
     // If it's an Eventbrite ticket and we're approving the refund, process through Eventbrite
-    if (status === "APPROVED" && ticket.ticket_service === "eventbrite" && ticket.order_id) {
-      try {
-        const response = await fetch(
-          `https://www.eventbriteapi.com/v3/orders/${ticket.order_id}/refunds/`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${eventbriteToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to process Eventbrite refund");
-        }
-      } catch (error) {
-        console.error("Eventbrite refund error:", error);
-        return new Response("failed to process Eventbrite refund", { status: 400 });
-      }
-    }
-
     // Update the ticket order status
     const { error: updateError } = await adminSupabase
       .from("ticket_orders")
@@ -73,9 +83,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     if (updateError) {
       throw Error("Failed to update ticket status: " + updateError.message);
     }
-
     // TODO: Send email notification to the organization/student about the refund status
-
     return new Response("success", { status: 200 });
   } catch (e: any) {
     console.error(e);

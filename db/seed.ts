@@ -1,8 +1,52 @@
-import { SeedClient, createSeedClient } from "@snaplet/seed";
+import {
+  SeedClient,
+  createSeedClient,
+  type studentsScalars,
+} from "@snaplet/seed";
 import { copycat, type Input } from "@snaplet/copycat";
 import "dotenv/config";
 import { env } from "process";
 import type { Tables } from "./database.types";
+
+const EXAMPLE_IMAGE_PATH = "smile.png";
+
+const example_problems = [
+  {
+    problem_latex: "How many fingers do you have?",
+    answer_latex: "10",
+    solution_latex:
+      "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
+    answer_type: "Integer",
+  },
+  {
+    problem_latex: "what is thirteen plus fourteen minus two",
+    answer_latex: "25",
+    solution_latex: "compute it.",
+    answer_type: "Integer",
+  },
+  {
+    problem_latex:
+      "Suppose $X$ is a random variable taking values in ${ 1 , \\ldots , n }$ such that $\\mathbb{E} X = n / 2$. Prove that $X \\geq n / 10$ with probability at least $1 / 10$.",
+    answer_latex: "Inequality gives proof.",
+    solution_latex: "do it",
+    answer_type: "Text",
+  },
+  {
+    problem_latex:
+      "integral of $\\int_{-\\infty}^\\infty \\frac{\\sin(x)}{x} d x$",
+    answer_latex: "pi",
+    solution_latex: "look up stack exchange",
+    answer_type: "AsciiMath",
+  },
+  {
+    problem_latex:
+      `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
+    answer_latex: "(9!)/2",
+    solution_latex:
+      "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
+    answer_type: "AsciiMath",
+  },
+] satisfies Partial<Tables<"problems">>[];
 
 enum UserType {
   Superadmin = 1,
@@ -51,6 +95,50 @@ async function create_user(
   } else if (type == UserType.Student) {
     return await seed.students([data]);
   }
+}
+
+// Seed an event and test with explicit parameters for ease of testing.
+async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
+  // Put the student in an event with a test that opens now.
+  // console.log(student.student_id);
+  const {
+    events: [event],
+  } = await seed.events([
+    {
+      event_name: "Example Event",
+      event_date: new Date(),
+      published: true,
+      summary: "debug event for testing",
+      eventbrite_event_id: null,
+      tests: [
+        {
+          test_name: "Example Test",
+          buffer_time: 60 * 60 * 24,
+          length: 60 * 20,
+          opening_time: new Date(),
+          division: null,
+          is_team: true,
+          visible: true,
+          test_mode: "Standard",
+          access_rules: null,
+          test_problems: example_problems.map((p) => ({ problems: p })),
+        },
+      ],
+      ticket_orders: [
+        {
+          ticket_service: "stripe",
+          student_id: student.student_id,
+          quantity: 1,
+        },
+      ],
+    },
+  ]);
+  await seed.teams([
+    {
+      event_id: event.event_id,
+      student_events: [{ event_id: event.event_id, ...student }],
+    },
+  ]);
 }
 
 function permute<T>(
@@ -219,7 +307,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
           buffer_time: (ctx) => copycat.int(ctx.seed, { min: 0, max: 10 }) * 60,
           length: (ctx) => copycat.int(ctx.seed, { min: 10, max: 60 }) * 60,
           division: null,
-          access_rules: {},
+          access_rules: null,
         },
       },
       ticket_orders: {
@@ -244,6 +332,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     "!net.*",
     "!pgsodium.*",
     "!realtime.*",
+    "!storage.*",
   ]);
 
   await create_user(
@@ -283,6 +372,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     {},
   );
   const debug_student = seed.$store.students[0];
+  await seed_debug_student(seed, debug_student);
   const debug_coach = seed.$store.coaches[0];
   const debug_admin = seed.$store.admins[0];
   const debug_superadmin = seed.$store.superadmins[0];
@@ -326,7 +416,17 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
   const { events } = await seed.events(
     (x) =>
       x(hosts.length * 4, ({ seed }) => ({
-        tests: (x) => x(3),
+        tests: (x) =>
+          x(3, () => {
+            return {
+              test_problems: copycat
+                .someOf(
+                  [1, 5],
+                  example_problems,
+                )(seed)
+                .map((p) => ({ problems: p })),
+            };
+          }),
         // Make most events published.
         published: copycat.int(seed, { min: 0, max: 9 }) < 9,
       })),
@@ -523,6 +623,10 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
       { connect: { events: [event] } },
     );
   }
+
+  // TODO: resolve importing supabase client properly
+  // supabase.storage.from("problem-images").upload(EXAMPLE_IMAGE_PATH, createReadStream('./example.png'));
+  
   if (!dryRun) {
     console.log("Successfully seeded database!");
   }

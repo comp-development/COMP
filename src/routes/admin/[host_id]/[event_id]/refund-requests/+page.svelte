@@ -4,12 +4,12 @@
   import { handleError } from "$lib/handleError";
   import { Button, Badge, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
   import type { Tables } from "$lib/types/database.types";
-
   const event_id = parseInt($page.params.event_id);
   let loading = true;
   let refundRequests: Tables<"ticket_orders">[] = [];
 
   (async () => {
+    console.log("LOADING", loading);
     try {
       console.log("Fetching refund requests for event:", event_id);
       let body = {
@@ -25,7 +25,7 @@
     } finally {
       loading = false;
     }
-  });
+  })();
 
   async function handleRefundAction(ticketId: number, action: "APPROVED" | "DENIED") {
     try {
@@ -52,6 +52,7 @@
         handleError(error);
       }
     } finally {
+      getEventRefundRequests(event_id);
       loading = false;
     }
   }

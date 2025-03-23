@@ -1,0 +1,13 @@
+/**
+ * Copyright IBM Corp. 2024
+ *
+ * This source code is licensed under the Apache-2.0 license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+import './file-uploader.js';
+import './file-uploader-item.js';
+import './file-uploader-drop-container.js';
+import './file-uploader-button.js';
+import './file-uploader-skeleton.js';
+//# sourceMappingURL=index.js.map
