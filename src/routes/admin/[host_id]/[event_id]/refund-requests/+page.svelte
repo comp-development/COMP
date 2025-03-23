@@ -64,6 +64,13 @@
   {#if loading}
     <p>Loading refund requests...</p>
   {:else}
+    {#if refundRequests.length > 0}
+    <div class="mb-4">
+      <p> Before accepting a refund request via eventbrite, please make sure to go to the eventbrite portal
+        and manually approve the refund for this exact order id. Then, click approve on the COMP.MT console!
+      </p>
+    </div>
+    {/if}
     <div class="mb-4">
       <p>Total Requests: {refundRequests.length}</p>
       <p>Pending Requests: {refundRequests.filter(r => r.refund_status === "REQUESTED").length}</p>

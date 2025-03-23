@@ -220,50 +220,6 @@
                 {#if ticket_order}
                   <TicketCard ticket={ticket_order} onRequestRefund={requestRefund} />
                 {/if}
-
-                <!-- Placeholder for additional tickets -->
-                <TicketCard 
-                  ticket={{
-                    order_id: "SAMPLE-123",
-                    refund_status: "REQUESTED",
-                    ticket_service: "eventbrite",
-                    id: 0,
-                    student_id: "",
-                    event_id: 0,
-                    created_at: new Date().toISOString(),
-                    org_id: null,
-                    quantity: 1
-                  }} 
-                  onRequestRefund={() => {}}
-                />
-                <TicketCard 
-                  ticket={{
-                    order_id: "SAMPLE-456",
-                    refund_status: "APPROVED",
-                    ticket_service: "eventbrite",
-                    id: 1,
-                    student_id: "",
-                    event_id: 0,
-                    created_at: new Date().toISOString(),
-                    org_id: null,
-                    quantity: 1
-                  }} 
-                  onRequestRefund={() => {}}
-                />
-                <TicketCard 
-                  ticket={{
-                    order_id: "SAMPLE-789",
-                    refund_status: "DENIED",
-                    ticket_service: "eventbrite",
-                    id: 2,
-                    student_id: "",
-                    event_id: 0,
-                    created_at: new Date().toISOString(),
-                    org_id: null,
-                    quantity: 1
-                  }} 
-                  onRequestRefund={() => {}}
-                />
               </div>
             </div>
           </div>

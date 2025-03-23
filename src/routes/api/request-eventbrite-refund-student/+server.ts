@@ -150,6 +150,10 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   
 
   try {
+
+    // there is already no ui for the student to leave the team, so shouldn't have to do anythung here?
+    
+
     const { error: updateError } = await adminSupabase
       .from("ticket_orders")
       .update({ refund_status: "REQUESTED" })
@@ -157,6 +161,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       .eq("event_id", event_id);
     if (updateError) {
       throw Error("Failed to update ticket orders: " + updateError.message);
+
     }
   } catch (e: any) {
     console.log("ERROR", e);
