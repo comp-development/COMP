@@ -70,17 +70,25 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       } else {
         // if this is eventbrite
         // call eventbrite api, parse through compelted refunds nad make sure status is refunded
-        // https://www.eventbriteapi.com/v3/events/event_id/orders?refund_request_statuses=completed
-        // const eventbriteResponse = await fetch(
-        //   `https://www.eventbriteapi.com/v3/events/refund_requests/?token=${eventbriteToken}`,
-        //   {
-        //     method: "GET",
-        //     headers: {
-        //       "Content-Type": "application/json",  // Required header
-        //     },
-        //     body: JSON.stringify(refundRequestBody),
-        //   }
-        // );
+        const eventbriteResponse = await fetch(
+          `https://www.eventbriteapi.com/v3/orders/${ticket.order_id}/?token=${eventbriteToken}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",  // Required header
+            },
+          }
+        );
+
+        if (!eventbriteResponse.ok) {
+          throw Error(`Eventbrite refund failed: ${eventbriteResponse.statusText}`);
+        }
+
+        const eventbriteData = await eventbriteResponse.json();
+        if (eventbriteData?.status !== "refunded") {
+          throw Error("Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!");
+        }
+        
       }
     }
     if(ticket.student_id !== null) {
