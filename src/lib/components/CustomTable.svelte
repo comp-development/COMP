@@ -25,7 +25,7 @@
     ClockSolid
   } from "flowbite-svelte-icons";
   
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   // Using custom icons instead of svelte-heros-v2 to avoid dependency issues
 
   // Props definitions using runes API - updated to use arrays
@@ -92,9 +92,47 @@
   let exportVisibleColumnsOnly = $state(false);
   let exportFilteredRowsOnly = $state(false);
 
-  // Derived filtered data - updated to use the new filter system
+  // Search state
+  let searchTerm = $state('');
+
+  // Create event dispatcher
+  const dispatch = createEventDispatcher<{
+    selectionChange: { 
+      selectedRows: Set<string | number>; 
+      selectedData: any[];
+      count: number;
+      allSelected: boolean;
+      someSelected: boolean;
+    };
+  }>();
+
+  // Function to check if a row matches the search term
+  function rowMatchesSearch(row: any): boolean {
+    if (!searchTerm.trim()) return true;
+    
+    const term = searchTerm.trim().toLowerCase();
+    
+    // Only search through visible columns
+    return allColumns.some(column => {
+      if (!internalVisibleColumns[column.displayKey]) return false;
+      
+      const value = row[column.dataKey];
+      if (value === null || value === undefined) return false;
+      
+      // Convert to string and check if it contains the search term
+      return String(value).toLowerCase().includes(term);
+    });
+  }
+
+  // Apply search to data
+  function applySearch(data: any[]): any[] {
+    if (!searchTerm.trim()) return data;
+    return data.filter(row => rowMatchesSearch(row));
+  }
+
+  // Derived filtered data - updated to include search
   const filteredData = $derived<any[]>(
-    sortData(applyFilters(props.data, filters), sortColumn, sortDirection)
+    sortData(applySearch(applyFilters(props.data, filters)), sortColumn, sortDirection)
   );
   
   // New state for selected rows - moved here after filteredData is defined
@@ -109,6 +147,17 @@
   const someRowsSelected = $derived(
     selectedRows.size > 0 && selectedRows.size < filteredData.length
   );
+
+  // Dispatch selection changes to parent
+  $effect(() => {
+    dispatch('selectionChange', {
+      selectedRows: selectedRows,
+      selectedData: getSelectedRowData(),
+      count: selectedRows.size,
+      allSelected: allRowsSelected,
+      someSelected: someRowsSelected
+    });
+  });
 
   // Check if a specific row is selected
   function isRowSelected(rowId: string | number): boolean {
@@ -474,6 +523,9 @@
         // Save filters
         localStorage.setItem(`${tableId}_filters`, JSON.stringify(filters));
         
+        // Save search term
+        localStorage.setItem(`${tableId}_search`, searchTerm);
+        
         // Save export settings
         localStorage.setItem(`${tableId}_export_settings`, JSON.stringify({
           visibleColumnsOnly: exportVisibleColumnsOnly,
@@ -514,6 +566,12 @@
         const savedFilters = localStorage.getItem(`${tableId}_filters`);
         if (savedFilters) {
           filters = JSON.parse(savedFilters);
+        }
+        
+        // Load search term
+        const savedSearch = localStorage.getItem(`${tableId}_search`);
+        if (savedSearch) {
+          searchTerm = savedSearch;
         }
         
         // Load export settings
@@ -627,9 +685,16 @@
       saveTableState();
     }
   });
+
+  // Watch for search term changes to save state
+  $effect(() => {
+    if (searchTerm.trim() !== '') {
+      saveTableState();
+    }
+  });
 </script>
 
-{#if props.isLoading}
+{#if props.isLoading || true}
   <div class="w-full">
     <!-- Table header skeleton -->
     <div class="mb-4 flex flex-row justify-between w-full">
@@ -700,6 +765,9 @@
           {/each}
         </Dropdown>
       </div>
+      
+      <!-- Slot for custom action buttons -->
+      <slot name="actions"></slot>
     </div>
     
     <!-- Right-aligned buttons -->
@@ -733,6 +801,13 @@
       </div>
     </div>
   </div>
+  
+  {#if !props.isLoading}
+    <!-- Search bar row - new addition -->
+    <div class="mb-4 mt-2 w-full">
+      <Search size="md" placeholder="Search across all visible columns..." bind:value={searchTerm} class="w-full" />
+    </div>
+  {/if}
   
   <!-- Filter Editor Modal using Flowbite Modal component -->
   <Modal title="Edit Filters" bind:open={showFilterEditor} size="xl" autoclose={false} classBody="w-full">

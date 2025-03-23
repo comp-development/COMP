@@ -97,7 +97,7 @@ export async function getEventCustomFields(
     .order("ordering");
 
   if (error) throw error;
-  console.log("GET EVENT CUSTOM FIELDS", data);
+  console.log("GET EVENT CUSTOM FIELDS", custom_field_table, data);
 
   const flattenedData = (data || []).map((record: any) => {
     if (record.custom_fields) {
@@ -353,7 +353,13 @@ export async function getEventOrganizations(event_id: number) {
     .select(
       `
             *,
-            org:orgs(*)
+            org:orgs(
+              *,
+              coaches:org_coaches(
+                *,
+                person:coaches(*)
+              )
+            )
         `,
     )
     .eq("event_id", event_id);

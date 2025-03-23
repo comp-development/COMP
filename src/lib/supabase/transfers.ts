@@ -13,6 +13,7 @@ import { supabase } from "../supabaseClient";
  */
 export async function transferStudentToTeam(student_event_id: number, new_team_id: number) {
   // First, get the organization ID of the team (if any)
+  console.log("Transferring student to team", student_event_id, new_team_id);
   const { data: teamData, error: teamError } = await supabase
     .from("teams")
     .select("org_id")
@@ -20,7 +21,7 @@ export async function transferStudentToTeam(student_event_id: number, new_team_i
     .single();
 
   if (teamError) throw teamError;
-  
+  console.log("Team data", teamData);
   // Now update the student record with both the new team_id and org_id
   const { data, error } = await supabase
     .from("student_events")
@@ -31,8 +32,9 @@ export async function transferStudentToTeam(student_event_id: number, new_team_i
     .eq("student_event_id", student_event_id)
     .select("*, person:students(*)")
     .single();
-
+  console.log("Error", error);
   if (error) throw error;
+  console.log("Data", data);
   return data;
 }
 
@@ -70,57 +72,31 @@ export async function transferStudentToOrg(student_event_id: number, new_org_id:
  * 1. The team's org_id will be updated
  * 2. All students in the team will be transferred to the new organization
  * 
+ * This operation is executed as a single transaction, so it either completes entirely
+ * or rolls back completely if any errors occur. Error handling is managed by PostgreSQL.
+ * 
  * @param team_id The ID of the team to transfer
  * @param new_org_id The ID of the organization to transfer the team to (or null to remove org affiliation)
  * @returns An object containing the updated team and list of affected students
  */
 export async function transferTeamToOrg(team_id: number, new_org_id: number | null) {
   try {
-    // 1. Update the team's organization
-    const { data: teamData, error: teamError } = await supabase
-      .from("teams")
-      .update({ org_id: new_org_id })
-      .eq("team_id", team_id)
-      .select()
-      .single();
-    
-    if (teamError) throw teamError;
-    
-    // 2. Get all students in this team
-    const { data: studentsData, error: studentsError } = await supabase
-      .from("student_events")
-      .select("student_event_id")
-      .eq("team_id", team_id);
-    
-    if (studentsError) throw studentsError;
-    
-    // 3. If there are students in the team, update all of their org_id values
-    let updatedStudents: any[] = [];
-    if (studentsData && studentsData.length > 0) {
-      const studentIds = studentsData.map(s => s.student_event_id);
-      
-      const { data: updatedStudentData, error: updateError } = await supabase
-        .from("student_events")
-        .update({ org_id: new_org_id })
-        .in("student_event_id", studentIds)
-        .select("*, person:students(*)");
-      
-      if (updateError) {
-        // If updating students fails, revert the team update to maintain consistency
-        await supabase
-          .from("teams")
-          .update({ org_id: teamData.org_id }) // Revert to original org_id
-          .eq("team_id", team_id);
-          
-        throw updateError;
+    // Call the RPC function that handles the entire transfer as a transaction
+    const { data, error } = await supabase.rpc(
+      'transfer_team_to_organization', 
+      { 
+        p_team_id: team_id,
+        p_new_org_id: new_org_id
       }
-      
-      updatedStudents = updatedStudentData;
-    }
+    );
     
+    // If there's an error from the database, throw it immediately
+    if (error) throw error;
+    
+    // Return the successful result
     return {
-      team: teamData,
-      students: updatedStudents
+      team: data.team,
+      students: data.students || []
     };
   } catch (error) {
     console.error("Error transferring team to organization:", error);
