@@ -625,6 +625,7 @@
               onDrop={handleDrop}
               onDragStart={handleDragStart}
               onDeleteStudent={handleDeleteStudentTeam}
+              waiverType={event_details?.waivers?.type ?? "none"}
               {handleDeleteTeam}
               {handleDragOver}
               {handleDragLeave}
@@ -650,6 +651,8 @@
           {#each studentsWithoutTeams as student}
             <DraggableStudent
               team_member={student}
+              {event_id}
+              waiverType={event_details?.waivers?.type ?? "none"}
               onDragStart={handleDragStart}
               onDeleteStudent={() => {
                 handleDeletingStudent(student);

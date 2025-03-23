@@ -45,6 +45,8 @@
     "dotenv": "^16.4.5",
     "fontawesome-free": "^1.0.4",
     "fs": "^0.0.1-security",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "marked": "^15.0.6",
     "mathlifier": "^2.0.2",
     "moment": "^2.30.1",

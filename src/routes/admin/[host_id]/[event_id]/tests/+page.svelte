@@ -44,8 +44,9 @@
   let loading = $state(true);
 
   let open = $state(false);
-  let settingsOpen = $state(false);
-  let createOpen = $state(false);
+  let testModalOpen = $state(false);
+  let isEditMode = $state(false);
+
   let instructions = "";
   let name = "";
 
@@ -61,7 +62,7 @@
   let subscription: any;
 
   interface TestData {
-    test_id: string;
+    test_id: string | number;
     test_name: string;
     is_team: boolean;
     division?: string;
@@ -79,20 +80,20 @@
   }
 
   let curTest: TestData = $state({} as TestData);
-  let newTest: TestData = $state({
+  let activeTest: TestData = $state({
+    test_id: "",
     test_name: "",
     is_team: false,
     visible: false,
     length: 3600,
     buffer_time: 300,
-    test_mode: "standard",
+    test_mode: "Standard",
     instructions: ""
   } as TestData);
   let dateValue: Date = $state(new Date());
 
   let isInvalid = $state(false);
   let nameError = $state("");
-  let createNameError = $state("");
 
   function setupTime(date: Date) {
     let month, day, year, hours, minutes, currentAmPm;
@@ -313,79 +314,70 @@
     open = true;
   }
 
-  function handleSettingsClick(test: TestData) {
-    curTest = { ...test };
-    settingsOpen = true;
+  function openTestModal(isEdit: boolean, test?: TestData) {
+    isEditMode = isEdit;
+    
+    if (isEdit && test) {
+      // Edit mode - clone the existing test
+      activeTest = { ...test };
+    } else {
+      // Create mode - initialize with defaults
+      activeTest = {
+        test_id: "",
+        test_name: "",
+        is_team: false,
+        visible: false,
+        length: 3600,
+        buffer_time: 300,
+        test_mode: "Standard",
+        instructions: ""
+      } as TestData;
+    }
+    
+    nameError = "";
+    testModalOpen = true;
   }
 
-  function closeSettingsModal() {
-    settingsOpen = false;
+  function handleSettingsClick(test: TestData) {
+    openTestModal(true, test);
+  }
+
+  function closeTestModal() {
+    testModalOpen = false;
     nameError = "";
   }
 
-  async function saveSettingsAndClose() {
+  async function saveTestAndClose() {
     // Validate test name
-    if (!curTest.test_name || curTest.test_name.trim() === "") {
+    if (!activeTest.test_name || activeTest.test_name.trim() === "") {
       nameError = "Test name cannot be empty";
       return;
     }
 
     try {
       const data = {
-        test_name: curTest.test_name.trim(),
-        length: parseInt(curTest.length?.toString() || "0"),
-        buffer_time: parseInt(curTest.buffer_time?.toString() || "0"),
-        is_team: curTest.is_team,
-        instructions: curTest.instructions,
-        test_mode: curTest.test_mode,
-        visible: curTest.visible
+        test_name: activeTest.test_name.trim(),
+        length: parseInt(activeTest.length?.toString() || "3600"),
+        buffer_time: parseInt(activeTest.buffer_time?.toString() || "300"),
+        is_team: activeTest.is_team,
+        visible: activeTest.visible,
+        test_mode: activeTest.test_mode,
+        instructions: activeTest.instructions
       };
       
-      await updateTest(curTest.test_id, data);
-      settingsOpen = false;
+      if (isEditMode) {
+        // Update existing test
+        await updateTest(activeTest.test_id, data);
+      } else {
+        // Create new test
+        await createTest({
+          ...data,
+          event_id: eventId
+        });
+      }
+      
+      testModalOpen = false;
       nameError = "";
-    } catch (error) {
-      handleError(error as Error);
-    }
-  }
-
-  function closeCreateModal() {
-    createOpen = false;
-    createNameError = "";
-    // Reset the newTest to default values
-    newTest = {
-      test_name: "",
-      is_team: false,
-      visible: false,
-      length: 3600,
-      buffer_time: 300,
-      test_mode: "standard",
-      instructions: ""
-    } as TestData;
-  }
-
-  async function createNewTest() {
-    // Validate test name
-    if (!newTest.test_name || newTest.test_name.trim() === "") {
-      createNameError = "Test name cannot be empty";
-      return;
-    }
-
-    try {
-      const testData = {
-        event_id: eventId,
-        test_name: newTest.test_name.trim(),
-        is_team: newTest.is_team,
-        visible: newTest.visible,
-        length: parseInt(newTest.length?.toString() || "3600"),
-        buffer_time: parseInt(newTest.buffer_time?.toString() || "300"),
-        test_mode: newTest.test_mode,
-        instructions: newTest.instructions
-      };
-      
-      await createTest(testData);
-      createOpen = false;
-      createNameError = "";
     } catch (error) {
       handleError(error as Error);
     }
@@ -403,7 +395,7 @@
       <div class="text-center">
         <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-auto flex items-center"
-          on:click={() => createOpen = true}
+          onclick={() => openTestModal(false)}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
@@ -413,7 +405,7 @@
       <div class="flex justify-between items-center mb-6">
         <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
-          on:click={() => createOpen = true}
+          onclick={() => openTestModal(false)}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
@@ -446,9 +438,13 @@
         {/each}
       </div>
       <br />
-      <Modal bind:open={settingsOpen} size="xl" autoclose={false} class="w-full max-w-4xl">
+      
+      <!-- Combined Test Modal (Create/Edit) -->
+      <Modal bind:open={testModalOpen} size="xl" autoclose={false} class="w-full max-w-4xl">
         <div class="text-center">
-          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Test Settings</h3>
+          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">
+            {isEditMode ? 'Test Settings' : 'Create New Test'}
+          </h3>
           
           <!-- Form layout using centered columns -->
           <div class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8">
@@ -460,7 +456,7 @@
                 </span>
                 <div class="w-64">
                   <Input 
-                    bind:value={curTest.test_name}
+                    bind:value={activeTest.test_name}
                     color={nameError ? "red" : "base"}
                   />
                   {#if nameError}
@@ -472,8 +468,8 @@
               <div class="flex flex-col items-center">
                 <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Visibility</span>
                 <div class="flex items-center justify-center gap-3">
-                  <Toggle bind:checked={curTest.visible} />
-                  <span>{curTest.visible ? 'Visible' : 'Hidden'}</span>
+                  <Toggle bind:checked={activeTest.visible} />
+                  <span>{activeTest.visible ? 'Visible' : 'Hidden'}</span>
                 </div>
               </div>
             </div>
@@ -483,15 +479,15 @@
               <div class="flex flex-col items-center">
                 <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Type</span>
                 <div class="flex items-center justify-center gap-3">
-                  <Toggle bind:checked={curTest.is_team} />
-                  <span>{curTest.is_team ? 'Team' : 'Individual'}</span>
+                  <Toggle bind:checked={activeTest.is_team} />
+                  <span>{activeTest.is_team ? 'Team' : 'Individual'}</span>
                 </div>
               </div>
               
               <div class="flex flex-col items-center">
                 <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
                 <div class="w-64">
-                  <Select bind:value={curTest.test_mode}>
+                  <Select bind:value={activeTest.test_mode}>
                     <option value="Standard">Standard</option>
                     <option value="Puzzle">Puzzle</option>
                     <option value="Guts">Guts</option>
@@ -506,14 +502,14 @@
               <div class="flex flex-col items-center">
                 <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Length (seconds)</span>
                 <div class="w-64">
-                  <Input type="number" bind:value={curTest.length} />
+                  <Input type="number" bind:value={activeTest.length} />
                 </div>
               </div>
               
               <div class="flex flex-col items-center">
                 <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
                 <div class="w-64">
-                  <Input type="number" bind:value={curTest.buffer_time} />
+                  <Input type="number" bind:value={activeTest.buffer_time} />
                 </div>
               </div>
             </div>
@@ -522,7 +518,7 @@
             <div class="w-full flex flex-col items-center">
               <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Instructions</span>
               <div class="w-full max-w-2xl">
-                <Textarea rows={5} bind:value={curTest.instructions} />
+                <Textarea rows={5} bind:value={activeTest.instructions} />
               </div>
             </div>
           </div>
@@ -530,19 +526,20 @@
           <div class="flex justify-center gap-4 mt-8">
             <button 
               class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeSettingsModal}
+              onclick={closeTestModal}
             >
               Cancel
             </button>
             <button 
               class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={saveSettingsAndClose}
+              onclick={saveTestAndClose}
             >
-              Save
+              {isEditMode ? 'Save' : 'Create'}
             </button>
           </div>
         </div>
       </Modal>
+      
       <Modal bind:open size="lg" autoclose={false}>
         <div class="text-center">
           <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Set open time</h3>
@@ -573,118 +570,15 @@
           <div class="flex justify-center gap-4 mt-6">
             <button 
               class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeModal}
+              onclick={closeModal}
             >
               Cancel
             </button>
             <button 
               class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={saveAndClose}
+              onclick={saveAndClose}
             >
               Save
-            </button>
-          </div>
-        </div>
-      </Modal>
-      
-      <!-- Create Test Modal -->
-      <Modal bind:open={createOpen} size="xl" autoclose={false} class="w-full max-w-4xl">
-        <div class="text-center">
-          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Create New Test</h3>
-          
-          <!-- Form layout using centered columns -->
-          <div class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8">
-            <!-- Row 1: Test Name and Visibility -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Test Name <span class="text-red-500">*</span>
-                </span>
-                <div class="w-64">
-                  <Input 
-                    type="text" 
-                    bind:value={newTest.test_name} 
-                    required 
-                    color={createNameError ? "red" : "base"}
-                  />
-                  {#if createNameError}
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">Test name cannot be empty</p>
-                  {/if}
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Visibility</span>
-                <div class="w-64 flex items-center justify-center">
-                  <Toggle bind:checked={newTest.visible} />
-                  <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">
-                    {newTest.visible ? 'Visible' : 'Hidden'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 2: Test Type and Test Mode -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Type</span>
-                <div class="w-64 flex items-center justify-center">
-                  <Toggle bind:checked={newTest.is_team} />
-                  <span class="ml-3 text-sm font-medium text-gray-900 dark:text-white">
-                    {newTest.is_team ? 'Team' : 'Individual'}
-                  </span>
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
-                <div class="w-64">
-                  <Select class="w-full" bind:value={newTest.test_mode}>
-                    <option value="standard">Standard</option>
-                    <option value="guts">Guts</option>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 3: Test Length and Buffer Time -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Length (seconds)</span>
-                <div class="w-64">
-                  <Input type="number" bind:value={newTest.length} />
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
-                <div class="w-64">
-                  <Input type="number" bind:value={newTest.buffer_time} />
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 4: Instructions -->
-            <div class="w-full flex flex-col items-center">
-              <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Instructions</span>
-              <div class="w-full max-w-2xl">
-                <Textarea rows={5} bind:value={newTest.instructions} />
-              </div>
-            </div>
-          </div>
-          
-          <div class="flex justify-center gap-4 mt-8">
-            <button 
-              class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              on:click={closeCreateModal}
-            >
-              Cancel
-            </button>
-            <button 
-              class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              on:click={createNewTest}
-            >
-              Create
             </button>
           </div>
         </div>
