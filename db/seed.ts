@@ -287,6 +287,8 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
           name: (ctx) =>
             "Organization " + copycat.word(ctx.seed, { capitalize: true }),
           address: (ctx) => copycat.postalAddress(ctx.seed),
+          address_latitude: null, 
+          address_longitude: null,
         },
       },
       students: {
