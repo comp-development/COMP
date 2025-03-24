@@ -65,7 +65,7 @@
     let ticket_orders: Tables<"ticket_orders">[] = $state([]);
     let in_progress_ticket_orders: Tables<"ticket_orders">[] = $state([]);
 
-    async function requestRefund(ticket_order: Tables<"ticket_orders">) {
+    async function requestRefund(first_name: string, last_name: string, email: string, ticket_order: Tables<"ticket_orders">) {
       if (ticket_order && ticket_order.refund_status == "NONE") {
         if (ticket_order.ticket_service == "eventbrite" || ticket_order.ticket_service == "stripe") {
           const { data: authData, error } = await supabase.auth.getSession();
@@ -79,6 +79,9 @@
             ticket_id: ticket_order.id,
             token,
             org_id,
+            first_name,
+            last_name,
+            email,
             eventbrite_order_id: ticket_order.order_id,
           };
           const response = await fetch("/api/request-eventbrite-refund-org", {
@@ -252,7 +255,10 @@
               {#each ticket_orders as ticket_order}
                 <TicketCard 
                   ticket={ticket_order}
-                  onRequestRefund={() => requestRefund(ticket_order)}
+                  onRequestRefund={requestRefund}
+                  first_name={coach?.first_name}
+                  last_name={coach?.last_name}
+                  email={coach?.email}
                 />
               {/each}
             </div>

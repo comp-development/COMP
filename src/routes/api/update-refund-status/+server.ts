@@ -88,7 +88,6 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         if (eventbriteData?.status !== "refunded") {
           throw Error("Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!");
         }
-        
       }
     }
     if(ticket.student_id !== null) {

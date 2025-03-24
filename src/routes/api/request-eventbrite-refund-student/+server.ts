@@ -11,6 +11,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   let event_id: number,
     ticket_id: number,
     target_org_id: number | null,
+    first_name: string,
+    last_name: string,
+    email: string,
     token: string,
     eventbrite_order_id: string | null;
 
@@ -25,6 +28,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     };
     ticket_id = r("ticket_id");
     event_id = r("event_id");
+    first_name = r("first_name");
+    last_name = r("last_name");
+    email = r("email");
     token = r("token");
     eventbrite_order_id = r("eventbrite_order_id");
   } catch (e: any) {
@@ -103,8 +109,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     try {
       // using event cancellation or covid19 as reason makes full refund go through
       const refundRequestBody = {
-        from_email: student?.email,
-        from_name: student?.first_name + " " + student?.last_name,
+        from_email: email,
+        from_name: first_name + " " + last_name,
         items: [
           {
             order_id: eventbrite_order_id,
@@ -152,7 +158,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   try {
 
     // there is already no ui for the student to leave the team, so shouldn't have to do anythung here?
-    
+
 
     const { error: updateError } = await adminSupabase
       .from("ticket_orders")

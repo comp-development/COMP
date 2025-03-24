@@ -53,7 +53,7 @@
   
 
 
-  async function requestRefund() {
+  async function requestRefund(first_name: string, last_name: string, email: string, ticket: Tables<"ticket_orders"> = ticket_order) {
     if (ticket_order && ticket_order.refund_status == "NONE") {
       if (ticket_order.ticket_service == "eventbrite" || ticket_order.ticket_service == "stripe") {
         const { data: authData, error } = await supabase.auth.getSession();
@@ -68,6 +68,9 @@
           event_id,
           ticket_id: ticket_order.id,
           token,
+          first_name,
+          last_name,
+          email,
           eventbrite_order_id: ticket_order.order_id,
         };
         console.log("calling");
@@ -218,7 +221,7 @@
             <div class="overflow-y-auto max-h-[70vh] pr-2 -mr-2">
               <div class="space-y-4">
                 {#if ticket_order}
-                  <TicketCard ticket={ticket_order} onRequestRefund={requestRefund} />
+                  <TicketCard ticket={ticket_order} onRequestRefund={requestRefund} first_name={student?.first_name} last_name={student?.last_name} email={student?.email} />
                 {/if}
               </div>
             </div>
