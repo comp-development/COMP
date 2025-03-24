@@ -1,14 +1,44 @@
+<!--
+  CustomTable Component
+  
+  A flexible and powerful table component with support for:
+  - Sorting
+  - Filtering
+  - Searching
+  - Column visibility toggling
+  - CSV export
+  - Custom formatting
+  - Frozen columns (using the `frozen: true` property on column definitions)
+  - Linked columns
+
+  Usage:
+  ```svelte
+  <CustomTable 
+    data={data}
+    columns={[
+      { key: 'id', label: 'ID', visible: false },
+      { key: 'name', label: 'Name', visible: true, frozen: true },  // This column will be frozen
+      { key: 'email', label: 'Email', visible: true }
+    ]}
+    entityType="user"
+    idField="id"
+    tableId="users_table"
+  />
+  ```
+
+  Column Properties:
+  - key: Unique identifier for the column (required)
+  - label: Display label for the column (required)
+  - visible: Whether the column is initially visible (default: true)
+  - searchable: Whether the column is included in search (default: true)
+  - dataType: The data type of the column ('string', 'number', 'date', 'boolean')
+  - format: Function to format the cell value
+  - frozen: When true, the column stays fixed on the left side while scrolling horizontally
+  - linkedToColumn: Associates this column with another visible column for search/filtering/export
+-->
+
 <script lang="ts">
-    import { handleError } from "$lib/handleError";
-  import { updateStudentEvent } from "$lib/supabase";
-    import toast from "$lib/toast.svelte";
   import {
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell,
     Search,
     Checkbox,
     Dropdown,
@@ -20,22 +50,43 @@
     Popover,
     Modal,
     Toggle,
+    Alert,
+    Spinner
   } from "flowbite-svelte";
-
+  
   // Import Flowbite Svelte Icons
-  import {
-    FilterSolid,
-    CloseOutline,
-    PlusOutline,
-    CaretDownSolid,
+  import { 
+    FilterSolid, 
+    CloseOutline, 
+    PlusOutline, 
+    CaretDownSolid, 
     CaretUpSolid,
     TableRowOutline,
     TableColumnOutline,
     ClockSolid,
+    SearchOutline,
+    DownloadSolid,
+    PenSolid,
+    TrashBinSolid,
+    CogOutline
   } from "flowbite-svelte-icons";
-
-  import { onMount } from "svelte";
+  
+  import { onMount, createEventDispatcher, onDestroy } from 'svelte';
   // Using custom icons instead of svelte-heros-v2 to avoid dependency issues
+
+  // Define the TableColumn type
+  type TableColumn = {
+    key: string;
+    label: string;
+    visible: boolean;
+    searchable?: boolean;
+    dataType?: 'string' | 'number' | 'date' | 'boolean';
+    format?: (value: any, row: any) => any;
+    displayKey?: string;
+    dataKey?: string;
+    displayLabel?: string;
+    linkedToColumn?: string; // New property to link this column to another column
+  };
 
   // Props definitions using runes API - updated to use arrays
   const props = $props<{
@@ -44,35 +95,34 @@
       key: string;
       label: string;
       visible: boolean;
-      format?: (
-        value: any,
-        row: any,
-      ) => { text: string; isBadge: boolean; color?: string } | string;
       searchable?: boolean;
-      dataType?: "string" | "number" | "date" | "boolean" | "link" | "checked"; // Added dataType for sorting
+      dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for sorting
+      format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+      linkedToColumn?: string; // Add linkedToColumn property to props interface
     }[];
-    customFields: {
-      custom_field_id: number;
-      label: string;
-      key: string;
-      dataType?: "string" | "number" | "date" | "boolean" | "link" | "checked"; // Added dataType for custom fields
-    }[];
-    entityType: "student" | "team" | "org";
+    entityType: string; // Changed from enum to string to make it more generic
     isLoading: boolean;
-    event_id: number;
+    event_id?: number; // Made optional
     event_name?: string; // Added event_name as an optional prop
     idField?: string; // Field to use as unique ID, defaults to primary key of entity
+    selectable?: boolean; // New prop to control if checkboxes should be shown
+    tableId?: string; // Optional unique identifier for the table (for localStorage)
+    identityColumns?: string[]; // New prop to specify which columns should be frozen and always visible
+    debounceSearch?: number; // Optional debounce time in milliseconds for search input
+    lazyLoad?: boolean; // Optional flag to enable lazy loading of table rows
+    initialBatchSize?: number; // Initial number of rows to render when using lazy loading
+    batchSize?: number; // Number of rows to add in each batch when using lazy loading
   }>();
 
-  console.log("PROPS", props);
+  console.log("PROPS", props)
 
   // Internal states
   let internalVisibleColumns = $state<Record<string, boolean>>({});
   let sortColumn = $state<string | null>(null);
-  let sortDirection = $state<"asc" | "desc">("asc");
-
+  let sortDirection = $state<'asc' | 'desc'>('asc');
+  
   // Get the ID field to use for each row
-  const idField = $derived(props.idField || `${props.entityType}_id`);
+  const idField = $derived(props.idField || 'id');
 
   // Filter related states
   interface FilterCondition {
@@ -81,101 +131,343 @@
     operator: string;
     value: string;
   }
-
+  
   let filters = $state<FilterCondition[]>([]);
   let pendingFilters = $state<FilterCondition[]>([]);
-  let filterText = $state("");
+  let filterText = $state('');
   let showColumnDropdown = $state(false);
   let activeFilterId = $state<string | null>(null);
   let showFilterEditor = $state(false);
 
-  // A unified array that combines regular columns and custom fields
+  // A simplified column interface that doesn't distinguish between regular and custom columns
   interface UnifiedColumn {
     key: string;
     label: string;
     visible: boolean;
-    type: "regular" | "custom";
     displayKey: string;
     dataKey: string;
     displayLabel: string;
-    custom_field_id?: number;
-    format?: (
-      value: any,
-      row: any,
-    ) => { text: string; isBadge: boolean; color?: string } | string;
+    format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
     searchable?: boolean;
-    dataType?: "string" | "number" | "date" | "boolean" | "link" | "checked";
-  }
+    dataType?: 'string' | 'number' | 'date' | 'boolean';
+    linkedToColumn?: string; 
+    frozen?: boolean; // New property to determine if a column should be frozen
+  };
 
   let allColumns = $state<UnifiedColumn[]>([]);
-
+  
   // Export settings
   let exportVisibleColumnsOnly = $state(false);
   let exportFilteredRowsOnly = $state(false);
 
+  // Search states
+  let searchTerm = $state('');
+  let debouncedSearchTerm = $state('');
+  let searchTimeout: number | null = null;
+  let isDebouncing = $state(false); // Track if debouncing is active
+  
+  // Create event dispatcher
+  const dispatch = createEventDispatcher<{
+    selectionChange: { 
+      selectedRows: Set<string | number>; 
+      selectedData: any[];
+      count: number;
+      allSelected: boolean;
+      someSelected: boolean;
+    };
+  }>();
+
+  // Debounce function for search
+  function debounceSearch(value: string) {
+    // Default debounce time to 300ms if not provided
+    const debounceTime = props.debounceSearch ?? 300;
+    
+    // Set debouncing flag
+    isDebouncing = true;
+    
+    // Clear any existing timeout
+    if (searchTimeout !== null) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // Set new timeout to update the debounced search term
+    searchTimeout = setTimeout(() => {
+      debouncedSearchTerm = value;
+      isDebouncing = false; // Reset debouncing flag
+      // Save to local storage when the debounced value changes
+      saveTableState();
+    }, debounceTime) as unknown as number;
+  }
+  
+  // Watch for searchTerm changes to debounce
   $effect(() => {
-    // Map regular columns
-    const regularColumns = props.columns.map((column: any) => ({
-      ...column,
-      type: "regular" as const,
-      displayKey: column.key, // The key as displayed/used in the component
-      dataKey: column.key, // The key used to access data in the row object
-      displayLabel: column.label, // The label displayed in the header
-    }));
-
-    // Map custom fields
-    const customFieldColumns = props.customFields.map((field: any) => ({
-      ...field,
-      type: "custom" as const,
-      displayKey: `custom_field.${field.key}`, // The key as displayed/used in the component
-      dataKey: `custom_field.${field.key}`, // The key used to access data in the row object
-      displayLabel: field.key, // The label displayed in the header
-      visible: true, // Custom fields are visible by default
-    }));
-
-    // Update allColumns
-    allColumns = [...regularColumns, ...customFieldColumns];
+    debounceSearch(searchTerm);
   });
+
+  // Function to check if a row matches the search term
+  function rowMatchesSearch(row: any): boolean {
+    if (!debouncedSearchTerm.trim()) return true;
+    
+    const term = debouncedSearchTerm.trim().toLowerCase();
+    
+    // Check visible columns
+    const hasMatch = allColumns.some(column => {
+      // Check if this column is visible directly or via linked parent visibility
+      const isDirectlyVisible = internalVisibleColumns[column.displayKey];
+      
+      // Check if this column is linked to a visible parent column
+      const isVisibleViaLinkedParent = column.linkedToColumn && 
+                                    internalVisibleColumns[column.linkedToColumn];
+      
+      // Skip if neither directly visible nor visible via linked parent
+      if (!isDirectlyVisible && !isVisibleViaLinkedParent) return false;
+      
+      const value = row[column.dataKey];
+      if (value === null || value === undefined) return false;
+      
+      // Convert to string and check if it contains the search term
+      return String(value).toLowerCase().includes(term);
+    });
+    
+    return hasMatch;
+  }
+
+  // Apply search to data
+  function applySearch(data: any[]): any[] {
+    if (!debouncedSearchTerm.trim()) return data;
+    return data.filter(row => rowMatchesSearch(row));
+  }
+
+  // Derived filtered data - updated to include search
+  const filteredData = $derived<any[]>(
+    sortData(applySearch(applyFilters(props.data, filters)), sortColumn, sortDirection)
+  );
+  
+  // New state for selected rows - moved here after filteredData is defined
+  let selectedRows = $state<Set<string | number>>(new Set());
+  
+  // Track if all rows are selected
+  const allRowsSelected = $derived(
+    filteredData.length > 0 && selectedRows.size === filteredData.length
+  );
+  
+  // Track if some but not all rows are selected
+  const someRowsSelected = $derived(
+    selectedRows.size > 0 && selectedRows.size < filteredData.length
+  );
+
+  // Dispatch selection changes to parent
+  $effect(() => {
+    dispatch('selectionChange', {
+      selectedRows: selectedRows,
+      selectedData: getSelectedRowData(),
+      count: selectedRows.size,
+      allSelected: allRowsSelected,
+      someSelected: someRowsSelected
+    });
+  });
+
+  // Check if a specific row is selected
+  function isRowSelected(rowId: string | number): boolean {
+    return selectedRows.has(rowId);
+  }
+  
+  // Toggle selection for a single row
+  function toggleRowSelection(rowId: string | number): void {
+    const newSelectedRows = new Set(selectedRows);
+    
+    if (newSelectedRows.has(rowId)) {
+      newSelectedRows.delete(rowId);
+    } else {
+      newSelectedRows.add(rowId);
+    }
+    
+    selectedRows = newSelectedRows;
+  }
+  
+  // Toggle selection for all rows
+  function toggleAllRows(): void {
+    if (allRowsSelected) {
+      // Deselect all rows
+      selectedRows = new Set();
+    } else {
+      // Select all rows
+      const newSelectedRows = new Set<string | number>();
+      filteredData.forEach((row, index) => {
+        const rowId = row[idField] !== undefined ? row[idField] : `row_${index}`;
+        newSelectedRows.add(rowId);
+      });
+      selectedRows = newSelectedRows;
+    }
+  }
+  
+  // Helper function to get selected row objects
+  function getSelectedRowData(): any[] {
+    return filteredData.filter((row, index) => {
+      const rowId = row[idField] !== undefined ? row[idField] : `row_${index}`;
+      return selectedRows.has(rowId);
+    });
+  }
+
+  // Effect to re-process columns when they change
+  $effect(() => {
+    if (props.columns) {
+      allColumns = populateAllColumns();
+      // Reinitialize visibility if needed
+      if (Object.keys(internalVisibleColumns).length === 0) {
+        internalVisibleColumns = initializeVisibility();
+      }
+    }
+  });
+
+  // Initialize columns with merged custom fields
+  function populateAllColumns() {
+    // Combine all column types to unify the interface
+    let result: UnifiedColumn[] = [];
+    
+    // Process regular columns
+    const regularColumns = props.columns || [];
+    regularColumns.forEach((column: any) => {
+      // Check if this is a simple string column
+      if (typeof column === 'string') {
+        result.push({
+          key: column,
+          label: column,
+          visible: true,
+          displayKey: column,
+          dataKey: column,
+          displayLabel: column,
+          frozen: props.identityColumns?.includes(column) || false // Set frozen based on identityColumns for backward compatibility
+        });
+      } else {
+        // This is an object-based column
+        const displayKey = column.key;
+        const dataKey = column.key;
+        const isFrozen = column.frozen || (props.identityColumns && props.identityColumns.includes(displayKey)) || false;
+        
+        result.push({
+          ...column,
+          displayKey: column.key, // The key as displayed/used in the component
+          dataKey: column.key, // The key used to access data in the row object
+          displayLabel: column.label, // The label displayed in the header
+          frozen: isFrozen // Set frozen state from column property or identityColumns
+        });
+      }
+    });
+    
+    return result;
+  }
 
   // Initialize visibility from columns' visible property
   function initializeVisibility() {
-    const initial: Record<string, boolean> = {};
-
-    // Initialize all columns using the unified approach
-    for (const column of allColumns) {
-      initial[column.displayKey] =
-        column.type === "regular" ? column.visible : true;
+    const savedState = getSavedState();
+    
+    if (savedState?.visibility) {
+      // Initialize from saved state
+      return savedState.visibility;
+    } else {
+      // Initialize from provided columns
+      let initialVisibility: Record<string, boolean> = {};
+      
+      // Set visibility for all columns based on their definition
+      allColumns.forEach(col => {
+        // Frozen columns must always be visible
+        if (col.frozen) {
+          initialVisibility[col.displayKey] = true;
+        } else {
+          initialVisibility[col.displayKey] = col.visible;
+        }
+      });
+      
+      return initialVisibility;
     }
+  }
 
-    return initial;
+  // Function to get saved state from localStorage
+  function getSavedState() {
+    if (!props.tableId) return null;
+    
+    try {
+      const visibilityJson = localStorage.getItem(`${props.tableId}_visibility`);
+      const columnsJson = localStorage.getItem(`${props.tableId}_columns`);
+      
+      if (!visibilityJson) return null;
+      
+      const visibility = JSON.parse(visibilityJson);
+      let columns = null;
+      
+      if (columnsJson) {
+        columns = JSON.parse(columnsJson);
+      }
+      
+      return { visibility, columns };
+    } catch (error) {
+      console.error("Error loading saved state:", error);
+      return null;
+    }
+  }
+
+  // Function to save column state to localStorage
+  function saveColumnState() {
+    if (!props.tableId) return;
+    
+    try {
+      const visibilityJson = JSON.stringify(internalVisibleColumns);
+      localStorage.setItem(`${props.tableId}_visibility`, visibilityJson);
+      
+      // Save frozen state
+      const columnsJson = JSON.stringify(allColumnsToJsonMap());
+      localStorage.setItem(`${props.tableId}_columns`, columnsJson);
+    } catch (error) {
+      console.error("Error saving column state:", error);
+    }
+  }
+
+  // Create a JSON representation of columns for saving
+  function allColumnsToJsonMap() {
+    // Create a new array with just the properties we want to serialize
+    return allColumns.map(col => ({
+      key: col.key,
+      visible: col.visible,
+      frozen: col.frozen // Include frozen state in JSON
+    }));
+  }
+
+  // Toggle column visibility
+  function toggleColumn(columnKey: string) {
+    // Frozen columns cannot be hidden
+    if (allColumns.find(col => col.displayKey === columnKey)?.frozen) {
+      return;
+    }
+    
+    internalVisibleColumns[columnKey] = !internalVisibleColumns[columnKey];
+    saveColumnState();
   }
 
   // Get available operators based on column data type
-  function getOperatorsForDataType(
-    dataType: "string" | "number" | "date" | "boolean" | "link" | "checked",
-  ): { value: string; label: string }[] {
+  function getOperatorsForDataType(dataType: 'string' | 'number' | 'date' | 'boolean'): { value: string; label: string }[] {
     const commonOperators = [
-      { value: "eq", label: "Equals (=)" },
-      { value: "neq", label: "Not Equals (≠)" },
-      { value: "contains", label: "Contains" },
-      { value: "startswith", label: "Starts With" },
-      { value: "endswith", label: "Ends With" },
+      { value: 'eq', label: 'Equals (=)' },
+      { value: 'neq', label: 'Not Equals (≠)' },
+      { value: 'contains', label: 'Contains' },
+      { value: 'startswith', label: 'Starts With' },
+      { value: 'endswith', label: 'Ends With' }
     ];
-
+    
     const numberDateOperators = [
-      { value: "gt", label: "Greater Than (>)" },
-      { value: "gte", label: "Greater Than or Equal (≥)" },
-      { value: "lt", label: "Less Than (<)" },
-      { value: "lte", label: "Less Than or Equal (≤)" },
+      { value: 'gt', label: 'Greater Than (>)' },
+      { value: 'gte', label: 'Greater Than or Equal (≥)' },
+      { value: 'lt', label: 'Less Than (<)' },
+      { value: 'lte', label: 'Less Than or Equal (≤)' }
     ];
-
+    
     switch (dataType) {
-      case "number":
-      case "date":
+      case 'number':
+      case 'date':
         return [...commonOperators, ...numberDateOperators];
-      case "boolean":
-        return [{ value: "eq", label: "Equals (=)" }];
-      case "string":
+      case 'boolean':
+        return [{ value: 'eq', label: 'Equals (=)' }];
+      case 'string':
       default:
         return commonOperators;
     }
@@ -183,84 +475,68 @@
 
   // Handle column sorting
   function handleSort(columnKey: string) {
-    console.log("SORTING", columnKey);
     if (sortColumn === columnKey) {
       // Toggle direction if same column is clicked again
-      sortDirection = sortDirection === "asc" ? "desc" : "asc";
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       // New column, set as ascending sort
       sortColumn = columnKey;
-      sortDirection = "asc";
+      sortDirection = 'asc';
     }
-
+    
     // Save sort settings to localStorage
     saveTableState();
   }
 
   // Get the data type for a column
-  function getColumnDataType(
-    columnKey: string,
-  ): "string" | "number" | "date" | "boolean" | "link" | "checked" {
+  function getColumnDataType(columnKey: string): 'string' | 'number' | 'date' | 'boolean' {
     // Find the column in our unified array
-    const column = allColumns.find((col) => col.displayKey === columnKey);
+    const column = allColumns.find(col => col.displayKey === columnKey);
     if (column && column.dataType) {
       return column.dataType;
     }
 
     // Default to string if type isn't specified
-    return "string";
+    return 'string';
   }
 
   // Compare values based on data type
-  function compareValues(
-    valueA: any,
-    valueB: any,
-    dataType: "string" | "number" | "date" | "boolean" | "link" | "checked",
-    direction: "asc" | "desc",
-  ): number {
+  function compareValues(valueA: any, valueB: any, dataType: 'string' | 'number' | 'date' | 'boolean', direction: 'asc' | 'desc'): number {
     // Handle undefined or null values
-    if (valueA === undefined || valueA === null) valueA = "";
-    if (valueB === undefined || valueB === null) valueB = "";
+    if (valueA === undefined || valueA === null) valueA = '';
+    if (valueB === undefined || valueB === null) valueB = '';
 
     let result: number;
 
     switch (dataType) {
-      case "number":
+      case 'number':
         // Convert to numbers for numerical comparison
         const numA = Number(valueA);
         const numB = Number(valueB);
-        result =
-          isNaN(numA) && isNaN(numB)
-            ? 0
-            : isNaN(numA)
-              ? -1
-              : isNaN(numB)
-                ? 1
-                : numA - numB;
+        result = isNaN(numA) && isNaN(numB) ? 0 : 
+                isNaN(numA) ? -1 : 
+                isNaN(numB) ? 1 : 
+                numA - numB;
         break;
 
-      case "date":
+      case 'date':
         // Convert to Date objects for date comparison
         const dateA = valueA ? new Date(valueA) : null;
         const dateB = valueB ? new Date(valueB) : null;
-        result =
-          !dateA && !dateB
-            ? 0
-            : !dateA
-              ? -1
-              : !dateB
-                ? 1
-                : dateA.getTime() - dateB.getTime();
+        result = !dateA && !dateB ? 0 :
+                !dateA ? -1 :
+                !dateB ? 1 :
+                dateA.getTime() - dateB.getTime();
         break;
 
-      case "boolean":
+      case 'boolean':
         // Convert to booleans
         const boolA = Boolean(valueA);
         const boolB = Boolean(valueB);
         result = boolA === boolB ? 0 : boolA ? 1 : -1;
         break;
 
-      case "string":
+      case 'string':
       default:
         // String comparison
         const strA = String(valueA).toLowerCase();
@@ -269,15 +545,11 @@
     }
 
     // Apply sort direction
-    return direction === "asc" ? result : -result;
+    return direction === 'asc' ? result : -result;
   }
 
   // Sort data function - updated for array data with type-aware sorting
-  function sortData(
-    data: any[],
-    column: string | null,
-    direction: "asc" | "desc",
-  ): any[] {
+  function sortData(data: any[], column: string | null, direction: 'asc' | 'desc'): any[] {
     if (!column || !data.length) return data;
 
     // Get the data type for this column
@@ -294,59 +566,57 @@
   // Apply a single filter condition
   function applyFilterCondition(row: any, filter: FilterCondition): boolean {
     const { column, operator, value } = filter;
-
+    
     // Get the actual value from the row
     let rowValue = row[column];
-    if (rowValue === null || rowValue === undefined) rowValue = "";
-
+    if (rowValue === null || rowValue === undefined) rowValue = '';
+    
     // Determine the data type for this column
     const dataType = getColumnDataType(column);
-
+    
     // Convert the value based on data type
     let typedRowValue: any = rowValue;
     let typedFilterValue: any = value;
-
+    
     switch (dataType) {
-      case "number":
+      case 'number':
         typedRowValue = Number(rowValue);
         typedFilterValue = Number(value);
         break;
-      case "date":
+      case 'date':
         typedRowValue = rowValue ? new Date(rowValue) : null;
         typedFilterValue = value ? new Date(value) : null;
         break;
-      case "boolean":
+      case 'boolean':
         typedRowValue = Boolean(rowValue);
-        typedFilterValue = value.toLowerCase() === "true";
+        typedFilterValue = value.toLowerCase() === 'true';
         break;
-      case "checked":
-      case "link":
-      case "string":
+      case 'string':
       default:
         typedRowValue = String(rowValue).toLowerCase();
         typedFilterValue = String(value).toLowerCase();
         break;
     }
-
+    
     // Apply the filter based on the operator
     switch (operator) {
-      case "eq": // Equals
+      case 'eq': // Equals
         return typedRowValue === typedFilterValue;
-      case "neq": // Not Equals
+      case 'neq': // Not Equals
         return typedRowValue !== typedFilterValue;
-      case "gt": // Greater Than
+      case 'gt': // Greater Than
         return typedRowValue > typedFilterValue;
-      case "gte": // Greater Than or Equal
+      case 'gte': // Greater Than or Equal
         return typedRowValue >= typedFilterValue;
-      case "lt": // Less Than
+      case 'lt': // Less Than
         return typedRowValue < typedFilterValue;
-      case "lte": // Less Than or Equal
+      case 'lte': // Less Than or Equal
         return typedRowValue <= typedFilterValue;
-      case "contains": // Contains
+      case 'contains': // Contains
         return String(typedRowValue).includes(typedFilterValue);
-      case "startswith": // Starts With
+      case 'startswith': // Starts With
         return String(typedRowValue).startsWith(typedFilterValue);
-      case "endswith": // Ends With
+      case 'endswith': // Ends With
         return String(typedRowValue).endsWith(typedFilterValue);
       default:
         return true;
@@ -356,70 +626,59 @@
   // Apply all filter conditions
   function applyFilters(data: any[], filters: FilterCondition[]): any[] {
     if (!filters.length) return data;
-
-    return data.filter((row) => {
+    
+    return data.filter(row => {
       // All conditions must be true (AND logic)
-      return filters.every((filter) => applyFilterCondition(row, filter));
+      return filters.every(filter => applyFilterCondition(row, filter));
     });
   }
 
-  // Derived filtered data - updated to use the new filter system
-  let filteredData = $derived<any[]>(
-    sortData(applyFilters(props.data, filters), sortColumn, sortDirection),
-  );
-
   // Get formatted value for display
   function getFormattedValue(column: any, row: any) {
-    // Handle regular columns with formatters
-    if (column.type === "regular" && column.format) {
+    // Handle columns with formatters
+    if (column.format) {
       const formatted = column.format(row[column.dataKey], row);
-      if (typeof formatted === "string") {
-        return { text: formatted || "-", isBadge: false };
+      if (typeof formatted === 'string') {
+        return { text: formatted || '-', isBadge: false };
       }
       return formatted;
     }
-
-    // Handle regular columns without formatters or custom fields
+    
+    // Handle columns without formatters
     const value = row[column.dataKey];
-    return {
-      text:
-        value === null || value === undefined || value === ""
-          ? "-"
-          : value.toString(),
-      isBadge: false,
-    };
+    return { text: (value === null || value === undefined || value === '') ? '-' : value.toString(), isBadge: false };
   }
 
   // Add a new filter condition without requiring column selection first
   function addFilter() {
     const id = Math.random().toString(36).substring(2, 9); // Generate a random ID
-
+    
     // Get the first available column as default
-    const defaultColumn = allColumns.length > 0 ? allColumns[0].displayKey : "";
-
+    const defaultColumn = allColumns.length > 0 ? allColumns[0].displayKey : '';
+    
     const newFilter: FilterCondition = {
       id,
       column: defaultColumn,
-      operator: "eq", // Default to equals
-      value: "",
+      operator: 'eq', // Default to equals
+      value: ''
     };
-
+    
     pendingFilters = [...pendingFilters, newFilter];
     activeFilterId = id;
     showColumnDropdown = false;
-    filterText = "";
+    filterText = '';
   }
 
   // Update a pending filter
   function updatePendingFilter(id: string, updates: Partial<FilterCondition>) {
-    pendingFilters = pendingFilters.map((filter) =>
-      filter.id === id ? { ...filter, ...updates } : filter,
+    pendingFilters = pendingFilters.map(filter => 
+      filter.id === id ? { ...filter, ...updates } : filter
     );
   }
 
   // Remove a pending filter
   function removePendingFilter(id: string) {
-    pendingFilters = pendingFilters.filter((filter) => filter.id !== id);
+    pendingFilters = pendingFilters.filter(filter => filter.id !== id);
     if (activeFilterId === id) {
       activeFilterId = null;
     }
@@ -441,7 +700,7 @@
     showFilterEditor = false;
     saveTableState();
   }
-
+  
   // Cancel filter editing
   function cancelFilterEditing() {
     pendingFilters = [...filters];
@@ -457,196 +716,272 @@
 
   // Get filtered columns for dropdown based on search text
   const filteredColumns = $derived(
-    filterText.trim() === ""
+    filterText.trim() === '' 
       ? allColumns
-      : allColumns.filter((col) =>
-          col.displayLabel.toLowerCase().includes(filterText.toLowerCase()),
-        ),
+      : allColumns.filter(col => 
+          col.displayLabel.toLowerCase().includes(filterText.toLowerCase())
+        )
   );
-
+  
   // Save table state to localStorage (columns visibility, sorting, and filtering)
   function saveTableState() {
     try {
-      if (props.event_id && props.entityType) {
+      // Generate a table identifier
+      const tableId = props.tableId || 
+        (props.event_id && props.entityType ? `event_${props.event_id}_${props.entityType}` : null);
+      
+      if (tableId) {
         // Save column visibility
-        localStorage.setItem(
-          `event_${props.event_id}_${props.entityType}_columns`,
-          JSON.stringify(internalVisibleColumns),
-        );
-
+        localStorage.setItem(`${tableId}_columns`, JSON.stringify(internalVisibleColumns));
+        
         // Save sorting state
-        localStorage.setItem(
-          `event_${props.event_id}_${props.entityType}_sort`,
-          JSON.stringify({
-            column: sortColumn,
-            direction: sortDirection,
-          }),
-        );
-
+        localStorage.setItem(`${tableId}_sort`, JSON.stringify({
+          column: sortColumn,
+          direction: sortDirection
+        }));
+        
         // Save filters
-        localStorage.setItem(
-          `event_${props.event_id}_${props.entityType}_filters`,
-          JSON.stringify(filters),
-        );
-
+        localStorage.setItem(`${tableId}_filters`, JSON.stringify(filters));
+        
+        // Save search term - we save the raw search term, not the debounced one
+        localStorage.setItem(`${tableId}_search`, searchTerm);
+        
         // Save export settings
-        localStorage.setItem(
-          `event_${props.event_id}_${props.entityType}_export_settings`,
-          JSON.stringify({
-            visibleColumnsOnly: exportVisibleColumnsOnly,
-            filteredRowsOnly: exportFilteredRowsOnly,
-          }),
-        );
+        localStorage.setItem(`${tableId}_export_settings`, JSON.stringify({
+          visibleColumnsOnly: exportVisibleColumnsOnly,
+          filteredRowsOnly: exportFilteredRowsOnly
+        }));
       }
     } catch (e) {
       console.error(`Error saving table state to localStorage:`, e);
     }
   }
 
-  // Load table state from localStorage
+  // Function to load table state from localStorage
   function loadTableState() {
+    if (!props.tableId) return false;
+    
     try {
-      if (props.event_id && props.entityType) {
-        // Load column visibility
-        const savedColumns = localStorage.getItem(
-          `event_${props.event_id}_${props.entityType}_columns`,
-        );
-        if (savedColumns) {
-          internalVisibleColumns = { ...JSON.parse(savedColumns) };
+      // Load column visibility
+      const visibilityJson = localStorage.getItem(`${props.tableId}_visibility`);
+      const columnsJson = localStorage.getItem(`${props.tableId}_columns`);
+      
+      if (!visibilityJson) return false;
+      
+      // Parse saved state
+      const savedVisibility = JSON.parse(visibilityJson);
+      
+      // Check if frozen columns exist in the saved visibility
+      const frozenColumns = allColumns.filter(col => col.frozen).map(col => col.displayKey);
+      
+      // Merge saved visibility with default values for columns not in saved state
+      // Ensure frozen columns are always visible
+      const mergedVisibility: Record<string, boolean> = {};
+      
+      // Start with all columns with their default visibility
+      allColumns.forEach(col => {
+        // Frozen columns must always be visible
+        if (col.frozen) {
+          mergedVisibility[col.displayKey] = true;
+        } 
+        // Use saved visibility if available, otherwise use column definition
+        else if (savedVisibility[col.displayKey] !== undefined) {
+          mergedVisibility[col.displayKey] = savedVisibility[col.displayKey];
         } else {
-          internalVisibleColumns = initializeVisibility();
+          mergedVisibility[col.displayKey] = col.visible;
         }
-
-        // Load sorting state
-        const savedSorting = localStorage.getItem(
-          `event_${props.event_id}_${props.entityType}_sort`,
-        );
-        if (savedSorting) {
-          const { column, direction } = JSON.parse(savedSorting);
-          sortColumn = column;
-          sortDirection = direction;
-          console.log("SORTING FROM STORAGE", sortColumn, sortDirection);
+      });
+      
+      // Set internal state
+      internalVisibleColumns = mergedVisibility;
+      
+      // Load sorting state
+      const sortJson = localStorage.getItem(`${props.tableId}_sort`);
+      if (sortJson) {
+        const savedSort = JSON.parse(sortJson);
+        if (savedSort.column && allColumns.some(col => col.displayKey === savedSort.column)) {
+          sortColumn = savedSort.column;
+          sortDirection = savedSort.direction || 'asc';
         }
-
-        // Load filters
-        const savedFilters = localStorage.getItem(
-          `event_${props.event_id}_${props.entityType}_filters`,
-        );
-        if (savedFilters) {
-          filters = JSON.parse(savedFilters);
-        }
-
-        // Load export settings
-        const savedExportSettings = localStorage.getItem(
-          `event_${props.event_id}_${props.entityType}_export_settings`,
-        );
-        if (savedExportSettings) {
-          const { visibleColumnsOnly, filteredRowsOnly } =
-            JSON.parse(savedExportSettings);
-          exportVisibleColumnsOnly = visibleColumnsOnly;
-          exportFilteredRowsOnly = filteredRowsOnly;
-        }
-
-        return true;
       }
-      return false;
-    } catch (e) {
-      console.error(`Error loading table state from localStorage:`, e);
+      
+      // Load filters
+      const filtersJson = localStorage.getItem(`${props.tableId}_filters`);
+      if (filtersJson) {
+        const savedFilters = JSON.parse(filtersJson);
+        // Validate each filter to ensure column exists
+        filters = savedFilters.filter((filter: FilterCondition) => 
+          allColumns.some(col => col.displayKey === filter.column)
+        );
+        pendingFilters = [...filters];
+      }
+      
+      // Load search term
+      const savedSearch = localStorage.getItem(`${props.tableId}_search`);
+      if (savedSearch !== null) {
+        searchTerm = savedSearch;
+        // Setting searchTerm will trigger the debounce via the effect
+      }
+      
+      // Load export settings
+      const exportSettingsJson = localStorage.getItem(`${props.tableId}_export_settings`);
+      if (exportSettingsJson) {
+        const savedExportSettings = JSON.parse(exportSettingsJson);
+        exportVisibleColumnsOnly = savedExportSettings.visibleColumnsOnly || false;
+        exportFilteredRowsOnly = savedExportSettings.filteredRowsOnly || false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error loading table state:", error);
       return false;
     }
   }
 
-  // Toggle column visibility
-  function toggleColumn(columnKey: string) {
-    // Create a new object to ensure reactivity
-    internalVisibleColumns = {
-      ...internalVisibleColumns,
-      [columnKey]: !internalVisibleColumns[columnKey],
+  // Set up mutation observer to detect DOM changes
+  let mutationObserver: MutationObserver | null = null;
+  
+  // Override the component lifecycle
+  onMount(() => {
+    // Initially populate columns
+    allColumns = populateAllColumns();
+    
+    // Initialize table state
+    if (!loadTableState()) {
+      // If no saved state, initialize with defaults
+      internalVisibleColumns = initializeVisibility();
+    }
+    
+    // Initialize pending filters
+    pendingFilters = [...filters];
+    
+    // Set up lazy loading intersection observer
+    if (props.lazyLoad) {
+      setupIntersectionObserver();
+    }
+    
+    // Set up a resize observer to recalculate positions when window resizes
+    const resizeObserver = new ResizeObserver(() => {
+      console.log("Resize observed");
+    });
+    
+    // Set up mutation observer to detect DOM changes that might affect column widths
+    mutationObserver = new MutationObserver((mutations) => {
+      console.log("DOM mutations observed");
+    });
+    
+    // Wait for DOM to be ready then observe
+    setTimeout(() => {
+      // Observe the container element for resize
+      const container = document.querySelector('.overflow-x-auto');
+      if (container) {
+        console.log("Observing container for resize");
+        resizeObserver.observe(container);
+        
+        // Observe table for DOM changes
+        const table = container.querySelector('table');
+        if (table && mutationObserver) {
+          console.log("Observing table for mutations");
+          mutationObserver.observe(table, { 
+            childList: true, 
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'style']
+          });
+        }
+      }
+    }, 100);
+    
+    return () => {
+      // Clean up observers on component destroy
+      resizeObserver.disconnect();
+      if (mutationObserver) mutationObserver.disconnect();
+      if (intersectionObserver) intersectionObserver.disconnect();
     };
-    saveTableState();
-  }
+  });
+  
+  // Recalculate positions when columns visibility changes
+  $effect(() => {
+    if (Object.keys(internalVisibleColumns).length > 0) {
+    }
+  });
 
   // Function to export table data to CSV
   function exportToCSV() {
-    // Get columns for the headers based on export settings
-    const columnsToExport = exportVisibleColumnsOnly
-      ? allColumns.filter((col) => internalVisibleColumns[col.displayKey])
-      : allColumns;
-
-    // Create headers array
-    const headers = columnsToExport.map((col) => col.displayLabel);
-
+    // Get visible columns and columns linked to visible columns
+    const visibleAndLinkedColumns = allColumns.filter(col => {
+      // Include directly visible columns
+      const isDirectlyVisible = exportVisibleColumnsOnly ? internalVisibleColumns[col.displayKey] : true;
+      
+      // Include columns linked to visible parent columns
+      const isVisibleViaLinkedParent = col.linkedToColumn && 
+                                     (exportVisibleColumnsOnly ? internalVisibleColumns[col.linkedToColumn] : true);
+      
+      return isDirectlyVisible || isVisibleViaLinkedParent;
+    });
+    
+    // Create headers array - use column keys instead of labels
+    const headers = visibleAndLinkedColumns.map(col => col.key);
+    
     // Get rows based on export settings
-    const rowsToExport = exportFilteredRowsOnly ? filteredData : props.data;
-
+    const rowsToExport = exportFilteredRowsOnly 
+      ? filteredData 
+      : props.data;
+    
     // Create rows arrays for each data item
     const rows = rowsToExport.map((row: Record<string, any>) => {
-      return columnsToExport.map((col) => {
-        // Get the value using the unified approach
+      return visibleAndLinkedColumns.map(col => {
+        // Get the value
         const value = row[col.dataKey];
         // For CSV export, we don't want to include the dash for empty values
-        return value === null || value === undefined || value === ""
-          ? ""
-          : col.type === "regular" && col.format
-            ? getFormattedValue(col, row as Record<string, any>).text
-            : String(value);
+        return (value === null || value === undefined || value === '') ? '' : 
+               (col.format) ? getFormattedValue(col, row as Record<string, any>).text : 
+               String(value);
       });
     });
-
+    
     // Combine headers and rows
     const csvContent = [
-      headers.map(escapeCSVValue).join(","),
-      ...rows.map((row) => row.map(escapeCSVValue).join(",")),
-    ].join("\n");
-
+      headers.map(escapeCSVValue).join(','),
+      ...rows.map((row: Record<string, any>) => row.map(escapeCSVValue).join(','))
+    ].join('\n');
+    
     // Create download link
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
+    const link = document.createElement('a');
+    
     // Set filename - include event name if available
     const now = new Date();
-    const date = now.toISOString().split("T")[0].replaceAll("-", ".");
-    const time = now.toISOString().substr(11, 8).replaceAll(":", ""); // Extract HHMM in GMT (no colon)
-    const exportType = exportVisibleColumnsOnly ? "visible" : "all";
-    const eventNamePart = props.event_name
-      ? `${props.event_name.toLowerCase().replace(/\s+/g, "-")}_`
-      : "";
+    const date = now.toISOString().split('T')[0].replaceAll('-','.');
+    const time = now.toISOString().substr(11, 8).replaceAll(':', ''); // Extract HHMM in GMT (no colon)
+    const exportType = exportVisibleColumnsOnly ? 'visible' : 'all';
+    const eventNamePart = props.event_name 
+      ? `${props.event_name.toLowerCase().replace(/\s+/g, '-')}_` 
+      : '';
     const filename = `${eventNamePart}${props.entityType}_${date}.${time}.csv`;
-
+    
     // Trigger download
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.display = "none";
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
-
+  
   // Helper function to escape CSV values
   function escapeCSVValue(value: any): string {
-    if (value === null || value === undefined) return "";
-
+    if (value === null || value === undefined) return '';
+    
     const stringValue = String(value);
     // If value contains comma, newline or double-quote, enclose in double quotes
-    if (
-      stringValue.includes(",") ||
-      stringValue.includes("\n") ||
-      stringValue.includes('"')
-    ) {
+    if (stringValue.includes(',') || stringValue.includes('\n') || stringValue.includes('"')) {
       // Replace double quotes with two double quotes
       return `"${stringValue.replace(/"/g, '""')}"`;
     }
     return stringValue;
   }
-
-  // Initialize when component mounts
-  onMount(() => {
-    // Load all table state from localStorage
-    loadTableState();
-    // Initialize pending filters with current filters
-    pendingFilters = [...filters];
-  });
 
   // Watch for filter changes to save state
   $effect(() => {
@@ -654,6 +989,116 @@
       saveTableState();
     }
   });
+
+  function formatCellValue(item: any, column: TableColumn) {
+    // Use the column's format function if provided
+    if (column.format) {
+      const formattedValue = column.format(item[column.key], item);
+      
+      // If the formatted value is a complex object with component info
+      if (formattedValue && typeof formattedValue === 'object' && !Array.isArray(formattedValue)) {
+        if (formattedValue.component) {
+          // Return the component with props
+          return { 
+            text: formattedValue.text, 
+            isBadge: formattedValue.isBadge, 
+            color: formattedValue.color, 
+            component: formattedValue.component, 
+            props: formattedValue.props,
+            cellStyle: formattedValue.cellStyle
+          };
+        } else if ('text' in formattedValue) {
+          // Return a standard formatted value
+          return { 
+            text: formattedValue.text, 
+            isBadge: formattedValue.isBadge, 
+            color: formattedValue.color,
+            cellStyle: formattedValue.cellStyle
+          };
+        }
+      }
+      return { text: String(formattedValue), isBadge: false };
+    }
+    
+    // Default formatting if no format function is provided
+    return { text: (item[column.key] === null || item[column.key] === undefined || item[column.key] === '') ? '-' : item[column.key].toString(), isBadge: false };
+  }
+
+  // Lazy loading states
+  let visibleRowCount = $state(props.initialBatchSize || 50); // Default to 50 rows initially
+  let batchSize = $derived(props.batchSize || 50); // Default to loading 50 rows at a time
+  let isLazyLoading = $derived(props.lazyLoad !== false); // Default to true if not specified
+  
+  // Element reference for infinite scrolling
+  let tableBottomRef: HTMLElement | null = null;
+  let intersectionObserver: IntersectionObserver | null = null;
+  
+  // Function to load more rows
+  function loadMoreRows() {
+    console.time('Loading more rows');
+    visibleRowCount += batchSize;
+    console.timeEnd('Loading more rows');
+  }
+  
+  // Set up intersection observer once DOM is mounted
+  function setupIntersectionObserver() {
+    if (!isLazyLoading) return;
+    
+    // Clean up any existing observer
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+    }
+    
+    // Create new observer
+    intersectionObserver = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && visibleRowCount < filteredData.length) {
+        loadMoreRows();
+      }
+    }, { 
+      rootMargin: '200px',
+      threshold: 0.1 // Add threshold to ensure more reliable triggering
+    });
+    
+    // Start observing
+    if (tableBottomRef) {
+      intersectionObserver.observe(tableBottomRef);
+    }
+  }
+  
+  // Use effect to set up observer when tableBottomRef changes or when filteredData changes
+  $effect(() => {
+    if (tableBottomRef) {
+      // Reset visible row count when filtered data changes
+      visibleRowCount = props.initialBatchSize || 50;
+      setupIntersectionObserver();
+    }
+  });
+
+  // Clean up observer on component unmount or when lazy loading is disabled
+  $effect(() => {
+    if (!isLazyLoading && intersectionObserver) {
+      intersectionObserver.disconnect();
+      intersectionObserver = null;
+    }
+  });
+
+  onDestroy(() => {
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+      intersectionObserver = null;
+    }
+  });
+  
+  // Get visible rows based on lazy loading settings
+  function getVisibleRows(): any[] {
+    if (!isLazyLoading) return filteredData;
+    return filteredData.slice(0, visibleRowCount);
+  }
+  
+  // Track if we're showing all rows or have more to load
+  const hasMoreRows = $derived(filteredData.length > visibleRowCount);
+  const visibleRows = $derived(getVisibleRows());
 </script>
 
 {#if props.isLoading}
@@ -701,7 +1146,7 @@
                 class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"
               ></div>
             {/each}
-          </div>
+          </div>  
         {/each}
       </div>
     </div>
@@ -710,110 +1155,102 @@
   <div class="mb-4 flex flex-row justify-between w-full">
     <!-- Left-aligned buttons -->
     <div class="flex items-center gap-2">
-      <Button
-        color="primary"
-        class="btn-primary flex items-center gap-1"
-        on:click={openFilterEditor}
-      >
+      <Button color="primary" class="btn-primary flex items-center gap-1" on:click={openFilterEditor}>
         <FilterSolid class="w-4 h-4" />
         Filters
         {#if filters.length > 0}
-          <Badge
-            color="none"
-            class="ml-1 bg-[color:var(--primary-light)] text-white"
-            >{filters.length}</Badge
-          >
+          <Badge color="none" class="ml-1 bg-[color:var(--primary-light)] text-white">{filters.length}</Badge>
         {/if}
       </Button>
-
+      
       <div class="relative">
-        <Button color="primary" class="btn-primary flex items-center gap-1">
+        <Button id="columnToggleButton" color="primary" class="btn-primary flex items-center gap-1">
           <TableColumnOutline class="w-4 h-4" />
           Show/Hide Columns
         </Button>
-        <Dropdown class="w-64">
-          {#each allColumns as column}
-            <DropdownItem class="px-2 py-1">
-              <Checkbox
-                checked={internalVisibleColumns[column.displayKey]}
-                on:change={() => toggleColumn(column.displayKey)}
-                class="text-left w-full"
-              >
-                <span class="text-sm break-words whitespace-normal"
-                  >{column.displayLabel}</span
-                >
-              </Checkbox>
-            </DropdownItem>
-          {/each}
+        <Dropdown triggeredBy="#columnToggleButton" class="w-64">
+          <div class="column-dropdown-content max-h-64 overflow-y-auto bg-white rounded shadow-lg py-2">
+            {#each allColumns.filter(column => !column.frozen && !column.linkedToColumn) as column}
+              <DropdownItem class="px-2 py-1">
+                <div class="flex items-center">
+                  <Checkbox 
+                    checked={internalVisibleColumns[column.displayKey]} 
+                    on:change={() => toggleColumn(column.displayKey)} 
+                    class="text-left w-full"
+                  >
+                    <span class="text-sm break-words whitespace-normal">
+                      {column.displayLabel}
+                    </span>
+                  </Checkbox>
+                </div>
+              </DropdownItem>
+            {/each}
+          </div>
         </Dropdown>
       </div>
+      
+      <!-- Slot for custom action buttons -->
+      <slot name="actions"></slot>
     </div>
-
+    
     <!-- Right-aligned buttons -->
     <div class="flex items-center ml-auto">
       <div class="relative">
-        <Button color="primary" class="flex items-center gap-1">
+        <Button id="exportButton" color="primary" class="flex items-center gap-1">
           <TableRowOutline class="w-4 h-4" />
           Export
         </Button>
-        <Dropdown class="w-64 p-3">
+        <Dropdown triggeredBy="#exportButton" class="w-64 p-3">
           <div class="space-y-3">
             <div class="flex items-center gap-2">
-              <Toggle
-                checked={exportVisibleColumnsOnly}
-                on:change={() => {
-                  exportVisibleColumnsOnly = !exportVisibleColumnsOnly;
-                  saveTableState();
-                }}
-              />
+              <Toggle checked={exportVisibleColumnsOnly} on:change={() => {
+                exportVisibleColumnsOnly = !exportVisibleColumnsOnly;
+                saveTableState();
+              }} />
               <span class="text-sm">Include shown columns only</span>
             </div>
             <div class="flex items-center gap-2">
-              <Toggle
-                checked={exportFilteredRowsOnly}
-                on:change={() => {
-                  exportFilteredRowsOnly = !exportFilteredRowsOnly;
-                  saveTableState();
-                }}
-              />
+              <Toggle checked={exportFilteredRowsOnly} on:change={() => {
+                exportFilteredRowsOnly = !exportFilteredRowsOnly;
+                saveTableState();
+              }} />
               <span class="text-sm">Include filtered rows only</span>
             </div>
             <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
-              <Button
-                size="sm"
-                color="primary"
-                class="w-full"
-                on:click={exportToCSV}>Export to CSV</Button
-              >
+              <Button size="sm" color="primary" class="w-full" on:click={exportToCSV}>Export to CSV</Button>
             </div>
           </div>
         </Dropdown>
       </div>
     </div>
   </div>
-
+  
+  {#if !props.isLoading}
+    <!-- Search bar row - new addition -->
+    <div class="mb-4 mt-2 w-full relative">
+      <Search size="md" placeholder="Search across all visible columns..." bind:value={searchTerm} class="w-full" />
+      {#if isDebouncing}
+        <div class="absolute right-8 top-0 h-full flex items-center">
+          <div class="animate-pulse">
+            <ClockSolid class="w-4 h-4 text-gray-400" />
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
+  
   <!-- Filter Editor Modal using Flowbite Modal component -->
-  <Modal
-    title="Edit Filters"
-    bind:open={showFilterEditor}
-    size="xl"
-    autoclose={false}
-    classBody="w-full"
-  >
-    <!-- Content -->
-    <div class="w-full space-y-4">
+  <Modal title="Edit Filters" bind:open={showFilterEditor} autoclose={false} size="lg">
+    <!-- Filter edit form -->
+    <div class="space-y-4">
       <!-- Add Filter Button -->
       <div class="mb-4">
-        <Button
-          color="light"
-          class="flex items-center gap-1"
-          on:click={addFilter}
-        >
+        <Button color="light" class="flex items-center gap-1" on:click={addFilter}>
           <PlusOutline class="w-4 h-4" />
           Add Filter
         </Button>
       </div>
-
+      
       <!-- Filter list -->
       {#if pendingFilters.length === 0}
         <div class="text-center p-4 text-gray-500 dark:text-gray-400">
@@ -826,7 +1263,7 @@
               <div class="flex flex-row flex-nowrap items-center gap-2 w-full">
                 <!-- Column selector - approx 30% -->
                 <div class="w-[40%]">
-                  <Select
+                  <Select 
                     value={filter.column}
                     on:change={(e) => {
                       const target = e.target as HTMLSelectElement;
@@ -835,22 +1272,18 @@
                     class="text-sm w-full"
                   >
                     {#each allColumns as column}
-                      <option value={column.displayKey}
-                        >{column.displayLabel}</option
-                      >
+                      <option value={column.displayKey}>{column.displayLabel}</option>
                     {/each}
                   </Select>
                 </div>
-
+                
                 <!-- Operator selector - approx 30% -->
                 <div class="w-[10%]">
-                  <Select
+                  <Select 
                     value={filter.operator}
                     on:change={(e) => {
                       const target = e.target as HTMLSelectElement;
-                      updatePendingFilter(filter.id, {
-                        operator: target.value,
-                      });
+                      updatePendingFilter(filter.id, { operator: target.value });
                     }}
                     class="text-sm w-full"
                   >
@@ -859,13 +1292,11 @@
                     {/each}
                   </Select>
                 </div>
-
+                
                 <!-- Value input - approx 30% -->
                 <div class="w-[40%]">
-                  <Input
-                    type={getColumnDataType(filter.column) === "date"
-                      ? "date"
-                      : "text"}
+                  <Input 
+                    type={getColumnDataType(filter.column) === 'date' ? 'date' : 'text'}
                     value={filter.value}
                     on:input={(e) => {
                       const target = e.target as HTMLInputElement;
@@ -875,10 +1306,10 @@
                     placeholder="Enter value"
                   />
                 </div>
-
+                
                 <!-- Remove button - approx 10% -->
                 <div class="flex-shrink-0 flex justify-center">
-                  <button
+                  <button 
                     class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 p-2"
                     on:click={() => removePendingFilter(filter.id)}
                     aria-label="Remove filter"
@@ -892,168 +1323,135 @@
         </div>
       {/if}
     </div>
-
+    
     <!-- Modal actions -->
     <svelte:fragment slot="footer">
       <div class="flex w-full justify-between items-center">
         <div class="flex gap-3">
-          <Button
-            color="red"
-            on:click={clearAllFilters}
-            disabled={pendingFilters.length === 0 && filters.length === 0}
-            >Clear All Filters</Button
-          >
-          <Button color="alternative" on:click={cancelFilterEditing}
-            >Cancel</Button
-          >
+          <Button color="red" on:click={clearAllFilters} disabled={pendingFilters.length === 0 && filters.length === 0}>Clear All Filters</Button>
+          <Button color="alternative" on:click={cancelFilterEditing}>Cancel</Button>
           <Button color="primary" on:click={saveFilters}>Apply Filters</Button>
         </div>
       </div>
     </svelte:fragment>
   </Modal>
-
-  <div class="overflow-x-auto">
-    <Table striped={false} hoverable={false} class="table-compact themed-table">
-      <TableHead class="border-b" theadClass="text-xs uppercase align-middle">
-        {#each allColumns as column}
-          {#if internalVisibleColumns[column.displayKey]}
-            <TableHeadCell
-              on:click={() => handleSort(column.displayKey)}
-              padding="px-6 py-3"
-              class="align-middle select-none sortable-header"
-            >
-              <span class="inline-flex items-center select-none header-label">
-                {column.displayLabel}
-                {#if sortColumn === column.displayKey}
-                  {#if sortDirection == "asc"}
-                    <CaretUpSolid class="w-3 h-3 ml-1" />
-                  {:else}
-                    <CaretDownSolid class="w-3 h-3 ml-1" />
-                  {/if}
-                {/if}
-              </span>
-            </TableHeadCell>
-          {/if}
-        {/each}
-      </TableHead>
-      <TableBody>
-        {#if filteredData.length === 0}
-          <TableBodyRow class="hover:bg-transparent no-hover">
-            <TableBodyCell
-              colspan={Object.values(internalVisibleColumns).filter((v) => v)
-                .length || 1}
-              class="text-center py-8 text-gray-500 dark:text-gray-400"
-            >
-              <div class="flex flex-col items-center justify-center">
-                {#if props.data.length === 0}
-                  <!-- No data at all -->
-                  <div
-                    class="mb-2 text-[color:var(--primary-light)] opacity-40"
-                  >
-                    <ClockSolid class="w-10 h-10" />
-                  </div>
-                  <p class="font-medium">
-                    No {props.entityType}s registered yet, check back later!
-                  </p>
-                {:else}
-                  <!-- Data exists but filtered out -->
-                  <div
-                    class="mb-2 text-[color:var(--primary-light)] opacity-40"
-                  >
-                    <FilterSolid class="w-10 h-10" />
-                  </div>
-                  <p class="font-medium">No rows to display</p>
-                  {#if filters.length > 0}
-                    <p class="text-sm mt-1">
-                      Try adjusting your filter criteria
-                    </p>
-                  {/if}
-                {/if}
-              </div>
-            </TableBodyCell>
-          </TableBodyRow>
-        {:else}
-          {#each filteredData as row (row[idField])}
-            <TableBodyRow>
-              {#each allColumns as column}
-                {#if internalVisibleColumns[column.displayKey]}
-                  <TableBodyCell>
-                    {#if column.type === "regular" && getFormattedValue(column, row).isBadge}
-                      <Badge
-                        color={getFormattedValue(column, row).color || "blue"}
-                      >
-                        {getFormattedValue(column, row).text}
-                      </Badge>
-                    {:else if column.dataType == "checked"}
-                      <div style="width: 100%; display: flex">
-                        <Checkbox
-                          checked={row.waiver == "Signed"}
-                          on:change={async () => {
-                            try {
-                              const newValue = row.waiver != "Signed"
-                                ? "Signed"
-                                : "Not Signed";
-
-                              row.waiver = newValue;
-
-                              const dataIndex = props.data.findIndex(
-                                (item) => item[idField] === row[idField]
-                              );
-                              if (dataIndex !== -1) {
-                                props.data[dataIndex].waiver = newValue;
-                              }
-
-                              await updateStudentEvent(row.student_event_id, {
-                                waiver: newValue,
-                              });
-
-                              toast.success(
-                                "Updated waiver status successfully",
-                              );
-                            } catch (e) {
-                              handleError(e);
-                            }
-                          }}
-                        >
-                          {row.waiver == "Signed" ? "Signed" : "Not Signed"}
-                        </Checkbox>
-                      </div>
-                    {:else if column.dataType == "link"}
-                      {#if getFormattedValue(column, row).text == "-"}
-                        {getFormattedValue(column, row).text}
+  
+  <!-- Improved table container with better overflow handling -->
+  <div class="relative overflow-x-auto rounded-md border border-gray-200">
+    <div class="max-h-[650px] overflow-y-auto overflow-x-visible">
+      <table class="w-full text-sm text-left border-collapse table-compact themed-table table-auto">
+        <thead class="text-xs uppercase border-b align-middle sticky top-0 z-10 bg-[color:var(--primary)] text-white">
+          <tr>
+            {#if props.selectable !== false}
+              <th class="w-10 px-4 py-3 whitespace-nowrap align-middle identity-column-checkbox">
+                <Checkbox checked={allRowsSelected} indeterminate={someRowsSelected} on:change={toggleAllRows} class="header-checkbox checkbox" />
+              </th>
+            {/if}
+            {#each allColumns as column, colIndex}
+              {#if internalVisibleColumns[column.displayKey]}
+                {@const frozenColumns = allColumns.filter(c => c.frozen && internalVisibleColumns[c.displayKey]).map(c => c.displayKey)}
+                {@const frozenIndex = frozenColumns.indexOf(column.displayKey)}
+                {@const isSticky = column.frozen}
+                {@const isLastSticky = column.frozen && frozenIndex === (frozenColumns.length - 1)}
+                {@const leftPosition = props.selectable !== false ? 40 + (frozenIndex * 100) : (frozenIndex * 100)}
+                <th 
+                  on:click={() => handleSort(column.displayKey)}
+                  class="px-6 py-3 align-middle select-none sortable-header whitespace-nowrap
+                         {isSticky ? 'identity-column-sticky' : ''}
+                         {isLastSticky ? 'identity-column-last-sticky' : ''}"
+                  style={isSticky ? `left: ${leftPosition}px !important;` : ''}
+                >
+                  <span class="inline-flex items-center select-none header-label">
+                    {column.displayLabel}
+                    {#if (sortColumn === column.displayKey)}
+                      {#if (sortDirection == 'asc')}
+                        <CaretUpSolid class="w-3 h-3 ml-1" />
                       {:else}
-                        <a
-                          href={getFormattedValue(column, row).text}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="text-blue-600 dark:text-blue-400 underline"
-                        >
-                          Link
-                        </a>
+                        <CaretDownSolid class="w-3 h-3 ml-1" />
                       {/if}
-                    {:else}
-                      {getFormattedValue(column, row).text}
                     {/if}
-                  </TableBodyCell>
+                  </span>
+                </th>
+              {/if}
+            {/each}
+          </tr>
+        </thead>
+        <tbody>
+          {#if filteredData.length === 0}
+            <tr class="no-hover">
+              <td colspan={Object.values(internalVisibleColumns).filter(v => v).length + (props.selectable !== false ? 1 : 0)} class="py-4 text-center text-gray-500 dark:text-gray-400">
+                No rows to display.
+              </td>
+            </tr>
+          {:else}
+            {#each visibleRows as row, index (row[idField] !== undefined ? row[idField] : `row_${index}`)}
+              <tr class="border-b border-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 custom-table-row">
+                {#if props.selectable !== false}
+                  <td class="w-10 px-4 py-3 whitespace-nowrap align-middle identity-column-checkbox">
+                    <Checkbox 
+                      checked={isRowSelected(row[idField] !== undefined ? row[idField] : `row_${index}`)} 
+                      on:change={() => toggleRowSelection(row[idField] !== undefined ? row[idField] : `row_${index}`)} 
+                      class="checkbox"
+                    />
+                  </td>
                 {/if}
-              {/each}
-            </TableBodyRow>
-          {/each}
-        {/if}
-      </TableBody>
-    </Table>
+                {#each allColumns as column, colIndex}
+                  {#if internalVisibleColumns[column.displayKey]}
+                    {@const frozenColumns = allColumns.filter(c => c.frozen && internalVisibleColumns[c.displayKey]).map(c => c.displayKey)}
+                    {@const frozenIndex = frozenColumns.indexOf(column.displayKey)}
+                    {@const isSticky = column.frozen}
+                    {@const isLastSticky = column.frozen && frozenIndex === (frozenColumns.length - 1)}
+                    {@const leftPosition = props.selectable !== false ? 40 + (frozenIndex * 100) : (frozenIndex * 100)}
+                    {@const formatted = getFormattedValue(column, row)}
+                    <td class="px-6 py-3 whitespace-nowrap
+                              {isSticky ? 'identity-column-sticky' : ''}
+                              {isLastSticky ? 'identity-column-last-sticky' : ''}"
+                        style={`${formatted.cellStyle ?? (formatted.component ? 'padding: 0;' : '')}${isSticky ? ` left: ${leftPosition}px !important;` : ''}`}>
+                      {#if formatted.component}
+                        <div class="h-full {formatted.props?.fitContent ? 'w-auto' : 'w-full'}">
+                          <svelte:component this={formatted.component} {...formatted.props} />
+                        </div>
+                      {:else if formatted.isBadge}
+                        <Badge color={formatted.color || "blue"}>
+                          {formatted.text}
+                        </Badge>
+                      {:else}
+                        {formatted.text}
+                      {/if}
+                    </td>
+                  {/if}
+                {/each}
+              </tr>
+            {/each}
+          {/if}
+        </tbody>
+      </table>
+      
+      <!-- Lazy loading indicator and loading reference -->
+      {#if isLazyLoading && hasMoreRows}
+        <div bind:this={tableBottomRef} class="py-4 flex justify-center">
+          <div class="flex items-center gap-2">
+            <Spinner size="5" color="blue" />
+            <span>Loading more rows...</span>
+          </div>
+        </div>
+      {:else if filteredData.length > 0}
+        <!-- End of table marker - bind this element for intersection observer -->
+        <div bind:this={tableBottomRef} class="h-1"></div>
+      {/if}
+    </div>
   </div>
 {/if}
 
 <style>
   /* Styles will be inherited from parent component */
-
+  
   /* Table header hover effects */
   :global(.sortable-header) {
     cursor: pointer;
     transition: all 0.2s ease-in-out;
   }
-
+  
   :global(.sortable-header:hover .header-label) {
     font-weight: bold;
     font-size: 110%;
@@ -1065,8 +1463,270 @@
   :global(.no-hover:hover) {
     background-color: transparent !important;
   }
-
+  
   :global(tr.no-hover:hover td) {
     background-color: transparent !important;
   }
-</style>
+  
+  /* Custom styling for the header checkbox */
+  :global(.header-checkbox) :global(input[type="checkbox"]) {
+    /* Removed styling for the unchecked state */
+  }
+  
+  :global(.header-checkbox) :global(input[type="checkbox"]:checked),
+  :global(.header-checkbox) :global(input[type="checkbox"]:indeterminate) {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+  
+  :global(.header-checkbox) :global(input[type="checkbox"]:focus) {
+    box-shadow: 0 0 0 0.2rem rgba(var(--primary-dark-rgb), 0.5);
+    border-color: var(--primary-dark);
+  }
+
+  /* Checkbox vertical alignment */
+  :global(table th), :global(table td) {
+    vertical-align: middle;
+  }
+  
+  :global(table .checkbox) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Table layout to ensure cells fit content without wrapping */
+  :global(.table-auto) {
+    table-layout: auto;
+    width: max-content;
+    min-width: 100%;
+  }
+  
+  :global(.table-auto th),
+  :global(.table-auto td) {
+    width: max-content;
+    white-space: nowrap;
+    overflow: visible;
+  }
+  
+  /* Sticky header styles */
+  :global(thead.sticky) {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  
+  :global(thead.sticky th) {
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* For dark mode compatibility with the sticky header */
+  :global(.dark thead.sticky) {
+    background-color: var(--primary-dark);
+  }
+  
+  /* Ensure checkboxes remain clickable when header is sticky */
+  :global(thead.sticky .checkbox) {
+    position: relative;
+    z-index: 11;
+  }
+
+  /* FROZEN COLUMNS - SIMPLIFIED UNIFIED IMPLEMENTATION */
+  /* Base styles for all frozen columns */
+  :global(.identity-column-checkbox),
+  :global(.identity-column-sticky) {
+    position: sticky !important;
+    z-index: 2;
+    background-color: white; /* Ensure background is solid */
+  }
+
+  /* Specific positioning for checkbox column */
+  :global(.identity-column-checkbox) {
+    left: 0 !important;
+    z-index: 3; /* Higher z-index for the checkbox column */
+    box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1); /* Shadow for checkbox column */
+  }
+
+  /* Visual separator for checkbox column */
+  :global(.identity-column-checkbox:after) {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 4px;
+    pointer-events: none;
+    box-shadow: inset -1px 0 1px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Visual separator only for the last sticky column */
+  :global(.identity-column-last-sticky:after) {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 4px;
+    pointer-events: none;
+    box-shadow: inset -1px 0 1px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Headers need higher z-index to stay on top */
+  :global(thead .identity-column-checkbox),
+  :global(thead .identity-column-sticky) {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 20 !important; /* Increased z-index to ensure headers stay fixed */
+    background-color: var(--primary); /* Use primary color for headers */
+  }
+
+  /* Make sure the header specifically stays fixed with both horizontal and vertical stickiness */
+  :global(table.themed-table thead th.identity-column-checkbox),
+  :global(table.themed-table thead th.identity-column-sticky) {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 25 !important; /* Even higher z-index for header cells */
+  }
+
+  /* Add proper background colors to frozen columns in tbody to prevent content showing through */
+  :global(tbody tr:nth-child(odd) .identity-column-checkbox),
+  :global(tbody tr:nth-child(odd) .identity-column-sticky) {
+    background-color: var(--primary-tint, #f9fafb);
+  }
+
+  :global(tbody tr:nth-child(even) .identity-column-checkbox),
+  :global(tbody tr:nth-child(even) .identity-column-sticky) {
+    background-color: white;
+  }
+
+  /* Ensure frozen columns' background color changes on hover */
+  :global(tbody tr:hover .identity-column-checkbox),
+  :global(tbody tr:hover .identity-column-sticky) {
+    background-color: var(--primary-light, #f3f4f6);
+  }
+
+  /* Add fallback CSS variables in case the global ones aren't defined */
+  :root {
+    --primary: var(--primary, #4B5563);
+    --primary-light: var(--primary-light, #E5E7EB);
+    --primary-tint: var(--primary-tint, #F9FAFB);
+    --primary-dark: var(--primary-dark, #374151);
+    --secondary: var(--secondary, #6B7280);
+    --accent: var(--accent, #3B82F6);
+    --success: var(--success, #10B981);
+    --purple: var(--purple, #8B5CF6);
+  }
+
+  /* Consolidated table styling */
+  :global(.table-compact) {
+    border-collapse: collapse;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
+  }
+  
+  :global(.table-compact th),
+  :global(.table-compact td) {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  :global(.border-b) {
+    border-bottom-width: 1px;
+    border-color: var(--primary-light, #ddd);
+  }
+
+  /* Table theming with global colors */
+  :global(.themed-table thead) {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  :global(.themed-table th) {
+    font-weight: 600;
+  }
+
+  /* Consistent transitions and background colors for all rows and cells */
+  :global(tbody tr) {
+    transition: background-color 0.2s ease-in-out;
+  }
+  
+  :global(tbody tr td) {
+    transition: background-color 0.2s ease-in-out;
+    border-color: var(--primary-light);
+  }
+
+  /* Define striping at the row level so cells can inherit */
+  :global(.themed-table tbody tr:nth-child(odd)) {
+    background-color: var(--primary-tint, #f9fafb);
+  }
+  
+  :global(.themed-table tbody tr:nth-child(even)) {
+    background-color: white;
+  }
+  
+  :global(.themed-table tbody tr:hover) {
+    background-color: var(--primary-light, #f3f4f6);
+  }
+
+  /* Badge theming */
+  :global(.badge.blue) {
+    background-color: var(--accent, #3B82F6);
+  }
+
+  :global(.badge.green) {
+    background-color: var(--success, #10B981);
+  }
+
+  :global(.badge.purple) {
+    background-color: var(--purple, #8B5CF6);
+  }
+
+  /* Tab theming */
+  :global(.tab-active) {
+    color: var(--primary, #4B5563);
+    border-color: var(--primary, #4B5563);
+  }
+
+  :global(.tab-item:hover) {
+    color: var(--primary-dark, #374151);
+  }
+
+  /* Search and filter controls */
+  :global(.search-input) {
+    border-color: var(--primary-light, #E5E7EB);
+  }
+
+  :global(.dropdown-toggle) {
+    background-color: var(--primary, #4B5563);
+    color: white;
+  }
+
+  /* Adjust the dropdown display for identity columns */
+  :global(.identity-column-dropdown) {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* Consistent transitions for all rows and cells */
+  :global(tbody tr) {
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  :global(tbody tr td) {
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  /* Define striping at the row level so cells can inherit */
+  :global(tbody tr:nth-child(odd)) {
+    background-color: var(--primary-tint, #f9fafb);
+  }
+
+  :global(tbody tr:nth-child(even)) {
+    background-color: white;
+  }
+
+  :global(tbody tr:hover) {
+    background-color: var(--primary-light, #f3f4f6);
+  }
+</style> 
