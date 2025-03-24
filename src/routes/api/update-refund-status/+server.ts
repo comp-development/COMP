@@ -48,6 +48,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
 
   if (status === "APPROVED") {
+
+    // actually approve the refunf using stripe, or check its been approved via eventbrite
     if (ticket.ticket_service === "stripe") {
       try {
         const stripe = new Stripe(stripeSecretKey);
@@ -64,92 +66,100 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       } catch (stripeError: any) {
         throw new Error(`Stripe refund failed: ${stripeError.message}`);
       }
-    } else {
-      if (ticket.ticket_service !== "eventbrite") {
-        throw Error("Unknown ticket service: " + ticket.ticket_service);
-      } else {
-        // if this is eventbrite
-        // call eventbrite api, parse through compelted refunds nad make sure status is refunded
-        const eventbriteResponse = await fetch(
-          `https://www.eventbriteapi.com/v3/orders/${ticket.order_id}/?token=${eventbriteToken}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",  // Required header
-            },
-          }
+    } else if (ticket.ticket_service === "eventbrite") {
+      const eventbriteResponse = await fetch(
+        `https://www.eventbriteapi.com/v3/orders/${ticket.order_id}/?token=${eventbriteToken}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json", // Required header
+          },
+        }
+      );
+
+      if (!eventbriteResponse.ok) {
+        throw Error(
+          `Eventbrite refund failed: ${eventbriteResponse.statusText}`
         );
-
-        if (!eventbriteResponse.ok) {
-          throw Error(`Eventbrite refund failed: ${eventbriteResponse.statusText}`);
-        }
-
-        const eventbriteData = await eventbriteResponse.json();
-        if (eventbriteData?.status !== "refunded") {
-          throw Error("Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!");
-        }
       }
+
+      const eventbriteData = await eventbriteResponse.json();
+      if (eventbriteData?.status !== "refunded") {
+        throw Error(
+          "Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!"
+        );
+      }
+    } else {
+      throw Error("Unknown ticket service: " + ticket.ticket_service);
     }
-    if(ticket.student_id !== null) {
+
+    // if this is a student ticket, need to delete registration from events
+    if (ticket.student_id !== null) {
       // should delete their entry from the event
       const { error: deleteError } = await adminSupabase
-      .from("student_events")
-      .delete()
-      .eq("student_id", ticket.student_id)
-      .eq("event_id", ticket.event_id);
-
+        .from("student_events")
+        .delete()
+        .eq("student_id", ticket.student_id)
+        .eq("event_id", ticket.event_id);
+  
       if (deleteError) {
-        throw Error("Failed to delete student-event entry: " + deleteError.message);
+        throw Error(
+          "Failed to delete student-event entry: " + deleteError.message
+        );
       }
-
+  
       // should delete their entry from the ticket_orders_Table
       const { error: deleteError2 } = await adminSupabase
-      .from("ticket_orders")
-      .delete()
-      .eq("student_id", ticket.student_id)
-      .eq("event_id", ticket.event_id);
-
+        .from("ticket_orders")
+        .delete()
+        .eq("student_id", ticket.student_id)
+        .eq("event_id", ticket.event_id);
+  
       if (deleteError2) {
-        throw Error("Failed to delete student ticket entry: " + deleteError2.message);
+        throw Error(
+          "Failed to delete student ticket entry: " + deleteError2.message
+        );
       }
-
+  
       // for book keepings sake, should also store their entry permanently in another table
       const { error: insertError } = await adminSupabase
-      .from("refunded_ticket_orders")
-      .insert({
-        id: ticket.id,
-        student_id: ticket.student_id,
-        event_id: ticket.event_id,
-        refund_status: status,
-        quantity: ticket.quantity,
-        order_id: ticket.order_id
-      });
-
+        .from("refunded_ticket_orders")
+        .insert({
+          id: ticket.id,
+          student_id: ticket.student_id,
+          event_id: ticket.event_id,
+          refund_status: status,
+          quantity: ticket.quantity,
+          order_id: ticket.order_id,
+        });
+  
       if (insertError) {
-        throw Error("Failed to insert into approved refunds table: " + insertError.message);
+        throw Error(
+          "Failed to insert into approved refunds table: " + insertError.message
+        );
       }
     }
 
-    // regardless of ticket service, if this is a student,
-    // we need to remove them from the event, by moving the ticket to the other table
-    // we need to delete their entry in the student-events table 
-
-
-    // just set the status
-    // for coaches, just change status to approved, should by default just work
   }
+
+  
+
+  // regardless of ticket service, if this is a student,
+  // we need to remove them from the event, by moving the ticket to the other table
+  // we need to delete their entry in the student-events table
+
+  // just set the status
+  // for coaches, just change status to approved, should by default just work
   // else {
   //   // next part will just set the status anyway.
   // }
-  if( status === "DENIED") {
+  if (status === "DENIED" || ticket.org_id !== null) {
     try {
-      // If it's an Eventbrite ticket and we're approving the refund, process through Eventbrite
-      // Update the ticket order status
       const { error: updateError } = await adminSupabase
         .from("ticket_orders")
         .update({ refund_status: status })
         .eq("id", ticket_id);
-  
+
       if (updateError) {
         throw Error("Failed to update ticket status: " + updateError.message);
       }
@@ -162,7 +172,4 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
 
   return new Response("success", { status: 200 });
-  
-
-  
 };

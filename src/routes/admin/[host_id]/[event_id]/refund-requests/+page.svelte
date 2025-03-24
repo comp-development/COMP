@@ -78,7 +78,7 @@
     </div>
     {/if}
     <div class="mb-4">
-      <p>Total Requests: {refundRequests.length}</p>
+      <p>Total Requests: {refundRequests.length + refundedRequests.length}</p>
       <p>Pending Requests: {refundRequests.filter(r => r.refund_status === "REQUESTED").length}</p>
     </div>
 
@@ -141,10 +141,10 @@
         </TableBody>
       </Table>
 
+      {#if refundedRequests.length > 0}
       <div class="mt-4">
         <p>Approved Refunds: {refundedRequests.length}</p>
       </div>
-
       <Table>
         <TableHead>
           <TableHeadCell>Order ID</TableHeadCell>
@@ -200,9 +200,11 @@
           {/each}
         </TableBody>
       </Table>
+      {/if}
 
+    {#if refundRequests.filter(r => r.refund_status === "DENIED").length > 0}
       <div class="mt-4">
-        <p>Approved Refunds: {refundedRequests.length}</p>
+        <p>Denied Refunds: {refundRequests.filter(r => r.refund_status === "DENIED").length}</p>
       </div>
       <Table>
         <TableHead>
@@ -259,6 +261,7 @@
           {/each}
         </TableBody>
       </Table>
+    {/if}
     {/if}
   {/if}
 </div> 
