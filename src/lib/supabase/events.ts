@@ -43,17 +43,17 @@ export async function getEventInformation(event_id: number) {
   return data;
 }
 
-export async function getEventTests(event_id: number, isAdmin: boolean = false) {
-  let query = supabase
-    .from("tests")
-    .select("*")
-    .eq("event_id", event_id);
-  
+export async function getEventTests(
+  event_id: number,
+  isAdmin: boolean = false,
+) {
+  let query = supabase.from("tests").select("*").eq("event_id", event_id);
+
   // Only filter by visibility if the user is not an admin
   if (!isAdmin) {
     query = query.eq("visible", true);
   }
-  
+
   let { data, error } = await query.order("test_name");
   if (error) throw error;
   return data;
@@ -329,7 +329,10 @@ export async function getStudentEvent(student_id: string, event_id: number) {
   return data;
 }
 
-export async function updateStudentEvent(student_event_id: number, studentEventData: {}) {
+export async function updateStudentEvent(
+  student_event_id: number,
+  studentEventData: {},
+) {
   const { data, error } = await supabase
     .from("student_events")
     .update(studentEventData)
@@ -436,7 +439,7 @@ export async function createEvent(eventData: {
     .insert({
       ...eventData,
       published: eventData.published ?? false,
-      waivers: { "type": "none" }
+      waivers: { type: "none" },
     })
     .select()
     .single();
@@ -753,7 +756,7 @@ export async function getCustomFieldResponsesBatch(
 
   // Get the list of event custom field IDs to fetch
   const eventCustomFieldIds = event_custom_fields.map(
-    (field) => field.event_custom_field_id
+    (field) => field.event_custom_field_id,
   );
 
   // Fetch all relevant custom field values in one query for all entities
@@ -770,20 +773,20 @@ export async function getCustomFieldResponsesBatch(
 
   // Create a mapping of entity_id -> field_id -> value
   const valueMap: Record<string, string> = {};
-  
+
   if (data) {
     data.forEach((row) => {
       const entityId = row[tableColumn];
       const fieldId = row.event_custom_field_id;
-      
+
       // Find the corresponding custom field
       const customField = event_custom_fields.find(
-        (field) => field.event_custom_field_id === fieldId
+        (field) => field.event_custom_field_id === fieldId,
       );
-      
+
       if (customField) {
         const key = `${custom_field_table.slice(0, -1)}_${entityId}_${customField.custom_field_id}`;
-        valueMap[key] = row.value || '-';
+        valueMap[key] = row.value || "-";
       }
     });
   }
@@ -797,11 +800,11 @@ export async function getEventTicketCount(event_id: number) {
     .from("ticket_orders")
     .select("quantity")
     .eq("event_id", event_id);
-    
+
   if (error) throw error;
-  
+
   // Calculate total by summing the quantities
   const totalTickets = data.reduce((sum, order) => sum + order.quantity, 0);
-  
+
   return totalTickets;
 }

@@ -55,6 +55,7 @@
     { name: "Tests", route: "tests" },
     { name: "Waivers", route: "waivers" },
     { name: "Custom Fields", route: "custom-fields" },
+    { name: "Stats", route: "data-visualization" },
   ];
 
   const adminHostPages = [
@@ -129,7 +130,10 @@
         <Logo />
       </div>
     </NavBrand>
-    <div class="md:order-2" style="display: flex; align-items: center; justify-content: end;">
+    <div
+      class="md:order-2"
+      style="display: flex; align-items: center; justify-content: end;"
+    >
       <Button size="sm" onclick={handleSignout} pill color="primary"
         >Sign Out</Button
       >
@@ -273,7 +277,7 @@
             </DropdownItem>
           {/each}
         </Dropdown> -->
-        
+
         <NavLi class="cursor-pointer">
           <CodeForkSolid class="h-6 text-primary-800 dark:text-white inline" />
           {#if selectedHost}{selectedHost.host_name}{:else}Choose Host{/if}
@@ -354,7 +358,7 @@
     top: 0;
     z-index: 1000;
   }
-  
+
   :global(nav div.flex) {
     justify-content: space-between;
     margin: 0;
@@ -417,7 +421,7 @@
       padding: 5px;
     }
 
-    :global(.navigationList ul [role=tooltip]) {
+    :global(.navigationList ul [role="tooltip"]) {
       color: white;
     }
 

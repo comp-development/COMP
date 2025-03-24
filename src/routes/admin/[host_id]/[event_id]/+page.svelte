@@ -51,17 +51,16 @@
 {#if loading}
   <Loading />
 {:else}
-  <EventDisplay
-    id={eventId}
-    host={host}
-    event={event_information}
-    editable={true}
-  />
+  <EventDisplay id={eventId} {host} event={event_information} editable={true} />
 
-  <hr>
+  <hr />
 
   <div class="mt-4">
-    <EventRegistrationsTable event_id={eventId} host_id={hostId} event_name={event_information.event_name} />
+    <EventRegistrationsTable
+      event_id={eventId}
+      host_id={hostId}
+      event_name={event_information.event_name}
+    />
   </div>
 {/if}
 
