@@ -43,12 +43,18 @@ export async function getEventInformation(event_id: number) {
   return data;
 }
 
-export async function getEventTests(event_id: number) {
-  let { data, error } = await supabase
+export async function getEventTests(event_id: number, isAdmin: boolean = false) {
+  let query = supabase
     .from("tests")
     .select("*")
-    .eq("event_id", event_id)
-    .order("test_name");
+    .eq("event_id", event_id);
+  
+  // Only filter by visibility if the user is not an admin
+  if (!isAdmin) {
+    query = query.eq("visible", true);
+  }
+  
+  let { data, error } = await query.order("test_name");
   if (error) throw error;
   return data;
 }
@@ -258,6 +264,16 @@ export async function getStudentTeams(student_id: string) {
   return data;
 }
 
+export async function resetStudentWaivers(event_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update({ waiver: null })
+    .eq("event_id", event_id);
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getStudentEvents(student_id: string) {
   const { data, error } = await supabase
     .from("student_events")
@@ -303,13 +319,24 @@ export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
     .select(
-      "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+      "*, student:students(*), team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
     )
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();
   console.log("getStudentEvent", data);
   if (error) throw error;
+  return data;
+}
+
+export async function updateStudentEvent(student_event_id: number, studentEventData: {}) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update(studentEventData)
+    .select("*")
+    .eq("student_event_id", student_event_id);
+  if (error) throw error;
+
   return data;
 }
 
@@ -340,11 +367,14 @@ export async function isEventPublished(event_id: number, host_id: number) {
 }
 
 export async function updateEvent(event_id: number, eventData: any) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("events")
     .update(eventData)
+    .select("*")
     .eq("event_id", event_id);
   if (error) throw error;
+
+  return data;
 }
 
 export async function getEventOrganizations(event_id: number) {
@@ -406,6 +436,7 @@ export async function createEvent(eventData: {
     .insert({
       ...eventData,
       published: eventData.published ?? false,
+      waivers: { "type": "none" }
     })
     .select()
     .single();
@@ -602,7 +633,7 @@ export async function upsertEventCustomFields(
 
 export async function upsertHostCustomFields(
   custom_fields: any[],
-  table: "orgs" | "students" | "teams",
+  table: "orgs" | "students" | "teams" | "waivers",
   host_id: number,
 ) {
   console.log("upsertHostCustomFields", custom_fields);

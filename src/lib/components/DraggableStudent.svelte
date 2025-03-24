@@ -1,24 +1,28 @@
 <script lang="ts">
-  import { Badge} from "flowbite-svelte";
+  import { Badge } from "flowbite-svelte";
   import Modal from "./Modal.svelte";
-  import { PenSolid, TrashBinSolid } from "flowbite-svelte-icons";
-  import StudentForm from "./StudentForm.svelte";
+  import {
+    PenSolid,
+    TrashBinSolid,
+    FileCheckSolid,
+    FilePenSolid,
+  } from "flowbite-svelte-icons";
+  import StudentForm from "$lib/components/StudentForm.svelte";
+  import { user } from "$lib/sessionStore";
 
   const {
     team_member,
     onDragStart,
+    event_id,
     onDeleteStudent,
     editableFeatures = true,
+    waiverType="none"
   } = $props();
 
   let isEditModalOpen = $state(false);
 
   const openEditModal = () => {
     isEditModalOpen = true;
-  };
-
-  const closeEditModal = () => {
-    isEditModalOpen = false;
   };
 </script>
 
@@ -30,11 +34,27 @@
 >
   <div class="ml-2">
     <div class="flex">
-      {#if team_member.front_id}
-        <Badge rounded large color="dark">{team_member.front_id}</Badge>
-      {/if}
+      <span id="waiverIcon">
+        <a href={(waiverType != "none" && $user.id == team_member.student_id) ? (team_member.waiver ?? `./${event_id}/waiver`) : ""}>
+          <Badge rounded large color={waiverType != "none" ? (team_member.waiver ? "green" : "red") : "dark"}>
+            {#if team_member.front_id}
+              {team_member.front_id}
+            {/if}
+            {#if waiverType != "none"}
+              {#if team_member.waiver}
+                <FileCheckSolid class="w-5 h-5" />
+              {:else}
+                <FilePenSolid class="w-5 h-5" />
+              {/if}
+            {/if}
+          </Badge>
+        </a>
+      </span>
       <div class="ml-2">
-        <p class="font-bold text-gray-800">
+        <p
+          class="font-bold text-gray-800"
+          style="display: flex; align-items: center; justify-content: left;"
+        >
           {team_member.person.first_name}
           {team_member.person.last_name}
         </p>
@@ -66,9 +86,7 @@
 </div>
 
 <div class="modalExterior secondPlaneModal">
-  <Modal 
-    bind:open={isEditModalOpen}
-  >
+  <Modal bind:open={isEditModalOpen}>
     <div class="specificModalMax">
       <h3 class="text-xl font-medium text-gray-900 dark:text-white">
         Edit Student
@@ -116,6 +134,4 @@
     pointer-events: all;
     z-index: 99999999;
   }
-
 </style>
-

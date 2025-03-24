@@ -25,11 +25,43 @@
   import SelectProblem from "$lib/components/SelectProblem.svelte";
   import CreateProblemModal from "$lib/components/CreateProblemModal.svelte";
 
+  // Define interfaces for our data structures
+  interface TestProblem {
+    test_problem_id: number;
+    problem_id: number;
+    test_id: number;
+    page_number: number;
+    problem_number: number;
+    points: number;
+    name: string;
+    problems: {
+      problem_id: number;
+      problem_latex: string;
+      answer_latex: string;
+    };
+    edits?: boolean;
+  }
+
+  interface Test {
+    test_id: number;
+    test_name: string;
+    length: number;
+    buffer_time: number;
+    instructions: string;
+    division?: string;
+    settings: {
+      pages: string[];
+    };
+    [key: string]: any; // Allow string indexing for dynamic properties
+  }
+
+  interface Clarification {
+    test_problem_id: number;
+    clarification_latex: string | null;
+  }
+
   let loading = $state(true);
 
-  let titleEditable = $state(false);
-  let lengthEditable = $state(false);
-  let bufferEditable = $state(false);
   let instructionsEditable = false;
 
   let modalProblem: number | null = $state(null);
@@ -37,21 +69,22 @@
   let openAddProblemModal: boolean = $state(false);
   let newProblemModal: boolean = $state(false);
 
+  let host_id = Number($page.params.host_id);
   let test_id = Number($page.params.test_id);
   let is_team = $page.params.test_id.charAt(0) == "t" ? true : false;
 
-  let user;
-  let test = $state();
-  let problems = $state();
-  let test_taker;
-  let clarifications = $state();
-  let allProblems;
+  let user: any;
+  let test = $state<Test | undefined>();
+  let problems = $state<TestProblem[]>([]);
+  let test_taker: any;
+  let clarifications = $state<Record<number, Clarification>>({});
+  let allProblems: any[];
 
   (async () => {
     user = await getThisUser();
     test = await getTest(test_id);
-    problems = await getTestProblems(test_id, null, "*, problems(*)");
-    allProblems = await getAllProblems();
+    problems = await getTestProblems(test_id, null, "*, problems(*)") || [];
+    allProblems = await getAllProblems(host_id);
     allProblems.forEach((problem) => {
       problem.id = problem.problem_id;
     });
@@ -60,7 +93,7 @@
   })();
 
   // Function to move the problem up (and across pages if necessary)
-  function moveUp(index) {
+  function moveUp(index: number) {
     if (index > 0) {
       const currentProblem = problems[index];
       const previousProblem = problems[index - 1];
@@ -84,14 +117,14 @@
 
       // Resort problems after the swap
       problems.sort(
-        (a, b) =>
+        (a: TestProblem, b: TestProblem) =>
           a.page_number - b.page_number || a.problem_number - b.problem_number,
       );
     }
   }
 
   // Function to move the problem down (and across pages if necessary)
-  function moveDown(index) {
+  function moveDown(index: number) {
     if (index < problems.length - 1) {
       const currentProblem = problems[index];
       const nextProblem = problems[index + 1];
@@ -115,78 +148,68 @@
 
       // Resort problems after the swap
       problems.sort(
-        (a, b) =>
+        (a: TestProblem, b: TestProblem) =>
           a.page_number - b.page_number || a.problem_number - b.problem_number,
       );
     }
   }
 
-  async function updateTitle(event) {
-    titleEditable = false;
-    test.test_name = event.target.innerText;
-    await updateTest(test.test_id, test);
-  }
-
-  async function updateLength(event) {
-    lengthEditable = false;
-    test.length = parseInt(event.target.innerText);
-    await updateTest(test.test_id, test);
-  }
-
-  async function updateBuffer(event) {
-    bufferEditable = false;
-    test.buffer_time = parseInt(event.target.innerText);
-    await updateTest(test.test_id, test);
-  }
-
-  async function updateTestWithKey(event, key, autoUpdate = false) {
-    test[key] = event.target.value;
-    if (autoUpdate) {
-      await updateTest(test.test_id, test);
+  async function updateTestWithKey(event: { target: { value: any } }, key: string, autoUpdate = false) {
+    if (test) {
+      test[key] = event.target.value;
+      if (autoUpdate) {
+        await updateTest(test.test_id, test);
+      }
     }
   }
 
   async function saveTest() {
     try {
-      await updateTest(test.test_id, test);
-      await updateTestProblems(test.test_id, problems);
-      clarifications = await updateProblemClarifications(clarifications);
-      toast.success("Successfully saved");
+      if (test) {
+        await updateTest(test.test_id, test);
+        await updateTestProblems(test.test_id, problems);
+        clarifications = await updateProblemClarifications(clarifications);
+        toast.success("Successfully saved");
+      }
     } catch (e) {
-      handleError(e);
+      handleError(e as Error);
     }
   }
 
   async function addNewProblemPage() {
-    test.settings.pages.push("Page " + (test.settings.pages.length + 1));
-    await updateTest(test.test_id, test);
+    if (test) {
+      test.settings.pages.push("Page " + (test.settings.pages.length + 1));
+      await updateTest(test.test_id, test);
+    }
   }
 
   // Group problems by page_number
-  const groupByPageNumber = (problems, totalPages) => {
-    const grouped = Array.from({ length: totalPages }, () => []);
+  const groupByPageNumber = (problems: TestProblem[], totalPages: number) => {
+    const grouped: TestProblem[][] = Array.from({ length: totalPages }, () => []);
 
-    problems.forEach((problem) => {
+    problems.forEach((problem: TestProblem) => {
       const pageNumber = problem.page_number - 1;
       if (grouped[pageNumber]) {
         grouped[pageNumber].push(problem);
       } else {
-        problem.pageNumber = 1;
-        group[0].push(problem);
+        problem.page_number = 1;
+        grouped[0].push(problem);
       }
     });
 
     return grouped;
   };
 
-  async function addNewProblemToTest(row) {
+  async function addNewProblemToTest(row: { problem_id: number }) {
     try {
+      if (!test) return;
+      
       const groupedProblems = groupByPageNumber(
         problems,
         test.settings.pages.length,
       );
       let prob_number = 0;
-      let idx = curPage ?? test.settings.pages.length - 1;
+      const idx = curPage !== null ? curPage : test.settings.pages.length - 1;
 
       if (groupedProblems[idx] && groupedProblems[idx].length > 0) {
         prob_number =
@@ -215,10 +238,12 @@
 
       problems.push(newProblem);
 
-      for (var i = curPage + 1; i < test.settings.pages.length; i++) {
-        groupedProblems[i].forEach((problem) => {
-          problem.problem_number += 1;
-        });
+      if (curPage !== null) {
+        for (var i = curPage + 1; i < test.settings.pages.length; i++) {
+          groupedProblems[i].forEach((problem) => {
+            problem.problem_number += 1;
+          });
+        }
       }
 
       clarifications[newProblem.test_problem_id] = {
@@ -233,7 +258,7 @@
 
       await saveTest();
     } catch (e) {
-      handleError(e);
+      handleError(e as Error);
     }
   }
 </script>
@@ -242,60 +267,12 @@
   <p>Loading...</p>
 {:else}
   <br />
-  <h1
-    contenteditable={titleEditable}
-    class:editable={titleEditable}
-    onclick={() => {
-      titleEditable = true;
-    }}
-    onblur={async (e) => {
-      await updateTitle(e);
-    }}
-    onkeypress={async (e) => {
-      e.key == "Enter" && (await updateTitle(e));
-    }}
-  >
-    {test.test_name}
+  <h1>
+    {test?.test_name}
   </h1>
-  {#if test.division}
+  {#if test?.division}
     <h2>{test.division}</h2>
   {/if}
-  <div>
-    Test Length (seconds):<br />
-    <p
-      contenteditable={lengthEditable}
-      class:editable={lengthEditable}
-      onclick={() => {
-        lengthEditable = true;
-      }}
-      onblur={async (e) => {
-        await updateLength(e);
-      }}
-      onkeypress={async (e) => {
-        e.key == "Enter" && (await updateLength(e));
-      }}
-    >
-      {test.length}
-    </p>
-  </div>
-  <div>
-    Test Buffer (seconds):<br />
-    <p
-      contenteditable={bufferEditable}
-      class:editable={bufferEditable}
-      onclick={() => {
-        bufferEditable = true;
-      }}
-      onblur={async (e) => {
-        await updateBuffer(e);
-      }}
-      onkeypress={async (e) => {
-        e.key == "Enter" && (await updateBuffer(e));
-      }}
-    >
-      {test.buffer_time}
-    </p>
-  </div>
   <br />
   <Button title="Grade Test" href={$page.url.pathname + "/grade"} />
   <br /><br />
@@ -537,6 +514,7 @@
       modalProblem = null;
       newProblemModal = true;
     }}
+    host_id={host_id}
     closeModal={() => (modalProblem = null)}
     onSelect={async (row) => {
       try {
@@ -564,6 +542,7 @@
     closeModal={() => {
       openAddProblemModal = false;
     }}
+    host_id={host_id}
     onSelect={async (row) => {
       console.log("ROW", row);
       await addNewProblemToTest(row);
@@ -572,6 +551,7 @@
 
   <CreateProblemModal
     open={newProblemModal}
+    host_id={host_id}
     changeNewProblem={() => {
       newProblemModal = true;
     }}
@@ -589,12 +569,6 @@
 <style>
   h1 {
     text-align: center;
-    cursor: pointer;
-  }
-
-  h1.editable {
-    border: 1px dashed #000000;
-    outline: none;
   }
 
   .box {

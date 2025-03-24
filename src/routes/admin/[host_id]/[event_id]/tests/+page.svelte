@@ -4,16 +4,13 @@
   import { page } from "$app/stores";
   import Button from "$lib/components/Button.svelte";
   import {
-    Toggle,
-    Tag,
+    Badge,
     Modal,
-    DatePicker,
-    DatePickerInput,
-    TimePicker,
-    TimePickerSelect,
-    SelectItem,
-    TextInput,
-  } from "carbon-components-svelte";
+    Input,
+    Textarea,
+    Toggle,
+    Select
+  } from "flowbite-svelte";
   import {
     formatTime,
     formatDuration,
@@ -24,10 +21,13 @@
     diffBetweenDates,
   } from "$lib/dateUtils";
   import Loading from "$lib/components/Loading.svelte";
-  import Document from "carbon-icons-svelte/lib/Document.svelte";
-  import Edit from "carbon-icons-svelte/lib/Edit.svelte";
-  import ListCheckedMirror from "carbon-icons-svelte/lib/ListCheckedMirror.svelte";
-  import TableSplit from "carbon-icons-svelte/lib/TableSplit.svelte";
+  import { 
+    FileLinesOutline, 
+    EditOutline, 
+    ClipboardCheckOutline, 
+    TableRowOutline,
+    PlusOutline
+  } from "flowbite-svelte-icons";
   import { handleError } from "$lib/handleError";
   import { onDestroy, onMount } from "svelte";
   import {
@@ -35,28 +35,67 @@
     getEventTests,
     getTeamId,
     updateTest,
+    createTest
   } from "$lib/supabase";
+  import { supabase } from "$lib/supabaseClient";
+  import DateTimePicker from "$lib/components/DateTimePicker.svelte";
+  import TestCard from "$lib/components/TestCard.svelte";
 
   let loading = $state(true);
 
   let open = $state(false);
+  let testModalOpen = $state(false);
+  let isEditMode = $state(false);
+
   let instructions = "";
   let name = "";
 
   let availableTests = [];
-  let testStatusMap = $state({});
-  let tests;
+  let testStatusMap: Record<string, any> = $state({});
+  let tests: any[] = [];
   run(() => {
     tests = Object.values(testStatusMap);
   });
   let user = null;
   let teamId = null;
+  let eventId = Number($page.params.event_id);
+  let subscription: any;
 
-  let curTest = $state({});
+  interface TestData {
+    test_id: string | number;
+    test_name: string;
+    is_team: boolean;
+    division?: string;
+    opening_time?: string;
+    length: number;
+    buffer_time: number;
+    date?: string;
+    time?: string;
+    amPm?: string;
+    status?: string;
+    countdown?: string;
+    instructions?: string;
+    test_mode?: string;
+    visible?: boolean;
+  }
+
+  let curTest: TestData = $state({} as TestData);
+  let activeTest: TestData = $state({
+    test_id: "",
+    test_name: "",
+    is_team: false,
+    visible: false,
+    length: 3600,
+    buffer_time: 300,
+    test_mode: "Standard",
+    instructions: ""
+  } as TestData);
+  let dateValue: Date = $state(new Date());
 
   let isInvalid = $state(false);
+  let nameError = $state("");
 
-  function setupTime(date) {
+  function setupTime(date: Date) {
     let month, day, year, hours, minutes, currentAmPm;
     year = date.getFullYear();
     month = String(date.getMonth() + 1).padStart(2, "0"); // months are zero-indexed
@@ -68,7 +107,27 @@
     curTest.date = `${month}/${day}/${year}`;
     curTest.time = `${hours}:${minutes}`;
     curTest.amPm = currentAmPm;
+    dateValue = date;
   }
+
+  const handleTestUpdate = (payload: any) => {
+    console.log("TEST UPDATE PAYLOAD", payload);
+    
+    if (payload.eventType === "DELETE") {
+      // Remove the deleted test from testStatusMap
+      if (testStatusMap[payload.old.test_id]) {
+        delete testStatusMap[payload.old.test_id];
+      }
+      return;
+    }
+    
+    // Handle INSERT and UPDATE events
+    testStatusMap[payload.new.test_id] = {
+      ...testStatusMap[payload.new.test_id],
+      ...payload.new,
+    };
+    updateStatus(testStatusMap[payload.new.test_id]);
+  };
 
   (async () => {
     user = await getThisUser();
@@ -76,9 +135,24 @@
     await getTests();
     console.log(testStatusMap);
     loading = false;
+
+    // Subscribe to changes in the tests table
+    subscription = supabase
+      .channel("admin-tests-" + eventId)
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // Listen for all changes (INSERT, UPDATE, DELETE)
+          schema: "public",
+          table: "tests",
+          filter: "event_id=eq." + eventId,
+        },
+        handleTestUpdate,
+      )
+      .subscribe();
   })();
 
-  const updateStatus = (test) => {
+  const updateStatus = (test: TestData) => {
     const currentTime = new Date();
     const newStatus = {
       status: "Closed",
@@ -131,16 +205,21 @@
     Object.values(testStatusMap).forEach(updateStatus);
   }, 1000);
 
+  onDestroy(() => {
+    subscription?.unsubscribe();
+    clearInterval(interval);
+  });
+
   async function handleSubmit() {
-    curTest.buffer_time = parseInt(curTest.buffer_time);
-    let [hours, minutes] = curTest.time.split(":");
+    curTest.buffer_time = parseInt(curTest.buffer_time?.toString() || "0");
+    let [hours, minutes] = (curTest.time || "12:00").split(":");
     if (curTest.amPm === "pm" && hours !== "12") {
-      hours = parseInt(hours) + 12;
+      hours = String(parseInt(hours) + 12);
     } else if (curTest.amPm === "am" && hours === "12") {
       hours = "00"; // Handle midnight
     }
 
-    const splitDate = curTest.date.split("/");
+    const splitDate = (curTest.date || "01/01/2023").split("/");
     console.log(splitDate);
     const year2 = splitDate[2];
     const month2 = splitDate[0];
@@ -190,212 +269,370 @@
 
   function validateInput() {
     // Check if the value is a nonnegative integer using regex
-    isInvalid = !/^\d+$/.test(curTest.buffer_time);
+    isInvalid = !/^\d+$/.test(curTest.buffer_time?.toString() || "");
   }
 
   async function getTests() {
     try {
-      tests = await getEventTests($page.params.event_id);
-      console.log(tests);
-      for (const test of tests) {
-        testStatusMap[test.test_id] = { ...test };
-        updateStatus(test);
+      const fetchedTests = await getEventTests(Number($page.params.event_id), true);
+      console.log(fetchedTests);
+      if (fetchedTests) {
+        for (const test of fetchedTests) {
+          testStatusMap[test.test_id] = { ...test };
+          updateStatus(test);
+        }
       }
     } catch (error) {
-      handleError(error);
+      handleError(error as Error);
+    }
+  }
+
+  function handleDateTimeChange(event: CustomEvent) {
+    const { date, formattedDate, time, amPm } = event.detail;
+    curTest.date = formattedDate;
+    curTest.time = time;
+    curTest.amPm = amPm;
+    dateValue = date;
+  }
+
+  function closeModal() {
+    open = false;
+  }
+
+  async function saveAndClose() {
+    open = false;
+    await handleSubmit();
+  }
+
+  function handleOpenClick(test: TestData) {
+    curTest = test;
+    setupTime(
+      curTest.opening_time
+        ? new Date(curTest.opening_time)
+        : new Date(),
+    );
+    open = true;
+  }
+
+  function openTestModal(isEdit: boolean, test?: TestData) {
+    isEditMode = isEdit;
+    
+    if (isEdit && test) {
+      // Edit mode - clone the existing test
+      activeTest = { ...test };
+    } else {
+      // Create mode - initialize with defaults
+      activeTest = {
+        test_id: "",
+        test_name: "",
+        is_team: false,
+        visible: false,
+        length: 3600,
+        buffer_time: 300,
+        test_mode: "Standard",
+        instructions: ""
+      } as TestData;
+    }
+    
+    nameError = "";
+    testModalOpen = true;
+  }
+
+  function handleSettingsClick(test: TestData) {
+    openTestModal(true, test);
+  }
+
+  function closeTestModal() {
+    testModalOpen = false;
+    nameError = "";
+  }
+
+  async function saveTestAndClose() {
+    // Validate test name
+    if (!activeTest.test_name || activeTest.test_name.trim() === "") {
+      nameError = "Test name cannot be empty";
+      return;
+    }
+
+    try {
+      const data = {
+        test_name: activeTest.test_name.trim(),
+        length: parseInt(activeTest.length?.toString() || "3600"),
+        buffer_time: parseInt(activeTest.buffer_time?.toString() || "300"),
+        is_team: activeTest.is_team,
+        visible: activeTest.visible,
+        test_mode: activeTest.test_mode,
+        instructions: activeTest.instructions
+      };
+      
+      if (isEditMode) {
+        // Update existing test
+        await updateTest(activeTest.test_id, data);
+      } else {
+        // Create new test
+        await createTest({
+          ...data,
+          event_id: eventId
+        });
+      }
+      
+      testModalOpen = false;
+      nameError = "";
+    } catch (error) {
+      handleError(error as Error);
     }
   }
 </script>
 
 <br />
-<h1>Tests</h1>
-<br />
-<div>
-  {#if loading}
-    <Loading />
-  {:else if tests.length === 0}
-    <p>No available tests!</p>
-  {:else}
-    <div class="buttonContainer">
-      {#each Object.values(testStatusMap).sort((a, b) => {
-        // Sort by opening_time first
-        const openingTimeComparison = new Date(a.opening_time) - new Date(b.opening_time);
-        if (openingTimeComparison !== 0) return openingTimeComparison;
+<div class="page-container">
+  <h1 class="page-title">Tests</h1>
+  <br />
+  <div>
+    {#if loading}
+      <Loading />
+    {:else if !tests || tests.length === 0}
+      <div class="text-center">
+        <button 
+          class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-auto flex items-center"
+          onclick={() => openTestModal(false)}
+        >
+          <PlusOutline class="w-4 h-4 mr-2" />
+          Create Test
+        </button>
+      </div>
+    {:else}
+      <div class="flex justify-between items-center mb-6">
+        <button 
+          class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
+          onclick={() => openTestModal(false)}
+        >
+          <PlusOutline class="w-4 h-4 mr-2" />
+          Create Test
+        </button>
+      </div>
+      <div class="test-grid">
+        {#each Object.values(testStatusMap).sort((a, b) => {
+          // Sort by opening_time first
+          const openingTimeA = a.opening_time ? new Date(a.opening_time).getTime() : 0;
+          const openingTimeB = b.opening_time ? new Date(b.opening_time).getTime() : 0;
+          const openingTimeComparison = openingTimeA - openingTimeB;
+          if (openingTimeComparison !== 0) return openingTimeComparison;
 
-        // Then sort by test_name
-        const nameComparison = a.test_name.localeCompare(b.test_name);
-        if (nameComparison !== 0) return nameComparison;
+          // Then sort by test_name
+          const nameComparison = a.test_name.localeCompare(b.test_name);
+          if (nameComparison !== 0) return nameComparison;
 
-        // Finally sort by test_division
-        return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
-      }) as test}
-        <div>
-          <div class="problemContainer">
-            <div>
-              <div
-                class="flex"
-                style="align-items: center; justify-content: left;"
-              >
-                <h4>
-                  {test.test_name}
-                </h4>
-                <Tag type="green">{test.is_team ? "Team" : "Individual"}</Tag>
-                {#if test.division}
-                  <Tag type="green">{test.division}</Tag>
-                {/if}
+          // Finally sort by test_division
+          return (a.division?.localeCompare(b.division || "") || 0); // Handle undefined division
+        }) as test}
+          <div class="test-card-container">
+            <TestCard 
+              test={test} 
+              isHostView={true}
+              onOpenClick={() => handleOpenClick(test)}
+              onInstructionsClick={() => {}}
+              onSettingsClick={() => handleSettingsClick(test)}
+            />
+          </div>
+        {/each}
+      </div>
+      <br />
+      
+      <!-- Combined Test Modal (Create/Edit) -->
+      <Modal bind:open={testModalOpen} size="xl" autoclose={false} class="w-full max-w-4xl">
+        <div class="text-center">
+          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">
+            {isEditMode ? 'Test Settings' : 'Create New Test'}
+          </h3>
+          
+          <!-- Form layout using centered columns -->
+          <div class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8">
+            <!-- Row 1: Test Name and Visibility -->
+            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
+              <div class="flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Test Name <span class="text-red-500">*</span>
+                </span>
+                <div class="w-64">
+                  <Input 
+                    bind:value={activeTest.test_name}
+                    color={nameError ? "red" : "base"}
+                  />
+                  {#if nameError}
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{nameError}</p>
+                  {/if}
+                </div>
               </div>
-              {#if test.status == "Not Open" && test.opening_time}
-                <p>
-                  Start Time: {new Date(test.opening_time).toLocaleString([], {
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              {/if}
-              <p style="text-align: left;">Duration: {test.length / 60} mins</p>
-              <p style="text-align: left;">
-                Buffer: {test.buffer_time / 60} mins
-              </p>
+              
+              <div class="flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Visibility</span>
+                <div class="flex items-center justify-center gap-3">
+                  <Toggle bind:checked={activeTest.visible} />
+                  <span>{activeTest.visible ? 'Visible' : 'Hidden'}</span>
+                </div>
+              </div>
             </div>
-            <div class="flex" style="gap: 5px">
-              <p style="margin-right: 5px;">
-                {test.countdown}
-              </p>
-              <!--
-								<Toggle
-									labelText="Visible"
-									on:toggle={(e) => console.log(e.detail)}
-								/>
-							-->
-
-              <div class="tooltip-container">
-                <a href="./tests/{test.test_id}">
-                  <button class="test-button empty">
-                    <Edit />
-                  </button>
-                  <span class="tooltip">Edit Test</span>
-                </a>
+            
+            <!-- Row 2: Test Type and Test Mode -->
+            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
+              <div class="flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Type</span>
+                <div class="flex items-center justify-center gap-3">
+                  <Toggle bind:checked={activeTest.is_team} />
+                  <span>{activeTest.is_team ? 'Team' : 'Individual'}</span>
+                </div>
               </div>
-              <div class="tooltip-container">
-                <a href="./tests/{test.test_id}/grade">
-                  <button class="test-button empty">
-                    <ListCheckedMirror />
-                  </button>
-                  <span class="tooltip">Grade Test</span>
-                </a>
+              
+              <div class="flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
+                <div class="w-64">
+                  <Select bind:value={activeTest.test_mode}>
+                    <option value="Standard">Standard</option>
+                    <option value="Puzzle">Puzzle</option>
+                    <option value="Guts">Guts</option>
+                    <option value="Meltdown">Meltdown</option>
+                  </Select>
+                </div>
               </div>
-              <div class="tooltip-container">
-                <a href="./tests/{test.test_id}/results">
-                  <button class="test-button empty">
-                    <TableSplit />
-                  </button>
-                  <span class="tooltip">Results</span>
-                </a>
+            </div>
+            
+            <!-- Row 3: Test Length and Buffer Time -->
+            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
+              <div class="flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Length (seconds)</span>
+                <div class="w-64">
+                  <Input type="number" bind:value={activeTest.length} />
+                </div>
               </div>
-              <button
-                class="test-button full"
-                onclick={(e) => {
-                  curTest = test;
-                  setupTime(
-                    curTest.openingTime
-                      ? new Date(curTest.openingTime)
-                      : new Date(),
-                  );
-                  open = true;
-                }}
-              >
-                Open
-              </button>
+              
+              <div class="flex flex-col items-center">
+                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
+                <div class="w-64">
+                  <Input type="number" bind:value={activeTest.buffer_time} />
+                </div>
+              </div>
+            </div>
+            
+            <!-- Row 4: Instructions -->
+            <div class="w-full flex flex-col items-center">
+              <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Instructions</span>
+              <div class="w-full max-w-2xl">
+                <Textarea rows={5} bind:value={activeTest.instructions} />
+              </div>
             </div>
           </div>
+          
+          <div class="flex justify-center gap-4 mt-8">
+            <button 
+              class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
+              onclick={closeTestModal}
+            >
+              Cancel
+            </button>
+            <button 
+              class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+              onclick={saveTestAndClose}
+            >
+              {isEditMode ? 'Save' : 'Create'}
+            </button>
+          </div>
         </div>
-      {/each}
-    </div>
-    <br />
-    <Modal
-      bind:open
-      modalHeading={name}
-      on:open
-      on:close
-      primaryButtonText="Save"
-      secondaryButtonText="Cancel"
-      size="lg"
-      onclick:button--secondary={() => (open = false)}
-      on:submit={async () => {
-        open = false;
-        await handleSubmit();
-      }}
-    >
-      Set open time:
-      <DatePicker bind:value={curTest.date} datePickerType="single" on:change>
-        <DatePickerInput labelText="Meeting date" placeholder="mm/dd/yyyy" />
-      </DatePicker>
-
-      <TimePicker
-        labelText="Time"
-        placeholder="hh:mm"
-        bind:value={curTest.time}
-      >
-        <TimePickerSelect bind:value={curTest.amPm}>
-          <SelectItem value="am" text="AM" />
-          <SelectItem value="pm" text="PM" />
-        </TimePickerSelect>
-      </TimePicker>
-
-      <Button
-        action={() => {
-          setupTime(new Date());
-        }}
-        title={"Now"}
-      />
-
-      <TextInput
-        labelText="Buffer Time (seconds)"
-        bind:value={curTest.buffer_time}
-        invalid={isInvalid}
-        invalidText="Input must be a nonnegative integer"
-        on:input={validateInput}
-      />
-
-      <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br
-      /><br /><br />
-    </Modal>
-  {/if}
+      </Modal>
+      
+      <Modal bind:open size="lg" autoclose={false}>
+        <div class="text-center">
+          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Set open time</h3>
+          
+          <DateTimePicker 
+            bind:date={dateValue}
+            bind:time={curTest.time}
+            bind:amPm={curTest.amPm}
+            dateLabel="Test Date"
+            timeLabel="Test Time"
+            on:dateTimeChange={handleDateTimeChange}
+          />
+          
+          <div class="mb-4">
+            <div>
+              <span class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
+              <Input
+                bind:value={curTest.buffer_time}
+                color={isInvalid ? "red" : "base"}
+                on:input={validateInput}
+              />
+              {#if isInvalid}
+                <p class="mt-2 text-sm text-red-600 dark:text-red-500">Input must be a nonnegative integer</p>
+              {/if}
+            </div>
+          </div>
+          
+          <div class="flex justify-center gap-4 mt-6">
+            <button 
+              class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
+              onclick={closeModal}
+            >
+              Cancel
+            </button>
+            <button 
+              class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+              onclick={saveAndClose}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </Modal>
+    {/if}
+  </div>
 </div>
 
 <style>
-  .test-button {
-    border-radius: 10px;
-    border: 1px solid #a7f0ba;
+  .page-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 0 2rem;
   }
 
-  .full {
-    background-color: #a7f0ba;
-    padding: 10px 20px;
+  .page-title {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
   }
 
-  .empty {
-    padding: 10px 10px;
+  .test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
   }
 
-  button:disabled,
-  button[disabled] {
-    cursor: not-allowed;
+  .test-card-container {
+    height: 100%;
   }
 
-  .test-button:not([disabled]):hover {
-    transform: scale(1.05);
-    cursor: pointer;
+  .form-field-wrapper {
+    max-width: 16rem;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    justify-content: center;
   }
 
-  .full:not([disabled]):hover {
-    border: 2px solid #3f9656;
+  .form-field-wrapper-lg {
+    max-width: 32rem;
   }
 
-  .empty:not([disabled]):hover {
-    border: 2px solid #494949;
+  .form-field-wrapper :global(input),
+  .form-field-wrapper :global(select),
+  .form-field-wrapper :global(textarea) {
+    width: 100%;
+  }
+
+  @media (max-width: 640px) {
+    .test-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

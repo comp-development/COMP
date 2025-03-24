@@ -11,9 +11,10 @@
     open: boolean;
     closeModal: any;
     addProblemFunction: any;
+    host_id: number;
   }
 
-  let { open, closeModal, addProblemFunction }: Props = $props();
+  let { open, closeModal, addProblemFunction, host_id }: Props = $props();
 
   let allProblems;
 
@@ -23,6 +24,7 @@
   let problem = $state({
     problem_latex: "",
     answer_latex: "",
+    host_id: host_id,
   });
 
   async function onSubmit() {
@@ -31,7 +33,7 @@
   }
 
   (async () => {
-    allProblems = await getAllProblems();
+    allProblems = await getAllProblems(host_id);
     allProblems.forEach((problem) => {
       problem.id = problem.problem_id;
     });
