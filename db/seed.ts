@@ -129,6 +129,7 @@ async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
           ticket_service: "stripe",
           student_id: student.student_id,
           quantity: 1,
+          refund_status: "NONE",
         },
       ],
     },
@@ -542,6 +543,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
             [...org_to_s.entries()].map(([e, s]) => ({
               student_id: null,
               org_id: e,
+              refund_status: "NONE",
               quantity:
                 s.length +
                 copycat.int(["extra tickets", i], { min: 0, max: 3 }),
@@ -556,6 +558,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
         student_id: s.student_id,
         org_id: null,
         quantity: 1,
+        refund_status: "NONE",
       })),
       { connect: { events: [event] } },
     );

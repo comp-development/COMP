@@ -737,18 +737,21 @@ export type Database = {
       coaches: {
         Row: {
           coach_id: string
+          created_at: string
           email: string
           first_name: string
           last_name: string
         }
         Insert: {
           coach_id?: string
+          created_at?: string
           email: string
           first_name: string
           last_name: string
         }
         Update: {
           coach_id?: string
+          created_at?: string
           email?: string
           first_name?: string
           last_name?: string
@@ -790,6 +793,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "event_custom_fields"
             referencedColumns: ["event_custom_field_id"]
+          },
+          {
+            foreignKeyName: "custom_field_values_org_event_id_fkey"
+            columns: ["org_event_id"]
+            isOneToOne: false
+            referencedRelation: "org_event_details"
+            referencedColumns: ["org_event_id"]
           },
           {
             foreignKeyName: "custom_field_values_org_event_id_fkey"
@@ -1039,6 +1049,7 @@ export type Database = {
           email: string | null
           host_id: number
           host_name: string
+          invites: string[] | null
           logo: string | null
           styles: Json | null
           summary: string | null
@@ -1047,6 +1058,7 @@ export type Database = {
           email?: string | null
           host_id?: number
           host_name: string
+          invites?: string[] | null
           logo?: string | null
           styles?: Json | null
           summary?: string | null
@@ -1055,6 +1067,7 @@ export type Database = {
           email?: string | null
           host_id?: number
           host_name?: string
+          invites?: string[] | null
           logo?: string | null
           styles?: Json | null
           summary?: string | null
@@ -1101,6 +1114,7 @@ export type Database = {
         Row: {
           created_at: string
           event_id: number
+          invites: string[] | null
           join_code: string
           org_event_id: number
           org_id: number
@@ -1108,6 +1122,7 @@ export type Database = {
         Insert: {
           created_at?: string
           event_id: number
+          invites?: string[] | null
           join_code?: string
           org_event_id?: number
           org_id: number
@@ -1115,6 +1130,7 @@ export type Database = {
         Update: {
           created_at?: string
           event_id?: number
+          invites?: string[] | null
           join_code?: string
           org_event_id?: number
           org_id?: number
@@ -1207,8 +1223,73 @@ export type Database = {
         }
         Relationships: []
       }
+      refunded_ticket_orders: {
+        Row: {
+          created_at: string
+          event_id: number
+          id: number
+          order_id: string
+          org_id: number | null
+          quantity: number
+          refund_status:
+            | Database["public"]["Enums"]["refund_status_enum"]
+            | null
+          student_id: string | null
+          ticket_service: Database["public"]["Enums"]["ticket_service_enum"]
+        }
+        Insert: {
+          created_at?: string
+          event_id: number
+          id?: number
+          order_id: string
+          org_id?: number | null
+          quantity: number
+          refund_status?:
+            | Database["public"]["Enums"]["refund_status_enum"]
+            | null
+          student_id?: string | null
+          ticket_service?: Database["public"]["Enums"]["ticket_service_enum"]
+        }
+        Update: {
+          created_at?: string
+          event_id?: number
+          id?: number
+          order_id?: string
+          org_id?: number | null
+          quantity?: number
+          refund_status?:
+            | Database["public"]["Enums"]["refund_status_enum"]
+            | null
+          student_id?: string | null
+          ticket_service?: Database["public"]["Enums"]["ticket_service_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_orders_duplicate_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "ticket_orders_duplicate_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["org_id"]
+          },
+          {
+            foreignKeyName: "ticket_orders_duplicate_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["student_id"]
+          },
+        ]
+      }
       student_events: {
         Row: {
+          created_at: string
           event_id: number
           front_id: string | null
           org_id: number | null
@@ -1217,6 +1298,7 @@ export type Database = {
           team_id: number | null
         }
         Insert: {
+          created_at?: string
           event_id: number
           front_id?: string | null
           org_id?: number | null
@@ -1225,6 +1307,7 @@ export type Database = {
           team_id?: number | null
         }
         Update: {
+          created_at?: string
           event_id?: number
           front_id?: string | null
           org_id?: number | null
@@ -1239,6 +1322,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "student_events_event_id_org_id_fkey"
+            columns: ["event_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "org_event_details"
+            referencedColumns: ["event_id", "org_id"]
           },
           {
             foreignKeyName: "student_events_event_id_org_id_fkey"
@@ -1265,7 +1355,7 @@ export type Database = {
       }
       students: {
         Row: {
-          contestdojo_id: string | null
+          created_at: string
           email: string
           first_name: string | null
           grade: string | null
@@ -1274,7 +1364,7 @@ export type Database = {
           student_id: string
         }
         Insert: {
-          contestdojo_id?: string | null
+          created_at?: string
           email: string
           first_name?: string | null
           grade?: string | null
@@ -1283,7 +1373,7 @@ export type Database = {
           student_id: string
         }
         Update: {
-          contestdojo_id?: string | null
+          created_at?: string
           email?: string
           first_name?: string | null
           grade?: string | null
@@ -1316,24 +1406,30 @@ export type Database = {
       }
       teams: {
         Row: {
+          created_at: string
           event_id: number
           front_id: string | null
+          invites: string[] | null
           join_code: string
           org_id: number | null
           team_id: number
           team_name: string
         }
         Insert: {
+          created_at?: string
           event_id: number
           front_id?: string | null
+          invites?: string[] | null
           join_code?: string
           org_id?: number | null
           team_id?: number
           team_name: string
         }
         Update: {
+          created_at?: string
           event_id?: number
           front_id?: string | null
+          invites?: string[] | null
           join_code?: string
           org_id?: number | null
           team_id?: number
@@ -1346,6 +1442,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "teams_org_events_fkey"
+            columns: ["event_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "org_event_details"
+            referencedColumns: ["event_id", "org_id"]
           },
           {
             foreignKeyName: "teams_org_events_fkey"
@@ -1395,6 +1498,45 @@ export type Database = {
           },
           {
             foreignKeyName: "test_answers_test_taker_id_fkey"
+            columns: ["test_taker_id"]
+            isOneToOne: false
+            referencedRelation: "test_takers_detailed"
+            referencedColumns: ["test_taker_id"]
+          },
+        ]
+      }
+      test_logs: {
+        Row: {
+          created_at: string
+          data: string
+          event_type: Database["public"]["Enums"]["test_event"]
+          id: number
+          test_taker_id: number
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          event_type: Database["public"]["Enums"]["test_event"]
+          id?: number
+          test_taker_id: number
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          event_type?: Database["public"]["Enums"]["test_event"]
+          id?: number
+          test_taker_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_logs_test_taker_id_fkey"
+            columns: ["test_taker_id"]
+            isOneToOne: false
+            referencedRelation: "test_takers"
+            referencedColumns: ["test_taker_id"]
+          },
+          {
+            foreignKeyName: "test_logs_test_taker_id_fkey"
             columns: ["test_taker_id"]
             isOneToOne: false
             referencedRelation: "test_takers_detailed"
@@ -1608,8 +1750,8 @@ export type Database = {
           order_id: string
           org_id: number | null
           quantity: number
-          student_id: string | null
           refund_status: Database["public"]["Enums"]["refund_status_enum"]
+          student_id: string | null
           ticket_service: Database["public"]["Enums"]["ticket_service_enum"]
         }
         Insert: {
@@ -1619,6 +1761,7 @@ export type Database = {
           order_id: string
           org_id?: number | null
           quantity: number
+          refund_status?: Database["public"]["Enums"]["refund_status_enum"]
           student_id?: string | null
           ticket_service?: Database["public"]["Enums"]["ticket_service_enum"]
         }
@@ -1629,6 +1772,7 @@ export type Database = {
           order_id?: string
           org_id?: number | null
           quantity?: number
+          refund_status?: Database["public"]["Enums"]["refund_status_enum"]
           student_id?: string | null
           ticket_service?: Database["public"]["Enums"]["ticket_service_enum"]
         }
@@ -1746,6 +1890,39 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "events"
             referencedColumns: ["event_id"]
+          },
+        ]
+      }
+      org_event_details: {
+        Row: {
+          address: Json | null
+          coach_emails: string | null
+          coach_names: string | null
+          created_at: string | null
+          custom_fields: Json | null
+          event_id: number | null
+          join_code: string | null
+          name: string | null
+          org_event_id: number | null
+          org_id: number | null
+          students_added: number | null
+          students_assigned: number | null
+          ticket_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["event_id"]
+          },
+          {
+            foreignKeyName: "org_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["org_id"]
           },
         ]
       }
@@ -1937,9 +2114,10 @@ export type Database = {
         | "multiple_choice"
         | "checkboxes"
         | "dropdown"
+      refund_status_enum: "NONE" | "DENIED" | "APPROVED" | "REQUESTED"
+      test_event: "focus" | "keypress" | "paste" | "blur" | "visibility_change"
       test_mode: "Standard" | "Puzzle" | "Guts" | "Meltdown"
       ticket_service_enum: "stripe" | "eventbrite"
-      refund_status_enum: "NONE" | "REQUESTED" | "APPROVED" | "DENIED"
     }
     CompositeTypes: {
       add_test_taker_result: {

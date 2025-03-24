@@ -84,9 +84,16 @@ export async function getEventRefundRequests(event_id: number) {
 
     const { data, error } = await supabase
       .from("ticket_orders")
-      .select("*")
+      .select(`
+        *,
+        students(first_name, last_name),
+        orgs(name)
+      `)
       .eq("event_id", event_id)
       .not("refund_status", "eq", "NONE");
+
+    // if student id, join with student
+    // if org id, join with org
 
     if (error) {
       console.error("Error in getEventRefundRequests:", error);
@@ -94,6 +101,31 @@ export async function getEventRefundRequests(event_id: number) {
     }
 
     console.log("Refund requests data: ", data);
+    return data || [];
+  } catch (error) {
+    console.error("Error getting refund requests:", error);
+    throw error;
+  }
+}
+
+export async function getEventRefundedRequests(event_id: number) {
+  try {
+    console.log("Fetching refunded requests for event:", event_id);
+
+    const { data, error } = await supabase
+      .from("refunded_ticket_orders")
+      .select(`
+        *,
+        students(first_name, last_name),
+        orgs(name)
+      `)
+      .eq("event_id", event_id)
+    if (error) {
+      console.error("Error in getEventRefundRequests:", error);
+      throw error;
+    }
+
+    console.log("Refunded requests data: ", data);
     return data || [];
   } catch (error) {
     console.error("Error getting refund requests:", error);
