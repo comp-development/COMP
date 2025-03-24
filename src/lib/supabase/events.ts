@@ -808,3 +808,11 @@ export async function getEventTicketCount(event_id: number) {
 
   return totalTickets;
 }
+
+export async function insertCoordinates(org_id : number, lat : number, lng: number){
+  const { error } = await supabase
+    .from("orgs")
+    .update({address_latitude: lat, address_longitude: lng})
+    .eq("org_id", org_id);
+  if (error) throw error; 
+}
