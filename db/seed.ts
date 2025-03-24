@@ -43,8 +43,7 @@ const example_problems = [
     host_id: 1,
   },
   {
-    problem_latex:
-      `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
+    problem_latex: `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
     answer_latex: "(9!)/2",
     solution_latex:
       "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
@@ -419,21 +418,30 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
 
   const { events } = await seed.events(
     (x) =>
-      x(hosts.length * 4, ({ seed }) => ({
-        tests: (x) =>
-          x(3, () => {
-            return {
-              test_problems: copycat
-                .someOf(
-                  [1, 5],
-                  example_problems,
-                )(seed)
-                .map((p) => ({ problems: p })),
-            };
-          }),
-        // Make most events published.
-        published: copycat.int(seed, { min: 0, max: 9 }) < 9,
-      })),
+      x(hosts.length * 4, ({ seed }) => {
+        const host_id = copycat.oneOf(hosts)(seed).host_id;
+        return {
+          host_id,
+          tests: (x) =>
+            x(3, () => {
+              return {
+                test_problems: copycat
+                  .someOf(
+                    [1, 5],
+                    example_problems,
+                  )(seed)
+                  .map((p) => ({
+                    problems: {
+                      ...p,
+                      host_id,
+                    },
+                  })),
+              };
+            }),
+          // Make most events published.
+          published: copycat.int(seed, { min: 0, max: 9 }) < 9,
+        };
+      }),
     {
       connect: { hosts },
     },
@@ -630,7 +638,6 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
 
   // TODO: resolve importing supabase client properly
   // supabase.storage.from("problem-images").upload(EXAMPLE_IMAGE_PATH, createReadStream('./example.png'));
-  
   if (!dryRun) {
     console.log("Successfully seeded database!");
   }
