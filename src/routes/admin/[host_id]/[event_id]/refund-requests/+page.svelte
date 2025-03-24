@@ -70,7 +70,7 @@
   {#if loading}
     <p>Loading refund requests...</p>
   {:else}
-    {#if refundRequests.length > 0}
+    {#if refundRequests.length + refundedRequests.length > 0}
     <div class="mb-4">
       <p> Before accepting a refund request via eventbrite, please make sure to go to the eventbrite portal
         and manually approve the refund for this exact order id. Then, click approve on the COMP.MT console!
@@ -82,9 +82,8 @@
       <p>Pending Requests: {refundRequests.filter(r => r.refund_status === "REQUESTED").length}</p>
     </div>
 
-    {#if refundRequests.length + refundedRequests.length === 0}
-      <p>No refund requests found.</p>
-    {:else}
+    
+    {#if refundRequests.filter(r => r.refund_status === "REQUESTED").length > 0}
       <Table>
         <TableHead>
           <TableHeadCell>Order ID</TableHeadCell>
@@ -140,6 +139,7 @@
           {/each}
         </TableBody>
       </Table>
+    {/if}
 
       {#if refundedRequests.length > 0}
       <div class="mt-4">
@@ -261,7 +261,6 @@
           {/each}
         </TableBody>
       </Table>
-    {/if}
     {/if}
   {/if}
 </div> 
