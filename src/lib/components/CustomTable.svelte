@@ -694,47 +694,53 @@
   });
 </script>
 
-{#if props.isLoading || true}
+{#if props.isLoading}
   <div class="w-full">
     <!-- Table header skeleton -->
     <div class="mb-4 flex flex-row justify-between w-full">
       <div class="flex items-center gap-2">
-        <div class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
-        <div class="h-9 w-40 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
+        <div
+          class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+        ></div>
+        <div
+          class="h-9 w-40 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+        ></div>
       </div>
       <div class="flex items-center">
-        <div class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
+        <div
+          class="h-9 w-24 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+        ></div>
       </div>
     </div>
-    
+
     <!-- Table skeleton -->
     <div class="overflow-x-auto">
-      <div class="max-h-[650px] overflow-y-auto">
-        <table class="w-full text-sm text-left border-collapse table-compact themed-table">
-          <!-- Skeleton header -->
-          <thead class="sticky top-0 z-10 bg-[color:var(--primary)] text-white sticky">
-            <tr class="bg-[color:var(--primary-tint)] bg-opacity-10 dark:bg-opacity-10">
-              {#each Array(4) as _, i}
-                <th class="py-3 whitespace-nowrap">
-                  <div class="h-6 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"></div>
-                </th>
-              {/each}
-            </tr>
-          </thead>
-          
-          <!-- Skeleton rows -->
-          <tbody>
-            {#each Array(5) as _, i}
-              <tr class="border-b border-[color:var(--primary-tint)] border-opacity-10 dark:border-opacity-10">
-                {#each Array(4) as _, j}
-                  <td class="py-4 whitespace-nowrap">
-                    <div class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"></div>
-                  </td>
-                {/each}
-              </tr>
+      <div
+        class="w-full border-b border-[color:var(--primary-tint)] border-opacity-20 dark:border-opacity-20"
+      >
+        <!-- Skeleton header -->
+        <div
+          class="grid grid-cols-4 gap-4 py-3 bg-[color:var(--primary-tint)] bg-opacity-10 dark:bg-opacity-10"
+        >
+          {#each Array(4) as _, i}
+            <div
+              class="h-6 bg-[color:var(--primary-tint)] bg-opacity-30 dark:bg-opacity-20 rounded animate-pulse"
+            ></div>
+          {/each}
+        </div>
+
+        <!-- Skeleton rows -->
+        {#each Array(5) as _, i}
+          <div
+            class="grid grid-cols-4 gap-4 py-4 border-b border-[color:var(--primary-tint)] border-opacity-10 dark:border-opacity-10"
+          >
+            {#each Array(4) as _, j}
+              <div
+                class="h-5 bg-[color:var(--primary-tint)] bg-opacity-20 dark:bg-opacity-15 rounded animate-pulse"
+              ></div>
             {/each}
-          </tbody>
-        </table>
+          </div>  
+        {/each}
       </div>
     </div>
   </div>
