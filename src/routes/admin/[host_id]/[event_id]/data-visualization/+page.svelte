@@ -17,9 +17,14 @@
               console.log("this operations costs like .0005 cents");
               address = orgs[i].org.address;
               console.log(address);
-              const result = await address_to_coordinates(address);
-              [lat,lng] =  [result[0].geometry.location.lat, result[0].geometry.location.lng];
-              insertCoordinates(orgs[i].org.org_id,lat,lng);
+              try {
+                const result = await address_to_coordinates(address);
+                [lat,lng] =  [result[0].geometry.location.lat, result[0].geometry.location.lng];
+                insertCoordinates(orgs[i].org.org_id,lat,lng);
+              } catch {
+                console.error(`Failed to get coordinates for org ${orgs[i].org_id}'s address: ${orgs[i].org.address}'`)
+                continue;
+              }
           }else{
               [lat,lng] = [orgs[i].org.address_latitude, orgs[i].org.address_longitude];
               console.log("WE DON'T USE API KEY YAY");
@@ -35,7 +40,7 @@
       return fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=${google_maps_key}`)
       .then(response => response.json())
       .then(data => {
-      console.log(data);
+          console.log(data);
           console.log(data.results[0].geometry.location);
           return data.results;
       }).catch(error => {
