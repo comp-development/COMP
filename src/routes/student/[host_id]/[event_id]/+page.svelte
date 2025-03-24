@@ -18,7 +18,7 @@
     updateStudentOrgEvent,
     type Student,
   } from "$lib/supabase";
-  import type { Tables } from "../../../../../db/database.types";
+  import type { Json, Tables } from "../../../../../db/database.types";
   import {
     supabase,
     type AsyncReturnType,
@@ -217,7 +217,9 @@
           <br />
         {/if}
 
-        {#if student_event && event_details.waivers?.type != "none" && !student_event.waiver}
+        {#if student_event
+          && (event_details?.waivers as {[key: string]: Json})?.type
+          && (event_details?.waivers as {[key: string]: Json})?.type != "none" && !student_event.waiver}
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
             <span class="font-medium">Sign Your Waiver!</span>
