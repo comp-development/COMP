@@ -26,8 +26,8 @@
   let independentTeams = $state([]);
   let selectedTab = $state("student");
 
-	let isEditModalOpen = $state(false);
-	let letEditableStudent = $state(null);
+  let isEditModalOpen = $state(false);
+  let letEditableStudent = $state(null);
 
   async function loadInformation() {
     try {
@@ -39,95 +39,58 @@
       students = await getEventStudents(eventId);
       independentTeams = await getEventIndependentTeams(eventId);
 
-			loading = false;
-		} catch (error) {
-			handleError(error);
-		}
-	}
+      loading = false;
+    } catch (error) {
+      handleError(error);
+    }
+  }
 
-	loadInformation();
+  loadInformation();
 </script>
 
 {#if loading}
-	<Loading />
+  <Loading />
 {:else}
-	<EventDisplay
-		id={eventId}
-		name={event_information.event_name}
-		date={event_information.event_date}
-		logo={event_information.logo != "" ? event_information.logo : host.logo}
-		email={event_information.email ?? host.email}
-		markdown={event_information.summary}
-		editable={true}
-	/>
-	
-	<div class="mt-4 mb-4 p-4">
-		<h2 class="text-2xl font-bold mb-4">Registered Organizations</h2>
-		<div class="tableMax">
-			<TableName
-				actionType="edit"
-				items={organizations}
-				action={(e, org) => {
-					window.location.href = `/admin/${hostId}/${eventId}/org/${org.org_id}`;
-				}}
-				columns = {[
-					{
-						label: "Name",
-						value: (item) => item.org.name,
-						sortable: true,
-					},
-					{
-						label: "Address",
-						value: (item) => item.org.address,
-						sortable: true,
-					},
-					{
-						label: "Join Code",
-						value: (item) => item.join_code,
-						sortable: true,
-					},
-				]}
-			/>
-		</div>
-		{#if organizations.length === 0}
-			<p class="text-center text-gray-500 mt-4">No organizations registered yet</p>
-		{/if}
-	</div>
+  <EventDisplay id={eventId} {host} event={event_information} editable={true} />
 
-  <hr>
+  <hr />
 
   <div class="mt-4">
-    <EventRegistrationsTable event_id={eventId} host_id={hostId} event_name={event_information.event_name} />
+    <EventRegistrationsTable
+      event_id={eventId}
+      host_id={hostId}
+      event_name={event_information.event_name}
+    />
   </div>
 {/if}
 
 <div class="modalExterior">
-	<Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
-		<div class="specificModalMax">
-			<h3 class="text-xl font-medium text-gray-900 dark:text-white">
-				Edit Student
-			</h3>
-			<StudentForm
-				title=""
-				student_event={letEditableStudent}
-				user={letEditableStudent.person}
-				event_id={eventId}
-			/>
-		</div>
-	</Modal>
+  <Modal bind:open={isEditModalOpen} size="md" autoclose={true}>
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Edit Student
+      </h3>
+      <StudentForm
+        title=""
+        student_event={letEditableStudent}
+        user={letEditableStudent.person}
+        event_id={eventId}
+      />
+    </div>
+  </Modal>
 </div>
 
 <style>
-	.tableMax {
-		max-width: 800px;
-		margin: 0 auto;
-	}
+  .tableMax {
+    max-width: 800px;
+    margin: 0 auto;
+  }
 
-	.specificModalMax {
-		max-height: 500px;
-	}
+  .specificModalMax {
+    max-height: 500px;
+  }
 
-	:global([role="tabpanel"]) {
-		background-color: transparent !important;
-	}
+  :global([role="tabpanel"]) {
+    background-color: transparent !important;
+  }
 </style>
