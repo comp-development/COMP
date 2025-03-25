@@ -29,6 +29,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { supabase } from "$lib/supabaseClient";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+  import AddOnButton from "$lib/components/AddOnButton.svelte";
   import { onMount } from 'svelte';
 
   let loading = $state(true);
@@ -526,6 +527,12 @@
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
           </Button>
+          <AddOnButton 
+            event_id={event_id} 
+            host_id={host_id} 
+            org_event_id={organizationDetails.event?.org_event_id} 
+            buttonLabel="Purchase Add-ons"
+          />
         </ButtonGroup>
       </div>
 
