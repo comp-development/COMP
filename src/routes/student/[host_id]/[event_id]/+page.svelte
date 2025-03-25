@@ -25,6 +25,7 @@
     type Get,
   } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
+  import AddOnButton from "$lib/components/AddOnButton.svelte";
 
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
@@ -249,6 +250,14 @@
                 href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`}
                 pill>Take Tests</Button
               >
+              <div class="ml-2">
+                <AddOnButton 
+                  event_id={event_id} 
+                  host_id={host_id} 
+                  student_event_id={student_event?.student_event_id} 
+                  buttonLabel="Purchase Add-ons"
+                />
+              </div>
             </div>
             <br />
           {/if}
