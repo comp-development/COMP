@@ -64,7 +64,16 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           reason: "requested_by_customer",
         });
       } catch (stripeError: any) {
-        throw new Error(`Stripe refund failed: ${stripeError.message}`);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+        console.log("stripeError", stripeError);
+
+        throw new Response(`Stripe refund failed: ${stripeError.message}`, {status: 400});
       }
     } else if (ticket.ticket_service === "eventbrite") {
       const eventbriteResponse = await fetch(
@@ -78,23 +87,34 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       );
 
       if (!eventbriteResponse.ok) {
-        throw Error(
-          `Eventbrite refund failed: ${eventbriteResponse.statusText}`
+        console.log("eventbriteResponse", eventbriteResponse.statusText);
+
+        return new Response(
+          `Eventbrite refund failed: ${eventbriteResponse.statusText}`, {status: 400}
         );
       }
 
       const eventbriteData = await eventbriteResponse.json();
       if (eventbriteData?.status !== "refunded") {
-        throw Error(
-          "Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!"
+        console.log("eventbriteData", eventbriteData);
+        return new Response(
+          "Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!", {status: 400}
         );
       }
     } else {
-      throw Error("Unknown ticket service: " + ticket.ticket_service);
+      return new Response(("Unknown ticket service: " + ticket.ticket_service), {status: 400});
     }
 
     // if this is a student ticket, need to delete registration from events
     if (ticket.student_id !== null) {
+      // grab the team they are being removed from
+      const { data: team_info, error: ticketError } = await adminSupabase
+        .from("student_events")
+        .select("team_id, teams(team_name)")  // Fetch team name via relationship
+        .eq("student_id", ticket.student_id)
+        .eq("event_id", ticket.event_id)
+        .single();
+
       // should delete their entry from the event
       const { error: deleteError } = await adminSupabase
         .from("student_events")
@@ -103,8 +123,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         .eq("event_id", ticket.event_id);
   
       if (deleteError) {
-        throw Error(
-          "Failed to delete student-event entry: " + deleteError.message
+        console.log("deleteError", deleteError);
+        return new Response(
+          ("Failed to delete student-event entry: " + deleteError.message), {status: 400}
         );
       }
   
@@ -116,8 +137,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         .eq("event_id", ticket.event_id);
   
       if (deleteError2) {
-        throw Error(
-          "Failed to delete student ticket entry: " + deleteError2.message
+        console.log("deleteError2", deleteError2);
+        return new Response(
+          ("Failed to delete student ticket entry: " + deleteError2.message), {status: 400}
         );
       }
   
@@ -131,11 +153,16 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           refund_status: status,
           quantity: ticket.quantity,
           order_id: ticket.order_id,
+          removed_team: team_info?.teams?.team_name,
         });
+
+      //TODO: shoould also delete the students info from the table
+      // TODO: Update team count if team is empty
+
   
       if (insertError) {
-        throw Error(
-          "Failed to insert into approved refunds table: " + insertError.message
+        return new Response(
+          "Failed to insert into approved refunds table: " + insertError.message, {status: 400}
         );
       }
     }
@@ -161,7 +188,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         .eq("id", ticket_id);
 
       if (updateError) {
-        throw Error("Failed to update ticket status: " + updateError.message);
+        return new Response(("Failed to update ticket status: " + updateError.message), { status: 400 });
       }
       // TODO: Send email notification to the organization/student about the refund status
       // return new Response("success", { status: 200 });

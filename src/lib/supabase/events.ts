@@ -327,6 +327,21 @@ export async function getStudentTicketOrder(
   return data;
 }
 
+export async function getStudentPastTicketOrders(
+  student_id: string,
+  event_id: number,
+) {
+  const { data, error } = await supabase
+    .from("refunded_ticket_orders")
+    .select("*")
+    .eq("student_id", student_id)
+    .eq("event_id", event_id)
+    .order("created_at", { ascending: false }) // Order by the `created_at` field in descending order
+    .limit(1); // just remove this one line if we want to displya all past tickets. 
+  if (error) throw error;
+  return data;
+}
+
 // once approved, just delete the entry, and store in another table just to be safe?
 
 export async function isEventPublished(event_id: number, host_id: number) {

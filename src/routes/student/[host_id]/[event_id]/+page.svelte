@@ -10,6 +10,7 @@
     getEventInformation,
     getStudentEvent,
     getStudentTicketOrder,
+    getStudentPastTicketOrders,
     updateStudentTeam,
     getOrgEventByJoinCode,
     getHostInformation,
@@ -38,6 +39,8 @@
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = null;
+  let past_tickets: Tables<"refunded_ticket_orders"> | null = null;
+
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student: Student = $state(null);
@@ -55,7 +58,7 @@
     await updateStudentTeam(
       student_event!.student_event_id,
       team!.team_id,
-      team!.org_id,
+      team!.org_id
     );
     student_event!.team = team!;
   };
@@ -64,7 +67,7 @@
     try {
       org_event = await getOrgEventByJoinCode(
         event_id,
-        orgJoinFormResponses.org_join_code.toUpperCase(),
+        orgJoinFormResponses.org_join_code.toUpperCase()
       );
     } catch (e) {
       const error: any = e;
@@ -79,19 +82,19 @@
     if (org_event) {
       await updateStudentOrgEvent(
         student_event!.student_event_id,
-        org_event.org_id,
+        org_event.org_id
       );
       student_event!.org_event = org_event;
     } else {
       throw new Error(
-        "An unknown error has occurred. Please email the tournament organizers.",
+        "An unknown error has occurred. Please email the tournament organizers."
       );
     }
   };
 
   async function eventbritePurchase(
     creating_team: boolean,
-    joining_team_code: string | null,
+    joining_team_code: string | null
   ) {
     const { data: authData, error } = await supabase.auth.getSession();
     if (error != null) {
@@ -101,7 +104,7 @@
 
     return async (data: any) => {
       // TODO: check that data has quantity 1.
-      console.log("eventbrite", data)
+      console.log("eventbrite", data);
       let body = {
         event_id,
         host_id: event_details!.host_id,
@@ -128,21 +131,26 @@
 
   async function openEventbriteWidget(
     creating_team: boolean,
-    joining_team_code: string | null,
+    joining_team_code: string | null
   ) {
     const eventbriteEventId = event_details?.eventbrite_event_id; // Replace with your actual Eventbrite event ID
     if (eventbriteEventId) {
       // Check if the event ID is valid
-       (window as any).EBWidgets.createWidget({
+      (window as any).EBWidgets.createWidget({
         widgetType: "checkout",
         eventId: eventbriteEventId,
         modal: true,
         modalTriggerElementId: "eventbrite-widget-container",
         iFrameContainerId: "modalTriggerElementId",
-        onOrderComplete: await eventbritePurchase(creating_team, joining_team_code),
+        onOrderComplete: await eventbritePurchase(
+          creating_team,
+          joining_team_code
+        ),
         promoCode: "student",
       });
-      (document.querySelector("#eventbrite-widget-container") as HTMLElement).click();
+      (
+        document.querySelector("#eventbrite-widget-container") as HTMLElement
+      ).click();
     }
   }
 
@@ -154,8 +162,8 @@
     host = await getHostInformation(host_id);
     student_event = await getStudentEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
+    past_tickets = await getStudentPastTicketOrders($user!.id, event_id);
     console.log("ticket_order", ticket_order);
-    console.log("hello");
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
@@ -191,14 +199,11 @@
 {#if loading}
   <Loading />
 {:else}
-  <script src="https://www.eventbrite.com/static/widgets/eb_widgets.js"></script>
-  <EventDisplay
-    id={event_id}
-    host={host}
-    event={event_details}
-    editable={false}
-  />
-  <hr/>
+  <script
+    src="https://www.eventbrite.com/static/widgets/eb_widgets.js"
+  ></script>
+  <EventDisplay id={event_id} {host} event={event_details} editable={false} />
+  <hr />
   {#if !student_event}
     {#if transaction_stored}
       <p>
@@ -209,9 +214,6 @@
     {/if}
   {/if}
 
-  <!-- // need to ensure that the ticket they bought is theres -->
-  <!-- // need to make sure they are not already in a team -->
-   <!-- If we request a refund on the ticket, will be removed from the team -->
   {#if student_event}
     {#if team || org_event}
       <div class="team_info">
@@ -219,18 +221,15 @@
           <h2>{org_event.org.name}</h2>
           <br />
         {/if}
-        <!-- Student can only request refund if they are on an independant team --> 
-         <!-- Once requesting refund for the event, need to kick them out of the team -->
-          <!-- Can only rejoin the team once they buy another ticket, or request gets denied -->
-           <!-- Student also needs a page to see the status of their refund -->
+
         {#if team && ticket_order?.ticket_service == "eventbrite" && ticket_order?.student_id == $user!.id}
-        <div class="flex">
-          <Button
-            href={`/student/${$page.params.host_id}/${$page.params.event_id}/refund-request`}
-            pill>Request Refund</Button
-          >
-        </div>
-        <br />
+          <div class="flex">
+            <Button
+              href={`/student/${$page.params.host_id}/${$page.params.event_id}/refund-request`}
+              pill>Request Refund</Button
+            >
+          </div>
+          <br />
         {:else if team && ticket_order?.ticket_service == "stripe" && ticket_order?.student_id == $user!.id}
           <div class="flex">
             <Button
@@ -240,20 +239,13 @@
           </div>
           <br />
         {/if}
-        <!-- {:else}
-        <Alert border color="red">
-          <InfoCircleSolid slot="icon" class="w-5 h-5" />
-          <span class="font-medium">Not assigned to a team!</span>
-          Error, you are not able to request a refund for this ve t
-        </Alert>
-        {/if} -->
 
         {#if !team}
           <Alert border color="red">
             <InfoCircleSolid slot="icon" class="w-5 h-5" />
             <span class="font-medium">Not assigned to a team!</span>
-            Your registration is not complete until you are assigned to a team - reach out to
-            your coach to assign you to a team.
+            Your registration is not complete until you are assigned to a team -
+            reach out to your coach to assign you to a team.
           </Alert>
         {:else}
           <div class="flex">
@@ -269,10 +261,12 @@
               org_id={team?.org_id}
               team={{
                 ...team,
-                teamMembers: team?.student_event?.map((member: StudentEvent) => ({
-                  ...member,
-                  person: member.student,
-                })),
+                teamMembers: team?.student_event?.map(
+                  (member: StudentEvent) => ({
+                    ...member,
+                    person: member.student,
+                  })
+                ),
               }}
               showTeamCode={org_event ? false : true}
               editableFeatures={false}
@@ -286,11 +280,9 @@
             />
           </div>
         {/if}
-
-        
       </div>
     {:else}
-      <br><br>
+      <br /><br />
       <div class="registrationForm">
         <Tabs tabStyle="pill">
           <TabItem
@@ -332,9 +324,7 @@
               divClass="bg-[var(--background)]"
             >
               <h2>Join Independent Team</h2>
-              <p>
-                Get the code from an already registered team member.
-              </p>
+              <p>Get the code from an already registered team member.</p>
               <CustomForm
                 fields={[
                   {
@@ -355,14 +345,17 @@
                 bind:newResponses={teamJoinFormResponses}
                 bind:validationErrors={teamJoinFormErrors}
                 handleSubmit={() => {
-                  if (event_details?.eventbrite_event_id && !transaction_stored) {
+                  if (
+                    event_details?.eventbrite_event_id &&
+                    !transaction_stored
+                  ) {
                     openEventbriteWidget(
                       false,
-                      teamJoinFormResponses["team_join_code"],
+                      teamJoinFormResponses["team_join_code"]
                     );
                   } else {
                     document.location.assign(
-                      `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`,
+                      `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${teamJoinFormResponses["team_join_code"]}`
                     );
                   }
                 }}
@@ -378,22 +371,23 @@
           >
             <h2>Create Independent Team</h2>
             <p>
-              If you're an individual, or you want to create a team independent of an org, then create an independent team.
-            </p><br>
+              If you're an individual, or you want to create a team independent
+              of an org, then create an independent team.
+            </p>
+            <br />
             <div class="flex">
               <Button
-                on:click={()=> {
-                  if (event_details?.eventbrite_event_id && !transaction_stored) {
-                    openEventbriteWidget(
-                      true,
-                      null,
-                    );
+                on:click={() => {
+                  if (
+                    event_details?.eventbrite_event_id &&
+                    !transaction_stored
+                  ) {
+                    openEventbriteWidget(true, null);
                   } else {
                     document.location.assign(
-                      `/student/${$page.params.host_id}/${$page.params.event_id}/create-team`,
+                      `/student/${$page.params.host_id}/${$page.params.event_id}/create-team`
                     );
                   }
-                  
                 }}
                 pill
               >
@@ -417,6 +411,24 @@
     {/if}
     -->
   {/if}
+
+
+  {#if !student_event && past_tickets.length > 0}
+    {#each past_tickets as ticket}
+      {#if ticket.removed_team}
+      <div class="bg-yellow-100 border-yellow-200 text-yellow-700 p-4 rounded-lg shadow-md mb-4">
+
+        <p>
+          Your past ticket was refunded, and you were removed from team <strong
+            >{ticket.removed_team}</strong
+          >. Please sign up again if you would still like to compete.
+        </p>
+      </div>
+
+      {/if}
+    {/each}
+  {/if}
+
   <hr />
   <StudentForm
     bind:student_event

@@ -1,3 +1,7 @@
+alter table "public"."refunded_ticket_orders" add column "removed_team" text;
+
+set check_function_bodies = off;
+
 CREATE OR REPLACE FUNCTION public.student_team_requirements(in_student_id uuid, in_team_id bigint, in_org_id bigint)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -30,7 +34,7 @@ begin
     select quantity into v_associated_t_o_quantity
     from ticket_orders
     where ticket_orders.student_id = in_student_id and ticket_orders.event_id = v_event_id;
-    if v_associated_t_o_quantity is not null and v_associated_t_o_quantity = 1 then
+    if v_associated_t_o_quantity is not null and v_associated_t_o_quantity >= 1 then
       return true;
     else
       raise 'Student must purchase ticket to be on independent team';
@@ -40,7 +44,7 @@ begin
 
   -- check that the sum of org ticket_order quantities is at least the count
   -- of students in that org's teams
-  select SUM(quantity) from ticket_orders where org_id = v_associated_team_org_id and event_id = v_event_id
+  select SUM(quantity) from ticket_orders where org_id = v_associated_team_org_id and event_id = v_event_id and refund_status IN ('NONE', 'DENIED')
   into v_org_available_tickets;
 
   select COUNT(*) from student_events
@@ -51,11 +55,10 @@ begin
   if v_org_available_tickets >= v_org_occupied_tickets then
     return true;
   else
-    raise 'Organization has not paid for sufficient tickets';
+    raise exception 'Organization has not paid for sufficient tickets: available = %, required = %', 
+    v_org_available_tickets, v_org_occupied_tickets;
   end if;
 
 end;
 $function$
 ;
-alter table "public"."student_events" validate constraint "student_team_requirements";
-    

@@ -48,7 +48,7 @@
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update refund status");
+        throw new Error("Failed to update refund status: " + (await response.text()));
       }
 
       // Refresh the refund requests list

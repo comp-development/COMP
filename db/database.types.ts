@@ -1231,9 +1231,8 @@ export type Database = {
           order_id: string
           org_id: number | null
           quantity: number
-          refund_status:
-            | Database["public"]["Enums"]["refund_status_enum"]
-            | null
+          refund_status: Database["public"]["Enums"]["refund_status_enum"]
+          removed_team: string | null
           student_id: string | null
           ticket_service: Database["public"]["Enums"]["ticket_service_enum"]
         }
@@ -1244,9 +1243,8 @@ export type Database = {
           order_id: string
           org_id?: number | null
           quantity: number
-          refund_status?:
-            | Database["public"]["Enums"]["refund_status_enum"]
-            | null
+          refund_status?: Database["public"]["Enums"]["refund_status_enum"]
+          removed_team?: string | null
           student_id?: string | null
           ticket_service?: Database["public"]["Enums"]["ticket_service_enum"]
         }
@@ -1257,9 +1255,8 @@ export type Database = {
           order_id?: string
           org_id?: number | null
           quantity?: number
-          refund_status?:
-            | Database["public"]["Enums"]["refund_status_enum"]
-            | null
+          refund_status?: Database["public"]["Enums"]["refund_status_enum"]
+          removed_team?: string | null
           student_id?: string | null
           ticket_service?: Database["public"]["Enums"]["ticket_service_enum"]
         }
