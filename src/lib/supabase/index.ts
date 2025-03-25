@@ -63,11 +63,12 @@ export async function getPurchasedAddons(options: {
     .select(`
       addon_id,
       quantity,
-      addons (
+      addons!addon_orders_addon_id_fk (
         addon_id,
         addon_name,
         price_cents,
-        enabled
+        enabled,
+        description
       )
     `);
   

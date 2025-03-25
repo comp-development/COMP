@@ -77,10 +77,6 @@ alter table "public"."addon_orders" add constraint "addon_orders_addon_id_fk" FO
 
 alter table "public"."addon_orders" validate constraint "addon_orders_addon_id_fk";
 
-alter table "public"."addon_orders" add constraint "addon_orders_addon_id_fkey" FOREIGN KEY (addon_id) REFERENCES addons(addon_id) not valid;
-
-alter table "public"."addon_orders" validate constraint "addon_orders_addon_id_fkey";
-
 alter table "public"."addon_orders" add constraint "addon_orders_org_event_id_fk" FOREIGN KEY (org_event_id) REFERENCES org_events(org_event_id) not valid;
 
 alter table "public"."addon_orders" validate constraint "addon_orders_org_event_id_fk";

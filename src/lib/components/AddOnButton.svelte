@@ -1,11 +1,16 @@
 <script lang="ts">
-  import { Button, Modal, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Label, Input } from "flowbite-svelte";
-  import { CartSolid, GiftBoxSolid } from "flowbite-svelte-icons";
+  import { Button, Modal, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell, Label, Input, Badge } from "flowbite-svelte";
+  import { CartSolid, GiftBoxSolid, MinusOutline, PlusOutline } from "flowbite-svelte-icons";
   import { user } from "$lib/sessionStore";
-  import { getEventAddons } from "$lib/supabase";
+  import { getEventAddons, getPurchasedAddons } from "$lib/supabase";
   import { supabase } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
   import type { Tables } from "../../../db/database.types";
+
+  // Updated type to include description property
+  type Addon = Tables<"addons"> & {
+    description?: string;
+  };
 
   const props = $props<{
     event_id: number;
@@ -34,16 +39,23 @@
   const entityType = getEntityType();
 
   let isOpen = $state(false);
-  let addons = $state<Tables<"addons">[]>([]);
+  let addons = $state<Addon[]>([]);
   let loading = $state(true);
   let quantities = $state<Record<string, number>>({});
   let hasAddons = $state(false);
+  let purchasedAddons = $state<any[]>([]);
+  let totalPurchasedItems = $state(0);
 
   // Check if there are add-ons available on component initialization
-  $effect(async () => {
+  $effect(() => {
+    checkAddons();
+  });
+  
+  async function checkAddons() {
     try {
       loading = true;
       const availableAddons = await getEventAddons(props.event_id, entityType);
+      console.log("Available addons:", availableAddons);
       hasAddons = availableAddons.length > 0;
     } catch (error) {
       handleError(error instanceof Error ? error : new Error(String(error)));
@@ -51,18 +63,54 @@
     } finally {
       loading = false;
     }
-  });
+  }
+  
+  // Function to load purchased add-ons
+  async function loadPurchasedAddons() {
+    try {
+      let options = {};
+      if (student_event_id) options = { student_event_id };
+      else if (team_id) options = { team_id };
+      else if (org_event_id) options = { org_event_id };
+      else return;
+      
+      const purchased = await getPurchasedAddons(options);
+      console.log("Purchased addons:", purchased);
+      purchasedAddons = purchased;
+      totalPurchasedItems = purchased.reduce((sum, item) => sum + item.quantity, 0);
+    } catch (error) {
+      console.error("Error loading purchased add-ons:", error);
+      handleError(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+  
+  // Get the quantity of a purchased add-on
+  function getPurchasedQuantity(addonId: string) {
+    const found = purchasedAddons.find(item => item.addon_id === addonId);
+    return found ? found.quantity : 0;
+  }
+  
+  // Calculate total price of purchased add-ons
+  function getTotalPurchasedPrice() {
+    return purchasedAddons.reduce((sum, item) => {
+      return sum + ((item.addons?.price_cents || 0) * item.quantity);
+    }, 0);
+  }
   
   async function loadAddons() {
     try {
       loading = true;
       addons = await getEventAddons(props.event_id, entityType);
+      console.log("Loaded addons:", addons);
       
       // Initialize quantities to 0
       quantities = addons.reduce((acc, addon) => {
         acc[addon.addon_id] = 0;
         return acc;
       }, {} as Record<string, number>);
+      
+      // Load purchased add-ons
+      await loadPurchasedAddons();
       
     } catch (error) {
       handleError(error instanceof Error ? error : new Error(String(error)));
@@ -132,6 +180,8 @@
         org_event_id
       };
       
+      console.log("Sending purchase request:", requestBody);
+      
       const response = await fetch("/api/purchase-addon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -155,9 +205,12 @@
   <Button color="primary" outline pill on:click={openModal}>
     <GiftBoxSolid class="w-4 h-4 me-2" />
     {buttonLabel}
+    {#if totalPurchasedItems > 0}
+      <Badge color="green" class="ms-2">{totalPurchasedItems}</Badge>
+    {/if}
   </Button>
 
-  <Modal bind:open={isOpen} size="xl" title="Purchase Add-ons">
+  <Modal bind:open={isOpen} size="xl" title="Purchase Add-ons" outsideclose>
     {#if loading}
       <div class="flex justify-center p-8">
         <div class="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
@@ -166,36 +219,58 @@
       <p>No add-ons are available for this event.</p>
     {:else}
       <div class="p-4">
+
         <Table striped={true}>
           <TableHead>
             <TableHeadCell>Add-on</TableHeadCell>
             <TableHeadCell>Price</TableHeadCell>
-            <TableHeadCell>Quantity</TableHeadCell>
+            <TableHeadCell>Already Purchased</TableHeadCell>
+            <TableHeadCell>Quantity to Add</TableHeadCell>
             <TableHeadCell>Total</TableHeadCell>
           </TableHead>
           <TableBody>
             {#each addons as addon}
               <TableBodyRow>
-                <TableBodyCell>{addon.addon_name}</TableBodyCell>
+                <TableBodyCell>
+                  {addon.addon_name}
+                  {#if addon.description}
+                    <div class="text-sm text-gray-400 break-words whitespace-normal max-w-[250px]">{addon.description}</div>
+                  {/if}
+                </TableBodyCell>
                 <TableBodyCell>${(addon.price_cents / 100).toFixed(2)}</TableBodyCell>
                 <TableBodyCell>
-                  <div class="flex items-center">
+                  {#if getPurchasedQuantity(addon.addon_id) > 0}
+                    <Badge color="green">{getPurchasedQuantity(addon.addon_id)}</Badge>
+                  {:else}
+                    0
+                  {/if}
+                </TableBodyCell>
+                <TableBodyCell>
+                  <div class="flex items-center space-x-2">
                     <button 
-                      class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300" 
-                      on:click={() => decrementQuantity(addon.addon_id)}>-</button>
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      on:click={() => decrementQuantity(addon.addon_id)}
+                      aria-label="Decrease quantity">
+                      <MinusOutline class="w-3 h-3" />
+                    </button>
+                    
                     <Input
                       type="number"
                       min="0"
-                      class="mx-2 w-16 text-center"
+                      class="w-12 text-center p-0 h-8"
                       value={quantities[addon.addon_id] || 0}
                       on:input={(e) => {
                         const target = e.currentTarget as HTMLInputElement;
                         setQuantity(addon.addon_id, target.value);
                       }}
                     />
+                    
                     <button 
-                      class="px-2 py-1 rounded bg-gray-200 hover:bg-gray-300" 
-                      on:click={() => incrementQuantity(addon.addon_id)}>+</button>
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      on:click={() => incrementQuantity(addon.addon_id)}
+                      aria-label="Increase quantity">
+                      <PlusOutline class="w-3 h-3" />
+                    </button>
                   </div>
                 </TableBodyCell>
                 <TableBodyCell>
@@ -205,6 +280,7 @@
             {/each}
             <TableBodyRow>
               <TableBodyCell><strong>Total</strong></TableBodyCell>
+              <TableBodyCell></TableBodyCell>
               <TableBodyCell></TableBodyCell>
               <TableBodyCell><strong>{getTotalItems()} items</strong></TableBodyCell>
               <TableBodyCell><strong>${(getTotalPrice() / 100).toFixed(2)}</strong></TableBodyCell>
