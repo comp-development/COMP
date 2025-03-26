@@ -1,63 +1,38 @@
-CREATE OR REPLACE FUNCTION public.student_team_requirements(in_student_id uuid, in_team_id bigint, in_org_id bigint)
- RETURNS boolean
+CREATE OR REPLACE FUNCTION public.check_student_team_requirements_trigger()
+ RETURNS trigger
  LANGUAGE plpgsql
  SECURITY DEFINER
 AS $function$
-declare
-    v_event_id bigint;
-    v_associated_team_org_id bigint;
-    v_associated_t_o_quantity bigint;
-    v_org_occupied_tickets bigint;
-    v_org_available_tickets bigint;
-begin
+DECLARE
+  v_student_id uuid;
+  v_team_id bigint;
+  v_org_id bigint;
+  v_result boolean;
+BEGIN
+  -- Determine the student_id, team_id, and org_id based on the operation
+  IF TG_OP = 'INSERT' OR TG_OP = 'UPDATE' THEN
+    v_student_id := NEW.student_id;
+    v_team_id := NEW.team_id;
+    v_org_id := NEW.org_id;
+  ELSIF TG_OP = 'DELETE' THEN
+    v_student_id := OLD.student_id;
+    v_team_id := OLD.team_id;
+    v_org_id := OLD.org_id;
+  ELSE
+    RAISE EXCEPTION 'This trigger should only be used for INSERT, UPDATE, or DELETE operations.';
+  END IF;
 
-  select teams.event_id, teams.org_id into v_event_id, v_associated_team_org_id
-  from teams where teams.team_id = in_team_id;
+  -- Call your existing function
+  v_result := public.student_team_requirements(v_student_id, v_team_id, v_org_id);
 
-  -- if the student is not on a team, there's nothing else to check
-  if in_team_id is null then
-    return true;
-  end if;
+  -- If the function returns false, raise an exception to prevent the operation
+  IF NOT v_result THEN
+    RAISE EXCEPTION 'Student team requirements not met.';
+  END IF;
 
-  -- if the student is on an org team, then they must have org_id in the student_events row
-  if v_associated_team_org_id is not null and not exists(select 1 from teams WHERE teams.org_id = in_org_id and teams.team_id = in_team_id) then
-    raise 'No matching team with the same org id';
-  end if;
-
-
-  -- if a student is on an independent team, then they must have paid for their own ticket
-  if v_associated_team_org_id is null then
-    select quantity into v_associated_t_o_quantity
-    from ticket_orders
-    where ticket_orders.student_id = in_student_id and ticket_orders.event_id = v_event_id;
-    if v_associated_t_o_quantity is not null and v_associated_t_o_quantity >= 1 then
-      return true;
-    else
-      raise 'Student must purchase ticket to be on independent team';
-    end if;
-    raise 'Student must purchase ticket to be on independent team';
-  end if;
-
-  -- check that the sum of org ticket_order quantities is at least the count
-  -- of students in that org's teams
-  select SUM(quantity) from ticket_orders where org_id = v_associated_team_org_id and event_id = v_event_id
-  into v_org_available_tickets;
-
-  select COUNT(*) from student_events
-  inner join teams on student_events.team_id = teams.team_id and student_events.event_id = v_event_id
-  where teams.org_id = v_associated_team_org_id
-  into v_org_occupied_tickets;
-
-  -- this runs before insertion of new student event. Thus, need to make sure there is room for one more student.
-  if v_org_available_tickets > v_org_occupied_tickets then
-    return true;
-  else
-    raise exception 'Organization has not paid for sufficient tickets: Available = %, Already Used = %', 
-          v_org_available_tickets, v_org_occupied_tickets;
-  end if;
-
-end;
+  RETURN NEW; -- For INSERT/UPDATE, return the new row
+END;
 $function$
 ;
-alter table "public"."student_events" validate constraint "student_team_requirements";
 
+CREATE TRIGGER student_events_requirements_trigger AFTER INSERT OR DELETE OR UPDATE ON public.student_events FOR EACH ROW EXECUTE FUNCTION check_student_team_requirements_trigger();
