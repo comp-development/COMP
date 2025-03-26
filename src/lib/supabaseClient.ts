@@ -13,3 +13,6 @@ export type AsyncReturnType<T extends (...args: any) => Promise<any>> =
 // Extracts the field `Key` of T | null if T is not null.
 export type Get<T, Key extends keyof NonNullable<T>> =
   T extends NonNullable<T> ? T[Key] : null;
+ 
+// Extracts the field `Key` of T | null if T is not null.
+export type Unpacked<T> = T extends (infer U)[] ? U : null;
