@@ -234,7 +234,7 @@
             </div>
             <ul class="list-disc pl-8 space-y-2">
               <li>Each ticket requested for refund will be immediately deactivated upon refund request</li>
-              <li>No student may be using the requested number of ticketss to make a refund request.</li>
+              <li>No student may be using the requested number of tickets to make a refund request.</li>
               <li>The host will review each request and either approve or deny it</li>
               <li>You will need to check this page to see the status of your requests</li>
             </ul>
