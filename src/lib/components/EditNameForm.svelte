@@ -22,7 +22,7 @@
   // Allows English letters, spaces, hyphens, apostrophes, and periods
   // First letter should be uppercase (Pascal Casing)
   const nameRegex = /^[\p{Lu}][\p{Ll}\p{M}]*(?:(?:[\p{Ll}\p{M}]*[\p{Lu}][\p{Ll}\p{M}]+)|(?:[ '-][\p{Lu}][\p{Ll}\p{M}]+))*$/u;
-  const MAX_NAME_LENGTH = 25;
+  const MAX_NAME_LENGTH = 30;
 
   function openModal() {
     newFirstName = firstName;
