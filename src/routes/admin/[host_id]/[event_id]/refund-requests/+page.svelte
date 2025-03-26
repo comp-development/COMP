@@ -3,19 +3,18 @@
   import { getEventRefundRequests, getEventRefundedRequests } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import { Button, Badge, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from "flowbite-svelte";
-  import type { Tables } from "$lib/types/database.types";
+  import type { Tables } from "$lib/../../db/database.types";
+  import CustomTable, { type UnifiedColumn } from "$lib/components/CustomTable.svelte";
+  import type { AsyncReturnType, Unpacked } from "$lib/supabaseClient";
   const event_id = parseInt($page.params.event_id);
   let loading = true;
-  let refundRequests: Tables<"ticket_orders">[] = [];
-  let refundedRequests: Tables<"refunded_ticket_order">[] = [];
+  let refundRequests: AsyncReturnType<typeof getEventRefundRequests> = [];
+  let refundedRequests: AsyncReturnType<typeof getEventRefundedRequests> = [];
 
   (async () => {
     console.log("LOADING", loading);
     try {
       console.log("Fetching refund requests for event:", event_id);
-      let body = {
-            event_id,
-          };
       refundRequests = await getEventRefundRequests(event_id);
 
       refundedRequests = await getEventRefundedRequests(event_id);
@@ -62,6 +61,35 @@
       loading = false;
     }
   }
+
+  function reshapeRefundRequest<T extends AsyncReturnType<typeof getEventRefundRequests>>(requests: T) {
+    return requests.map(r => (
+       {
+        ...r,
+        created_at: new Date(r.created_at).toLocaleDateString(),
+        requestor_id: r.student_id ? r.students?.first_name + " " + r.students?.first_name : r.orgs?.name,
+        actions: r.refund_status,
+      }
+    ));
+  }
+
+  const ticket_order_columns = [
+    {key: "order_id", label: "Order ID", visible: true, dataType: 'string'},
+    {key: "ticket_service", label: "Ticket Service", visible: true, dataType: 'string'},
+    {key: "requestor_id", label: "Requested By", visible: true, dataType: 'string'},
+    {key: "quantity", label: "Quantity", visible: true, dataType: 'string'},
+    {key: "refund_status", label: "Status", visible: true, dataType: 'string', format: (_, r) => {
+      const COLORS: {[key in Unpacked<typeof refundRequests>["refund_status"]]: string} = {
+        'REQUESTED': 'yellow',
+        'APPROVED': 'green',
+        'DENIED': 'red',
+        'NONE': 'dark',
+      };
+      return {text: r.refund_status, isBadge: true, color: COLORS[(r as Unpacked<typeof refundRequests>).refund_status]}
+    }},
+    {key: "actions", label: "Actions", visible: true, dataType: 'string', format: "column-snippet"
+    },
+  ] as UnifiedColumn[];
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -70,197 +98,66 @@
   {#if loading}
     <p>Loading refund requests...</p>
   {:else}
-    {#if refundRequests.length + refundedRequests.length > 0}
     <div class="mb-4">
       <p> Before accepting a refund request via eventbrite, please make sure to go to the eventbrite portal
         and manually approve the refund for this exact order id. Then, click approve on the COMP.MT console!
       </p>
     </div>
-    {/if}
     <div class="mb-4">
       <p>Total Requests: {refundRequests.length + refundedRequests.length}</p>
       <p>Pending Requests: {refundRequests.filter(r => r.refund_status === "REQUESTED").length}</p>
     </div>
 
-    
-    {#if refundRequests.filter(r => r.refund_status === "REQUESTED").length > 0}
-      <Table>
-        <TableHead>
-          <TableHeadCell>Order ID</TableHeadCell>
-          <TableHeadCell>Ticket Service</TableHeadCell>
-          <TableHeadCell>Requested By</TableHeadCell>
-          <TableHeadCell>Quantity</TableHeadCell>
-          <TableHeadCell>Status</TableHeadCell>
-          <TableHeadCell>Requested At</TableHeadCell>
-          <TableHeadCell>Actions</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each refundRequests.filter(r => r.refund_status === "REQUESTED") as request}
-            <TableBodyRow>
-              <TableBodyCell>{request.order_id}</TableBodyCell>
-              <TableBodyCell>{request.ticket_service}</TableBodyCell>
-              <TableBodyCell>{request.student_id ? request.students.first_name + " " + request.students.last_name : request.orgs.name}</TableBodyCell>
-              <TableBodyCell>{request.quantity}</TableBodyCell>
-              <TableBodyCell>
-                <Badge
-                  color={request.refund_status === 'REQUESTED' ? 'yellow' : 
-                         request.refund_status === 'APPROVED' ? 'green' : 
-                         request.refund_status === 'DENIED' ? 'red' : 'dark'}
-                >
-                  {request.refund_status}
-                </Badge>
-              </TableBodyCell>
-              <TableBodyCell>
-                {new Date(request.created_at).toLocaleDateString()}
-              </TableBodyCell>
-              <TableBodyCell>
-                {#if request.refund_status === 'REQUESTED'}
-                  <div class="flex gap-2">
-                    <Button
-                      size="xs"
-                      color="green"
-                      on:click={() => handleRefundAction(request.id, 'APPROVED')}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="xs"
-                      color="red"
-                      on:click={() => handleRefundAction(request.id, 'DENIED')}
-                    >
-                      Deny
-                    </Button>
-                  </div>
-                {:else}
-                  <span class="text-gray-500">No actions available</span>
-                {/if}
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
-    {/if}
-
-      {#if refundedRequests.length > 0}
-      <div class="mt-4">
-        <p>Approved Refunds: {refundedRequests.length}</p>
-      </div>
-      <Table>
-        <TableHead>
-          <TableHeadCell>Order ID</TableHeadCell>
-          <TableHeadCell>Ticket Service</TableHeadCell>
-          <TableHeadCell>Requested By</TableHeadCell>
-          <TableHeadCell>Quantity</TableHeadCell>
-          <TableHeadCell>Status</TableHeadCell>
-          <TableHeadCell>Requested At</TableHeadCell>
-          <TableHeadCell>Actions</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each refundedRequests as request}
-            <TableBodyRow>
-              <TableBodyCell>{request.order_id}</TableBodyCell>
-              <TableBodyCell>{request.ticket_service}</TableBodyCell>
-              <TableBodyCell>{request.student_id ? request.students.first_name + " " + request.students.last_name : request.orgs.name}</TableBodyCell>
-              <TableBodyCell>{request.quantity}</TableBodyCell>
-              <TableBodyCell>
-                <Badge
-                  color={request.refund_status === 'REQUESTED' ? 'yellow' : 
-                         request.refund_status === 'APPROVED' ? 'green' : 
-                         request.refund_status === 'DENIED' ? 'red' : 'dark'}
-                >
-                  {request.refund_status}
-                </Badge>
-              </TableBodyCell>
-              <TableBodyCell>
-                {new Date(request.created_at).toLocaleDateString()}
-              </TableBodyCell>
-              <TableBodyCell>
-                {#if request.refund_status === 'REQUESTED'}
-                  <div class="flex gap-2">
-                    <Button
-                      size="xs"
-                      color="green"
-                      on:click={() => handleRefundAction(request.id, 'APPROVED')}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="xs"
-                      color="red"
-                      on:click={() => handleRefundAction(request.id, 'DENIED')}
-                    >
-                      Deny
-                    </Button>
-                  </div>
-                {:else}
-                  <span class="text-gray-500">No actions available</span>
-                {/if}
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
+    {#snippet render_component_column(column: UnifiedColumn, row: Unpacked<typeof refundRequests> )}
+      {#if column.key == "actions"}
+        {#if row.refund_status === 'REQUESTED'}
+          <div class="flex gap-2">
+            <Button
+              size="xs"
+              color="green"
+              on:click={() => handleRefundAction(row.id, 'APPROVED')}
+            >
+              Approve
+            </Button>
+            <Button
+              size="xs"
+              color="red"
+              on:click={() => handleRefundAction(row.id, 'DENIED')}
+            >
+              Deny
+            </Button>
+          </div>
+        {:else}
+          <span class="text-gray-500">No actions available</span>
+        {/if}
       {/if}
+    {/snippet}
 
-    {#if refundRequests.filter(r => r.refund_status === "DENIED").length > 0}
-      <div class="mt-4">
-        <p>Denied Refunds: {refundRequests.filter(r => r.refund_status === "DENIED").length}</p>
-      </div>
-      <Table>
-        <TableHead>
-          <TableHeadCell>Order ID</TableHeadCell>
-          <TableHeadCell>Ticket Service</TableHeadCell>
-          <TableHeadCell>Requested By</TableHeadCell>
-          <TableHeadCell>Quantity</TableHeadCell>
-          <TableHeadCell>Status</TableHeadCell>
-          <TableHeadCell>Requested At</TableHeadCell>
-          <TableHeadCell>Actions</TableHeadCell>
-        </TableHead>
-        <TableBody>
-          {#each refundRequests.filter(r => r.refund_status === "DENIED") as request}
-            <TableBodyRow>
-              <TableBodyCell>{request.order_id}</TableBodyCell>
-              <TableBodyCell>{request.ticket_service}</TableBodyCell>
-              <TableBodyCell>{request.student_id ? request.students.first_name + " " + request.students.last_name : request.orgs.name}</TableBodyCell>
-              <TableBodyCell>{request.quantity}</TableBodyCell>
-              <TableBodyCell>
-                <Badge
-                  color={request.refund_status === 'REQUESTED' ? 'yellow' : 
-                         request.refund_status === 'APPROVED' ? 'green' : 
-                         request.refund_status === 'DENIED' ? 'red' : 'dark'}
-                >
-                  {request.refund_status}
-                </Badge>
-              </TableBodyCell>
-              <TableBodyCell>
-                {new Date(request.created_at).toLocaleDateString()}
-              </TableBodyCell>
-              <TableBodyCell>
-                {#if request.refund_status === 'REQUESTED'}
-                  <div class="flex gap-2">
-                    <Button
-                      size="xs"
-                      color="green"
-                      on:click={() => handleRefundAction(request.id, 'APPROVED')}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="xs"
-                      color="red"
-                      on:click={() => handleRefundAction(request.id, 'DENIED')}
-                    >
-                      Deny
-                    </Button>
-                  </div>
-                {:else}
-                  <span class="text-gray-500">No actions available</span>
-                {/if}
-              </TableBodyCell>
-            </TableBodyRow>
-          {/each}
-        </TableBody>
-      </Table>
-    {/if}
+    <CustomTable
+      data={reshapeRefundRequest(refundRequests)}
+      columns={[
+        {key: "created_at", label: "Created At", visible: true, dataType: 'string'},
+        ...ticket_order_columns,
+      ]}
+      customFields={[]}
+      entityType={"ticket"}
+      isLoading={loading}
+      event_id={event_id}
+      component_renderer={render_component_column}
+    />
+
+    <CustomTable
+      data={reshapeRefundRequest(refundedRequests)}
+      columns={[
+        {key: "created_at", label: "Refunded At", visible: true, dataType: 'string'},
+        ...ticket_order_columns,
+      ]}
+      customFields={[]}
+      entityType={"ticket"}
+      isLoading={loading}
+      event_id={event_id}
+      component_renderer={render_component_column}
+    />
+
   {/if}
 </div> 
