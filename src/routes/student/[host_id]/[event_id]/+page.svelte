@@ -167,30 +167,7 @@
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
-    team?.student_event.sort((a: StudentEvent, b: StudentEvent) => {
-      const aValues = [
-        a?.front_id ?? "",
-        a?.student?.first_name ?? "",
-        a?.student?.last_name ?? "",
-      ];
-      const bValues = [
-        b?.front_id ?? "",
-        b?.student?.first_name ?? "",
-        b?.student?.last_name ?? "",
-      ];
-      return aValues < bValues ? 1 : -1;
-    });
-
-    console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
-
-    // if (event_details?.eventbrite_event_id) {
-    //   // Load the Eventbrite widget
-    //   const script = document.createElement("script");
-    //   script.src = "https://www.eventbrite.com/static/widgets/eb_widgets.js";
-    //   script.async = true;
-    //   document.body.appendChild(script);
-    // }
 
     loading = false;
   })();
@@ -262,7 +239,7 @@
               team={{
                 ...team,
                 teamMembers: team?.student_event?.map(
-                  (member: StudentEvent) => ({
+                  (member) => ({
                     ...member,
                     person: member.student,
                   })

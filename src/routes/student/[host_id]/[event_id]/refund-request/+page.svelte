@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
-  import { Button, Badge, Tabs, TabItem, Card } from "flowbite-svelte";
-  import StudentForm from "$lib/components/StudentForm.svelte";
+  import { Card } from "flowbite-svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { Alert } from "flowbite-svelte";
   import { InfoCircleSolid } from "flowbite-svelte-icons";
@@ -10,15 +9,12 @@
     getEventInformation,
     getStudentEvent,
     getStudentTicketOrder,
-    updateStudentTeam,
-    getOrgEventByJoinCode,
     getHostInformation,
     type StudentEvent,
     getStudent,
-    updateStudentOrgEvent,
     type Student,
   } from "$lib/supabase";
-  import type { Tables } from "../../../../../db/database.types";
+  import type { Tables } from "../../../../../../db/database.types";
   import {
     supabase,
     type AsyncReturnType,
@@ -32,28 +28,17 @@
   let student_event: StudentEvent = $state(null);
   let event_details: AsyncReturnType<typeof getEventInformation> | null =
     $state(null);
-  import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
-  import CopyText from "$lib/components/CopyText.svelte";
-  import StudentTeam from "$lib/components/StudentTeam.svelte";
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
-  let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let ticket_order: Tables<"ticket_orders"> | null = $state(null);
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student: Student = $state(null);
-  let teamJoinFormResponses: any = $state({});
-  let teamJoinFormErrors: any = $state({});
-  let orgJoinFormResponses: any = $state({});
-  let orgJoinFormErrors: any = $state({});
   let host = $state();
   let selectedOption: "join_org" | "join_team" | "create_team" =
     $state("join_org");
 
-  
-
-
-  async function requestRefund(first_name: string, last_name: string, email: string, ticket: Tables<"ticket_orders"> = ticket_order) {
+  async function requestRefund(first_name: string, last_name: string, email: string, ticket: Tables<"ticket_orders"> | null = ticket_order) {
     if (ticket_order && ticket_order.refund_status == "NONE") {
       if (ticket_order.ticket_service == "eventbrite" || ticket_order.ticket_service == "stripe") {
         const { data: authData, error } = await supabase.auth.getSession();
@@ -130,25 +115,9 @@
     student_event = await getStudentEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     console.log("ticket_order", ticket_order);
-    console.log("hello");
     transaction_stored = ticket_order != null;
     team = student_event?.team;
-    org_event = student_event?.org_event;
-    team?.student_event.sort((a: StudentEvent, b: StudentEvent) => {
-      const aValues = [
-        a?.front_id ?? "",
-        a?.student?.first_name ?? "",
-        a?.student?.last_name ?? "",
-      ];
-      const bValues = [
-        b?.front_id ?? "",
-        b?.student?.first_name ?? "",
-        b?.student?.last_name ?? "",
-      ];
-      return aValues < bValues ? 1 : -1;
-    });
 
-    console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
 
     // if (event_details?.eventbrite_event_id) {
