@@ -4,15 +4,20 @@
   import Loading from "$lib/components/Loading.svelte";
   import { Button } from "flowbite-svelte";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+  import EditNameForm from "$lib/components/EditNameForm.svelte";
 
   let coach: any = $state();
   let loading = $state(true);
   let organizations = $state([]);
 
-  (async () => {
+  async function loadData() {
     coach = await getCoach($user!.id);
     organizations = await getCoachOrganizations($user!.id);
     loading = false;
+  }
+
+  (async () => {
+    await loadData();
   })();
 </script>
 
@@ -21,7 +26,15 @@
 {:else}
   <br />
   <h1 class="header">Welcome to the Coach Portal</h1>
-  <h2>{coach.first_name} {coach.last_name}</h2>
+  <div class="flex items-center gap-1">
+    <h2>{coach.first_name} {coach.last_name}</h2>
+    <EditNameForm 
+      firstName={coach.first_name} 
+      lastName={coach.last_name} 
+      userType="coach" 
+      onUpdate={loadData}
+    />
+  </div>
   <br />
   <Button pill href="/coach/create_org">Create Organization</Button>
   <br /><br /><br />
