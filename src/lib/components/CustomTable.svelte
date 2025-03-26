@@ -71,7 +71,7 @@
     CogOutline
   } from "flowbite-svelte-icons";
   
-  import { onMount, createEventDispatcher, onDestroy } from 'svelte';
+  import { onMount, createEventDispatcher, onDestroy, type Snippet } from 'svelte';
   // Using custom icons instead of svelte-heros-v2 to avoid dependency issues
 
   // Define the TableColumn type
@@ -89,18 +89,21 @@
   };
 
   // Props definitions using runes API - updated to use arrays
-  const props = $props<{
+  const props: {
     data: any[]; // Changed from Record<string | number, any> to any[]
-    columns: {
+    columns: ({
       key: string;
       label: string;
       visible: boolean;
       searchable?: boolean;
       dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for sorting
-      format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+      format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string);
       linkedToColumn?: string; // Add linkedToColumn property to props interface
-    }[];
+    }[]);
     entityType: string; // Changed from enum to string to make it more generic
+    // A custom renderer for specific columns.
+    // Takes in the column being processed and the row (as any).
+    component_renderer?: Snippet<[UnifiedColumn, any]>;
     isLoading: boolean;
     event_id?: number; // Made optional
     event_name?: string; // Added event_name as an optional prop
@@ -112,7 +115,7 @@
     lazyLoad?: boolean; // Optional flag to enable lazy loading of table rows
     initialBatchSize?: number; // Initial number of rows to render when using lazy loading
     batchSize?: number; // Number of rows to add in each batch when using lazy loading
-  }>();
+  } = $props();
 
   console.log("PROPS", props)
 
@@ -140,14 +143,15 @@
   let showFilterEditor = $state(false);
 
   // A simplified column interface that doesn't distinguish between regular and custom columns
-  interface UnifiedColumn {
+  export interface UnifiedColumn {
     key: string;
     label: string;
     visible: boolean;
     displayKey: string;
     dataKey: string;
     displayLabel: string;
-    format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+    custom_field_id?: number;
+    format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string);
     searchable?: boolean;
     dataType?: 'string' | 'number' | 'date' | 'boolean';
     linkedToColumn?: string; 
@@ -634,9 +638,9 @@
   }
 
   // Get formatted value for display
-  function getFormattedValue(column: any, row: any) {
+  function getFormattedValue(column: UnifiedColumn, row: any): { text: string; isBadge: true; color?: string; }|{ text: any; isBadge: false; } {
     // Handle columns with formatters
-    if (column.format) {
+    if (column.format && column.format != "column-snippet") {
       const formatted = column.format(row[column.dataKey], row);
       if (typeof formatted === 'string') {
         return { text: formatted || '-', isBadge: false };
@@ -935,7 +939,7 @@
         const value = row[col.dataKey];
         // For CSV export, we don't want to include the dash for empty values
         return (value === null || value === undefined || value === '') ? '' : 
-               (col.format) ? getFormattedValue(col, row as Record<string, any>).text : 
+               (col.format && col.format != "column-snippet") ? getFormattedValue(col, row as Record<string, any>).text : 
                String(value);
       });
     });
@@ -1415,6 +1419,9 @@
                         <Badge color={formatted.color || "blue"}>
                           {formatted.text}
                         </Badge>
+                      {:else if column.format == "column-snippet"}
+                        <!-- use the custom snippet renderer for this column -->
+                        {@render props.component_renderer!(column, row)}
                       {:else}
                         {formatted.text}
                       {/if}
