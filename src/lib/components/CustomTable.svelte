@@ -115,6 +115,7 @@
     lazyLoad?: boolean; // Optional flag to enable lazy loading of table rows
     initialBatchSize?: number; // Initial number of rows to render when using lazy loading
     batchSize?: number; // Number of rows to add in each batch when using lazy loading
+    actions?: Snippet,
   } = $props();
 
   console.log("PROPS", props)
@@ -1194,7 +1195,9 @@
       </div>
       
       <!-- Slot for custom action buttons -->
-      <slot name="actions"></slot>
+      {#if props.actions}
+        {@render props.actions()}
+      {/if}
     </div>
     
     <!-- Right-aligned buttons -->
