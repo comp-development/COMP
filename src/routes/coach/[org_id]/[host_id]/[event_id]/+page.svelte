@@ -36,6 +36,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { supabase } from "$lib/supabaseClient";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+  import AddOnButton from "$lib/components/AddOnButton.svelte";
   import InvitedUser from "$lib/components/InvitedUser.svelte";
     import { generateEmail } from "$lib/emailTemplate";
 
@@ -612,6 +613,12 @@
             <UserAddSolid class="w-4 h-4 me-2" />
             Invite Students
           </Button>
+          <AddOnButton 
+            event_id={event_id} 
+            host_id={host_id} 
+            org_event_id={organizationDetails.event?.org_event_id} 
+            buttonLabel="Purchase Add-ons"
+          />
         </ButtonGroup>
       </div>
 
@@ -625,6 +632,7 @@
               onDrop={handleDrop}
               onDragStart={handleDragStart}
               onDeleteStudent={handleDeleteStudentTeam}
+              waiverType={event_details?.waivers?.type ?? "none"}
               {handleDeleteTeam}
               {handleDragOver}
               {handleDragLeave}
@@ -650,6 +658,8 @@
           {#each studentsWithoutTeams as student}
             <DraggableStudent
               team_member={student}
+              {event_id}
+              waiverType={event_details?.waivers?.type ?? "none"}
               onDragStart={handleDragStart}
               onDeleteStudent={() => {
                 handleDeletingStudent(student);

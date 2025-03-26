@@ -43,12 +43,18 @@ export async function getEventInformation(event_id: number) {
   return data;
 }
 
-export async function getEventTests(event_id: number) {
-  let { data, error } = await supabase
-    .from("tests")
-    .select("*")
-    .eq("event_id", event_id)
-    .order("test_name");
+export async function getEventTests(
+  event_id: number,
+  isAdmin: boolean = false,
+) {
+  let query = supabase.from("tests").select("*").eq("event_id", event_id);
+
+  // Only filter by visibility if the user is not an admin
+  if (!isAdmin) {
+    query = query.eq("visible", true);
+  }
+
+  let { data, error } = await query.order("test_name");
   if (error) throw error;
   return data;
 }
@@ -97,7 +103,7 @@ export async function getEventCustomFields(
     .order("ordering");
 
   if (error) throw error;
-  console.log("GET EVENT CUSTOM FIELDS", data);
+  console.log("GET EVENT CUSTOM FIELDS", custom_field_table, data);
 
   const flattenedData = (data || []).map((record: any) => {
     if (record.custom_fields) {
@@ -258,6 +264,16 @@ export async function getStudentTeams(student_id: string) {
   return data;
 }
 
+export async function resetStudentWaivers(event_id: number) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update({ waiver: null })
+    .eq("event_id", event_id);
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getStudentEvents(student_id: string) {
   const { data, error } = await supabase
     .from("student_events")
@@ -303,13 +319,27 @@ export async function getStudentEvent(student_id: string, event_id: number) {
   const { data, error } = await supabase
     .from("student_events")
     .select(
-      "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+      "*, student:students(*), team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
     )
     .eq("student_id", student_id)
     .eq("event_id", event_id)
     .maybeSingle();
   console.log("getStudentEvent", data);
   if (error) throw error;
+  return data;
+}
+
+export async function updateStudentEvent(
+  student_event_id: number,
+  studentEventData: {},
+) {
+  const { data, error } = await supabase
+    .from("student_events")
+    .update(studentEventData)
+    .select("*")
+    .eq("student_event_id", student_event_id);
+  if (error) throw error;
+
   return data;
 }
 
@@ -340,11 +370,14 @@ export async function isEventPublished(event_id: number, host_id: number) {
 }
 
 export async function updateEvent(event_id: number, eventData: any) {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("events")
     .update(eventData)
+    .select("*")
     .eq("event_id", event_id);
   if (error) throw error;
+
+  return data;
 }
 
 export async function getEventOrganizations(event_id: number) {
@@ -353,7 +386,13 @@ export async function getEventOrganizations(event_id: number) {
     .select(
       `
             *,
-            org:orgs(*)
+            org:orgs(
+              *,
+              coaches:org_coaches(
+                *,
+                person:coaches(*)
+              )
+            )
         `,
     )
     .eq("event_id", event_id);
@@ -400,6 +439,7 @@ export async function createEvent(eventData: {
     .insert({
       ...eventData,
       published: eventData.published ?? false,
+      waivers: { type: "none" },
     })
     .select()
     .single();
@@ -594,7 +634,7 @@ export async function deleteCustomFields(custom_field: any, is_event_field: bool
 
 export async function upsertHostCustomFields(
   custom_fields: any[],
-  table: "orgs" | "students" | "teams",
+  table: "orgs" | "students" | "teams" | "waivers",
   host_id: number,
 ) {
   console.log("upsertHostCustomFields", custom_fields);
@@ -677,7 +717,7 @@ export async function getCustomFieldResponsesBatch(
 
   // Get the list of event custom field IDs to fetch
   const eventCustomFieldIds = event_custom_fields.map(
-    (field) => field.event_custom_field_id
+    (field) => field.event_custom_field_id,
   );
 
   // Fetch all relevant custom field values in one query for all entities
@@ -702,12 +742,12 @@ export async function getCustomFieldResponsesBatch(
 
       // Find the corresponding custom field
       const customField = event_custom_fields.find(
-        (field) => field.event_custom_field_id === fieldId
+        (field) => field.event_custom_field_id === fieldId,
       );
 
       if (customField) {
         const key = `${custom_field_table.slice(0, -1)}_${entityId}_${customField.custom_field_id}`;
-        valueMap[key] = row.value || '-';
+        valueMap[key] = row.value || "-";
       }
     });
   }
@@ -728,4 +768,12 @@ export async function getEventTicketCount(event_id: number) {
   const totalTickets = data.reduce((sum, order) => sum + order.quantity, 0);
 
   return totalTickets;
+}
+
+export async function insertCoordinates(org_id : number, lat : number, lng: number){
+  const { error } = await supabase
+    .from("orgs")
+    .update({address_latitude: lat, address_longitude: lng})
+    .eq("org_id", org_id);
+  if (error) throw error; 
 }

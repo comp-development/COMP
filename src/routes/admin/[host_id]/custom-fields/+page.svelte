@@ -5,7 +5,7 @@
   import EditableCustomForm from "$lib/components/EditableCustomForm.svelte";
   import { page } from "$app/stores";
 
-  let selectedTab = "student";
+  let selectedTab = "waivers";
   let studentResponses = $state({});
   let orgResponses = $state({});
   let teamResponses = $state({});

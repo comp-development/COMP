@@ -21,8 +21,25 @@
       if (container) {
         container.innerHTML = replaceImage(math);
         window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, container]);
+        
+        // Make math elements unfocusable after typesetting
+        window.MathJax.Hub.Queue(() => makeUnfocusable());
       }
     }
+  }
+
+  // Make all math elements unfocusable
+  function makeUnfocusable() {
+    if (!container) return;
+    
+    // Target all MathJax-generated elements
+    const mathElements = container.querySelectorAll('.MathJax, .MathJax_Display, .mjx-chtml');
+    mathElements.forEach(el => {
+      if (el instanceof HTMLElement) {
+        el.setAttribute('tabindex', '-1');
+        el.style.outline = 'none';
+      }
+    });
   }
 
   function initMathJax() {
@@ -50,6 +67,10 @@
           },
           TeX: { extensions: ["AMSmath.js", "AMSsymbols.js"] },
           menuSettings: { context: "browser" },
+          // Disable keyboard navigation within math
+          // elements to prevent tab focus
+          showMathMenu: false,
+          showMathMenuMSIE: false,
         });
         resolve();
       };
@@ -75,4 +96,4 @@
   });
 </script>
 
-<div bind:this={container}></div>
+<div bind:this={container} tabindex="-1"></div>

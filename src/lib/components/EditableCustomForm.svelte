@@ -34,6 +34,7 @@
     host_id,
     is_event_fields = false,
     table,
+    title="Custom Field Builder",
     editableHostFields,
   } = $props();
 
@@ -41,10 +42,39 @@
   let showCustomFieldModal = $state(false);
   let availableCustomFields = $state([]);
   let originalCustomFields = $state([]);
+  let hideComponent = $state(false);
+
+  let inputTypes = [
+    { icon: TextSizeOutline, type: "text", tooltip: "Text" },
+    { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
+    { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
+    { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
+    {
+      icon: ListOutline,
+      type: "multiple_choice",
+      tooltip: "Multiple Choice",
+    },
+    { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
+    { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
+    { icon: PhoneOutline, type: "phone", tooltip: "Number" },
+  ];
 
   async function onLoad() {
-    availableCustomFields = await getCustomFields(host_id, table);
-    originalCustomFields = await JSON.parse(await JSON.stringify(custom_fields));
+    if (table) {
+      availableCustomFields = await getCustomFields(host_id, table);
+      inputTypes = [
+        ...inputTypes,
+        {
+          icon: CirclePlusSolid,
+          type: "add_existing",
+          tooltip: "Add Existing Field",
+          onClick: openCustomFieldModal,
+        },
+      ];
+    }
+    originalCustomFields = await JSON.parse(
+      await JSON.stringify(custom_fields),
+    );
     loading = false;
   }
 
@@ -59,27 +89,6 @@
       handleError(error);
     }
   }
-
-  const inputTypes = [
-    { icon: TextSizeOutline, type: "text", tooltip: "Text" },
-    { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
-    { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
-    { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
-    {
-      icon: ListOutline,
-      type: "multiple_choice",
-      tooltip: "Multiple Choice",
-    },
-    { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
-    { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
-    { icon: PhoneOutline, type: "phone", tooltip: "Number" },
-    {
-      icon: CirclePlusSolid,
-      type: "add_existing",
-      tooltip: "Add Existing Field",
-      onClick: openCustomFieldModal,
-    },
-  ];
 
   // Generate unique IDs for each button
   const buttonIds = inputTypes.map(
@@ -232,9 +241,27 @@
         );
       }
 
-      const results = await action();
-      custom_fields = results;
-      originalCustomFields = await JSON.parse(await JSON.stringify(results));
+      deletedFields = originalCustomFields.filter(
+        (field) => !custom_fields.some((cf) => cf.key === field.key),
+      );
+
+      if (deletedFields.length > 0) {
+        showConfirmDeleteModal = true;
+      } else {
+        await action();
+        originalCustomFields = await JSON.parse(
+          await JSON.stringify(custom_fields),
+        );
+        toast.success("Custom fields saved successfully");
+      }
+    } catch (error) {
+      handleError(error);
+    }
+  }
+
+  async function confirmDeleteFields() {
+    try {
+      await action();
       toast.success("Custom fields saved successfully");
     } catch (error) {
       handleError(error);
@@ -246,7 +273,7 @@
   <Loading />
 {:else}
   <div class="space-y-2">
-    <h2>Custom Field Builder</h2>
+    <h2>{title}</h2>
     {#if hasChanges()}
       <Button pill onclick={handleSubmit}>Submit</Button>
     {/if}

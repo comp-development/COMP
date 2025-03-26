@@ -20,6 +20,8 @@
   const event_id = parseInt($page.params.event_id);
   const host_id = parseInt($page.params.host_id);
 
+  const MAX_NAME_LENGTH = 50;
+
   const studentFields = [
     {
       key: "first_name",
@@ -64,12 +66,14 @@
       key: "org_name",
       label: "Organization Name",
       required: true,
-      regex: null,
-      placeholder: null,
+      regex: new RegExp(`^.{1,${MAX_NAME_LENGTH}}$`),
+      regex_error_message: `Organization name must be ${MAX_NAME_LENGTH} characters or less`,
+      placeholder: "Enter organization name (max 50 characters)",
       value: null,
       choices: null,
       editable: false,
       hidden: false,
+      help_text: `Maximum ${MAX_NAME_LENGTH} characters`
     },
     {
       key: "org_address",
@@ -89,12 +93,14 @@
       key: "team_name",
       label: "Team Name",
       required: true,
-      regex: null,
-      placeholder: null,
+      regex: new RegExp(`^.{1,${MAX_NAME_LENGTH}}$`),
+      regex_error_message: `Team name must be ${MAX_NAME_LENGTH} characters or less`,
+      placeholder: "Enter team name (max 50 characters)",
       value: null,
       choices: null,
       editable: true,
       hidden: false,
+      help_text: `Maximum ${MAX_NAME_LENGTH} characters`
     },
   ];
 

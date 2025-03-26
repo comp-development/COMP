@@ -23,6 +23,12 @@
     logInState: LogInState;
   }
 
+  // Regex for name validation
+  // Allows English letters, spaces, hyphens, apostrophes, and periods
+  // First letter should be uppercase (Pascal Casing)
+  const nameRegex = /^(?=.{1,30}$)[\p{Lu}][\p{Ll}\p{M}]*(?:(?:[\p{Ll}\p{M}]*[\p{Lu}][\p{Ll}\p{M}]+)|(?:[ '-][\p{Lu}][\p{Ll}\p{M}]+))*$/u;
+  const NAME_ERROR_MESSAGE = "Name should be in typical capitalization, and contain only English letters, spaces, hyphens, apostrophes, accents, and periods. Maximum 30 characters.";
+
   // Destructure the prop (if not provided, you can set a default value)
   let { logInState = "LOGIN" }: Props = $props();
   let newResponses = $state({});
@@ -127,7 +133,9 @@
       hidden: false,
       custom_field_type: "text",
       placeholder: "First Name",
-    },
+      regex: nameRegex,
+      regex_error_message: NAME_ERROR_MESSAGE
+      },
     {
       name: "last_name",
       label: "Last Name",
@@ -136,6 +144,8 @@
       hidden: false,
       custom_field_type: "text",
       placeholder: "Last Name",
+      regex: nameRegex,
+      regex_error_message: NAME_ERROR_MESSAGE
     },
     {
       name: "email",

@@ -5,12 +5,13 @@
   import { handleError } from "$lib/handleError";
   import { Button } from "flowbite-svelte";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
+  import EditNameForm from "$lib/components/EditNameForm.svelte";
 
   let student: any = $state();
   let hosts = $state([]);
   let loading = $state(true);
 
-  (async () => {
+  async function loadData() {
     try {
       student = await getStudent($user!.id);
       hosts = await getAllPublicHosts();
@@ -18,6 +19,10 @@
     } catch (error) {
       handleError(error);
     }
+  }
+
+  (async () => {
+    await loadData();
   })();
 </script>
 
@@ -25,7 +30,15 @@
   <Loading />
 {:else}
   <br />
-  <h1>Welcome, {student.first_name} {student.last_name}</h1>
+  <div class="flex items-center gap-1">
+    <h1>Welcome, {student.first_name} {student.last_name}</h1>
+    <EditNameForm 
+      firstName={student.first_name} 
+      lastName={student.last_name} 
+      userType="student" 
+      onUpdate={loadData}
+    />
+  </div>
   <h2 style="font-weight: 500">{$user?.email}</h2>
   <br /><br />
   <h3 class="text-xl font-medium text-gray-900 dark:text-white flex">
