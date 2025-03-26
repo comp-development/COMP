@@ -1651,8 +1651,26 @@
       </div>
     </div>
   </div>
-
+      
+  {#snippet student_actions()}
+      {#if hasSelectedStudents && activeTab === 0}
+        <Button color="primary" on:click={openTransferModal} class="flex items-center gap-2">
+          <ArrowRightAltSolid class="w-4 h-4" />
+          Transfer Students ({selectedStudents.length})
+        </Button>
+      {/if}
+  {/snippet}
+  {#snippet team_actions()}
+    {#if hasSelectedTeams && activeTab === 1}
+      <Button color="primary" on:click={openTeamTransferModal} class="flex items-center gap-2">
+        <ArrowRightAltSolid class="w-4 h-4" />
+        Transfer Teams ({selectedTeams.length})
+      </Button>
+    {/if}
+  {/snippet}
+  
   <Tabs style="underline" class="themed-tabs">
+
     <TabItem 
       open={activeTab === 0} 
       title="Students" 
@@ -1674,15 +1692,8 @@
         debounceSearch={400}
         lazyLoad={true}
         on:selectionChange={handleStudentSelectionChange}
+        actions={student_actions}
       >
-        <svelte:fragment slot="actions">
-          {#if hasSelectedStudents && activeTab === 0}
-            <Button color="primary" on:click={openTransferModal} class="flex items-center gap-2">
-              <ArrowRightAltSolid class="w-4 h-4" />
-              Transfer Students ({selectedStudents.length})
-            </Button>
-          {/if}
-        </svelte:fragment>
       </CustomTable>
     </TabItem>
     
@@ -1707,16 +1718,8 @@
         selectable={true}
         debounceSearch={400}
         lazyLoad={true}
-        on:selectionChange={handleTeamSelectionChange}
+        actions={team_actions}
       >
-        <svelte:fragment slot="actions">
-          {#if hasSelectedTeams && activeTab === 1}
-            <Button color="primary" on:click={openTeamTransferModal} class="flex items-center gap-2">
-              <ArrowRightAltSolid class="w-4 h-4" />
-              Transfer Teams ({selectedTeams.length})
-            </Button>
-          {/if}
-        </svelte:fragment>
       </CustomTable>
     </TabItem>
     
