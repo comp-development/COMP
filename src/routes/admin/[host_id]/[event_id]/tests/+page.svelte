@@ -1,5 +1,6 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
+
   import { page } from "$app/stores";
   import Button from "$lib/components/Button.svelte";
   import {
@@ -41,6 +42,7 @@
   import TestCard from "$lib/components/TestCard.svelte";
 
   let loading = $state(true);
+
   let open = $state(false);
   let testModalOpen = $state(false);
   let isEditMode = $state(false);
@@ -54,7 +56,6 @@
   run(() => {
     tests = Object.values(testStatusMap);
   });
-
   let user = null;
   let teamId = null;
   let eventId = Number($page.params.event_id);

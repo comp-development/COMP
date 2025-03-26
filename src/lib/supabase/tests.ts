@@ -237,16 +237,3 @@ export async function updateTest(test_id, testData) {
 
   return true;
 }
-
-export async function createTest(testData) {
-  const { data, error } = await supabase
-    .from("tests")
-    .insert([testData])
-    .select();
-
-  if (error) {
-    throw error;
-  }
-
-  return data[0];
-}

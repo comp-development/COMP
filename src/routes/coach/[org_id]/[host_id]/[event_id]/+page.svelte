@@ -38,7 +38,7 @@
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
   import AddOnButton from "$lib/components/AddOnButton.svelte";
   import InvitedUser from "$lib/components/InvitedUser.svelte";
-    import { generateEmail } from "$lib/emailTemplate";
+  import { generateEmail } from "$lib/emailTemplate";
 
   let loading = $state(true);
   let coach: any = $state();
@@ -101,7 +101,7 @@
       org_id,
     );
 
-    invites = organizationDetails.event.invites;
+    invites = organizationDetails?.event?.invites ?? [];
 
     console.log("ORG", organizationDetails);
     ticketCount = await getTicketCount(event_id, org_id);
