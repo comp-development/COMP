@@ -31,32 +31,35 @@
     ClockSolid
   } from "flowbite-svelte-icons";
   
-  import { onMount } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
   // Using custom icons instead of svelte-heros-v2 to avoid dependency issues
 
   // Props definitions using runes API - updated to use arrays
-  const props = $props<{
+  const props: {
     data: any[]; // Changed from Record<string | number, any> to any[]
-    columns: {
+    columns: ({
       key: string;
       label: string;
       visible: boolean;
-      format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+      format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string | { component: Element });
       searchable?: boolean;
       dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for sorting
-    }[];
+    })[];
+    // A custom renderer for specific columns.
+    // Takes in the column being processed and the row (as any).
+    component_renderer?: Snippet<[UnifiedColumn, any]>;
     customFields: { 
       custom_field_id: number; 
       label: string; 
       key: string;
       dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for custom fields
     }[];
-    entityType: 'student' | 'team' | 'org';
+    entityType: 'student' | 'team' | 'org' | 'ticket';
     isLoading: boolean;
     event_id: number;
     event_name?: string; // Added event_name as an optional prop
     idField?: string; // Field to use as unique ID, defaults to primary key of entity
-  }>();
+  } = $props();
 
   console.log("PROPS", props)
 
@@ -84,7 +87,7 @@
   let showFilterEditor = $state(false);
 
   // A unified array that combines regular columns and custom fields
-  interface UnifiedColumn {
+  export interface UnifiedColumn {
     key: string;
     label: string;
     visible: boolean;
@@ -93,7 +96,7 @@
     dataKey: string;
     displayLabel: string;
     custom_field_id?: number;
-    format?: (value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string;
+    format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string);
     searchable?: boolean;
     dataType?: 'string' | 'number' | 'date' | 'boolean';
   }
@@ -336,9 +339,9 @@
   );
 
   // Get formatted value for display
-  function getFormattedValue(column: any, row: any) {
+  function getFormattedValue(column: UnifiedColumn, row: any): { text: string; isBadge: true; color?: string; }|{ text: any; isBadge: false; } {
     // Handle regular columns with formatters
-    if (column.type === 'regular' && column.format) {
+    if (column.type === 'regular' && column.format && column.format != "column-snippet") {
       const formatted = column.format(row[column.dataKey], row);
       if (typeof formatted === 'string') {
         return { text: formatted || '-', isBadge: false };
@@ -528,7 +531,7 @@
         const value = row[col.dataKey];
         // For CSV export, we don't want to include the dash for empty values
         return (value === null || value === undefined || value === '') ? '' : 
-               (col.type === 'regular' && col.format) ? getFormattedValue(col, row as Record<string, any>).text : 
+               (col.type === 'regular' && col.format && col.format != "column-snippet") ? getFormattedValue(col, row as Record<string, any>).text : 
                String(value);
       });
     });
@@ -841,9 +844,12 @@
                 {#if internalVisibleColumns[column.displayKey]}
                   <TableBodyCell>
                     {#if column.type === 'regular' && getFormattedValue(column, row).isBadge}
-                      <Badge color={getFormattedValue(column, row).color || "blue"}>
+                      <Badge color={(getFormattedValue(column, row) as any).color || "blue"}>
                         {getFormattedValue(column, row).text}
                       </Badge>
+                    {:else if column.type === 'regular' && column.format == "column-snippet"}
+                      <!-- use the custom snippet renderer for this column -->
+                      {@render props.component_renderer!(column, row)}
                     {:else}
                       {getFormattedValue(column, row).text}
                     {/if}
