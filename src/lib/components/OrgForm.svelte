@@ -8,6 +8,9 @@
   } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
 
+  // Maximum length for organization name
+  const MAX_ORG_NAME_LENGTH = 50;
+
   let {
     org = $bindable(null),
     event_id,
@@ -26,7 +29,7 @@
   let validationErrors = $state({});
   let custom_fields = $state([]);
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: Event) {
     try {
       org = await upsertOrgEvent(event_id, org_id);
       console.log("ORG", org);
@@ -70,8 +73,9 @@
       key: "org_name",
       label: "Organization Name",
       required: true,
-      regex: null,
-      placeholder: null,
+      regex: new RegExp(`^.{1,${MAX_ORG_NAME_LENGTH}}$`),
+      regex_error_message: `Organization name must be ${MAX_ORG_NAME_LENGTH} characters or less`,
+      placeholder: "Enter organization name",
       value: org?.orgs.name ?? null,
       choices: null,
       editable: false,
