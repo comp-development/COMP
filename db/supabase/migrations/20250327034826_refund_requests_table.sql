@@ -111,7 +111,7 @@ begin
   into v_org_available_tickets;
 
 
-  SELECT SUM(refund_requests.quantity) 
+  SELECT COALESCE(SUM(refund_requests.quantity), 0)
   INTO v_org_refunding_tickets
   FROM refund_requests
   JOIN ticket_orders ON refund_requests.ticket_id = ticket_orders.id
