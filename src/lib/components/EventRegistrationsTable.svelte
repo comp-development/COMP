@@ -7,7 +7,8 @@
     Radio,
     Select,
     Alert,
-    Spinner
+    Spinner,
+    Input
   } from "flowbite-svelte";
   import { 
     getEventStudents, 
@@ -202,6 +203,15 @@
   let showTeamTransferModal = $state(false);
   let teamTransferInProgress = $state(false);
   let failedTeams = $state<TeamRowData[]>([]); // Track teams that failed to transfer
+
+  let showTicketOrderModal = $state(false);
+  let ticketOrderType = $state<'student' | 'org'>('student');
+  let ticketOrderPurchaserID = $state("");
+  let ticketOrderQuantity = $state(1);
+  let ticketOrderID = $state("");
+  let ticketOrderInsertInProgress = $state(false);
+  let ticketOrderError: null | Error = $state(null);
+  let ticketOrderSuccess: null | "Insert Successful" = $state(null);
 
   let event = $state<any>(null);
   let waiverEnabled = $state(false);
@@ -602,21 +612,21 @@
             primaryText: `${s.first_name} ${s.last_name}`,
             subtitle: s.email,
           }
-        }
+        } as {text: string, isBadge: boolean};
       }
     },
     { key: 'org_id', label: 'Org ID', visible: true, searchable: true, dataType: 'string' as const , format: (c: any, _: any) => {
       if (!c) return { text: '-', isBadge: false };
       const o = orgMap.get(c)!;
         return {
-          text: o.name,
+          text: o.name!,
           isBadge: false,
           component: EntityBadge,
           props: {
             primaryText: o.name,
             subtitle: o.join_code,
           }
-        }
+        } as {text: string, isBadge: boolean};
       }
     },
     { key: 'created_at', label: 'Purchased', visible: true, dataType: 'date' as const,
@@ -665,6 +675,13 @@
     failedTeams = [];
     isRetry = false;
     showTeamTransferModal = true;
+  }
+  function openTicketModal() {
+    ticketOrderPurchaserID = "";
+    ticketOrderQuantity = 1;
+    ticketOrderID = "admin-";
+    ticketOrderSuccess = null;
+    showTicketOrderModal = true;
   }
 
   // Execute the transfer based on selected options
@@ -1018,6 +1035,27 @@
     } finally {
       // Don't set teamTransferInProgress to false here as it will be set in the setTimeout
     }
+  }
+
+  async function attemptTicketOrderInsert() {
+    ticketOrderInsertInProgress = true;
+    ticketOrderSuccess = null;
+    try {
+      const {data: _, error} = await supabase.from("ticket_orders").insert({
+        event_id,
+        order_id: ticketOrderID,
+        [ticketOrderType == "student" ? "student_id" : "org_id"]: ticketOrderPurchaserID,
+        quantity: ticketOrderQuantity,
+      });
+      if (error) throw error;
+
+      ticketOrderError = null;
+      ticketOrderSuccess = "Insert Successful";
+    } catch (error) {
+      handleError(error as any);
+      ticketOrderError = (error as any).message;
+    }
+    ticketOrderInsertInProgress = false;
   }
 
   // Fetch data on mount
@@ -1708,7 +1746,7 @@
   </div>
       
   {#snippet student_actions()}
-      {#if hasSelectedStudents && activeTab === 0}
+      {#if hasSelectedStudents}
         <Button color="primary" on:click={openTransferModal} class="flex items-center gap-2">
           <ArrowRightAltSolid class="w-4 h-4" />
           Transfer Students ({selectedStudents.length})
@@ -1716,7 +1754,7 @@
       {/if}
   {/snippet}
   {#snippet team_actions()}
-    {#if hasSelectedTeams && activeTab === 1}
+    {#if hasSelectedTeams}
       <Button color="primary" on:click={openTeamTransferModal} class="flex items-center gap-2">
         <ArrowRightAltSolid class="w-4 h-4" />
         Transfer Teams ({selectedTeams.length})
@@ -1813,12 +1851,13 @@
       <!-- hack to get around scoping of snippet -->
       {#if true}
         {#snippet actions()}
-          {#if activeTab === 3}
-            <Button color="primary" on:click={openTeamTransferModal} class="flex items-center gap-2">
-              <ArrowRightAltSolid class="w-4 h-4" />
-              Insert Order
-            </Button>
-          {/if}
+          <Button color="primary" on:click={openTicketModal} class="flex items-center gap-2">
+            <ArrowRightAltSolid class="w-4 h-4" />
+            Insert Order
+          </Button>
+          <Button color="primary" on:click={() => reloadData(['ticket_orders'])} class="flex items-center gap-2">
+            Reload
+          </Button>
         {/snippet}
         <CustomTable 
           data={ticketOrders}
@@ -2107,6 +2146,80 @@
           {/if}
         </Button>
       {/if}
+    </svelte:fragment>
+  </Modal>
+
+  <!-- Ticket order adding Modal -->
+  <Modal title="Add Ticket Order" bind:open={showTicketOrderModal} size="md" autoclose={false}>
+    <div class="space-y-4">
+      {#if transferSuccess}
+        <Alert color="green" class="mb-4">
+          <span class="font-medium">Success!</span> All teams have been transferred successfully.
+        </Alert>
+      {:else}
+        <div class="flex flex-col gap-3">
+          <!-- Organization Selection -->
+          <div class="mt-2">
+            <label for="purchaser-type-select" class="block mb-2 text-sm font-medium text-gray-900">
+              Select Purchaser Type
+            </label>
+            <Select id="purchaser-type-select" class="w-full" bind:value={ticketOrderType}>
+              <option value={"student"}>student</option>
+              <option value={"org"}>organization</option>
+            </Select>
+          </div>
+          <div class="mt-2">
+            <label for="ticket-purchaser-id" class="block mb-2 text-sm font-medium text-gray-900">
+              Enter purchaser ID
+            </label>
+            <Input id="ticket-purchaser-id" bind:value={ticketOrderPurchaserID}/>
+          </div>
+          <div class="mt-2">
+            <label for="ticket-quantity" class="block mb-2 text-sm font-medium text-gray-900">
+              Enter Quantity
+            </label>
+            <Input id="ticket-quantity" type="number" bind:value={ticketOrderQuantity}/>
+          </div>
+          <div class="mt-2">
+            <label for="ticket-order-id" class="block mb-2 text-sm font-medium text-gray-900">
+              Enter Custom Order ID
+            </label>
+            <Input id="ticket-order-id" bind:value={ticketOrderID}/>
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    {#if ticketOrderError}
+      <Alert color="yellow" class="mt-2 text-xs">
+        <span class="font-medium">Error:</span> {ticketOrderError.message}
+      </Alert>
+      <br/>
+    {/if}
+
+    {#if ticketOrderSuccess}
+      <Alert color="green" class="mt-2 text-xs">
+        <span class="font-medium">Success:</span> {ticketOrderSuccess}
+      </Alert>
+      <br/>
+    {/if}
+
+
+    <!-- Modal Footer -->
+    <svelte:fragment slot="footer">
+      <Button color="alternative" on:click={() => showTicketOrderModal = false}>
+        {transferSuccess && !transferError ? 'Close' : 'Cancel'}
+      </Button>
+      <Button 
+        color="primary" 
+        on:click={attemptTicketOrderInsert} 
+        disabled={ticketOrderInsertInProgress}
+      >
+        {#if ticketOrderInsertInProgress}
+          <Spinner class="mr-2" size="4" />
+        {/if}
+        Insert
+      </Button>
     </svelte:fragment>
   </Modal>
 </div>
