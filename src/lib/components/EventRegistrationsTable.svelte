@@ -29,7 +29,6 @@
   import type { Tables } from "../../../db/database.types";
   import { supabase } from "$lib/supabaseClient";
   import { handleError } from "$lib/handleError";
-  import { DataBase } from "carbon-icons-svelte";
 
   // Define types for our extended data structures
   // Updated to use array structures instead of dictionaries
