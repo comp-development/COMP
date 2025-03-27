@@ -25,6 +25,10 @@
   import CustomTable from './CustomTable.svelte';
   import EntityBadge from './EntityBadge.svelte';
   import { UsersGroupSolid, BuildingSolid, ArrowRightAltSolid, FileCheckSolid, FilePenSolid } from "flowbite-svelte-icons";
+  import type { Tables } from "../../../db/database.types";
+  import { supabase } from "$lib/supabaseClient";
+  import { handleError } from "$lib/handleError";
+  import { DataBase } from "carbon-icons-svelte";
 
   // Define types for our extended data structures
   // Updated to use array structures instead of dictionaries
@@ -39,7 +43,6 @@
     email: string;
     first_name: string | null;
     last_name: string | null;
-    fullName: string;
     team_name: string | null;
     org_name: string | null;
     org_join_code: string | null;
@@ -87,6 +90,8 @@
     } | null;
     [key: string]: any; // For custom fields: custom_field.field_key
   };
+
+  type TicketOrderRowData = Tables<"ticket_orders">;
 
   type CustomField = {
     custom_field_id: number;
@@ -154,6 +159,7 @@
   let students = $state<StudentRowData[]>([]);
   let teams = $state<TeamRowData[]>([]);
   let orgs = $state<OrgRowData[]>([]);
+  let ticketOrders = $state<TicketOrderRowData[]>([]);
   
   // Add these memoized derived states for formatted data
   let formattedStudentRows = $derived(formatStudentRowsForDisplay(students));
@@ -584,6 +590,45 @@
   let mergedStudentColumns = $derived(getMergedStudentColumns());
   let mergedTeamColumns = $derived(getMergedTeamColumns());
   let mergedOrgColumns = $derived(getMergedOrgColumns());
+  let ticketOrderColumns = [
+    { key: 'student_id', label: 'Student ID', visible: true, searchable: true, dataType: 'string' as const, format: (c: any, _: any) => {
+      if (!c) return { text: '-', isBadge: false };
+      const s = studentMap.get(c)!;
+        return {
+          text: `${s.first_name} ${s.last_name}`,
+          isBadge: false,
+          component: EntityBadge,
+          props: {
+            primaryText: `${s.first_name} ${s.last_name}`,
+            subtitle: s.email,
+          }
+        }
+      }
+    },
+    { key: 'org_id', label: 'Org ID', visible: true, searchable: true, dataType: 'string' as const , format: (c: any, _: any) => {
+      if (!c) return { text: '-', isBadge: false };
+      const o = orgMap.get(c)!;
+        return {
+          text: o.name,
+          isBadge: false,
+          component: EntityBadge,
+          props: {
+            primaryText: o.name,
+            subtitle: o.join_code,
+          }
+        }
+      }
+    },
+    { key: 'created_at', label: 'Purchased', visible: true, dataType: 'date' as const,
+      format: (value: any, _: any) => (
+        { text: value ? new Date(value).toLocaleString() : '-', isBadge: false }
+      )
+    },
+    { key: 'quantity', label: 'Quantity', visible: true, searchable: true, dataType: 'number' as const },
+    { key: 'ticket_service', label: 'Ticket Service', visible: true, searchable: true, dataType: 'string' as const },
+    { key: 'order_id', label: 'Order ID', visible: true, searchable: true, dataType: 'string' as const },
+    { key: 'id', label: 'ID', visible: false, searchable: true, dataType: 'string' as const },
+  ];
 
   // Handle student selection changes
   function handleStudentSelectionChange(event: CustomEvent) {
@@ -1006,7 +1051,7 @@
       orgCustomFields = orgCustomFieldsData;
       
       // Now load all data using our reloadData function
-      await reloadData(['students', 'teams', 'organizations']);
+      await reloadData(['students', 'teams', 'organizations', 'ticket_orders']);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -1485,7 +1530,7 @@
    * Reloads data after transfers are completed
    * @param dataTypes Array of data types to reload ('students', 'teams', 'organizations')
    */
-  async function reloadData(dataTypes: ('students' | 'teams' | 'organizations')[] = ['students', 'teams', 'organizations']) {
+  async function reloadData(dataTypes: ('students' | 'teams' | 'organizations' | 'ticket_orders')[] = ['students', 'teams', 'organizations', 'ticket_orders']) {
     try {
       if (dataTypes.includes('students')) {
         // Reload students data
@@ -1496,7 +1541,7 @@
           const person = s.person || {};
           // Create a fullName property combining first and last names
           const fullName = [person.first_name, person.last_name].filter(Boolean).join(' ') || 'Unnamed';
-          
+
           return {
             ...s,
             ...person,
@@ -1523,6 +1568,7 @@
         students.forEach(student => {
           studentMap.set(student.student_id, student);
         });
+        console.log(studentMap)
       }
       
       if (dataTypes.includes('teams')) {
@@ -1531,6 +1577,15 @@
       
       if (dataTypes.includes('organizations')) {
         await fetchOrganizations();
+      }
+      
+      if (dataTypes.includes('ticket_orders')) {
+        const { data, error } = await supabase.from("ticket_orders").select("*").filter("event_id", "eq", event_id);
+        if (error) {
+          handleError(error);
+          return;
+        }
+        ticketOrders = data;
       }
       
       // Update relationships AFTER all data is loaded
@@ -1745,6 +1800,43 @@
         lazyLoad={true}
       />
     </TabItem>
+
+    <TabItem 
+      open={activeTab === 3} 
+      title="Ticket Orders" 
+      class="tab-item" 
+      activeClasses="tab-active"
+      onclick={() => {
+        activeTab = 3;
+      }}
+    >
+      <!-- hack to get around scoping of snippet -->
+      {#if true}
+        {#snippet actions()}
+          {#if activeTab === 3}
+            <Button color="primary" on:click={openTeamTransferModal} class="flex items-center gap-2">
+              <ArrowRightAltSolid class="w-4 h-4" />
+              Insert Order
+            </Button>
+          {/if}
+        {/snippet}
+        <CustomTable 
+          data={ticketOrders}
+          columns={ticketOrderColumns}
+          entityType="student"
+          isLoading={loading}
+          event_id={event_id}
+          event_name={event_name}
+          tableId={`event_${event_id}_ticket_orders`}
+          idField="id"
+          debounceSearch={400}
+          lazyLoad={true}
+          actions={actions}
+        >
+        </CustomTable>
+      {/if}
+    </TabItem>
+    
   </Tabs>
 
   <!-- Transfer Modal -->
