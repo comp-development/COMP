@@ -613,13 +613,13 @@
             <UserAddSolid class="w-4 h-4 me-2" />
             Invite Students
           </Button>
-          <AddOnButton 
-            event_id={event_id} 
-            host_id={host_id} 
-            org_event_id={organizationDetails.event?.org_event_id} 
-            buttonLabel="Purchase Add-ons"
-          />
         </ButtonGroup>
+        <AddOnButton 
+          event_id={event_id} 
+          host_id={host_id} 
+          org_event_id={organizationDetails.event?.org_event_id} 
+          buttonLabel="Purchase Add-ons"
+        />
       </div>
 
       <div class="grid-container">

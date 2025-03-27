@@ -30,10 +30,10 @@
   <Loading />
 {:else}
   <div class="flex items-center gap-1">
-    <h1>Welcome, {student.first_name} {student.last_name}</h1>
+    <h1>Welcome, {admin.first_name} {admin.last_name}</h1>
     <EditNameForm 
-      firstName={student.first_name} 
-      lastName={student.last_name} 
+      firstName={admin.first_name} 
+      lastName={admin.last_name} 
       userType="admin" 
       onUpdate={loadData}
     />

@@ -88,7 +88,7 @@
           body: JSON.stringify({
             email: email,
             subject: `Become an Admin for '${host.host_name}' on COMP`,
-            message: generateEmail('admin_invite', { host, host_id, email, admin }),
+            message: generateEmail('admin_invite', { host, host_id, admin }),
           }),
         });
 

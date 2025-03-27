@@ -8,20 +8,15 @@
 
   let loading = $state(true);
   let host = $state(null);
-  let email = $state(null);
+  let user = $state(null);
   let user_id = $state(null);
 
  (async () => {
     try {
-      email = $page.url.searchParams.get('email');
       let host_id = $page.url.searchParams.get('host_id');
+      user = await getThisUser();
 
-      let user = await getThisUser();
-      if (user.email != email) {
-        throw new Error("You are not logged into the correct account.");
-      }
-
-      let isInvited = await checkUserInvitedToHost(host_id, email);
+      let isInvited = await checkUserInvitedToHost(host_id, user.email);
       if (!isInvited) {
         throw new Error("User is not invited to this host.");
       }
@@ -31,13 +26,14 @@
       loading = false;
     } catch (err) {
       handleError(err);
+      window.location.href = `/`;
     }
   })();
 
   async function acceptInvitation() {
     try {
       await userJoinAsHostAdmin(user_id, host.host_id);
-      await removeUserInvitationFromHost(host.host_id, email);
+      await removeUserInvitationFromHost(host.host_id, user.email);
 
       toast.success("You have successfully joined the host!");
       window.location.href = `/admin/${host.host_id}`;

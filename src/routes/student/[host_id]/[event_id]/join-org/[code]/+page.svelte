@@ -40,14 +40,13 @@
     } else {
       handleError(new Error(json.failure?.reason));
       failure = json.failure!;
+      loading = false;
 
       if (failure.reason.includes("not registered for this tournament")) {
         loading = true;
         document.location.assign(`/student/${host_id}/${event_id}?org_join_code=${join_code}`);
       }
     }
-
-    loading = false;
   })();
 </script>
 

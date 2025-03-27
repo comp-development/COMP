@@ -1,6 +1,6 @@
 export function generateEmail(type, params) {
   const {
-    host, host_id, event_id, email, admin, coach, user, org, event_details, organizationDetails, team_information, team
+    host, host_id, event_id, admin, coach, user, org, event_details, organizationDetails, team_information, team
   } = params;
 
   let title = '';
@@ -12,7 +12,7 @@ export function generateEmail(type, params) {
     case 'admin_invite':
       title = `You're Invited to <span style="color: ${host.styles.primary}">'${host.host_name}'</span> on COMP!`;
       inviteText = `You have been invited to become an admin on <strong><span style="color: ${host.styles.primary}">'${host.host_name}'</span></strong> on COMP by <strong>${admin.first_name} ${admin.last_name}</strong>!`;
-      buttonUrl = `https://comp.mt/join-host?host_id=${host_id}&email=${email}`;
+      buttonUrl = `https://comp.mt/join-host?host_id=${host_id}`;
       break;
 
     case 'org_invite':
