@@ -58,10 +58,10 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   }
 
   const {data: event, error: eventError} = await adminSupabase
-  .from("events")
-  .select("*")
-  .eq("id", ticket.event_id)
-  .single();
+    .from("events")
+    .select("*")
+    .eq("id", ticket.event_id)
+    .single();
 
   if (eventError || !event) {
     return new Response("event not found", { status: 404 });
@@ -92,12 +92,13 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
             .eq("event_id", ticket.event_id);
 
         const total_active_tickets : number = active_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) || 0;
-        const { data: refunded_tickets, error: refunded_tickets_error } = await adminSupabase
+        const { data: refunded_tickets, error: refunded_tickets_error } =  
+            await adminSupabase
             .from("refund_requests")
-            .select("quantity, ticket_orders!inner(org_id)")
+            .select("quantity, ticket_orders!inner(id, org_id, event_id)") // Select id and org_id from ticket_orders
+            .in("refund_status", ["PENDING", "APPROVED"])
             .eq("ticket_orders.org_id", ticket.org_id)
-            .eq("refund_requests.ticket_id", "ticket_orders.ticket_id")
-            .in("status", ["PENDING", "APPROVED"]);
+            .eq("ticket_orders.event_id", ticket.event_id);
 
         const total_refunded_tickets : number= refunded_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) || 0;
             console.log("total_active_tickets", total_active_tickets);

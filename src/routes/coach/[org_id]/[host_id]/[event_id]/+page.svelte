@@ -527,6 +527,10 @@
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
           </Button>
+          <Button pill outline color="primary" href={`/coach/${$page.params.org_id}/${$page.params.host_id}/${$page.params.event_id}/request-refund`}>
+            <CartSolid class="w-4 h-4 me-2" />
+            Request Ticket Refund
+          </Button>
           <AddOnButton 
             event_id={event_id} 
             host_id={host_id} 

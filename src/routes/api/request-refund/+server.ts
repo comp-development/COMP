@@ -13,6 +13,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   let event_id: number,
     ticket_id: number,
     refunded_tickets: number,
+    message: string,
     token: string;
 
   console.log("REQUEST", request);
@@ -28,6 +29,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     event_id = r("event_id");
     refunded_tickets = r("refunded_tickets");
     token = r("token");
+    message = body["message"] || "";
   } catch (e: any) {
     return new Response("missing or malformed body: " + e.message, {
       status: 400,
@@ -40,6 +42,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   // if it is eventbrite, we still don't bother creating a refund request in eventbrite, we let user deal with it
 
   console.log("BODY", body);
+
+
+  console.log("refunded, tickets", refunded_tickets);
 
   const user_response = await adminSupabase.auth.getUser(token);
   if (user_response.error != null || user_response.data == null) {
@@ -69,10 +74,13 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     });
   }
 
+  if(refunded_tickets == 0) {
+    return new Response("must refund at least one ticket", { status: 400 });
+  }
+
   const { data: ticket, error: ticketError } = await adminSupabase
     .from("ticket_orders")
     .select("*", { count: "exact" })
-    .eq("student_id", user.id)
     .eq("event_id", event_id)
     .eq("id", ticket_id)
     .maybeSingle();
@@ -111,22 +119,25 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     const total_active_tickets: number =
       active_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) ||
       0;
-    const { data: refunded_tickets, error: refunded_tickets_error } =
+
+    const { data: already_refunded_tickets, error: refunded_tickets_error } =
       await adminSupabase
-        .from("refund_requests")
-        .select("quantity, ticket_orders!inner(org_id)")
-        .eq("ticket_orders.org_id", ticket.org_id)
-        .eq("refund_requests.ticket_id", "ticket_orders.ticket_id")
-        .in("status", ["PENDING", "APPROVED"]);
+      .from("refund_requests")
+      .select("quantity, ticket_orders!inner(id, org_id, event_id)") // Select id and org_id from ticket_orders
+      .in("refund_status", ["PENDING", "APPROVED"])
+      .eq("ticket_orders.org_id", ticket.org_id)
+      .eq("ticket_orders.event_id", ticket.event_id);
+
 
     const total_refunded_tickets: number =
-      refunded_tickets?.reduce(
+      already_refunded_tickets?.reduce(
         (sum, order) => sum + (order.quantity || 0),
         0
       ) || 0;
     console.log("total_active_tickets", total_active_tickets);
     console.log("total_refunded_tickets", total_refunded_tickets);
     console.log("used_tickets", used_tickets);
+    console.log("refunded_tickets", refunded_tickets);
 
     if (
       total_active_tickets - total_refunded_tickets - used_tickets <
@@ -138,6 +149,56 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       );
     }
   }
+  else if(ticket.student_id != null) {
+    const { count: used_tickets } = await adminSupabase
+        .from("student_events")
+        .select("*", { count: "exact" })
+        .not("team_id", "is", null)
+        .eq("student_id", ticket.student_id)
+        .eq("event_id", ticket.event_id);
+
+    // Get the total number of active tickets (sum of quantities)
+    const { data: active_tickets } = await adminSupabase
+        .from("ticket_orders")
+        .select("quantity")
+        .eq("student_id", ticket.student_id)
+        .eq("event_id", ticket.event_id);
+
+    const total_active_tickets: number =
+        active_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) ||
+        0;
+
+        
+    const { data: already_refunded_tickets, error: refunded_tickets_error } =
+        await adminSupabase
+        .from("refund_requests")
+        .select("quantity, ticket_orders!inner(id, student_id, event_id)") // Select id and org_id from ticket_orders
+        .in("refund_status", ["PENDING", "APPROVED"])
+        .eq("ticket_orders.student_id", ticket.student_id)
+        .eq("ticket_orders.event_id", ticket.event_id);
+
+    const total_refunded_tickets: number =
+        already_refunded_tickets?.reduce(
+        (sum, order) => sum + (order.quantity || 0),
+        0
+        ) || 0;
+    console.log("total_active_tickets", total_active_tickets);
+    console.log("total_refunded_tickets", total_refunded_tickets);
+    console.log("used_tickets", used_tickets);
+
+    if (
+        total_active_tickets - total_refunded_tickets <
+        refunded_tickets
+    ) {
+        return new Response(
+        `cannot refund tickets as too many tickets are in use`,
+        { status: 400 }
+        );
+    }
+    
+  }
+
+
 
   // TODO?: Should ideally create an eventbrite refund request for the event
   // if(ticket.service == "eventbrite") {
@@ -186,7 +247,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     .insert({
       ticket_id: ticket.id,
       quantity: refunded_tickets,
-      refund_status: status,
+      refund_status: "PENDING",
+      message: message,
     });
 
   if (updateError) {
