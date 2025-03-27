@@ -1,0 +1,200 @@
+import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
+import { adminSupabase } from "$lib/adminSupabaseClient";
+import { env } from "$env/dynamic/private";
+import type { Tables } from "../../../../db/database.types";
+import { tick } from "svelte";
+import { quadIn } from "svelte/easing";
+import { QuadrantPlot } from "carbon-icons-svelte";
+
+const eventbriteToken = env.EVENTBRITE_TOKEN;
+
+export const POST: RequestHandler = async (request: RequestEvent) => {
+  let body: any | null = null;
+  let event_id: number,
+    ticket_id: number,
+    refunded_tickets: number,
+    token: string;
+
+  console.log("REQUEST", request);
+  try {
+    body = await request.request.json();
+    const r = (k: string): any => {
+      if (body[k] == null) {
+        throw Error(`missing key "${k}"`);
+      }
+      return body[k];
+    };
+    ticket_id = r("ticket_id");
+    event_id = r("event_id");
+    refunded_tickets = r("refunded_tickets");
+    token = r("token");
+  } catch (e: any) {
+    return new Response("missing or malformed body: " + e.message, {
+      status: 400,
+    });
+  }
+
+  // in order to request a refund,
+  // we just create an entry in the backend database
+
+  // if it is eventbrite, we still don't bother creating a refund request in eventbrite, we let user deal with it
+
+  console.log("BODY", body);
+
+  const user_response = await adminSupabase.auth.getUser(token);
+  if (user_response.error != null || user_response.data == null) {
+    return new Response("invalid JWT credentials", { status: 400 });
+  }
+  const user = user_response.data.user;
+
+  const student = (
+    await adminSupabase
+      .from("students")
+      .select("*")
+      .eq("student_id", user.id)
+      .maybeSingle()
+  ).data;
+
+  const coach = (
+    await adminSupabase
+      .from("coaches")
+      .select("*")
+      .eq("coach_id", user.id)
+      .maybeSingle()
+  ).data;
+
+  if (coach == null && student == null) {
+    return new Response("user is not a student or coach", {
+      status: 400,
+    });
+  }
+
+  const { data: ticket, error: ticketError } = await adminSupabase
+    .from("ticket_orders")
+    .select("*", { count: "exact" })
+    .eq("student_id", user.id)
+    .eq("event_id", event_id)
+    .eq("id", ticket_id)
+    .maybeSingle();
+
+  console.log("ticket", ticket);
+
+  if (ticketError) {
+    return new Response("ticket not found", { status: 404 });
+  }
+  if (ticket == null) {
+    return new Response("user has not purchased a ticket for this event", {
+      status: 400,
+    });
+  }
+  if (student != null && ticket.student_id != student.student_id) {
+    return new Response("user information does not match ticket", {});
+  }
+  // TODO: Verify that the coach has access to request refunds for this org
+
+  // if this is an org need to perform verification that refund can be requested again
+  if (ticket.org_id !== null) {
+    const { count: used_tickets } = await adminSupabase
+      .from("student_events")
+      .select("*", { count: "exact" })
+      .not("team_id", "is", null)
+      .eq("org_id", ticket.org_id)
+      .eq("event_id", ticket.event_id);
+
+    // Get the total number of active tickets (sum of quantities)
+    const { data: active_tickets } = await adminSupabase
+      .from("ticket_orders")
+      .select("quantity")
+      .eq("org_id", ticket.org_id)
+      .eq("event_id", ticket.event_id);
+
+    const total_active_tickets: number =
+      active_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) ||
+      0;
+    const { data: refunded_tickets, error: refunded_tickets_error } =
+      await adminSupabase
+        .from("refund_requests")
+        .select("quantity, ticket_orders!inner(org_id)")
+        .eq("ticket_orders.org_id", ticket.org_id)
+        .eq("refund_requests.ticket_id", "ticket_orders.ticket_id")
+        .in("status", ["PENDING", "APPROVED"]);
+
+    const total_refunded_tickets: number =
+      refunded_tickets?.reduce(
+        (sum, order) => sum + (order.quantity || 0),
+        0
+      ) || 0;
+    console.log("total_active_tickets", total_active_tickets);
+    console.log("total_refunded_tickets", total_refunded_tickets);
+    console.log("used_tickets", used_tickets);
+
+    if (
+      total_active_tickets - total_refunded_tickets - used_tickets <
+      refunded_tickets
+    ) {
+      return new Response(
+        `cannot refund tickets as too many tickets are in use`,
+        { status: 400 }
+      );
+    }
+  }
+
+  // TODO?: Should ideally create an eventbrite refund request for the event
+  // if(ticket.service == "eventbrite") {
+  //     try {
+  //         // using event cancellation or covid19 as reason makes full refund go through
+  //         const refundRequestBody = {
+  //           from_email: email,
+  //           from_name: first_name + " " + last_name,
+  //           items: [
+  //             {
+  //               order_id: eventbrite_order_id,
+  //             },
+  //           ],
+  //           reason: "event_cancelled",
+  //           message: "Event is cancelled for the time being.",
+  //         };
+
+  //         console.log("refundRequestBody", refundRequestBody);
+  //         const eventbriteResponse = await fetch(
+  //           `https://www.eventbriteapi.com/v3/refund_requests/?token=${eventbriteToken}`,
+  //           {
+  //             method: "POST",
+  //             headers: {
+  //               "Content-Type": "application/json",  // Required header
+  //               // "Authorization": `Bearer ${eventbriteToken}` // Sometimes required
+  //             },
+  //             body: JSON.stringify(refundRequestBody),
+  //           }
+  //         );
+
+  //         if (!eventbriteResponse.ok) {
+  //           console.log("eventbriteResponse", eventbriteResponse);
+  //           throw new Error("Failed to request refund from eventbrite");
+  //         }
+  //         console.log("eventbriteResponse", eventbriteResponse);
+  //       } catch (e: any) {
+  //         console.log("ERROR", e);
+  //         console.error(e);
+  //         return new Response("failed to execute: " + e.message, { status: 400 });
+  //       }
+  // }
+
+  // now we just create a request
+  const { error: updateError } = await adminSupabase
+    .from("refund_requests")
+    .insert({
+      ticket_id: ticket.id,
+      quantity: refunded_tickets,
+      refund_status: status,
+    });
+
+  if (updateError) {
+    console.log("updateError", updateError);
+    return new Response(
+      "Failed to update refund request: " + updateError.message,
+      { status: 400 }
+    );
+  }
+  return new Response("success", { status: 200 });
+};
