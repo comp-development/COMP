@@ -888,6 +888,19 @@
       dataType: "string" as const,
     },
     {
+      key: "refund_status",
+      label: "Refund Requests",
+      visible: true,
+      searchable: true,
+      dataType: "string" as const,
+      // format: (value: any, _: any) => ({
+      //   console.log(value);
+      //   display: value.refund_requests.length > 0
+      //     ? `<button class="grant-refund-btn" data-order-id="${value.id}">Grant Refund</button>`
+      //     : `<button class="view-refund-btn" data-order-id="${value.id}">View Refund Request</button>`,
+      // }),
+    },
+    {
       key: "order_id",
       label: "Order ID",
       visible: true,
@@ -900,19 +913,6 @@
       visible: false,
       searchable: true,
       dataType: "string" as const,
-    },
-    {
-      key: "refund_status",
-      label: "Refund Requests",
-      visible: true,
-      searchable: true,
-      dataType: "string" as const,
-      // format: (value: any, _: any) => ({
-      //   console.log(value);
-      //   display: value.refund_requests.length > 0
-      //     ? `<button class="grant-refund-btn" data-order-id="${value.id}">Grant Refund</button>`
-      //     : `<button class="view-refund-btn" data-order-id="${value.id}">View Refund Request</button>`,
-      // }),
     },
   ];
 
@@ -2910,6 +2910,7 @@
 
   <!-- Refund Modal -->
   <Modal bind:open={showRefundModal} class="overflow-auto">
+    <div class= "overflow-y-scroll max-h-[70vh] max-w-[80vh]">
     {#if currentTicketOrder.ticket_service === "eventbrite"}
       <Alert color="yellow" class="mt-2 text-s">
         <span class="font-large">Note:</span>
@@ -2945,7 +2946,7 @@
         class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
       >
         <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
-          Existing Refund Requests
+          Pending Requests
         </h3>
         <ul class="space-y-2">
           {#each currentTicketOrder?.refund_requests.filter((request) => request.refund_status === "PENDING") as request}
@@ -3037,7 +3038,7 @@
               {/if}
               {#if request.refund_status === "PENDING"}
                 <div class="mt-4">
-                  <div class="mt-2 text-left">Reason for refund?</div>
+                  <div class="mt-2 text-left">Response Message:</div>
                   <Input
                     bind:value={pendingRefundMessage}
                     type="text"
@@ -3059,7 +3060,7 @@
         class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
       >
         <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
-          Existing Refund Requests
+          Completed Requests
         </h3>
         <ul class="space-y-2">
           {#each currentTicketOrder?.refund_requests.filter((request) => request.refund_status !== "PENDING") as request}
@@ -3191,7 +3192,7 @@
           />
         </div>
         <div class="mt-4">
-          <div class="mt-2 text-left">Reason for refund?</div>
+          <div class="mt-2 text-left">Reason for refund:</div>
           <Input
             bind:value={refundMessage}
             type="text"
@@ -3217,6 +3218,7 @@
       <div class="mt-6 flex justify-end gap-2">
         <Button on:click={() => (showRefundModal = false)}>Close</Button>
       </div>
+    </div>
     </div>
   </Modal>
 </div>
