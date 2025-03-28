@@ -14,7 +14,7 @@
     "@snaplet/seed": "^0.98.0",
     "@types/node": "^22.9.0",
     "@types/pg": "^8.11.10",
-    "pg": "^8.13.0",
+    "pg": "^8.14.1",
     "tsx": "^4.19.2"
   },
   "postinstall": "patch-package",
