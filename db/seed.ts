@@ -17,12 +17,14 @@ const example_problems = [
     solution_latex:
       "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
     answer_type: "Integer",
+    host_id: 1,
   },
   {
     problem_latex: "what is thirteen plus fourteen minus two",
     answer_latex: "25",
     solution_latex: "compute it.",
     answer_type: "Integer",
+    host_id: 1,
   },
   {
     problem_latex:
@@ -30,6 +32,7 @@ const example_problems = [
     answer_latex: "Inequality gives proof.",
     solution_latex: "do it",
     answer_type: "Text",
+    host_id: 1,
   },
   {
     problem_latex:
@@ -37,14 +40,15 @@ const example_problems = [
     answer_latex: "pi",
     solution_latex: "look up stack exchange",
     answer_type: "AsciiMath",
+    host_id: 1,
   },
   {
-    problem_latex:
-      `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
+    problem_latex: `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
     answer_latex: "(9!)/2",
     solution_latex:
       "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
     answer_type: "AsciiMath",
+    host_id: 1,
   },
 ] satisfies Partial<Tables<"problems">>[];
 
@@ -283,6 +287,8 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
           name: (ctx) =>
             "Organization " + copycat.word(ctx.seed, { capitalize: true }),
           address: (ctx) => copycat.postalAddress(ctx.seed),
+          address_latitude: null, 
+          address_longitude: null,
         },
       },
       students: {
@@ -414,21 +420,30 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
 
   const { events } = await seed.events(
     (x) =>
-      x(hosts.length * 4, ({ seed }) => ({
-        tests: (x) =>
-          x(3, () => {
-            return {
-              test_problems: copycat
-                .someOf(
-                  [1, 5],
-                  example_problems,
-                )(seed)
-                .map((p) => ({ problems: p })),
-            };
-          }),
-        // Make most events published.
-        published: copycat.int(seed, { min: 0, max: 9 }) < 9,
-      })),
+      x(hosts.length * 4, ({ seed }) => {
+        const host_id = copycat.oneOf(hosts)(seed).host_id;
+        return {
+          host_id,
+          tests: (x) =>
+            x(3, () => {
+              return {
+                test_problems: copycat
+                  .someOf(
+                    [1, 5],
+                    example_problems,
+                  )(seed)
+                  .map((p) => ({
+                    problems: {
+                      ...p,
+                      host_id,
+                    },
+                  })),
+              };
+            }),
+          // Make most events published.
+          published: copycat.int(seed, { min: 0, max: 9 }) < 9,
+        };
+      }),
     {
       connect: { hosts },
     },
@@ -625,7 +640,6 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
 
   // TODO: resolve importing supabase client properly
   // supabase.storage.from("problem-images").upload(EXAMPLE_IMAGE_PATH, createReadStream('./example.png'));
-  
   if (!dryRun) {
     console.log("Successfully seeded database!");
   }

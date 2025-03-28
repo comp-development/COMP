@@ -104,9 +104,9 @@ export async function upsertTestAnswer(
   test_problem_id: number,
   answer: string,
 ) {
-  console.log("adding", answer);
-  console.log("TAKERID", test_taker_id);
-  console.log("ANSWSER", answer);
+  // console.log("adding", answer);
+  // console.log("TAKERID", test_taker_id);
+  // console.log("ANSWSER", answer);
   const { data, error } = await supabase.rpc("upsert_test_answer", {
     p_answer: answer,
     p_test_taker_id: test_taker_id,
@@ -213,4 +213,17 @@ export async function updateTest(test_id, testData) {
   }
 
   return true;
+}
+
+export async function createTest(testData) {
+  const { data, error } = await supabase
+    .from("tests")
+    .insert([testData])
+    .select();
+
+  if (error) {
+    throw error;
+  }
+
+  return data[0];
 }

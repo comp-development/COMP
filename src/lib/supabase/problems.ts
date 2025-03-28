@@ -13,8 +13,8 @@ export async function addProblem(problem) {
   return data;
 }
 
-export async function getAllProblems(customSelect: string = "*") {
-  const { data, error } = await supabase.from("problems").select("*");
+export async function getAllProblems(host_id: number, customSelect: string = "*") {
+  const { data, error } = await supabase.from("problems").select("*").eq("host_id", host_id);
 
   if (error) throw error;
   return data;
@@ -85,15 +85,15 @@ export async function updateClarification(clarification) {
 }
 
 export async function updateTestProblems(test_id: number, oldProblems) {
-  const problems = structuredClone(oldProblems);
+  const problems = JSON.parse(JSON.stringify(oldProblems));
   for (const oldProblem of problems) {
     await updateTestProblem(test_id, oldProblem);
   }
 }
 
 export async function updateTestProblem(test_id: number, oldProblem) {
-  const problem = structuredClone(oldProblem);
-  const problem2 = structuredClone(oldProblem);
+  const problem = JSON.parse(JSON.stringify(oldProblem));
+  const problem2 = JSON.parse(JSON.stringify(oldProblem));
 
   const { probError } = await supabase
     .from("problems")
