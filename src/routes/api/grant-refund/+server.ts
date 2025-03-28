@@ -14,9 +14,12 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
   let refund_id : number | null;
   let refunded_tickets : number | null;
+  let response_message : string | null;
 
   try {
     body = await request.request.json();
+
+    console.log("body", body);
 
   /**
    * Convenience function to extract value from `body` by key.
@@ -35,7 +38,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     // the following two are optional
     refund_id = body["refund_id"]
     refunded_tickets = body["refunded_tickets"]
-
+    response_message = body["response_message"]
   } catch (e: any) {
     return new Response("missing or malformed body: " + e.message, {
       status: 400,
@@ -185,14 +188,14 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         }
         // TODO, delete an emptyteam as well
     }
-
+    console.log("resp", response_message);
     const { error: updateError } = await adminSupabase
         .from("refund_requests")
         .insert({
             ticket_id: ticket.id,
             quantity: refunded_tickets,
             refund_status: status,
-            message: "Refund issued by event organizer!"
+            response_reason: response_message || "Refund issued by event organizer!"
         });
 
     if (updateError) {
@@ -285,7 +288,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     .from("refund_requests")
     .update({
     quantity: refunded_tickets,
-    refund_status: status
+    refund_status: status,
+    response_reason: response_message
     })
     .eq("id", refund_id);
 

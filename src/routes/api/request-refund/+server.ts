@@ -241,6 +241,26 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   //       }
   // }
 
+  // make sure no pending request exists
+  const {data: oldRequests, error: oldError} = await adminSupabase
+    .from("refund_requests")
+    .select("*")
+    .eq("ticket_id", ticket_id)
+    .eq("refund_status", "PENDING");
+    if(oldError) {
+        console.log("updateError", oldError);
+        return new Response(
+        "Failed to update refund request: " + oldError.message,
+        { status: 400 }
+        );
+    }
+    if(oldRequests.length > 0) {
+        return new Response(
+            `cannot make new request until current requests are granted`,
+            { status: 400 }
+        );
+    }
+
   // now we just create a request
   const { error: updateError } = await adminSupabase
     .from("refund_requests")
@@ -248,8 +268,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       ticket_id: ticket.id,
       quantity: refunded_tickets,
       refund_status: "PENDING",
-      message: message,
+      request_reason: message,
     });
+    
 
   if (updateError) {
     console.log("updateError", updateError);

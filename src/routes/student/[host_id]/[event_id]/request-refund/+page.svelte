@@ -121,13 +121,9 @@
       student = await getStudent($user!.id)!;
       host = await getHostInformation(host_id);
       student_event = await getStudentEvent($user!.id, event_id);
-      console.log("stuff", student_event);
       available_tickets = await getStudentAvailableTickets($user!.id, event_id);
-      console.log("available_tickets", available_tickets);
 
       ticket_order = await getStudentTicketOrder($user!.id, event_id);
-      console.log("stuff");
-      console.log("ticket_order", ticket_order);
       transaction_stored = ticket_order != null;
       team = student_event?.team;
   
@@ -167,7 +163,6 @@
     <!-- // need to make sure they are not already   in a team -->
     <!-- If we request a refund on the ticket, will be removed from the team -->
     {#if student_event}
-      {#if team}
         <div class="flex gap-8 p-6">
           <!-- Left Sidebar with Instructions -->
           <div class="w-2/5">
@@ -183,10 +178,10 @@
                   </p>
                 </div>
                 <ul class="list-disc pl-8 space-y-2">
-                  <li>The tickets you request to refund will be immediately deactivated</li>
-                  <li>You will not be able to participate in the event with this ticket, unless the request gets explicitly denied.</li>
-                  <li>You cannot purchase a new ticket until the host responds to your request</li>
+                  <li>The tickets you request will still be active until the host responds to the request.</li>
+                  <li>You cannot purchase a new ticket.</li>
                   <li>The host will review your request and either approve or deny it</li>
+                  <li>If the request is approved, your regisration from the event will immediately be cancelled, and you will be removed from your team.</li>
                   <li>You will have to check this page to see the status of your request</li>
                 </ul>
                 <Alert color="yellow" class="mt-4">
@@ -210,14 +205,6 @@
             </div>
           </div>
         </div>
-      {:else}
-        <Alert border color="red">
-          <InfoCircleSolid slot="icon" class="w-5 h-5" />
-          <span class="font-medium">Not assigned to a team!</span>
-          Error, you are not registered for this event? You cannot request a refund
-        </Alert>
-      {/if}
-  
       <!--
       {#if org_event != null}
         {#if !purchase_ticket}

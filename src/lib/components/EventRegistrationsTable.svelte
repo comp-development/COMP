@@ -20,7 +20,11 @@
     getEventInformation,
   } from "$lib/supabase/events";
 
-  import { getOrganizationDetails, getOrgTicketOrders, getTicketCount } from "$lib/supabase/orgs";
+  import {
+    getOrganizationDetails,
+    getOrgTicketOrders,
+    getTicketCount,
+  } from "$lib/supabase/orgs";
   import {
     transferStudentToTeam,
     transferStudentToOrg,
@@ -101,7 +105,9 @@
     [key: string]: any; // For custom fields: custom_field.field_key
   };
 
-  type TicketOrderRowData = (Tables<"ticket_orders"> & { refund_requests: Tables<"refund_requests">[] });
+  type TicketOrderRowData = Tables<"ticket_orders"> & {
+    refund_requests: Tables<"refund_requests">[];
+  };
 
   type CustomField = {
     custom_field_id: number;
@@ -145,7 +151,7 @@
     dataType?: "string" | "number" | "date" | "boolean";
     format?: (
       value: any,
-      row: any,
+      row: any
     ) => { text: string; isBadge: boolean; color?: string } | string;
   };
 
@@ -223,15 +229,21 @@
   let ticketOrderInsertInProgress = $state(false);
   let ticketOrderError: null | Error = $state(null);
   let ticketOrderSuccess: null | "Insert Successful" = $state(null);
+  let ticketTab = $state(0);
 
   let showRefundModal = $state(false);
-  let selectedTicketOrders : any[]= [];
+  let selectedTicketOrders: any[] = [];
   let currentTicketOrder = $state<any>(null);
   let hasSelectedTicketOrders = $state(false);
   let refundQuantity = $state(1);
+  let refundMessage = $state<string>("");
+
   let refundInProgress = $state(false);
+  let pendingRefundQuantity = $state<number>(1);
+  let pendingRefundMessage = $state<string>("");
 
   let pendingRefundQuantities = $state<{ [key: number]: number }>({}); // Object to store quantities
+  let pendingRefundMessages = $state<{ [key: number]: string }>({}); // Object to store quantities
 
   let event = $state<any>(null);
   let waiverEnabled = $state(false);
@@ -239,16 +251,16 @@
   // Computed sorted arrays for dropdowns
   const sortedTeams = $derived(
     [...teams].sort((a, b) =>
-      (a.team_name || "").localeCompare(b.team_name || ""),
-    ),
+      (a.team_name || "").localeCompare(b.team_name || "")
+    )
   );
 
   const sortedOrgs = $derived(
     [...orgs].sort((a, b) =>
       (a.name || `Organization #${a.org_id}`).localeCompare(
-        b.name || `Organization #${b.org_id}`,
-      ),
-    ),
+        b.name || `Organization #${b.org_id}`
+      )
+    )
   );
 
   // Column definitions for CustomTable
@@ -917,37 +929,44 @@
     selectedTeams = selectedData;
     hasSelectedTeams = count > 0;
   }
-  function calculateTotalUsableTickets(ticketOrder: Tables<"ticket_orders"> & {refund_requests: Tables<"refund_requests">[]}) {
-    if(!ticketOrder) return 0;
+  function calculateTotalUsableTickets(
+    ticketOrder: Tables<"ticket_orders"> & {
+      refund_requests: Tables<"refund_requests">[];
+    }
+  ) {
+    if (!ticketOrder) return 0;
 
     let refunded = 0;
 
-    if(ticketOrder.org_id != null) {
-      refunded = ticketOrder?.refund_requests?.reduce((sum, request) => {
-        if (request.refund_status === 'APPROVED' || request.refund_status === 'PENDING') {
-          return sum + (request?.quantity || 0);
-        }
-        return sum;
-      }, 0) || 0;
-    }
-    else {
-      refunded = ticketOrder.refund_requests?.reduce((sum, request) => {
-        if (request.refund_status === 'APPROVED') {
-          return sum + (request?.quantity || 0);
-        }
-        return sum;
-      }, 0) || 0;
+    if (ticketOrder.org_id != null) {
+      refunded =
+        ticketOrder?.refund_requests?.reduce((sum, request) => {
+          if (
+            request.refund_status === "APPROVED" ||
+            request.refund_status === "PENDING"
+          ) {
+            return sum + (request?.quantity || 0);
+          }
+          return sum;
+        }, 0) || 0;
+    } else {
+      refunded =
+        ticketOrder.refund_requests?.reduce((sum, request) => {
+          if (request.refund_status === "APPROVED") {
+            return sum + (request?.quantity || 0);
+          }
+          return sum;
+        }, 0) || 0;
     }
 
     return ticketOrder.quantity - refunded;
-    
   }
 
   function handleTicketOrderSelectionChange(event: CustomEvent) {
     const { selectedData, count } = event.detail;
     selectedTicketOrders = selectedData;
-    hasSelectedTicketOrders = count  == 1;
-    if(count === 1) {
+    hasSelectedTicketOrders = count == 1;
+    if (count === 1) {
       currentTicketOrder = selectedTicketOrders[0];
     }
   }
@@ -987,54 +1006,61 @@
     showRefundModal = true;
   }
 
-
-
-  async function executeRefund(ticket_id: number, status: string, refunded_tickets: number, refund_id: number | null) {
+  async function executeRefund(
+    ticket_id: number,
+    status: string,
+    response_message: string | null,
+    refunded_tickets: number,
+    refund_id: number | null
+  ) {
     refundInProgress = true;
     try {
-      const response = await fetch('/api/grant-refund', {
-        method: 'POST',
+      const response = await fetch("/api/grant-refund", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           ticket_id,
           status,
           refunded_tickets,
-          refund_id
+          refund_id,
+          response_message,
         }),
       });
       if (response.ok) {
-          const { data, error } = await supabase
-            .from("ticket_orders")
-            .select("*, refund_requests(*)")
-            .eq("id", ticket_id);
-          if (error) {
-            handleError(error);
-            return;
-          }
-          currentTicketOrder = data.map((order) => ({
-            ...order,
-            refund_status: order.refund_requests.length > 0
+        const { data, error } = await supabase
+          .from("ticket_orders")
+          .select("*, refund_requests(*)")
+          .eq("id", ticket_id);
+        if (error) {
+          handleError(error);
+          return;
+        }
+        currentTicketOrder = data.map((order) => ({
+          ...order,
+          refund_status:
+            order.refund_requests.length > 0
               ? `Pending Requests`
               : `No Refunds`,
-            available_tickets: calculateTotalUsableTickets(order),
-          }))[0];
-          console.log("finished selectedTicketOrders", currentTicketOrder);
-
-        } else {
-          const errorText = await response.text();
-          console.error(errorText);
-          handleError(new Error(errorText));
+          available_tickets: calculateTotalUsableTickets(order),
+        }))[0];
+        if(!refund_id) {
+          refundMessage = "";
+          refundQuantity = 0; 
         }
-
+        
+      } else {
+        const errorText = await response.text();
+        console.error(errorText);
+        handleError(new Error(errorText));
+      }
     } catch (error) {
       console.error(error);
       handleError(error);
     } finally {
       refundInProgress = false;
     }
-
   }
 
   // Execute the transfer based on selected options
@@ -1064,7 +1090,7 @@
               // Keep org but remove team
               result = await transferStudentToTeam(
                 student.student_event_id,
-                -1,
+                -1
               );
 
               // Update local data
@@ -1083,7 +1109,7 @@
               const teamIdForTransfer = selectedTeamId as number;
               result = await transferStudentToTeam(
                 student.student_event_id,
-                teamIdForTransfer,
+                teamIdForTransfer
               );
 
               // Update local data
@@ -1100,7 +1126,7 @@
             const orgIdForTransfer = selectedOrgId === -1 ? -1 : selectedOrgId;
             result = await transferStudentToOrg(
               student.student_event_id,
-              orgIdForTransfer,
+              orgIdForTransfer
             );
 
             // Update local data
@@ -1296,7 +1322,7 @@
       // Determine which teams to process
       const teamsToProcess = isRetry
         ? selectedTeams.filter((team) =>
-            failedTeams.some((ft) => ft.team_id === team.team_id),
+            failedTeams.some((ft) => ft.team_id === team.team_id)
           )
         : selectedTeams;
 
@@ -1310,7 +1336,7 @@
           const orgIdForTransfer = selectedOrgId as number;
           const result = await transferTeamToOrg(
             team.team_id,
-            orgIdForTransfer,
+            orgIdForTransfer
           );
 
           // Update local data on successful transfer
@@ -1626,7 +1652,7 @@
         getCustomFieldResponsesBatch(
           studentCustomFields,
           studentIds,
-          "students",
+          "students"
         ),
         getCustomFieldResponsesBatch(teamCustomFields, teamIds, "teams"),
         getCustomFieldResponsesBatch(orgCustomFields, orgEventIds, "orgs"),
@@ -1682,7 +1708,7 @@
 
   // Helper function to map custom_field_type to dataType
   function mapCustomFieldTypeToDataType(
-    fieldType: string,
+    fieldType: string
   ): "string" | "number" | "date" | "boolean" {
     switch (fieldType.toLowerCase()) {
       case "number":
@@ -1722,7 +1748,7 @@
 
   // Format student rows for display to avoid repeated formatting during render
   function formatStudentRowsForDisplay(
-    rawStudents: StudentRowData[],
+    rawStudents: StudentRowData[]
   ): StudentRowData[] {
     const formattedRows = rawStudents.map((student) => {
       // Create a processed copy that already has all the formatted display values
@@ -1985,7 +2011,7 @@
       "teams",
       "organizations",
       "ticket_orders",
-    ],
+    ]
   ) {
     try {
       if (dataTypes.includes("students")) {
@@ -2018,7 +2044,7 @@
           const studentData = student as any;
           if (studentData.created_at) {
             students[index].registeredAt = new Date(
-              studentData.created_at,
+              studentData.created_at
             ).toLocaleString();
           }
         });
@@ -2049,13 +2075,14 @@
           return;
         }
 
-
         ticketOrders = data.map((order) => ({
           ...order,
-            refund_status: order.refund_requests.length > 0
-                  ? `Requests Exist`
-                  : `No Existing Requests `,
-            available_tickets: calculateTotalUsableTickets(order),
+          refund_status: order.refund_requests.some(
+            (request) => request.refund_status === "PENDING"
+          )
+            ? `Requests Pending`
+            : ``,
+          available_tickets: calculateTotalUsableTickets(order),
         }));
       }
 
@@ -2317,15 +2344,15 @@
             Reload
           </Button>
           {#if hasSelectedTicketOrders}
-          <Button
-            color="primary"
-            on:click={openRefundModal}
-            class="flex items-center gap-2"
-          >
-            <ArrowRightAltSolid class="w-4 h-4" />
-            View Refunds
-          </Button>
-        {/if}
+            <Button
+              color="primary"
+              on:click={openRefundModal}
+              class="flex items-center gap-2"
+            >
+              <ArrowRightAltSolid class="w-4 h-4" />
+              Grant Refunds
+            </Button>
+          {/if}
         {/snippet}
         <CustomTable
           data={ticketOrders}
@@ -2759,6 +2786,16 @@
     size="md"
     autoclose={false}
   >
+    <!-- <Tabs style="underline" class="themed-tabs">
+    <TabItem
+      open={ticketTab === 0}
+      title="Create Tickets"
+      class="tab-item"
+      activeClasses="tab-active"
+      onclick={() => {
+        activeTab = 0;
+      }}
+    > -->
     <div class="space-y-4">
       {#if transferSuccess}
         <Alert color="green" class="mb-4">
@@ -2857,89 +2894,294 @@
         Insert
       </Button>
     </svelte:fragment>
+    <!-- </TabItem>
+    <TabItem
+      open={ticketTab === 1}
+      title="Link Existing Order"
+      class="tab-item"
+      activeClasses="tab-active"
+      onclick={() => {
+        ticketTab = 1;
+      }}
+    > -->
+    <!-- </TabItem>
+  </Tabs> -->
   </Modal>
 
   <!-- Refund Modal -->
-  <Modal bind:open={showRefundModal} class="overflow-auto" >
+  <Modal bind:open={showRefundModal} class="overflow-auto">
     {#if currentTicketOrder.ticket_service === "eventbrite"}
-    <Alert color="yellow" class="mt-2 text-s">
-      <span class="font-large">Note:</span>
-      COMP.MT portal does not actually issue the refunds for tickets purchased through Eventbrite. You must go through the Eventbrite portal to issue the refunds (either partial or full refunds).
-      Making the request here is only used to ensure the teams have the correct ticket count, once the refund is issues through eventbrite. Please please please make sure the information entered here matches the information on the eventbrite portal first!
-    </Alert>
-  {/if}
+      <Alert color="yellow" class="mt-2 text-s">
+        <span class="font-large">Note:</span>
+        COMP.MT portal does not actually issue the refunds for tickets purchased
+        through Eventbrite. You must go through the Eventbrite portal to issue the
+        refunds (either partial or full refunds). Making the request here is only
+        used to ensure the teams have the correct ticket count, once the refund is
+        issues through eventbrite. Please please please make sure the information
+        entered here matches the information on the eventbrite portal first!
+      </Alert>
+    {/if}
 
     {#if currentTicketOrder.refund_requests && currentTicketOrder?.refund_requests.length > 0 && currentTicketOrder?.ticket_service !== "admin"}
-    <div class="flex justify-between mb-4 overflow-auto">
-      <div>
-        <p class="text-sm font-medium text-gray-900 dark:text-white">Total Purchased Tickets</p>
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">{currentTicketOrder?.quantity}</p>
+      <div class="flex justify-between mb-4 overflow-auto">
+        <div>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            Total Purchased Tickets
+          </p>
+          <p class="text-lg font-semibold text-gray-900 dark:text-white">
+            {currentTicketOrder?.quantity}
+          </p>
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-900 dark:text-white">
+            Total Usable Tickets:
+          </p>
+          <p class="text-lg font-semibold text-gray-900 dark:text-white">
+            {currentTicketOrder?.available_tickets}
+          </p>
+        </div>
       </div>
-      <div>
-        <p class="text-sm font-medium text-gray-900 dark:text-white">Total Usable Tickets:</p>
-        <p class="text-lg font-semibold text-gray-900 dark:text-white">{currentTicketOrder?.available_tickets}</p>
-      </div>
-    </div>
-    <div class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-      <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
-        Existing Refund Requests
-      </h3>
-      <ul class="space-y-2">
-        {#each currentTicketOrder?.refund_requests as request}
-          <li class="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
-            <div class="flex items-center">
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">
-                  Request ID: <span class="font-semibold">{request.id}</span>
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                  Status: <span class="font-semibold">{request.refund_status}</span>,
-                  Quantity: <span class="font-semibold">{request.quantity}</span>
-                </p>
-              </div>
-              {#if request.refund_status === 'APPROVED'}
-                <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-200 dark:text-green-900">
-                  Approved
-                </span>
-              {:else if request.refund_status === 'PENDING'}
-                <div class="flex items-center gap-2">
-                  <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-200 dark:text-yellow-900">
-                    Pending
-                  </span>
-                  <Input type="number" min="1" max={request.quantity} class="w-16 border rounded p-1 text-sm" bind:value={pendingRefundQuantities[request.id]} placeholder="Qty" />
-                  {#if refundInProgress}
-                    <Spinner class="mr-2" size="4" />
-                  {:else}
-                  <Button class="bg-green-600" on:click={() => executeRefund(currentTicketOrder.id, "APPROVED", pendingRefundQuantities[request.id], request.id )}>Approve</Button>
-                  <Button class="bg-red-600" on:click={() => executeRefund(currentTicketOrder.id, "DENIED", pendingRefundQuantities[request.id], request.id )}>Deny</Button>
-                  {/if}
+      <div
+        class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+      >
+        <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+          Existing Refund Requests
+        </h3>
+        <ul class="space-y-2">
+          {#each currentTicketOrder?.refund_requests.filter((request) => request.refund_status === "PENDING") as request}
+            <li class="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
+              <div class="flex items-center">
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">
+                    Request ID: <span class="font-semibold">{request.id}</span>
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Status: <span class="font-semibold"
+                      >{request.refund_status}</span
+                    >, Quantity:
+                    <span class="font-semibold">{request.quantity}</span>
+                  </p>
                 </div>
-              {:else if request.refund_status === 'DENIED'}
-                <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-200 dark:text-red-900">
-                  Denied
-                </span>
-              {:else}
-                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800 dark:bg-gray-200 dark:text-gray-900">
-                  {request.refund_status}
-                </span>
-              {/if}
-            </div>
-            {#if request.message}
-              <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Message: <span class="font-semibold">{request.message}</span>
+                {#if request.refund_status === "APPROVED"}
+                  <span
+                    class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-200 dark:text-green-900"
+                  >
+                    Approved
+                  </span>
+                {:else if request.refund_status === "PENDING"}
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-200 dark:text-yellow-900"
+                    >
+                      Pending
+                    </span>
+                    <Input
+                      type="number"
+                      min="1"
+                      max={request.quantity}
+                      class="w-16 border rounded p-1 text-sm"
+                      bind:value={pendingRefundQuantity}
+                      placeholder="Qty"
+                    />
+                    {#if refundInProgress}
+                      <Spinner class="mr-2" size="4" />
+                    {:else}
+                      <Button
+                        class="bg-green-600"
+                        on:click={() =>
+                          executeRefund(
+                            currentTicketOrder.id,
+                            "APPROVED",
+                            pendingRefundMessage.length > 0
+                              ? pendingRefundMessage
+                              : null,
+                            pendingRefundQuantity,
+                            request.id
+                          )}>Approve</Button
+                      >
+                      <Button
+                        class="bg-red-600"
+                        on:click={() =>
+                          executeRefund(
+                            currentTicketOrder.id,
+                            "DENIED",
+                            pendingRefundMessage.length > 0
+                              ? pendingRefundMessage
+                              : null,
+                            pendingRefundQuantities[request.id],
+                            request.id
+                          )}>Deny</Button
+                      >
+                    {/if}
+                  </div>
+                {:else if request.refund_status === "DENIED"}
+                  <span
+                    class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-200 dark:text-red-900"
+                  >
+                    Denied
+                  </span>
+                {:else}
+                  <span
+                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800 dark:bg-gray-200 dark:text-gray-900"
+                  >
+                    {request.refund_status}
+                  </span>
+                {/if}
               </div>
-            {/if}
-          </li>
-        {/each}
-      </ul>
-    </div>
-  {/if}
+              {#if request.request_reason}
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Request: <span class="font-semibold"
+                    >{request.request_reason}</span
+                  >
+                </div>
+              {/if}
+              {#if request.refund_status === "PENDING"}
+                <div class="mt-4">
+                  <div class="mt-2 text-left">Reason for refund?</div>
+                  <Input
+                    bind:value={pendingRefundMessage}
+                    type="text"
+                    placeholder="Request for refund"
+                  />
+                </div>
+              {:else if request.response_reason}
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Response: <span class="font-semibold"
+                    >{request.response_reason}</span
+                  >
+                </div>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </div>
+      <div
+        class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+      >
+        <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+          Existing Refund Requests
+        </h3>
+        <ul class="space-y-2">
+          {#each currentTicketOrder?.refund_requests.filter((request) => request.refund_status !== "PENDING") as request}
+            <li class="rounded-md bg-gray-50 p-3 dark:bg-gray-800">
+              <div class="flex items-center">
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900 dark:text-white">
+                    Request ID: <span class="font-semibold">{request.id}</span>
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Status: <span class="font-semibold"
+                      >{request.refund_status}</span
+                    >, Quantity:
+                    <span class="font-semibold">{request.quantity}</span>
+                  </p>
+                </div>
+                {#if request.refund_status === "APPROVED"}
+                  <span
+                    class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-200 dark:text-green-900"
+                  >
+                    Approved
+                  </span>
+                {:else if request.refund_status === "PENDING"}
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-200 dark:text-yellow-900"
+                    >
+                      Pending
+                    </span>
+                    <Input
+                      type="number"
+                      min="1"
+                      max={request.quantity}
+                      class="w-16 border rounded p-1 text-sm"
+                      bind:value={pendingRefundQuantity}
+                      placeholder="Qty"
+                    />
+                    {#if refundInProgress}
+                      <Spinner class="mr-2" size="4" />
+                    {:else}
+                      <Button
+                        class="bg-green-600"
+                        on:click={() =>
+                          executeRefund(
+                            currentTicketOrder.id,
+                            "APPROVED",
+                            pendingRefundMessage.length > 0
+                              ? pendingRefundMessage
+                              : null,
+                            pendingRefundQuantity,
+                            request.id
+                          )}>Approve</Button
+                      >
+                      <Button
+                        class="bg-red-600"
+                        on:click={() =>
+                          executeRefund(
+                            currentTicketOrder.id,
+                            "DENIED",
+                            pendingRefundMessage.length > 0
+                              ? pendingRefundMessage
+                              : null,
+                            pendingRefundQuantities[request.id],
+                            request.id
+                          )}>Deny</Button
+                      >
+                    {/if}
+                  </div>
+                {:else if request.refund_status === "DENIED"}
+                  <span
+                    class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-200 dark:text-red-900"
+                  >
+                    Denied
+                  </span>
+                {:else}
+                  <span
+                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800 dark:bg-gray-200 dark:text-gray-900"
+                  >
+                    {request.refund_status}
+                  </span>
+                {/if}
+              </div>
+              {#if request.request_reason}
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Request: <span class="font-semibold"
+                    >{request.request_reason}</span
+                  >
+                </div>
+              {/if}
+              {#if request.refund_status === "PENDING"}
+                <div class="mt-4">
+                  <div class="mt-2 text-left">Reason for refund?</div>
+                  <Input
+                    bind:value={pendingRefundMessage}
+                    type="text"
+                    placeholder="Request for refund"
+                  />
+                </div>
+              {:else if request.response_reason}
+                <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Response: <span class="font-semibold"
+                    >{request.response_reason}</span
+                  >
+                </div>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      </div>
+    {/if}
     <div class="p-6">
       <div class="p-6">
         <h2 class="text-xl font-semibold">Refund Tickets</h2>
-        <p class="text-sm text-gray-600">Enter the number of tickets to refund. Note, if this is for an org, tickets they requested to refund are not available for them to use, so please be sure to address any pending requests before proceeding.</p>
+        <p class="text-sm text-gray-600">
+          Enter the number of tickets to refund. Note, if this is for an org,
+          tickets they requested to refund are not available for them to use, so
+          please be sure to address any pending requests before proceeding.
+        </p>
         <div class="mt-4">
-          <label class="block text-sm font-medium text-gray-700">Refund Quantity:</label>
+          <label class="block text-sm font-medium text-gray-700"
+            >Refund Quantity:</label
+          >
           <Input
             type="number"
             min="1"
@@ -2948,10 +3190,28 @@
             placeholder="Number of tickets to refund"
           />
         </div>
+        <div class="mt-4">
+          <div class="mt-2 text-left">Reason for refund?</div>
+          <Input
+            bind:value={refundMessage}
+            type="text"
+            placeholder="Request for refund"
+          />
+        </div>
         {#if refundInProgress}
-                    <Spinner class="mr-2" size="4" />
-          {:else}
-        <Button on:click={() => executeRefund(currentTicketOrder.id, "APPROVED", refundQuantity, null ) } color="blue">Submit</Button>
+          <Spinner class="mr-2" size="4" />
+        {:else}
+          <Button
+            on:click={() =>
+              executeRefund(
+                currentTicketOrder.id,
+                "APPROVED",
+                refundMessage.length > 0 ? refundMessage : null,
+                refundQuantity,
+                null)
+              }
+            color="blue">Submit</Button
+          >
         {/if}
       </div>
       <div class="mt-6 flex justify-end gap-2">

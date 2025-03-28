@@ -24,13 +24,6 @@
   export let available_tickets = 0;
 
   function handleRefundRequest() {
-    console.log("refunded_tickets", refunded_tickets);
-    console.log("REQUESTED");
-    console.log("REQUESTED");
-    console.log("REQUESTED");
-    console.log("REQUESTED");
-    console.log("REQUESTED");
-
     onRequestRefund(refunded_tickets, message, ticket);
     showModal = false;
   }
@@ -91,11 +84,16 @@
               Status: <span class="font-semibold">{request.refund_status}</span>,
               Quantity: <span class="font-semibold">{request.quantity}</span>
             </p>
-            {#if request.message}
+            {#if request.request_reason}
                 <p class="text-xs text-gray-500 dark:text-gray-400">
-                  Message: <span class="font-semibold">{request.message}</span>
+                  Reason for request: <span class="font-semibold">{request.request_reason}</span>
                 </p>
             {/if}
+            {#if request.response_reason}
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              Host Response: <span class="font-semibold">{request.response_reason}</span>
+            </p>
+        {/if}
           </div>
           {#if request.refund_status === 'APPROVED'}
             <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-200 dark:text-green-900">
@@ -138,7 +136,7 @@
 
 
     <div class="mt-4">
-      <div class="mt-2 text-left"> Message </div>
+      <div class="mt-2 text-left"> Reasonn for refund? </div>
       <Input 
         bind:value={message} 
         type="text" 

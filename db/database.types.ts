@@ -1357,31 +1357,34 @@ export type Database = {
         Row: {
           created_at: string
           id: number
-          message: string | null
           quantity: number
           refund_status:
             | Database["public"]["Enums"]["refund_status_enum"]
             | null
+          request_reason: string | null
+          response_reason: string | null
           ticket_id: number | null
         }
         Insert: {
           created_at?: string
           id?: number
-          message?: string | null
           quantity: number
           refund_status?:
             | Database["public"]["Enums"]["refund_status_enum"]
             | null
+          request_reason?: string | null
+          response_reason?: string | null
           ticket_id?: number | null
         }
         Update: {
           created_at?: string
           id?: number
-          message?: string | null
           quantity?: number
           refund_status?:
             | Database["public"]["Enums"]["refund_status_enum"]
             | null
+          request_reason?: string | null
+          response_reason?: string | null
           ticket_id?: number | null
         }
         Relationships: [

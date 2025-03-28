@@ -64,6 +64,12 @@ grant update on table "public"."refund_requests" to "service_role";
 
 alter table "public"."refund_requests" disable row level security;
 
+alter table "public"."refund_requests" drop column "message";
+
+alter table "public"."refund_requests" add column "request_reason" text;
+
+alter table "public"."refund_requests" add column "response_reason" text;
+
 CREATE OR REPLACE FUNCTION public.student_team_requirements(in_student_id uuid, in_team_id bigint, in_org_id bigint)
  RETURNS boolean
  LANGUAGE plpgsql
