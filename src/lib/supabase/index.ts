@@ -65,7 +65,8 @@ export async function getPurchasedAddons(options: {
       quantity,
       addons!addon_orders_addon_id_fk (
         addon_id,
-        addon_name,
+        key,
+        label,
         price_cents,
         enabled,
         description
