@@ -18,6 +18,12 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
   try {
     body = await request.request.json();
 
+  /**
+   * Convenience function to extract value from `body` by key.
+   * @throws {Error} if key is not present in `body`
+   * @param {string} k key to extract
+   * @returns {any} value from `body`
+   */
     const r = (k: string): any => {
       if (body[k] == null) {
         throw Error(`missing key "${k}"`);
@@ -53,14 +59,14 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     return new Response("missing refund_id and number of refunded_tickets", { status: 400 });
   }
 
-  if(refund_id != null && refunded_tickets == null) {
+  if(refund_id != null && refunded_tickets == null && status !== "DENIED") {
     return new Response("missing number of refunded_tickets", { status: 400 });
   }
 
   const {data: event, error: eventError} = await adminSupabase
     .from("events")
     .select("*")
-    .eq("id", ticket.event_id)
+    .eq("event_id", ticket.event_id)
     .single();
 
   if (eventError || !event) {
@@ -73,6 +79,21 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     // check the status is APPROVED
     if(status !== "APPROVED") {
       return new Response("status must be APPROVED", { status: 400 });
+    }
+
+    // get all existing pending requests with this ticket id first
+    const { data: existing_requests, error: existing_requests_error } = await adminSupabase
+        .from("refund_requests")
+        .select("*")
+        .eq("ticket_id", ticket_id)
+        .eq("refund_status", "PENDING");
+
+    if(existing_requests_error) {
+      return new Response("error verifying existing requests", { status: 500 });
+    }
+
+    if(existing_requests && existing_requests.length > 0) {
+      return new Response("Cannot grant new refunds until all existing pending refund requests are addressed.", { status: 400 });
     }
 
     // if this is an org event, make sure they have enough spare tickets
@@ -140,6 +161,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
                 charge: chargeId,
                 amount: refundAmount,
               });
+              console.log("Stripe refund successful");
           } catch (stripeError: any) {
             console.log("stripeError", stripeError);
             throw new Response(`Stripe refund failed: ${stripeError.message}`, {status: 400});
@@ -169,7 +191,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         .insert({
             ticket_id: ticket.id,
             quantity: refunded_tickets,
-            refund_status: status
+            refund_status: status,
+            message: "Refund issued by event organizer!"
         });
 
     if (updateError) {
@@ -193,7 +216,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       return new Response("refund request not found", { status: 404 });
     }
     
-    if(refund.quantity > refunded_tickets) {
+    if(refund.quantity <refunded_tickets) {
       return new Response("refund request quantity is greater than number of tickets", { status: 400 });
     }
     if(refund.refund_status !== "PENDING") {
@@ -229,6 +252,8 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
                     charge: chargeId,
                     amount: refundAmount,
                   });
+                  console.log("Stripe refund successful");
+
               } catch (stripeError: any) {
                 console.log("stripeError", stripeError);
                 throw new Response(`Stripe refund failed: ${stripeError.message}`, {status: 400});
@@ -260,9 +285,16 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
     .from("refund_requests")
     .update({
     quantity: refunded_tickets,
-    status: status
+    refund_status: status
     })
     .eq("id", refund_id);
+
+    if (updateError) {
+        console.log("updateError", updateError);
+        return new Response(
+            ("Failed to update refund request: " + updateError.message), {status: 400}
+        );
+    }
   }
 
   return new Response("success", { status: 200 });
