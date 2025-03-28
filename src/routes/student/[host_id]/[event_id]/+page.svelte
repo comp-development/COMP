@@ -297,10 +297,18 @@
             open={selectedOption === "join_org"}
             title="Join Organization"
             divClass="bg-[var(--background)]"
+            style="border: 2px solid var(--primary); padding: 10px 16px;"
           >
             <h2>Join Organization</h2>
             <p>
               Get your organization join code from your organization's coach.
+            </p>
+            <p>
+              <em>
+                If you are registering as an individual, or want to create a
+                team independent of an organization (without a coach), please
+                <strong>create an independent team</strong> instead.
+              </em>
             </p>
             <CustomForm
               fields={[
@@ -330,6 +338,7 @@
               open={selectedOption === "join_team"}
               title="Join Independent Team"
               divClass="bg-[var(--background)]"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <h2>Join Independent Team</h2>
               <p>Get the code from an already registered team member.</p>
@@ -377,11 +386,17 @@
             open={selectedOption === "create_team"}
             title="Create Independent Team"
             divClass="bg-[var(--background)]"
+            style="border: 2px solid var(--primary); padding: 10px 16px;"
           >
             <h2>Create Independent Team</h2>
             <p>
-              If you're an individual, or you want to create a team independent
-              of an org, then create an independent team.
+              If you're an individual, or you want to create a team independent of an org, then create an independent team.
+            </p>
+            <p>
+              <em>
+                If you want to register as part of an organization with a coach,
+                please <strong>create an organization</strong> instead.
+              </em>
             </p>
             <br />
             <div class="flex">
