@@ -101,7 +101,7 @@
     [key: string]: any; // For custom fields: custom_field.field_key
   };
 
-  type TicketOrderRowData = Tables<"ticket_orders">;
+  type TicketOrderRowData = (Tables<"ticket_orders"> & { refund_requests: Tables<"refund_requests">[] });
 
   type CustomField = {
     custom_field_id: number;
@@ -223,6 +223,10 @@
   let ticketOrderInsertInProgress = $state(false);
   let ticketOrderError: null | Error = $state(null);
   let ticketOrderSuccess: null | "Insert Successful" = $state(null);
+
+  let showRefundModal = $state(false);
+  let selectedTicketOrders = $state<any[]>([]);
+  let hasSelectedTicketOrders = $state(false);
 
   let event = $state<any>(null);
   let waiverEnabled = $state(false);
@@ -880,6 +884,19 @@
       searchable: true,
       dataType: "string" as const,
     },
+    {
+      key: "refund_button",
+      label: "Refund",
+      visible: true,
+      searchable: true,
+      dataType: "string" as const,
+      // format: (value: any, _: any) => ({
+      //   console.log(value);
+      //   display: value.refund_requests.length > 0
+      //     ? `<button class="grant-refund-btn" data-order-id="${value.id}">Grant Refund</button>`
+      //     : `<button class="view-refund-btn" data-order-id="${value.id}">View Refund Request</button>`,
+      // }),
+    },
   ];
 
   // Handle student selection changes
@@ -895,6 +912,14 @@
     selectedTeams = selectedData;
     hasSelectedTeams = count > 0;
   }
+
+  function handleTicketOrderSelectionChange(event: CustomEvent) {
+    const { selectedData, count } = event.detail;
+    selectedTicketOrders = selectedData;
+    hasSelectedTicketOrders = count  == 1;
+    console.log(selectedTicketOrders);
+  }
+
   // Open transfer modal
   function openTransferModal() {
     // Reset previous state
@@ -924,6 +949,10 @@
     ticketOrderID = "admin-";
     ticketOrderSuccess = null;
     showTicketOrderModal = true;
+  }
+
+  function openRefundModal() {
+    showRefundModal = true;
   }
 
   // Execute the transfer based on selected options
@@ -1931,13 +1960,22 @@
       if (dataTypes.includes("ticket_orders")) {
         const { data, error } = await supabase
           .from("ticket_orders")
-          .select("*")
+          .select("*, refund_requests(*)")
           .filter("event_id", "eq", event_id);
         if (error) {
           handleError(error);
           return;
         }
-        ticketOrders = data;
+        console.log("data", data);
+
+
+        ticketOrders = data.map((order) => ({
+    ...order,
+    refund_button: order.refund_requests.length > 0
+      ? `Pending Requests`
+      : `No Refunds`,
+  }));
+        // ticketOrders = data;
       }
 
       // Update relationships AFTER all data is loaded
@@ -2197,6 +2235,16 @@
           >
             Reload
           </Button>
+          {#if hasSelectedTicketOrders}
+          <Button
+            color="primary"
+            on:click={openRefundModal}
+            class="flex items-center gap-2"
+          >
+            <ArrowRightAltSolid class="w-4 h-4" />
+            View Refunds
+          </Button>
+        {/if}
         {/snippet}
         <CustomTable
           data={ticketOrders}
@@ -2209,6 +2257,7 @@
           idField="id"
           debounceSearch={400}
           lazyLoad={true}
+          on:selectionChange={handleTicketOrderSelectionChange}
           {actions}
         ></CustomTable>
       {/if}
@@ -2727,6 +2776,86 @@
         Insert
       </Button>
     </svelte:fragment>
+  </Modal>
+
+  <!-- Refund Modal -->
+  <Modal bind:open={showRefundModal}>
+
+
+    {#if selectedTicketOrders[0]?.refund_requests && selectedTicketOrders[0]?.refund_requests.length > 0}
+    <div class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+      <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+        Existing Refund Requests
+      </h3>
+      <ul class="space-y-2">
+        {#each selectedTicketOrders[0]?.refund_requests as request}
+          <li class="flex items-center rounded-md bg-gray-50 p-3 dark:bg-gray-800">
+            <div class="flex-1">
+              <p class="text-sm font-medium text-gray-900 dark:text-white">
+                Request ID: <span class="font-semibold">{request.id}</span>
+              </p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Status: <span class="font-semibold">{request.refund_status}</span>,
+                Quantity: <span class="font-semibold">{request.quantity}</span>
+              </p>
+              {#if request.message}
+                  <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Message: <span class="font-semibold">{request.message}</span>
+                  </p>
+              {/if}
+            </div>
+            {#if request.refund_status === 'APPROVED'}
+              <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-200 dark:text-green-900">
+                Approved
+              </span>
+            {:else if request.refund_status === 'PENDING'}
+              <!-- <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-200 dark:text-yellow-900">
+                Pending
+              </span> -->
+              <div class="flex items-center gap-2">
+                <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-200 dark:text-yellow-900">
+                  Pending
+                </span>
+                <input type="number" min="1" max={request.quantity} class="w-16 border rounded p-1 text-sm" placeholder="Qty" />
+                <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-xs">Approve</button>
+                <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs">Deny</button>
+              </div>
+            {:else if request.refund_status === 'DENIED'}
+              <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-200 dark:text-red-900">
+                Denied
+              </span>
+            {:else}
+              <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800 dark:bg-gray-200 dark:text-gray-900">
+                {request.refund_status}
+              </span>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
+  
+    <div class="p-6">
+      <div class="p-6">
+        <h2 class="text-xl font-semibold">Grant Additional Refund</h2>
+        <p class="text-sm text-gray-600">Enter the number of additional tickets to refund.</p>
+    
+        <div class="mt-4">
+          <label class="block text-sm font-medium text-gray-700">Refund Quantity:</label>
+          <Input
+            type="number"
+            min="1"
+            max={selectedTicketOrders[0]?.quantity || 1}
+            placeholder="Number of tickets to refund"
+          />
+        </div>
+      </div>
+  
+      <div class="mt-6 flex justify-end gap-2">
+        <Button on:click={() => (showRefundModal = false)}>Close</Button>
+        <!-- <Button on:click={handleRefundRequest} color="blue">Submit</Button> -->
+      </div>
+    </div>
   </Modal>
 </div>
 
