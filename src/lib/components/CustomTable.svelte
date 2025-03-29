@@ -88,6 +88,11 @@
     linkedToColumn?: string; // New property to link this column to another column
   };
 
+  // Fixed return type for formatted values
+  type FormattedValue = 
+    | { text: string; isBadge: true; color?: string; cellStyle?: string; } 
+    | { text: any; isBadge: false; cellStyle?: string; component?: any; props?: any; };
+
   // Props definitions using runes API - updated to use arrays
   const props: {
     data: any[]; // Changed from Record<string | number, any> to any[]
@@ -100,7 +105,7 @@
       format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string);
       linkedToColumn?: string; // Add linkedToColumn property to props interface
     }[]);
-    entityType: string; // Changed from enum to string to make it more generic
+    entityType: string;  // Changed from enum to string to make it more generic
     // A custom renderer for specific columns.
     // Takes in the column being processed and the row (as any).
     component_renderer?: Snippet<[UnifiedColumn, any]>;
@@ -369,7 +374,23 @@
     
     if (savedState?.visibility) {
       // Initialize from saved state
-      return savedState.visibility;
+      const mergedVisibility: Record<string, boolean> = {};
+      
+      // Start with all columns with their default visibility
+      allColumns.forEach(col => {
+        // Frozen columns must always be visible
+        if (col.frozen) {
+          mergedVisibility[col.displayKey] = true;
+        } 
+        // Use saved visibility if available, otherwise use column definition
+        else if (savedState.visibility[col.displayKey] !== undefined) {
+          mergedVisibility[col.displayKey] = savedState.visibility[col.displayKey];
+        } else {
+          mergedVisibility[col.displayKey] = col.visible;
+        }
+      });
+      
+      return mergedVisibility;
     } else {
       // Initialize from provided columns
       let initialVisibility: Record<string, boolean> = {};
@@ -639,14 +660,14 @@
   }
 
   // Get formatted value for display
-  function getFormattedValue(column: UnifiedColumn, row: any): { text: string; isBadge: true; color?: string; }|{ text: any; isBadge: false; } {
+  function getFormattedValue(column: UnifiedColumn, row: any): FormattedValue {
     // Handle columns with formatters
     if (column.format && column.format != "column-snippet") {
       const formatted = column.format(row[column.dataKey], row);
       if (typeof formatted === 'string') {
         return { text: formatted || '-', isBadge: false };
       }
-      return formatted;
+      return formatted as FormattedValue;
     }
     
     // Handle columns without formatters
@@ -846,6 +867,66 @@
   // Set up mutation observer to detect DOM changes
   let mutationObserver: MutationObserver | null = null;
   
+  // Function to load more rows
+  function loadMoreRows() {
+    console.time('Loading more rows');
+    visibleRowCount += batchSize;
+    console.timeEnd('Loading more rows');
+  }
+  
+  // Set up intersection observer once DOM is mounted
+  function setupIntersectionObserver() {
+    if (!isLazyLoading) return;
+    
+    // Clean up any existing observer
+    if (intersectionObserver) {
+      intersectionObserver.disconnect();
+    }
+    
+    // If tableBottomRef isn't available yet, try to find it
+    if (!tableBottomRef) {
+      tableBottomRef = document.querySelector('[data-table-bottom-ref]');
+      if (!tableBottomRef) {
+        console.log('tableBottomRef element not found, will try again later');
+        // Try again after a short delay
+        setTimeout(() => setupIntersectionObserver(), 100);
+        return;
+      }
+    }
+    
+    console.log('Setting up intersection observer', tableBottomRef);
+    
+    // Create new observer
+    intersectionObserver = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry && entry.isIntersecting && visibleRowCount < filteredData.length) {
+        console.log('Loading more rows triggered by intersection', visibleRowCount, filteredData.length);
+        loadMoreRows();
+      }
+    }, { 
+      rootMargin: '200px',
+      threshold: 0.1 // Add threshold to ensure more reliable triggering
+    });
+    
+    // Start observing
+    try {
+      intersectionObserver.observe(tableBottomRef);
+    } catch (err) {
+      console.error('Error observing table bottom reference:', err);
+    }
+  }
+  
+  // Use effect to set up observer when tableBottomRef changes or when filteredData changes
+  $effect(() => {
+    // Only reset visible row count when filtered data changes significantly
+    // This condition prevents resetting during small changes that might happen during search
+    if (tableBottomRef && filteredData.length > 0) {
+      if (props.lazyLoad) {
+        setupIntersectionObserver();
+      }
+    }
+  });
+
   // Override the component lifecycle
   onMount(() => {
     // Initially populate columns
@@ -860,33 +941,37 @@
     // Initialize pending filters
     pendingFilters = [...filters];
     
-    // Set up lazy loading intersection observer
-    if (props.lazyLoad) {
-      setupIntersectionObserver();
-    }
-    
-    // Set up a resize observer to recalculate positions when window resizes
-    const resizeObserver = new ResizeObserver(() => {
-      console.log("Resize observed");
-    });
-    
-    // Set up mutation observer to detect DOM changes that might affect column widths
-    mutationObserver = new MutationObserver((mutations) => {
-      console.log("DOM mutations observed");
-    });
-    
-    // Wait for DOM to be ready then observe
+    // Set up observers with a slight delay to ensure DOM is ready
     setTimeout(() => {
+      // First attempt at setting up intersection observer
+      if (props.lazyLoad) {
+        setupIntersectionObserver();
+      }
+      
+      // Set up a resize observer to recalculate positions when window resizes
+      const resizeObserver = new ResizeObserver(() => {
+        // When resize happens, re-setup the intersection observer
+        if (props.lazyLoad) {
+          setupIntersectionObserver();
+        }
+      });
+      
+      // Set up mutation observer to detect DOM changes that might affect column widths
+      mutationObserver = new MutationObserver((mutations) => {
+        // Re-initialize intersection observer when DOM changes
+        if (props.lazyLoad) {
+          setupIntersectionObserver();
+        }
+      });
+      
       // Observe the container element for resize
       const container = document.querySelector('.overflow-x-auto');
       if (container) {
-        console.log("Observing container for resize");
         resizeObserver.observe(container);
         
         // Observe table for DOM changes
         const table = container.querySelector('table');
         if (table && mutationObserver) {
-          console.log("Observing table for mutations");
           mutationObserver.observe(table, { 
             childList: true, 
             subtree: true,
@@ -897,17 +982,44 @@
       }
     }, 100);
     
+    // Additional safety check for lazy loading after a longer delay
+    if (props.lazyLoad) {
+      setTimeout(() => {
+        if (!intersectionObserver || !tableBottomRef) {
+          console.log('Delayed setup of intersection observer');
+          setupIntersectionObserver();
+        }
+      }, 500);
+    }
+    
     return () => {
       // Clean up observers on component destroy
-      resizeObserver.disconnect();
-      if (mutationObserver) mutationObserver.disconnect();
       if (intersectionObserver) intersectionObserver.disconnect();
+      if (mutationObserver) mutationObserver.disconnect();
     };
   });
   
-  // Recalculate positions when columns visibility changes
+  // When component is updated due to tab switching or other events that change visibility
   $effect(() => {
-    if (Object.keys(internalVisibleColumns).length > 0) {
+    // If lazy loading is enabled, ensure the observer is set up after the UI updates
+    if (props.lazyLoad && filteredData.length > visibleRowCount) {
+      // Small delay to allow DOM to update
+      setTimeout(() => {
+        setupIntersectionObserver();
+      }, 10);
+    }
+  });
+  
+  // Handle when data changes
+  $effect(() => {
+    if (props.data.length > 0 && props.lazyLoad) {
+      // Reset visible count when data source changes
+      visibleRowCount = props.initialBatchSize || 50;
+      
+      // Re-setup observer with a slight delay to allow DOM to update
+      setTimeout(() => {
+        setupIntersectionObserver();
+      }, 50);
     }
   });
 
@@ -995,34 +1107,34 @@
     }
   });
 
-  function formatCellValue(item: any, column: TableColumn) {
+  function formatCellValue(item: any, column: TableColumn): FormattedValue {
     // Use the column's format function if provided
     if (column.format) {
-      const formattedValue = column.format(item[column.key], item);
+      const formatted = column.format(item[column.key], item);
       
       // If the formatted value is a complex object with component info
-      if (formattedValue && typeof formattedValue === 'object' && !Array.isArray(formattedValue)) {
-        if (formattedValue.component) {
+      if (formatted && typeof formatted === 'object' && !Array.isArray(formatted)) {
+        if (formatted.component) {
           // Return the component with props
           return { 
-            text: formattedValue.text, 
-            isBadge: formattedValue.isBadge, 
-            color: formattedValue.color, 
-            component: formattedValue.component, 
-            props: formattedValue.props,
-            cellStyle: formattedValue.cellStyle
-          };
-        } else if ('text' in formattedValue) {
+            text: formatted.text, 
+            isBadge: formatted.isBadge, 
+            color: formatted.color, 
+            component: formatted.component, 
+            props: formatted.props,
+            cellStyle: formatted.cellStyle
+          } as FormattedValue;
+        } else if ('text' in formatted) {
           // Return a standard formatted value
           return { 
-            text: formattedValue.text, 
-            isBadge: formattedValue.isBadge, 
-            color: formattedValue.color,
-            cellStyle: formattedValue.cellStyle
-          };
+            text: formatted.text, 
+            isBadge: formatted.isBadge || false, 
+            color: formatted.color,
+            cellStyle: formatted.cellStyle
+          } as FormattedValue;
         }
       }
-      return { text: String(formattedValue), isBadge: false };
+      return { text: String(formatted), isBadge: false };
     }
     
     // Default formatting if no format function is provided
@@ -1037,63 +1149,6 @@
   // Element reference for infinite scrolling
   let tableBottomRef: HTMLElement | null = null;
   let intersectionObserver: IntersectionObserver | null = null;
-  
-  // Function to load more rows
-  function loadMoreRows() {
-    console.time('Loading more rows');
-    visibleRowCount += batchSize;
-    console.timeEnd('Loading more rows');
-  }
-  
-  // Set up intersection observer once DOM is mounted
-  function setupIntersectionObserver() {
-    if (!isLazyLoading) return;
-    
-    // Clean up any existing observer
-    if (intersectionObserver) {
-      intersectionObserver.disconnect();
-    }
-    
-    // Create new observer
-    intersectionObserver = new IntersectionObserver((entries) => {
-      const [entry] = entries;
-      if (entry.isIntersecting && visibleRowCount < filteredData.length) {
-        loadMoreRows();
-      }
-    }, { 
-      rootMargin: '200px',
-      threshold: 0.1 // Add threshold to ensure more reliable triggering
-    });
-    
-    // Start observing
-    if (tableBottomRef) {
-      intersectionObserver.observe(tableBottomRef);
-    }
-  }
-  
-  // Use effect to set up observer when tableBottomRef changes or when filteredData changes
-  $effect(() => {
-    if (tableBottomRef) {
-      // Reset visible row count when filtered data changes
-      visibleRowCount = props.initialBatchSize || 50;
-      setupIntersectionObserver();
-    }
-  });
-
-  // Clean up observer on component unmount or when lazy loading is disabled
-  $effect(() => {
-    if (!isLazyLoading && intersectionObserver) {
-      intersectionObserver.disconnect();
-      intersectionObserver = null;
-    }
-  });
-
-  onDestroy(() => {
-    if (intersectionObserver) {
-      intersectionObserver.disconnect();
-      intersectionObserver = null;
-    }
-  });
   
   // Get visible rows based on lazy loading settings
   function getVisibleRows(): any[] {
@@ -1344,7 +1399,7 @@
   </Modal>
   
   <!-- Improved table container with better overflow handling -->
-  <div class="relative overflow-x-auto rounded-md border border-gray-200">
+  <div class="relative overflow-x-auto rounded-md border border-gray-200 shadow-lg">
     <div class="max-h-[650px] overflow-y-auto overflow-x-visible">
       <table class="w-full text-sm text-left border-collapse table-compact themed-table table-auto">
         <thead class="text-xs uppercase border-b align-middle sticky top-0 z-10 bg-[color:var(--primary)] text-white">
@@ -1419,7 +1474,10 @@
                           <svelte:component this={formatted.component} {...formatted.props} />
                         </div>
                       {:else if formatted.isBadge}
-                        <Badge color={formatted.color || "blue"}>
+                        <Badge color={formatted.color === "blue" || formatted.color === "green" || formatted.color === "red" || 
+                                 formatted.color === "yellow" || formatted.color === "indigo" || formatted.color === "purple" || 
+                                 formatted.color === "pink" || formatted.color === "dark" || formatted.color === "primary" || 
+                                 formatted.color === "none" ? formatted.color : "blue"}>
                           {formatted.text}
                         </Badge>
                       {:else if column.format == "column-snippet"}
@@ -1439,7 +1497,7 @@
       
       <!-- Lazy loading indicator and loading reference -->
       {#if isLazyLoading && hasMoreRows}
-        <div bind:this={tableBottomRef} class="py-4 flex justify-center">
+        <div bind:this={tableBottomRef} class="py-4 flex justify-center" data-table-bottom-ref>
           <div class="flex items-center gap-2">
             <Spinner size="5" color="blue" />
             <span>Loading more rows...</span>
@@ -1447,7 +1505,7 @@
         </div>
       {:else if filteredData.length > 0}
         <!-- End of table marker - bind this element for intersection observer -->
-        <div bind:this={tableBottomRef} class="h-1"></div>
+        <div bind:this={tableBottomRef} class="h-1" data-table-bottom-ref></div>
       {/if}
     </div>
   </div>
@@ -1631,7 +1689,7 @@
   /* Consolidated table styling */
   :global(.table-compact) {
     border-collapse: collapse;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     border-radius: 0.375rem;
   }
   

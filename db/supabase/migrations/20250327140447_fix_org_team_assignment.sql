@@ -27,7 +27,7 @@ BEGIN
 
   -- If the function returns false, raise an exception to prevent the operation
   IF NOT v_result THEN
-    RAISE EXCEPTION 'Student team requirements not met.';
+    RAISE EXCEPTION 'An impossible error has occurred. Please email admin@comp.mt immediately if you have encountered this';
   END IF;
 
   RETURN NEW; -- For INSERT/UPDATE, return the new row

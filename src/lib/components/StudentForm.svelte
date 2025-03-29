@@ -29,7 +29,8 @@
     student_event = $bindable(null),
     user,
     event_id,
-    editing=false
+    editing=false,
+    afterSubmit = () => {}
   } = $props();
 
   let token: string | null = null;
@@ -70,7 +71,9 @@
       handleError(error);
       return;
     }
-    //document.location.reload();
+
+    afterSubmit();
+
     return;
   }
 

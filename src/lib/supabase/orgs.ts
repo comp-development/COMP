@@ -1,3 +1,4 @@
+import toast from "$lib/toast.svelte";
 import { supabase } from "../supabaseClient";
 
 export async function getOrganization(org_id: number) {
@@ -32,7 +33,7 @@ export async function getOrganizationDetails(org_id: number, event_id: number) {
   if (coachError) throw coachError;
 
   const orgData = data as any;
-  
+
   orgData.coaches = coachData;
 
   const teams = await getOrganizationTeams(org_id, event_id);
@@ -127,6 +128,123 @@ export async function getCoachOrganizations(coach_id: string) {
   return data;
 }
 
+export async function inviteUserToOrgEvent(org_id: number, event_id: number, emails: string[]) {
+  const { data, error } = await supabase
+    .from("org_events")
+    .select("invites")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .single();
+
+  if (error) throw error;
+
+  let invites = data.invites;
+  let newInvites = [];
+
+  //Check if emails are valid
+  let allValid = true;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!invites) {
+    invites = emails;
+  } else {
+    emails.forEach((email) => {
+      const trimmed = email.trim();
+
+      if (emailRegex.test(trimmed)) {
+        if (!invites.includes(trimmed)) {
+          invites.push(trimmed);
+          newInvites.push(trimmed);
+        }
+      } else {
+        allValid = false;
+      }
+    });
+  }
+
+  if (!allValid) {
+    toast.error("One or more of the emails are invalid and were not added");
+  }
+
+  // Fetch student data and check if they are already in a team or org
+  const { data: students, error: studentsError } = await supabase
+    .from("students")
+    .select("student_id, email")
+    .in("email", invites);
+
+  if (studentsError) throw studentsError;
+
+  const studentIds = students.map(student => student.student_id);
+
+  const { data: studentEvents, error: studentEventsError } = await supabase
+    .from("student_events")
+    .select("student_id, team_id, org_id")
+    .in("student_id", studentIds);
+
+  if (studentEventsError) throw studentEventsError;
+
+  const duplicateEmails = studentEvents
+    .filter(event => event.team_id || event.org_id)
+    .map(event => students.find(student => student.student_id === event.student_id)?.email);
+
+  if (duplicateEmails.length > 0) {
+    toast.error("Some students are already in a team or organization");
+    newInvites = newInvites.filter(email => !duplicateEmails.includes(email));
+    invites = invites.filter(email => !duplicateEmails.includes(email));
+  }
+
+  // Insert invitations
+  const { error: updateError } = await supabase
+    .from("org_events")
+    .update({ invites })
+    .eq("org_id", org_id)
+    .eq("event_id", event_id);
+
+  if (updateError) throw updateError;
+
+  return { newInvites, invites };
+}
+
+export async function removeUserInvitationFromOrgEvent(org_id: number, event_id: number, email: string) {
+  const { data, error: fetchError } = await supabase
+    .from("org_events")
+    .select("invites")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  let invites = data.invites;
+  let newInvites;
+
+  if (invites) {
+    newInvites = invites.filter((invite: string) => invite !== email);
+  }
+
+  if (invites && newInvites.length != invites.length) {
+    const { error: updateError } = await supabase
+      .from("org_events")
+      .update({ invites: newInvites })
+      .eq("org_id", org_id)
+      .eq("event_id", event_id);
+
+    if (updateError) throw updateError;
+  }
+}
+
+export async function checkUserInvitedToOrgEvent(org_id: number, event_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("org_events")
+    .select("invites")
+    .eq("org_id", org_id)
+    .eq("event_id", event_id)
+    .single();
+  if (error) throw error;
+
+  return data.invites.includes(email);
+}
+
 export async function addCoachToOrganization(coach_id: string, org_id: number) {
   const { data, error } = await supabase
     .from("org_coaches")
@@ -174,7 +292,7 @@ export async function getOrganizationTeams(org_id: number, event_id: number) {
 export async function ifOrgEvent(event_id: number, org_id: number) {
   const { data, error } = await supabase
     .from("org_events")
-    .select("*")
+    .select("*, event:events(*)")
     .eq("event_id", event_id)
     .eq("org_id", org_id)
     .maybeSingle();

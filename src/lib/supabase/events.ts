@@ -518,74 +518,6 @@ export async function upsertEventCustomFields(
     ? custom_fields
     : [custom_fields];
 
-  // First, get all existing custom fields and event_custom_fields for this event
-  const { data: existingEventFields, error: fetchError } = await supabase
-    .from("event_custom_fields")
-    .select("*, custom_fields(*)")
-    .eq("event_id", event_id);
-
-  if (fetchError) throw fetchError;
-
-  // Create sets of IDs that currently exist in the database
-  const existingEventCustomFieldIds = new Set(
-    existingEventFields?.map((f) => f.event_custom_field_id)
-  );
-  const existingCustomFieldIds = new Set(
-    existingEventFields?.map((f) => f.custom_field_id)
-  );
-
-  // Create sets of IDs that should remain after the update
-  const remainingEventCustomFieldIds = new Set(
-    fieldsArray
-      .filter((f) => f.event_custom_field_id)
-      .map((f) => f.event_custom_field_id)
-  );
-  const remainingCustomFieldIds = new Set(
-    fieldsArray
-      .filter((f) => f.custom_field_id && !f.host_id)
-      .map((f) => f.custom_field_id)
-  );
-
-  // Delete event_custom_fields that are no longer present
-  const eventCustomFieldsToDelete = [...existingEventCustomFieldIds].filter(
-    (id) => !remainingEventCustomFieldIds.has(id)
-  );
-
-  if (eventCustomFieldsToDelete.length > 0) {
-    const { error: deleteEventFieldsError0 } = await supabase
-      .from("custom_field_values")
-      .delete()
-      .in("event_custom_field_id", eventCustomFieldsToDelete);
-
-    if (deleteEventFieldsError0) throw deleteEventFieldsError0;
-
-    const { error: deleteEventFieldsError } = await supabase
-      .from("event_custom_fields")
-      .delete()
-      .in("event_custom_field_id", eventCustomFieldsToDelete);
-
-    if (deleteEventFieldsError) throw deleteEventFieldsError;
-  }
-
-  // Delete custom_fields that are no longer present and don't have a host_id
-  const customFieldsToDelete = [...existingCustomFieldIds]
-    .filter((id) => !remainingCustomFieldIds.has(id))
-    .filter((id) => {
-      const field = existingEventFields?.find(
-        (f) => f.custom_field_id === id
-      )?.custom_fields;
-      return field && !field.host_id;
-    });
-
-  if (customFieldsToDelete.length > 0) {
-    const { error: deleteCustomFieldsError } = await supabase
-      .from("custom_fields")
-      .delete()
-      .in("custom_field_id", customFieldsToDelete);
-
-    if (deleteCustomFieldsError) throw deleteCustomFieldsError;
-  }
-
   // Continue with the existing upsert logic
   const formatFieldData = (field) => ({
     key: field.key,
@@ -667,7 +599,7 @@ export async function upsertEventCustomFields(
           ordering: fieldsArray.indexOf(field) + 1,
         }))
       )
-      .select();
+      .select("*, custom_fields!inner(*)");
     if (error) throw error;
     insertedEventFields = data || [];
   }
@@ -684,12 +616,78 @@ export async function upsertEventCustomFields(
           ordering: fieldsArray.indexOf(field) + 1,
         }))
       )
-      .select();
+      .select("*, custom_fields!inner(*)");
     if (error) throw error;
     updatedEventFields = data || [];
   }
 
-  return [...insertedEventFields, ...updatedEventFields];
+  let data = [...insertedEventFields, ...updatedEventFields];
+
+  let flattenedData = data.map((record: any) => {
+    console.log(record);
+    if (record.custom_fields) {
+      record = { ...record, ...record.custom_fields };
+      delete record.custom_fields;
+    }
+    return record;
+  });
+
+  return flattenedData.sort((a, b) => a.ordering - b.ordering);
+}
+
+export async function deleteCustomFields(custom_field: any, is_event_field: boolean) {
+  console.log("custom field getting deleted", custom_field);
+  if (!custom_field || !("custom_field_id" in custom_field)) return;
+
+  if (is_event_field) {
+    if ("event_custom_field_id" in custom_field) {
+      const { error: deleteEventCustomFieldValueError } = await supabase
+        .from("custom_field_values")
+        .delete()
+        .eq("event_custom_field_id", custom_field.event_custom_field_id);
+
+      if (deleteEventCustomFieldValueError) throw deleteEventCustomFieldValueError;
+
+      const { error: deleteEventCustomFieldError } = await supabase
+        .from("event_custom_fields")
+        .delete()
+        .eq("event_custom_field_id", custom_field.event_custom_field_id);
+
+      if (deleteEventCustomFieldError) throw deleteEventCustomFieldError;
+    }
+  } else {
+    const { data: eventCustomFields, error: fetchEventCustomFieldsError } = await supabase
+      .from("event_custom_fields")
+      .select("*")
+      .eq("custom_field_id", custom_field.custom_field_id);
+
+    if (fetchEventCustomFieldsError) throw fetchEventCustomFieldsError;
+    
+    for (const eventCustomField of eventCustomFields) {
+      const { error: deleteEventCustomFieldValueError } = await supabase
+        .from("custom_field_values")
+        .delete()
+        .eq("event_custom_field_id", eventCustomField.event_custom_field_id);
+
+      if (deleteEventCustomFieldValueError) throw deleteEventCustomFieldValueError;
+
+      const { error: deleteEventCustomFieldError } = await supabase
+        .from("event_custom_fields")
+        .delete()
+        .eq("event_custom_field_id", eventCustomField.event_custom_field_id);
+
+      if (deleteEventCustomFieldError) throw deleteEventCustomFieldError;
+    }
+  }
+
+  if (is_event_field ? custom_field.event_id != null : custom_field.host_id != null) {
+    const { error: deleteCustomFieldError } = await supabase
+      .from("custom_fields")
+      .delete()
+      .eq("custom_field_id", custom_field.custom_field_id);
+
+    if (deleteCustomFieldError) throw deleteCustomFieldError;
+  }
 }
 
 export async function upsertHostCustomFields(
@@ -703,43 +701,6 @@ export async function upsertHostCustomFields(
   const fieldsArray = Array.isArray(custom_fields)
     ? custom_fields
     : [custom_fields];
-
-  // First, get all existing custom fields and event_custom_fields for this event
-  const { data: existingEventFields, error: fetchError } = await supabase
-    .from("custom_fields")
-    .select("*")
-    .eq("host_id", host_id);
-
-  if (fetchError) throw fetchError;
-
-  const existingCustomFieldIds = new Set(
-    existingEventFields?.map((f) => f.custom_field_id)
-  );
-
-  const remainingCustomFieldIds = new Set(
-    fieldsArray
-      .filter((f) => f.custom_field_id && !f.host_id)
-      .map((f) => f.custom_field_id)
-  );
-
-  // Delete custom_fields that are no longer present and don't have a host_id
-  const customFieldsToDelete = [...existingCustomFieldIds]
-    .filter((id) => !remainingCustomFieldIds.has(id))
-    .filter((id) => {
-      const field = existingEventFields?.find(
-        (f) => f.custom_field_id === id
-      )?.custom_fields;
-      return field && !field.host_id;
-    });
-
-  if (customFieldsToDelete.length > 0) {
-    const { error: deleteCustomFieldsError } = await supabase
-      .from("custom_fields")
-      .delete()
-      .in("custom_field_id", customFieldsToDelete);
-
-    if (deleteCustomFieldsError) throw deleteCustomFieldsError;
-  }
 
   // Continue with the existing upsert logic
   const formatFieldData = (field) => ({

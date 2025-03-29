@@ -1,5 +1,28 @@
 import { supabase } from "../supabaseClient";
 
+export async function createTest(testData: {}) {
+  const { data, error } = await supabase
+    .from("tests")
+    .insert([testData])
+    .select("*")
+    .single();
+
+  if (error) { throw error; }
+  return data;
+}
+
+export async function editTest(test_id: number, testData: {}) {
+  const { data, error } = await supabase
+    .from("tests")
+    .update(testData)
+    .eq("test_id", test_id)
+    .select("*")
+    .single();
+
+  if (error) { throw error; }
+  return data;
+}
+
 /** Fetches test problems given a test id. Ordered by problem number
  *
  * @param test_id number
@@ -213,17 +236,4 @@ export async function updateTest(test_id, testData) {
   }
 
   return true;
-}
-
-export async function createTest(testData) {
-  const { data, error } = await supabase
-    .from("tests")
-    .insert([testData])
-    .select();
-
-  if (error) {
-    throw error;
-  }
-
-  return data[0];
 }

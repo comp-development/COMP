@@ -288,7 +288,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
       if (existing_requests_error) {
         return new Response("error verifying existing requests", {
-          status: 500,
+          status: 400,
         });
       }
       const approved_refunded_tickets: number =

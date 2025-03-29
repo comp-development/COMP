@@ -1,49 +1,40 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import Loading from "$lib/components/Loading.svelte";
-  import { getHostInformation, userJoinAsHostAdmin, getThisUser } from "$lib/supabase";
+  import { getHostInformation, userJoinAsHostAdmin, getThisUser, checkUserInvitedToHost, removeUserInvitationFromHost } from "$lib/supabase";
   import { Button } from "flowbite-svelte";
   import { handleError } from "$lib/handleError";
   import toast from "$lib/toast.svelte";
 
   let loading = $state(true);
   let host = $state(null);
+  let user = $state(null);
   let user_id = $state(null);
 
  (async () => {
     try {
-      let email = $page.url.searchParams.get('email');
       let host_id = $page.url.searchParams.get('host_id');
-      let hashed_host_id = $page.url.searchParams.get('hashed_host_id');
+      user = await getThisUser();
 
-      let user = await getThisUser();
-      if (user.email != email) {
-        throw new Error("You are not logged into the correct account.");
+      let isInvited = await checkUserInvitedToHost(host_id, user.email);
+      if (!isInvited) {
+        throw new Error("User is not invited to this host.");
       }
+
       user_id = user.id;
-
-      const response = await fetch(`/api/hash_data`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, host_id })
-      });
-      const data = await response.json();
-      if (data.error) throw data.error;
-
-      if (data.hash != hashed_host_id) {
-        throw new Error("Hash is incorrect.");
-      }
-
       host = await getHostInformation(host_id);
       loading = false;
     } catch (err) {
       handleError(err);
+      window.location.href = `/`;
     }
   })();
 
   async function acceptInvitation() {
     try {
       await userJoinAsHostAdmin(user_id, host.host_id);
+      await removeUserInvitationFromHost(host.host_id, user.email);
+
       toast.success("You have successfully joined the host!");
       window.location.href = `/admin/${host.host_id}`;
     } catch (err) {
@@ -55,9 +46,11 @@
 {#if loading}
   <Loading />
 {:else}
-  <div class="flex flex-col items-center justify-center p-4">
-    <img src={host.logo} alt="Logo" class="w-32 h-32 mb-6" />
-    <h2 class="text-center mb-2">You have been invited to join {host?.host_name}</h2>
-    <Button color="primary" onclick={() => acceptInvitation()}>Accept Invitation</Button>
+  <div class="p-10">
+    <div class="relative flex items-center space-x-4 mb-6">
+      <img src={host.logo} alt="Host Logo" class="w-36 h-36 rounded-full" />
+    </div>
+    <h2 class="text-center text-xl font-semibold mb-5">You have been invited to join {host?.host_name}</h2>
+    <Button color="primary" pill onclick={acceptInvitation}>Accept Invitation</Button>
   </div>
 {/if}

@@ -7,13 +7,13 @@
   import { getAdmin, getAdminHosts } from "$lib/supabase";
   import EditNameForm from "$lib/components/EditNameForm.svelte";
 
-  let student: any = $state();
+  let admin: any = $state();
   let hosts = $state([]);
   let loading = $state(true);
 
   async function loadData() {
     try {
-      student = await getAdmin($user!.id);
+      admin = await getAdmin($user!.id);
       hosts = await getAdminHosts($user!.id);
       loading = false;
     } catch (error) {
@@ -30,10 +30,10 @@
   <Loading />
 {:else}
   <div class="flex items-center gap-1">
-    <h1>Welcome, {student.first_name} {student.last_name}</h1>
+    <h1>Welcome, {admin.first_name} {admin.last_name}</h1>
     <EditNameForm 
-      firstName={student.first_name} 
-      lastName={student.last_name} 
+      firstName={admin.first_name} 
+      lastName={admin.last_name} 
       userType="admin" 
       onUpdate={loadData}
     />

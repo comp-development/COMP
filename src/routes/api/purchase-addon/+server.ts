@@ -130,7 +130,7 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
           currency: "USD",
           unit_amount: add_on.price_cents,
           product_data: {
-            name: `${add_on.addon_name} for ${event_data.event_name}`,
+            name: `${add_on.label} for ${event_data.event_name}`,
           },
         },
         quantity: addon.quantity,
@@ -221,7 +221,7 @@ export const GET: RequestHandler = async (request: RequestEvent) => {
     if (descriptionParts.length < 1) continue;
     
     const addonName = descriptionParts[0];
-    const matchingAddon = addons.find(a => a.addon_name === addonName);
+    const matchingAddon = addons.find(a => a.label === addonName);
     
     if (!matchingAddon) continue;
 

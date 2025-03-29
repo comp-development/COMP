@@ -2,6 +2,7 @@ import { type RequestEvent, type RequestHandler } from "@sveltejs/kit";
 import { Stripe } from "stripe";
 import { adminSupabase } from "$lib/adminSupabaseClient";
 import { env } from "$env/dynamic/private";
+import { removeUserInvitationFromTeam } from "$lib/supabase";
 
 const stripeSecretKey = env.STRIPE_SECRET_API_KEY;
 
@@ -82,31 +83,39 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       await adminSupabase
         .from("student_events")
         .select(
-          "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*))",
+          "*, team:teams(*, student_event:student_events(*, student:students(*))), org_event:org_events(*, org:orgs(*)), event:events(*)",
         )
         .eq("student_id", user.id)
         .eq("event_id", event_id)
         .maybeSingle();
     wrap_supabase_error(
-      "fetching student event information",
+      "You are not registered for this tournament",
       student_event_details,
       details_error,
     );
 
     if (student_event_details?.team != null) {
-      return construct_response({ failure: { reason: "already in a team" } });
+      return construct_response({ failure: { reason: "You are already in a team" } });
     }
 
     let { data: team_data, error: team_error } = await adminSupabase
       .from("teams")
-      .select("team_id, org_id")
+      .select("team_id, org_id, team_members:student_events(*)")
       .eq("join_code", join_code)
       .maybeSingle();
     wrap_supabase_error(
-      "fetching team id for join code. team may not exist",
+      "fetching team id for join code. Team may not exist",
       team_data,
       team_error,
     );
+    
+    if (team_data.org_id != (student_event_details.org_event ? student_event_details.org_event.org_id : null)) {
+      throw new Error("This team is not associated with this organization");
+    }
+
+    if (team_data.team_members.length >= student_event_details.event.max_team_size) {
+      throw new Error("Team is full");
+    }
 
     // If the join code is for an org team, add the student to the org.
     if (team_data!.org_id) {
@@ -213,10 +222,12 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
       );
     wrap_supabase_error("adding student to team", 0, student_team_error);
 
+    await removeUserInvitationFromTeam(Number(team_data!.team_id), user.email + "");
+
     return construct_response({ success: { team_join_code: join_code } });
   } catch (e: any) {
     return construct_response({
-      failure: { reason: "failed to execute: " + e.message },
+      failure: { reason: "Failed to execute: " + e.message },
     });
   }
 };

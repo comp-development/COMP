@@ -37,6 +37,7 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
   import StudentTeam from "$lib/components/StudentTeam.svelte";
+
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   // let ticket_order: Tables<"ticket_orders"> | null = null;
@@ -57,17 +58,6 @@
   let host = $state();
   let selectedOption: "join_org" | "join_team" | "create_team" =
     $state("join_org");
-
-  const afterTeamSubmit = async () => {
-    // If this callback is called, then the student must've been in the event => student_event is non-null.
-    // Also, we assume the TeamForm component created a team => team is not null.
-    await updateStudentTeam(
-      student_event!.student_event_id,
-      team!.team_id,
-      team!.org_id,
-    );
-    student_event!.team = team!;
-  };
 
   const orgJoinSubmit = async (_: Event) => {
     try {
@@ -286,6 +276,7 @@
           <div class="teamContainer">
             <StudentTeam
               {event_id}
+              {host_id}
               org_id={team?.org_id}
               team={{
                 ...team,
@@ -299,6 +290,8 @@
               showTeamCode={org_event ? false : true}
               waiverType={event_details?.waivers?.type ?? "none"}
               editableFeatures={false}
+              user={student}
+              {event_details}
               onDrop={() => {}}
               onDragStart={() => {}}
               onDeleteStudent={() => {}}
@@ -328,10 +321,18 @@
             open={selectedOption === "join_org"}
             title="Join Organization"
             divClass="bg-[var(--background)]"
+            style="border: 2px solid var(--primary); padding: 10px 16px;"
           >
             <h2>Join Organization</h2>
             <p>
               Get your organization join code from your organization's coach.
+            </p>
+            <p>
+              <em>
+                If you are registering as an individual, or want to create a
+                team independent of an organization (without a coach), please
+                <strong>create an independent team</strong> instead.
+              </em>
             </p>
             <CustomForm
               fields={[
@@ -361,6 +362,7 @@
               open={selectedOption === "join_team"}
               title="Join Independent Team"
               divClass="bg-[var(--background)]"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <h2>Join Independent Team</h2>
               <p>Get the code from an already registered team member.</p>
@@ -408,11 +410,17 @@
             open={selectedOption === "create_team"}
             title="Create Independent Team"
             divClass="bg-[var(--background)]"
+            style="border: 2px solid var(--primary); padding: 10px 16px;"
           >
             <h2>Create Independent Team</h2>
             <p>
-              If you're an individual, or you want to create a team independent
-              of an org, then create an independent team.
+              If you're an individual, or you want to create a team independent of an org, then create an independent team.
+            </p>
+            <p>
+              <em>
+                If you want to register as part of an organization with a coach,
+                please <strong>create an organization</strong> instead.
+              </em>
             </p>
             <br />
             <div class="flex">
@@ -458,6 +466,21 @@
     user={{ ...student, ...$user }}
     {event_id}
     editing={student_event ? true : false}
+    afterSubmit={() => {
+      let org_join_code = $page.url.searchParams.get("org_join_code");
+      if (org_join_code) {
+        document.location.assign(
+          `/student/${$page.params.host_id}/${$page.params.event_id}/join-org/${org_join_code}`,
+        );
+      }
+      
+      let team_join_code = $page.url.searchParams.get("team_join_code");
+      if (team_join_code) {
+        document.location.assign(
+          `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${team_join_code}`,
+        );
+      }
+    }}
   />
   {#if student_event && !org_event}
   <Button

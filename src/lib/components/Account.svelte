@@ -12,6 +12,7 @@
   import { Tabs, TabItem, Alert } from "flowbite-svelte";
   import { InfoCircleSolid } from "flowbite-svelte-icons";
   import Logo from "$lib/components/Logo.svelte";
+  import { page } from '$app/stores';
 
   // Instead of using an enum for login state, we'll just use string literals.
   // Define the allowed login states.
@@ -56,6 +57,7 @@
           const user = await createAccount(
             newResponses.email,
             newResponses.password,
+            $page.url.pathname
           );
 
           console.log("USER", user)
