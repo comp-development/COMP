@@ -182,9 +182,9 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
         (sum, order) => sum + (order.quantity || 0),
         0
         ) || 0;
-    console.log("total_active_tickets", total_active_tickets);
-    console.log("total_refunded_tickets", total_refunded_tickets);
-    console.log("used_tickets", used_tickets);
+      console.log("total_active_tickets", total_active_tickets);
+      console.log("total_refunded_tickets", total_refunded_tickets);
+      console.log("used_tickets", used_tickets);
 
     if (
         total_active_tickets - total_refunded_tickets <
