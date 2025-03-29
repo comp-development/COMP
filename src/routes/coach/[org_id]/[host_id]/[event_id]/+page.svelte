@@ -352,8 +352,6 @@
 
       // Close the modal and reset the input
       isTeamModalOpen = false;
-      teamName = "";
-      editingTeamId = null;
     } catch (error) {
       handleError(error);
     }
@@ -609,17 +607,18 @@
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
           </Button>
+          <AddOnButton 
+            event_id={event_id} 
+            host_id={host_id} 
+            org_event_id={organizationDetails.event?.org_event_id} 
+            buttonLabel="Purchase Add-ons"
+          />
           <Button pill outline color="primary" onclick={() => (isModalOpen = true)}>
             <UserAddSolid class="w-4 h-4 me-2" />
             Invite Students
           </Button>
+          
         </ButtonGroup>
-        <AddOnButton 
-          event_id={event_id} 
-          host_id={host_id} 
-          org_event_id={organizationDetails.event?.org_event_id} 
-          buttonLabel="Purchase Add-ons"
-        />
       </div>
 
       <div class="grid-container">

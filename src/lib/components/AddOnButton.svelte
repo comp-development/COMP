@@ -57,6 +57,7 @@
       const availableAddons = await getEventAddons(props.event_id, entityType);
       console.log("Available addons:", availableAddons);
       hasAddons = availableAddons.length > 0;
+      console.log("Has addons:", hasAddons);
     } catch (error) {
       handleError(error instanceof Error ? error : new Error(String(error)));
       hasAddons = false;
@@ -141,6 +142,11 @@
     }
   }
 
+  // Check if an addon can be purchased (is enabled)
+  function canPurchase(addon: Addon) {
+    return addon.enabled;
+  }
+
   function getTotalItems() {
     return Object.values(quantities).reduce((sum, quantity) => sum + quantity, 0);
   }
@@ -210,7 +216,7 @@
     {/if}
   </Button>
 
-  <Modal bind:open={isOpen} size="xl" title="Purchase Add-ons" outsideclose>
+  <Modal bind:open={isOpen} size="xl" title="View Add-ons" outsideclose>
     {#if loading}
       <div class="flex justify-center p-8">
         <div class="animate-spin h-8 w-8 border-4 border-primary-500 rounded-full border-t-transparent"></div>
@@ -232,7 +238,7 @@
             {#each addons as addon}
               <TableBodyRow>
                 <TableBodyCell>
-                  {addon.addon_name}
+                  {addon.label}
                   {#if addon.description}
                     <div class="text-sm text-gray-400 break-words whitespace-normal max-w-[250px]">{addon.description}</div>
                   {/if}
@@ -246,32 +252,35 @@
                   {/if}
                 </TableBodyCell>
                 <TableBodyCell>
-                  <div class="flex items-center space-x-2">
-                    <button 
-                      class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      on:click={() => decrementQuantity(addon.addon_id)}
-                      aria-label="Decrease quantity">
-                      <MinusOutline class="w-3 h-3" />
-                    </button>
-                    
-                    <Input
-                      type="number"
-                      min="0"
-                      class="w-12 text-center p-0 h-8"
-                      value={quantities[addon.addon_id] || 0}
-                      on:input={(e) => {
-                        const target = e.currentTarget as HTMLInputElement;
-                        setQuantity(addon.addon_id, target.value);
-                      }}
-                    />
-                    
-                    <button 
-                      class="flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      on:click={() => incrementQuantity(addon.addon_id)}
-                      aria-label="Increase quantity">
-                      <PlusOutline class="w-3 h-3" />
-                    </button>
-                  </div>
+                  {#if canPurchase(addon)}
+                    <div class="flex items-center space-x-2">
+                      <button 
+                        on:click={() => decrementQuantity(addon.addon_id)}
+                        class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        disabled={!canPurchase(addon)}
+                      >
+                        <MinusOutline class="w-4 h-4" />
+                      </button>
+                      <Input 
+                        size="sm" 
+                        type="number" 
+                        min="0" 
+                        class="w-20" 
+                        value={quantities[addon.addon_id]} 
+                        on:input={(e) => setQuantity(addon.addon_id, e.currentTarget.value)}
+                        disabled={!canPurchase(addon)}
+                      />
+                      <button 
+                        on:click={() => incrementQuantity(addon.addon_id)}
+                        class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        disabled={!canPurchase(addon)}
+                      >
+                        <PlusOutline class="w-4 h-4" />
+                      </button>
+                    </div>
+                  {:else}
+                    <div class="text-gray-500 italic">Purchase Closed</div>
+                  {/if}
                 </TableBodyCell>
                 <TableBodyCell>
                   ${((addon.price_cents * (quantities[addon.addon_id] || 0)) / 100).toFixed(2)}
