@@ -30,7 +30,7 @@ export async function getEventAddons(
     .from("addons")
     .select("*")
     .eq("event_id", event_id)
-    .eq("enabled", true)
+    .eq("visible", true)
     .eq("addon_table", entity_type);
 
   if (error) throw error;
