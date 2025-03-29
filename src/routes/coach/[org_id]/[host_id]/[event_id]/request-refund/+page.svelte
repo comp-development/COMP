@@ -92,7 +92,9 @@
           const text = await response.text();
           if (response.ok) {
             // Refresh ticket orders after successful refund request
+            // delay for 100 ms
             ticket_orders = await getOrgTicketOrders(event_id, org_id);
+            console.log("ticket_orders", ticket_orders);
           } else {
             handleError(new Error(text));
           }

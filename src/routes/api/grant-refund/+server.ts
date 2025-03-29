@@ -137,6 +137,32 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
     // returns how many  are available by the org 
     if(ticket.ticket_service == "eventbrite") {
+
+      const eventbriteResponse = await fetch(
+        `https://www.eventbriteapi.com/v3/orders/${ticket.order_id}/?token=${eventbriteToken}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json", // Required header
+          },
+        }
+      );
+
+      if (!eventbriteResponse.ok) {
+        console.log("eventbriteResponse", eventbriteResponse.statusText);
+
+        return new Response(
+          `Eventbrite refund failed: ${eventbriteResponse.statusText}`, {status: 400}
+        );
+      }
+
+      const eventbriteData = await eventbriteResponse.json();
+      if (eventbriteData?.status !== "refunded" && eventbriteData?.status !== "partial_refunded") {
+        console.log("eventbriteData", eventbriteData);
+        return new Response(
+          "Event is not yet refunded on Eventbrite portal. Please login to the portal to refund it first!", {status: 400}
+        );
+      }
       // no actual check, trust user to make sure the ticket was partially refunded
       // and that the refund_request_id was correct
       // TODO, figure out what the partial request looks like
@@ -208,23 +234,32 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
   // we are responding to an existing request
  // this means these tickets are already pending and we can take them out of use.
-  if(refund_id != null && refunded_tickets != null) {
+  if(refund_id != null) {
+    
+    console.log('entered correct statement');
+
     let { data: refund, error: refundError } = await adminSupabase
-    .from("refund_requests")
-    .select("*")
-    .eq("id", refund_id)
-    .single();    
+      .from("refund_requests")
+      .select("*")
+      .eq("id", refund_id)
+      .single();    
+
+    
 
     if (refundError || !refund) {
       return new Response("refund request not found", { status: 404 });
     }
     
-    if(refund.quantity <refunded_tickets) {
+    if(refund.quantity < refunded_tickets) {
       return new Response("refund request quantity is greater than number of tickets", { status: 400 });
     }
     if(refund.refund_status !== "PENDING") {
       return new Response("refund request is not pending.", { status: 400 });
     }
+
+
+  console.log("almost approved??");
+
 
     // if status is approved, actually send the money back
     if(status === "APPROVED") {
@@ -285,13 +320,13 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
     // update the refund request with the approve or deny status
     const { error: updateError } = await adminSupabase
-    .from("refund_requests")
-    .update({
-    quantity: refunded_tickets,
-    refund_status: status,
-    response_reason: response_message
-    })
-    .eq("id", refund_id);
+      .from("refund_requests")
+      .update({
+      quantity: refunded_tickets,
+      refund_status: status,
+      response_reason: response_message
+      })
+      .eq("id", refund_id);
 
     if (updateError) {
         console.log("updateError", updateError);

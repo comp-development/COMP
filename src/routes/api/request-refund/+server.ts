@@ -201,45 +201,51 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
 
   // TODO?: Should ideally create an eventbrite refund request for the event
-  // if(ticket.service == "eventbrite") {
-  //     try {
-  //         // using event cancellation or covid19 as reason makes full refund go through
-  //         const refundRequestBody = {
-  //           from_email: email,
-  //           from_name: first_name + " " + last_name,
-  //           items: [
-  //             {
-  //               order_id: eventbrite_order_id,
-  //             },
-  //           ],
-  //           reason: "event_cancelled",
-  //           message: "Event is cancelled for the time being.",
-  //         };
 
-  //         console.log("refundRequestBody", refundRequestBody);
-  //         const eventbriteResponse = await fetch(
-  //           `https://www.eventbriteapi.com/v3/refund_requests/?token=${eventbriteToken}`,
-  //           {
-  //             method: "POST",
-  //             headers: {
-  //               "Content-Type": "application/json",  // Required header
-  //               // "Authorization": `Bearer ${eventbriteToken}` // Sometimes required
-  //             },
-  //             body: JSON.stringify(refundRequestBody),
-  //           }
-  //         );
+  // try to create a refund request on eventbrite as well, but it won't always work
+  // will not throw error if this fails!!
+  if(ticket.ticket_service == "eventbrite") {
+      try {
+          const email = student !== null ? student.email : coach?.email;
+          const first_name = student !== null ? student.first_name : coach?.first_name;
+          const last_name = student !== null ? student.last_name : coach?.last_name;
+          const ev_message = "Attempting to request refund for " + refunded_tickets + " tickets";
 
-  //         if (!eventbriteResponse.ok) {
-  //           console.log("eventbriteResponse", eventbriteResponse);
-  //           throw new Error("Failed to request refund from eventbrite");
-  //         }
-  //         console.log("eventbriteResponse", eventbriteResponse);
-  //       } catch (e: any) {
-  //         console.log("ERROR", e);
-  //         console.error(e);
-  //         return new Response("failed to execute: " + e.message, { status: 400 });
-  //       }
-  // }
+          // using event cancellation or covid19 as reason makes full refund go through
+          const refundRequestBody = {
+            from_email: email,
+            from_name: first_name + " " + last_name,
+            items: [
+              {
+                order_id: ticket.order_id,
+              },
+            ],
+            reason: "event_cancelled",
+            message: ev_message,
+          };
+
+          console.log("refundRequestBody", refundRequestBody);
+          const eventbriteResponse = await fetch(
+            `https://www.eventbriteapi.com/v3/refund_requests/?token=${eventbriteToken}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",  // Required header
+                // "Authorization": `Bearer ${eventbriteToken}` // Sometimes required
+              },
+              body: JSON.stringify(refundRequestBody),
+            }
+          );
+
+          if (!eventbriteResponse.ok) {
+            console.log("eventbriteResponse", eventbriteResponse);
+            throw new Error("Failed to request refund from eventbrite");
+          }
+          console.log("eventbriteResponse", eventbriteResponse);
+        } catch (e: any) {
+          console.log("ERROR", e);
+        }
+  }
 
   // make sure no pending request exists
   const {data: oldRequests, error: oldError} = await adminSupabase

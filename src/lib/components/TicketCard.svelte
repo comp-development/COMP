@@ -66,7 +66,39 @@
 </Card> 
 
 <Modal bind:open={showModal}>
+  <div class="overflow-y-scroll max-h-[70vh] max-w-[80vh]">
+  <div class="p-6">
+    <h2 class="text-xl font-semibold">Request Refund</h2>
+    <p class="text-sm text-gray-600">Please enter how many tickets you would like to request a refund for. Please don't request more tickets than you have.</p>
 
+    <div class="mt-4">
+      <div class="text-sm text-gray-600">*Required</div>
+      <div class="mt-2 text-left"> Refunded Tickets: </div>
+      <Input 
+        bind:value={refunded_tickets} 
+        type="number" 
+        min="1" 
+        max={available_tickets} 
+        placeholder="Number of tickets to refund" 
+      /> 
+    </div>
+
+
+    <div class="mt-4">
+      <div class="mt-2 text-left"> Reasonn for refund? </div>
+      <Input 
+        bind:value={message} 
+        type="text" 
+        placeholder="Request for refund" 
+      /> 
+    </div>
+
+    <div class="mt-6 flex justify-end gap-2">
+      <Button on:click={() => (showModal = false)}>Cancel</Button>
+      <Button on:click={handleRefundRequest} color="blue">Submit</Button>
+    </div>
+  </div>
+  
 
   {#if ticket?.refund_requests && ticket?.refund_requests.length > 0}
   <div class="mb-6 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
@@ -117,36 +149,6 @@
     </ul>
   </div>
 {/if}
+</div>
 
-  <div class="p-6">
-    <h2 class="text-xl font-semibold">Request Refund</h2>
-    <p class="text-sm text-gray-600">Please enter how many tickets you would like to request a refund for. Please don't request more tickets than you have.</p>
-
-    <div class="mt-4">
-      <div class="text-sm text-gray-600">*Required</div>
-      <div class="mt-2 text-left"> Refunded Tickets: </div>
-      <Input 
-        bind:value={refunded_tickets} 
-        type="number" 
-        min="1" 
-        max={available_tickets} 
-        placeholder="Number of tickets to refund" 
-      /> 
-    </div>
-
-
-    <div class="mt-4">
-      <div class="mt-2 text-left"> Reasonn for refund? </div>
-      <Input 
-        bind:value={message} 
-        type="text" 
-        placeholder="Request for refund" 
-      /> 
-    </div>
-
-    <div class="mt-6 flex justify-end gap-2">
-      <Button on:click={() => (showModal = false)}>Cancel</Button>
-      <Button on:click={handleRefundRequest} color="blue">Submit</Button>
-    </div>
-  </div>
 </Modal>
