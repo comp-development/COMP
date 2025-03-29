@@ -105,7 +105,7 @@
       format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string);
       linkedToColumn?: string; // Add linkedToColumn property to props interface
     }[]);
-    entityType: string; // Changed from enum to string to make it more generic
+    entityType: string;  // Changed from enum to string to make it more generic
     // A custom renderer for specific columns.
     // Takes in the column being processed and the row (as any).
     component_renderer?: Snippet<[UnifiedColumn, any]>;

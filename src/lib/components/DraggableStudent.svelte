@@ -103,7 +103,7 @@
 </div>
 
 <style>
-  .teamMember {
+  :global(.teamMember) {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -115,7 +115,7 @@
     transition: transform 0.2s ease;
   }
 
-  .teamMember:hover {
+  :global(.teamMember:hover) {
     transform: scale(1.01);
   }
 

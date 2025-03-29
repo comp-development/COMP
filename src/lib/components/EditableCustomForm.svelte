@@ -23,7 +23,7 @@
   } from "flowbite-svelte-icons";
   import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
   import TableName from "$lib/components/TableName.svelte";
-  import { getCustomFields } from "$lib/supabase";
+  import { deleteCustomFields, getCustomFields } from "$lib/supabase";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
   import Loading from "./Loading.svelte";
@@ -32,6 +32,7 @@
     custom_fields = $bindable(),
     action,
     host_id,
+    is_event_fields = false,
     table,
     title="Custom Field Builder",
     editableHostFields,
@@ -96,8 +97,6 @@
 
   let showDeleteModal = $state(false);
   let fieldToDelete: number | null = $state(null);
-  let showConfirmDeleteModal = $state(false);
-  let deletedFields = $state([]);
 
   // Track which sections are expanded using a simple object
   let expandedSections = $state({});
@@ -161,9 +160,13 @@
     showDeleteModal = true;
   }
 
-  function removeField() {
+  async function removeField() {
     if (fieldToDelete !== null) {
+      await deleteCustomFields(custom_fields[fieldToDelete], is_event_fields);
       custom_fields = custom_fields.filter((_, i) => i !== fieldToDelete);
+      originalCustomFields = await JSON.parse(await JSON.stringify(custom_fields));
+
+      toast.success("Field deleted successfully");
       showDeleteModal = false;
       fieldToDelete = null;
     }
@@ -262,16 +265,12 @@
       toast.success("Custom fields saved successfully");
     } catch (error) {
       handleError(error);
-    } finally {
-      showConfirmDeleteModal = false;
     }
   }
 </script>
 
 {#if loading}
   <Loading />
-{:else if hideComponent}
-  <p>This component is currently not available for use.</p>
 {:else}
   <div class="space-y-2">
     <h2>{title}</h2>
@@ -512,20 +511,12 @@
 <ConfirmationModal
   isShown={showDeleteModal}
   actionName="delete this custom field"
+  warning="It may delete existing user registration data"
   onCancel={() => {
     showDeleteModal = false;
     fieldToDelete = null;
   }}
   onConfirm={removeField}
-/>
-
-<ConfirmationModal
-  isShown={showConfirmDeleteModal}
-  actionName="delete fields? It may delete user registration data"
-  onCancel={() => {
-    showConfirmDeleteModal = false;
-  }}
-  onConfirm={confirmDeleteFields}
 />
 
 <style>
