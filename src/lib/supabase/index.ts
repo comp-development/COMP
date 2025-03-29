@@ -153,3 +153,46 @@ export async function getEventAddonQuantities(event_id: number) {
     orgQuantities
   };
 }
+
+/**
+ * Upserts an event addon
+ * 
+ * @param addon Addon object with event_id, key, label, price_cents, etc.
+ * @returns The upserted addon
+ */
+export async function upsertEventAddon(addon: {
+  addon_id?: string;
+  event_id: number;
+  key: string;
+  label: string;
+  price_cents: number;
+  description?: string;
+  enabled: boolean;
+  visible: boolean;
+  addon_table: 'students' | 'teams' | 'orgs';
+}) {
+  // If addon_id exists, update; otherwise, insert
+  const { data, error } = await supabase
+    .from("addons")
+    .upsert(addon, { onConflict: 'addon_id' })
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * Deletes an event addon
+ * 
+ * @param addon_id ID of the addon to delete
+ * @returns void
+ */
+export async function deleteEventAddon(addon_id: string) {
+  const { error } = await supabase
+    .from("addons")
+    .delete()
+    .eq("addon_id", addon_id);
+
+  if (error) throw error;
+}
