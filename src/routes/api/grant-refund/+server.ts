@@ -303,15 +303,15 @@ export const POST: RequestHandler = async (request: RequestEvent) => {
 
         if(ticket.student_id !== null) {
             // should delete their entry from the event
-            const { error: deleteError } = await adminSupabase
-            .from("student_events")
-            .delete()
-            .eq("student_id", ticket.student_id)
-            .eq("event_id", ticket.event_id);
-            if (deleteError) {
-                console.log("deleteError", deleteError);
+            const { error: deleteRegError } = await adminSupabase
+              .from("student_events")
+              .update({ team_id: null })
+              .eq("student_id", ticket.student_id)
+              .eq("event_id", ticket.event_id);
+            if (deleteRegError ) {
+                console.log("deleteError", deleteRegError );
                 return new Response(
-                    ("Failed to delete student-event entry: " + deleteError.message), {status: 400}
+                    ("Failed to delete student-event entry: " + deleteRegError .message), {status: 400}
                 );
             }
             // TODO, delete an emptyteam as well

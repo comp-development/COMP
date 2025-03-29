@@ -93,8 +93,16 @@
           if (response.ok) {
             // Refresh ticket orders after successful refund request
             // delay for 100 ms
-            ticket_orders = await getOrgTicketOrders(event_id, org_id);
-            console.log("ticket_orders", ticket_orders);
+            // setTimeout(async () => {
+            //   console.log("REFRESHING TICKET ORDERS");
+            //   ticket_orders = await getOrgTicketOrders(org_id, event_id);
+            // }, 2000);
+            ticket_orders = await getOrgTicketOrders(org_id, event_id);
+
+    
+            // ticket_orders = await getOrgTicketOrders(event_id, org_id);
+            // console.log("ticket_orders", ticket_orders);
+            toast.success("Successfully requested refund.");
           } else {
             handleError(new Error(text));
           }

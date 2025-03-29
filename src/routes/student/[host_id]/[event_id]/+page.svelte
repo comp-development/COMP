@@ -212,13 +212,24 @@
   <hr />
 
   {#if !student_event}
-    {#if transaction_stored}
+    {#if transaction_stored && available_tickets > 0}
       <p>
         Payment found, but registration is not complete. Please fill out the
         following form to proceed.
       </p>
       <br />
+    {:else if transaction_stored && available_tickets == 0}
+      <Alert border color="red">
+        <InfoCircleSolid slot="icon" class="w-5 h-5" />
+        <span class="font-medium">Your ticket has been refunded.</span>
+        <Button
+        href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
+        pill>View Requests</Button
+      >
+      </Alert>
+      <br />
     {/if}
+
   {/if}
 
   {#if student_event}

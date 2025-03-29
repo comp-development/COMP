@@ -30,6 +30,7 @@
     let event_details: AsyncReturnType<typeof getEventInformation> | null =
       $state(null);
     import EventDisplay from "$lib/components/EventDisplay.svelte";
+  import toast from "$lib/toast.svelte";
     let team: Get<StudentEvent, "team"> | undefined = $state(null);
     
     let ticket_order: (Tables<"ticket_orders"> & {
@@ -74,9 +75,10 @@
           });
           const text = await response.text();
           if (response.ok) {
-            ticket_order = await getStudentTicketOrder($user!.id, event_id);
-            available_tickets   = await getStudentAvailableTickets($user!.id, event_id);
-            console.log("ticket_order", ticket);
+            // ticket_order = await getStudentTicketOrder($user!.id, event_id);
+            // available_tickets   = await getStudentAvailableTickets($user!.id, event_id);
+            // console.log("ticket_order", ticket);
+            toast.success("Successfully requested refund.");
           } else {
             handleError(new Error(text));
           }
@@ -150,19 +152,20 @@
     <EventDisplay id={event_id} {host} event={event_details} editable={false} />
     <hr />
     {#if !student_event}
-      {#if transaction_stored}
+      {#if transaction_stored && available_tickets > 0}
         <p>
-          Payment found, but registration is not complete. Please fill out the
+          Payment found, but registration is not complete. Please go back to event page, and fill out the
           following form to proceed.
         </p>
         <br />
+      <!-- {:else if transaction_stored && available_tickets == 0} -->
       {/if}
     {/if}
   
     <!-- // need to ensure that the ticket they bought is theres -->
     <!-- // need to make sure they are not already   in a team -->
     <!-- If we request a refund on the ticket, will be removed from the team -->
-    {#if student_event}
+    {#if transaction_stored}
         <div class="flex gap-8 p-6">
           <!-- Left Sidebar with Instructions -->
           <div class="w-2/5">
