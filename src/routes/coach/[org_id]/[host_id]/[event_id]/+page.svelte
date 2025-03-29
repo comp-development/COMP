@@ -285,7 +285,6 @@
   }
 
   function openPurchaseModal() {
-    ticketQuantity = 0;
     isPurchaseModalOpen = true;
   }
 
