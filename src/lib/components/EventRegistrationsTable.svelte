@@ -45,6 +45,7 @@
   import { handleError } from "$lib/handleError";
   import { Tab } from "carbon-components-svelte";
   import toast from "$lib/toast.svelte";
+  import { on } from "svelte/events";
 
 
   // Define types for our extended data structures
@@ -898,12 +899,35 @@
       visible: true,
       searchable: true,
       dataType: "string" as const,
-      // format: (value: any, _: any) => ({
-      //   console.log(value);
-      //   display: value.refund_requests.length > 0
-      //     ? `<button class="grant-refund-btn" data-order-id="${value.id}">Grant Refund</button>`
-      //     : `<button class="view-refund-btn" data-order-id="${value.id}">View Refund Request</button>`,
-      // }),
+      linkedToColumn: "refund_message",
+    //   format: (value: any, row: any) => {
+    //     if(value === "Requests Pending") {
+    //       return {
+    //         text: value, // Use the value as the button text (assuming value is the ID)
+    //         isBadge: false,
+    //         component: Button,
+    //         props: {
+    //           color:"green",
+    //           // on: {
+    //           //   click: openRefundModal, // Pass the row ID to openRefundModal
+    //           // },
+    //           onClick: openRefundModal,
+    //         },
+    //         cellStyle: "width: fit-content; white-space: nowrap;", // Optional cell styling
+    //       };
+    //     }
+    //     else {
+    //           return value;
+    //     }
+    //   }
+    },
+    {
+      key: "refund_message",
+      label: "Refund Message",
+      visible: false,
+      linked_to_column: "refund_status",
+      searchable: true,
+      dataType: "string" as const,
     },
     {
       key: "order_id",
@@ -1008,6 +1032,7 @@
   }
 
   function openRefundModal() {
+    console.log("called");
     showRefundModal = true;
   }
 
@@ -1049,6 +1074,9 @@
               ? `Pending Requests`
               : `No Refunds`,
           available_tickets: calculateTotalUsableTickets(order),
+          refund_message: order.refund_requests.find(
+            (request) => request.refund_status === "PENDING" && request.request_reason
+          )?.request_reason || ``,
         }))[0];
         if (!refund_id) {
           refundMessage = "";
@@ -2092,6 +2120,9 @@
           )
             ? `Requests Pending`
             : ``,
+          refund_message: order.refund_requests.find(
+            (request) => request.refund_status === "PENDING" && request.request_reason
+          )?.request_reason || ``,
           available_tickets: calculateTotalUsableTickets(order),
         }));
       }
@@ -3067,7 +3098,7 @@
                     <Input
                       bind:value={pendingRefundMessage}
                       type="text"
-                      placeholder="Request for refund"
+                      placeholder="Response"
                     />
                   </div>
                 {:else if request.response_reason}
