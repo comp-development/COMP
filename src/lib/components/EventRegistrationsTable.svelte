@@ -38,6 +38,7 @@
     FilePenSolid,
     CirclePlusSolid,
     UserSolid,
+    TicketSolid,
   } from "flowbite-svelte-icons";
   import type { Tables } from "../../../db/database.types";
   import { supabase } from "$lib/supabaseClient";
@@ -105,6 +106,15 @@
   };
 
   type TicketOrderRowData = Tables<"ticket_orders">;
+
+  // Enhanced type with additional fields for display
+  interface EnrichedTicketOrderRowData extends TicketOrderRowData {
+    student_name?: string;
+    student_email?: string;
+    org_name?: string;
+    org_join_code?: string;
+    [key: string]: any; // For any additional dynamic fields
+  }
 
   type CustomField = {
     custom_field_id: number;
@@ -180,6 +190,7 @@
   let formattedStudentRows = $derived(formatStudentRowsForDisplay(students));
   let formattedTeamRows = $derived(formatTeamRowsForDisplay(teams));
   let formattedOrgRows = $derived(formatOrgRowsForDisplay(orgs));
+  let formattedTicketOrderRows = $derived(formatTicketOrdersForDisplay(ticketOrders));
 
   // Lookup maps for quick access by ID
   let studentMap = $state<Map<string, StudentRowData>>(new Map());
@@ -846,17 +857,43 @@
       dataType: "string" as const,
       format: (c: any, _: any) => {
         if (!c) return { text: "-", isBadge: false };
-        const s = studentMap.get(c)!;
+        const s = studentMap.get(c);
+        if (!s) return { text: `Unknown Student (${c})`, isBadge: false };
         return {
-          text: `${s.first_name} ${s.last_name}`,
+          text: `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Unnamed Student',
           isBadge: false,
           component: EntityBadge,
           props: {
-            primaryText: `${s.first_name} ${s.last_name}`,
-            subtitle: s.email,
+            primaryText: `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Unnamed Student',
+            subtitle: s.email || '',
+            backgroundColor: "#e1effe", // Light blue background
+            hoverBackgroundColor: "#bfdbfe", // Slightly darker blue for hover
+            textColor: "var(--blue-700, #1d4ed8)",
+            borderRadius: "0.375rem",
+            padding: "0.5rem 0.75rem",
+            width: null,
+            style: "display: block; text-align: left; white-space: nowrap;",
+            fitContent: true,
           },
+          cellStyle: "width: fit-content; max-width: max-content; white-space: nowrap;",
         } as { text: string; isBadge: boolean };
       },
+    },
+    {
+      key: "student_name",
+      label: "Student Name",
+      visible: false,
+      searchable: true, 
+      dataType: "string" as const,
+      linkedToColumn: "student_id",
+    },
+    {
+      key: "student_email",
+      label: "Student Email",
+      visible: false,
+      searchable: true,
+      dataType: "string" as const,
+      linkedToColumn: "student_id",
     },
     {
       key: "org_id",
@@ -866,25 +903,51 @@
       dataType: "string" as const,
       format: (c: any, _: any) => {
         if (!c) return { text: "-", isBadge: false };
-        const o = orgMap.get(c)!;
+        const o = orgMap.get(c);
+        if (!o) return { text: `Unknown Org (${c})`, isBadge: false };
         return {
-          text: o.name!,
+          text: o.name || `Organization #${o.org_id}`,
           isBadge: false,
           component: EntityBadge,
           props: {
-            primaryText: o.name,
-            subtitle: o.join_code,
+            primaryText: o.name || `Organization #${o.org_id}`,
+            subtitle: o.join_code || '',
+            backgroundColor: "#f0e6ff", // Light purple background (matches other org badges)
+            hoverBackgroundColor: "#e2d6f5", // Slightly darker purple for hover
+            textColor: "var(--purple-700, #6D28D9)",
+            borderRadius: "0.375rem",
+            padding: "0.5rem 0.75rem",
+            width: null,
+            style: "display: block; text-align: left; white-space: nowrap;",
+            fitContent: true,
           },
+          cellStyle: "width: fit-content; max-width: max-content; white-space: nowrap;",
         } as { text: string; isBadge: boolean };
       },
+    },
+    {
+      key: "org_name",
+      label: "Organization Name",
+      visible: false,
+      searchable: true,
+      dataType: "string" as const,
+      linkedToColumn: "org_id",
+    },
+    {
+      key: "org_join_code",
+      label: "Organization Join Code",
+      visible: false,
+      searchable: true,
+      dataType: "string" as const,
+      linkedToColumn: "org_id",
     },
     {
       key: "created_at",
       label: "Purchased",
       visible: true,
       dataType: "date" as const,
-      format: (value: any, _: any) => ({
-        text: value ? new Date(value).toLocaleString() : "-",
+      format: (value: any, row: any) => ({
+        text: row._formattedCreatedAt || (value ? new Date(value).toLocaleString() : "-"),
         isBadge: false,
       }),
     },
@@ -2068,7 +2131,27 @@
           handleError(error);
           return;
         }
-        ticketOrders = data;
+        
+        // Enrich ticket orders with student and org information
+        ticketOrders = data.map(order => {
+          const enrichedOrder = { ...order } as EnrichedTicketOrderRowData;
+          
+          // Add student information if available
+          if (order.student_id && studentMap.has(order.student_id)) {
+            const student = studentMap.get(order.student_id)!;
+            enrichedOrder.student_name = `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'Unnamed Student';
+            enrichedOrder.student_email = student.email || '';
+          }
+          
+          // Add organization information if available
+          if (order.org_id && orgMap.has(order.org_id)) {
+            const org = orgMap.get(order.org_id)!;
+            enrichedOrder.org_name = org.name || `Organization #${org.org_id}`;
+            enrichedOrder.org_join_code = org.join_code || '';
+          }
+          
+          return enrichedOrder;
+        });
       }
 
       // Update relationships AFTER all data is loaded
@@ -2288,6 +2371,38 @@
     teamQuantities: Map<number, Map<string, number>>;
     orgQuantities: Map<number, Map<string, number>>;
   } | null>(null);
+
+  // Format ticket orders for display
+  function formatTicketOrdersForDisplay(orders: EnrichedTicketOrderRowData[]): EnrichedTicketOrderRowData[] {
+    return orders.map(order => {
+      // Create a formatted copy to avoid modifying the original
+      const formattedOrder = { ...order };
+      
+      // Format dates
+      if (formattedOrder.created_at) {
+        try {
+          formattedOrder._formattedCreatedAt = new Date(formattedOrder.created_at).toLocaleString();
+        } catch (e) {
+          formattedOrder._formattedCreatedAt = String(formattedOrder.created_at);
+        }
+      }
+      
+      return formattedOrder;
+    });
+  }
+
+  // Import the new EntityTabs component
+  import EntityTabs from "./EntityTabs.svelte";
+
+  let activeTabId = $state('students'); // New state variable for EntityTabs
+
+  // Define tab-to-number mapping for backward compatibility
+  const tabIdToNumber: Record<string, number> = {
+    'students': 0,
+    'teams': 1,
+    'organizations': 2,
+    'tickets': 3
+  };
 </script>
 
 <div class="w-full">
@@ -2357,16 +2472,49 @@
     {/if}
   {/snippet}
 
-  <Tabs style="underline" class="themed-tabs">
-    <TabItem
-      open={activeTab === 0}
-      title="Students"
-      class="tab-item"
-      activeClasses="tab-active"
-      onclick={() => {
-        activeTab = 0;
-      }}
-    >
+  <!-- Replace the above Tabs with EntityTabs -->
+  <EntityTabs
+    bind:activeTabId
+    tabs={[
+      {
+        id: 'students',
+        title: 'Students',
+        entityType: 'student',
+        icon: UserSolid
+      },
+      {
+        id: 'teams',
+        title: 'Teams',
+        entityType: 'team',
+        icon: UsersGroupSolid
+      },
+      {
+        id: 'organizations',
+        title: 'Organizations',
+        entityType: 'org',
+        icon: BuildingSolid
+      },
+      {
+        id: 'tickets',
+        title: 'Tickets',
+        entityType: 'ticket',
+        icon: TicketSolid
+      }
+    ]}
+    style="traditional"
+    spacing={{ x: 4, y: 4 }}
+    contentBackground={false}
+    on:tabChange={({ detail }) => {
+      // For backward compatibility with existing code
+      switch (detail.tabId) {
+        case 'students': activeTab = 0; break;
+        case 'teams': activeTab = 1; break;
+        case 'organizations': activeTab = 2; break;
+        case 'tickets': activeTab = 3; break;
+      }
+    }}
+  >
+    {#if activeTabId === 'students'}
       <CustomTable
         data={formattedStudentRows}
         columns={mergedStudentColumns}
@@ -2380,18 +2528,8 @@
         lazyLoad={true}
         on:selectionChange={handleStudentSelectionChange}
         actions={student_actions}
-      ></CustomTable>
-    </TabItem>
-
-    <TabItem
-      open={activeTab === 1}
-      title="Teams"
-      class="tab-item"
-      activeClasses="tab-active"
-      onclick={() => {
-        activeTab = 1;
-      }}
-    >
+      />
+    {:else if activeTabId === 'teams'}
       <CustomTable
         data={formattedTeamRows}
         columns={mergedTeamColumns}
@@ -2406,18 +2544,8 @@
         lazyLoad={true}
         on:selectionChange={handleTeamSelectionChange}
         actions={team_actions}
-      ></CustomTable>
-    </TabItem>
-
-    <TabItem
-      open={activeTab === 2}
-      title="Organizations"
-      class="tab-item"
-      activeClasses="tab-active"
-      onclick={() => {
-        activeTab = 2;
-      }}
-    >
+      />
+    {:else if activeTabId === 'organizations'}
       <CustomTable
         data={formattedOrgRows}
         columns={mergedOrgColumns}
@@ -2430,52 +2558,39 @@
         debounceSearch={400}
         lazyLoad={true}
       />
-    </TabItem>
-
-    <TabItem
-      open={activeTab === 3}
-      title="Ticket Orders"
-      class="tab-item"
-      activeClasses="tab-active"
-      onclick={() => {
-        activeTab = 3;
-      }}
-    >
-      <!-- hack to get around scoping of snippet -->
-      {#if true}
-        {#snippet actions()}
-          <Button
-            color="primary"
-            on:click={openTicketModal}
-            class="flex items-center gap-2"
-          >
-            <CirclePlusSolid class="w-4 h-4" />
-            Insert Order
-          </Button>
-          <Button
-            color="primary"
-            on:click={() => reloadData(["ticket_orders"])}
-            class="flex items-center gap-2"
-          >
-            Reload
-          </Button>
-        {/snippet}
-        <CustomTable
-          data={ticketOrders}
-          columns={ticketOrderColumns}
-          entityType="student"
-          isLoading={loading}
-          {event_id}
-          {event_name}
-          tableId={`event_${event_id}_ticket_orders`}
-          idField="id"
-          debounceSearch={400}
-          lazyLoad={true}
-          {actions}
-        ></CustomTable>
-      {/if}
-    </TabItem>
-  </Tabs>
+    {:else if activeTabId === 'tickets'}
+      {#snippet actions()}
+        <Button
+          color="primary"
+          on:click={openTicketModal}
+          class="flex items-center gap-2"
+        >
+          <CirclePlusSolid class="w-4 h-4" />
+          Insert Order
+        </Button>
+        <Button
+          color="primary"
+          on:click={() => reloadData(["ticket_orders"])}
+          class="flex items-center gap-2"
+        >
+          Reload
+        </Button>
+      {/snippet}
+      <CustomTable
+        data={formattedTicketOrderRows}
+        columns={ticketOrderColumns}
+        entityType="tickets"
+        isLoading={loading}
+        {event_id}
+        {event_name}
+        tableId={`event_${event_id}_ticket_orders`}
+        idField="id"
+        debounceSearch={400}
+        lazyLoad={true}
+        {actions}
+      />
+    {/if}
+  </EntityTabs>
 
   <!-- Transfer Modal -->
   <Modal
