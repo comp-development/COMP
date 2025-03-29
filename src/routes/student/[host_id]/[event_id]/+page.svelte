@@ -9,6 +9,7 @@
   import {
     getEventInformation,
     getStudentEvent,
+    getStudentAvailableTickets,
     getStudentTicketOrder,
     updateStudentTeam,
     getOrgEventByJoinCode,
@@ -17,6 +18,7 @@
     getStudent,
     updateStudentOrgEvent,
     type Student,
+    getStudentTotalTickets,
   } from "$lib/supabase";
   import type { Json, Tables } from "../../../../../db/database.types";
   import {
@@ -38,7 +40,14 @@
 
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
-  let ticket_order: Tables<"ticket_orders"> | null = null;
+  // let ticket_order: Tables<"ticket_orders"> | null = null;
+
+  let ticket_order:
+    | (Tables<"ticket_orders"> & { refund_requests: Tables<"refund_requests">[] })
+    | null;
+
+  let available_tickets = $state(0);
+  let total_tickets = $state(0);
   let transaction_stored = $state(false);
   let loading = $state(true);
   let student: Student = $state(null);
@@ -149,6 +158,8 @@
     host = await getHostInformation(host_id);
     student_event = await getStudentEvent($user!.id, event_id);
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
+    available_tickets = await getStudentAvailableTickets($user!.id, event_id);
+    total_tickets = await getStudentTotalTickets( $user!.id, event_id);
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
@@ -191,13 +202,24 @@
   <hr />
 
   {#if !student_event}
-    {#if transaction_stored}
+    {#if transaction_stored && available_tickets > 0}
       <p>
         Payment found, but registration is not complete. Please fill out the
         following form to proceed.
       </p>
       <br />
+    {:else if transaction_stored && available_tickets == 0}
+      <Alert border color="red">
+        <InfoCircleSolid slot="icon" class="w-5 h-5" />
+        <span class="font-medium">Your ticket has been refunded.</span>
+        <Button
+        href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
+        pill>View Requests</Button
+      >
+      </Alert>
+      <br />
     {/if}
+
   {/if}
 
   {#if student_event}
@@ -281,6 +303,15 @@
           </div>
         {/if}
       </div>
+    {:else if available_tickets == 0 && total_tickets > 0}
+      <Alert border color="red">
+        <InfoCircleSolid slot="icon" class="w-5 h-5" />
+        <span class="font-medium">Your ticket has been refunded.</span>
+        <Button
+        href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
+        pill>View Requests</Button
+      >
+      </Alert>
     {:else}
       <br /><br />
       <div class="registrationForm">
@@ -428,6 +459,7 @@
     {/if}
     -->
   {/if}
+
   <hr />
   <StudentForm
     bind:student_event
@@ -450,6 +482,12 @@
       }
     }}
   />
+  {#if student_event && !org_event}
+  <Button
+          href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
+          pill>Request Refund</Button
+        >
+{/if}
 {/if}
 
 <style>
