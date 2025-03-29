@@ -19,6 +19,7 @@
     getEventOrganizations,
     getEventInformation,
   } from "$lib/supabase/events";
+  import { getEventAddonQuantities } from "$lib/supabase";
 
   import { getOrganizationDetails, getTicketCount } from "$lib/supabase/orgs";
   import {
@@ -780,6 +781,14 @@
       },
     },
     {
+      key: "coach_email",
+      label: "Coach Email",
+      visible: false,
+      searchable: true,
+      dataType: "string" as const,
+      linkedToColumn: "coaches",
+    },
+    {
       key: "teamCount",
       label: "Teams",
       visible: true,
@@ -1515,6 +1524,7 @@
             address: orgData.address,
             join_code: orgEvent.join_code || null,
             coaches: coachesText,
+            coach_email: primaryCoach?.email || null,
             primaryCoach: primaryCoach, // Add the primary coach object for badge display
             studentCount: getStudentsForOrg(orgId).length,
             teamCount: getTeamsForOrg(orgId).length,
@@ -1785,6 +1795,18 @@
         }
       }
 
+      // Add addon quantities if available
+      if (addonData) {
+        const studentQuantities = addonData.studentQuantities.get(student.student_event_id);
+        if (studentQuantities) {
+          addonData.addons.forEach(addon => {
+            if (addon.addon_table === 'students') {
+              processedStudent[`addon.${addon.key}`] = studentQuantities.get(addon.addon_id) || 0;
+            }
+          });
+        }
+      }
+
       return processedStudent;
     });
     return formattedRows;
@@ -1854,6 +1876,18 @@
           cellStyle:
             "width: fit-content; max-width: max-content; white-space: nowrap;",
         };
+      }
+
+      // Add addon quantities if available
+      if (addonData) {
+        const teamQuantities = addonData.teamQuantities.get(team.team_id);
+        if (teamQuantities) {
+          addonData.addons.forEach(addon => {
+            if (addon.addon_table === 'teams') {
+              processedTeam[`addon.${addon.key}`] = teamQuantities.get(addon.addon_id) || 0;
+            }
+          });
+        }
       }
 
       return processedTeam;
@@ -1933,6 +1967,18 @@
         };
       }
 
+      // Add addon quantities if available
+      if (addonData && org.event?.org_event_id) {
+        const orgQuantities = addonData.orgQuantities.get(org.event.org_event_id);
+        if (orgQuantities) {
+          addonData.addons.forEach(addon => {
+            if (addon.addon_table === 'orgs') {
+              processedOrg[`addon.${addon.key}`] = orgQuantities.get(addon.addon_id) || 0;
+            }
+          });
+        }
+      }
+
       return processedOrg;
     });
     return formattedRows;
@@ -1951,6 +1997,17 @@
     ],
   ) {
     try {
+      // Load addon data if any of the main data types are being reloaded
+      if (dataTypes.some(type => ["students", "teams", "organizations"].includes(type))) {
+        addonData = await getEventAddonQuantities(event_id);
+        console.log('Addon data loaded:', {
+          addons: addonData.addons.length,
+          studentQuantities: addonData.studentQuantities.size,
+          teamQuantities: addonData.teamQuantities.size,
+          orgQuantities: addonData.orgQuantities.size
+        });
+      }
+
       if (dataTypes.includes("students")) {
         // Reload students data
         const studentsData = await getEventStudents(event_id);
@@ -2048,6 +2105,59 @@
       if (dataTypes.length > 0) {
         await fetchCustomFieldValues();
       }
+      
+      // Map addon quantities to the respective data objects
+      if (addonData) {
+        // Add addon data to students
+        students.forEach(student => {
+          if (student.student_event_id) {
+            // Convert to number if needed
+            const studentEventId = Number(student.student_event_id);
+            const studentAddonMap = addonData.studentQuantities.get(studentEventId);
+            if (studentAddonMap) {
+              addonData.addons
+                .filter(addon => addon.addon_table === 'students')
+                .forEach(addon => {
+                  const quantity = studentAddonMap.get(addon.addon_id) || 0;
+                  student[`addon.${addon.key}`] = quantity;
+                });
+            }
+          }
+        });
+        
+        // Add addon data to teams
+        teams.forEach(team => {
+          if (team.team_id) {
+            // Convert team_id to number to match Map keys
+            const teamIdNum = Number(team.team_id);
+            const teamAddonMap = addonData.teamQuantities.get(teamIdNum);
+            if (teamAddonMap) {
+              addonData.addons
+                .filter(addon => addon.addon_table === 'teams')
+                .forEach(addon => {
+                  const quantity = teamAddonMap.get(addon.addon_id) || 0;
+                  team[`addon.${addon.key}`] = quantity;
+                });
+            }
+          }
+        });
+        
+        // Add addon data to organizations (orgs array rather than organizations)
+        orgs.forEach(org => {
+          if (org.event?.org_event_id) {
+            const orgEventIdNum = Number(org.event.org_event_id);
+            const orgAddonMap = addonData.orgQuantities.get(orgEventIdNum);
+            if (orgAddonMap) {
+              addonData.addons
+                .filter(addon => addon.addon_table === 'orgs')
+                .forEach(addon => {
+                  const quantity = orgAddonMap.get(addon.addon_id) || 0;
+                  org[`addon.${addon.key}`] = quantity;
+                });
+            }
+          }
+        });
+      }
     } catch (error) {
       console.error("Error in reloadData:", error);
     }
@@ -2057,6 +2167,24 @@
   function getMergedStudentColumns(): TableColumn[] {
     // Start with regular columns
     const regularColumns = [...studentColumns];
+
+    // Add addon columns
+    if (addonData) {
+      const addonColumns = addonData.addons
+        .filter(addon => addon.addon_table === 'students')
+        .map(addon => ({
+          key: `addon.${addon.key}`,
+          label: addon.key,
+          visible: true,
+          searchable: true,
+          dataType: "number" as const,
+          format: (value: any, row: any) => ({ 
+            text: String(value || 0), 
+            isBadge: false 
+          })
+        }));
+      regularColumns.push(...addonColumns);
+    }
 
     // Add custom field columns
     const customColumns = studentCustomFields.map((field) => ({
@@ -2074,6 +2202,24 @@
     // Start with regular columns
     const regularColumns = [...teamColumns];
 
+    // Add addon columns
+    if (addonData) {
+      const addonColumns = addonData.addons
+        .filter(addon => addon.addon_table === 'teams')
+        .map(addon => ({
+          key: `addon.${addon.key}`,
+          label: addon.label,
+          visible: true,
+          searchable: true,
+          dataType: "number" as const,
+          format: (value: any, row: any) => ({ 
+            text: String(value || 0), 
+            isBadge: false 
+          })
+        }));
+      regularColumns.push(...addonColumns);
+    }
+
     // Add custom field columns
     const customColumns = teamCustomFields.map((field) => ({
       key: `custom_field.${field.key}`,
@@ -2089,6 +2235,24 @@
   function getMergedOrgColumns(): TableColumn[] {
     // Start with regular columns
     const regularColumns = [...orgColumns];
+
+    // Add addon columns
+    if (addonData) {
+      const addonColumns = addonData.addons
+        .filter(addon => addon.addon_table === 'orgs')
+        .map(addon => ({
+          key: `addon.${addon.key}`,
+          label: addon.label,
+          visible: true,
+          searchable: true,
+          dataType: "number" as const,
+          format: (value: any, row: any) => ({ 
+            text: String(value || 0), 
+            isBadge: false 
+          })
+        }));
+      regularColumns.push(...addonColumns);
+    }
 
     // Add custom field columns
     const customColumns = orgCustomFields.map((field) => ({
@@ -2116,6 +2280,14 @@
 
   // Custom comparator for name sorting
   // ... existing code ...
+
+  // Add state for addon data
+  let addonData = $state<{
+    addons: any[];
+    studentQuantities: Map<number, Map<string, number>>;
+    teamQuantities: Map<number, Map<string, number>>;
+    orgQuantities: Map<number, Map<string, number>>;
+  } | null>(null);
 </script>
 
 <div class="w-full">

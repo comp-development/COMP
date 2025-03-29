@@ -86,3 +86,70 @@ export async function getPurchasedAddons(options: {
   if (error) throw error;
   return data;
 }
+
+/**
+ * Get addon quantities for all entities in an event
+ * 
+ * @param event_id number
+ * @returns Object containing addon quantities for students, teams, and orgs
+ */
+export async function getEventAddonQuantities(event_id: number) {
+  // Get all addons for the event first
+  const { data: addons, error: addonError } = await supabase
+    .from("addons")
+    .select("*")
+    .eq("event_id", event_id)
+
+  if (addonError) throw addonError;
+  console.log('Found addons:', addons);
+
+  // Get all addon orders for the event
+  const { data: orders, error: orderError } = await supabase
+    .from("addon_orders")
+    .select(`
+      addon_id,
+      quantity,
+      student_event_id,
+      team_id,
+      org_event_id
+    `)
+    .in("addon_id", addons.map(a => a.addon_id));
+
+  if (orderError) throw orderError;
+  console.log('Found orders:', orders);
+
+  // Create maps to store quantities by entity ID
+  const studentQuantities = new Map<number, Map<string, number>>();
+  const teamQuantities = new Map<number, Map<string, number>>();
+  const orgQuantities = new Map<number, Map<string, number>>();
+
+  // Process orders into the maps
+  orders.forEach(order => {
+    if (order.student_event_id) {
+      if (!studentQuantities.has(order.student_event_id)) {
+        studentQuantities.set(order.student_event_id, new Map());
+      }
+      const studentMap = studentQuantities.get(order.student_event_id)!;
+      studentMap.set(order.addon_id, (studentMap.get(order.addon_id) || 0) + order.quantity);
+    } else if (order.team_id) {
+      if (!teamQuantities.has(order.team_id)) {
+        teamQuantities.set(order.team_id, new Map());
+      }
+      const teamMap = teamQuantities.get(order.team_id)!;
+      teamMap.set(order.addon_id, (teamMap.get(order.addon_id) || 0) + order.quantity);
+    } else if (order.org_event_id) {
+      if (!orgQuantities.has(order.org_event_id)) {
+        orgQuantities.set(order.org_event_id, new Map());
+      }
+      const orgMap = orgQuantities.get(order.org_event_id)!;
+      orgMap.set(order.addon_id, (orgMap.get(order.addon_id) || 0) + order.quantity);
+    }
+  });
+
+  return {
+    addons,
+    studentQuantities,
+    teamQuantities,
+    orgQuantities
+  };
+}
