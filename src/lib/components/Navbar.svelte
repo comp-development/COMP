@@ -55,6 +55,7 @@
     { name: "Tests", route: "tests" },
     { name: "Waivers", route: "waivers" },
     { name: "Custom Fields", route: "custom-fields" },
+    { name: "Addons", route: "addons" },
     { name: "Stats", route: "data-visualization" },
   ];
 
