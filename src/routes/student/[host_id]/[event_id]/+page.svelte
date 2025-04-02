@@ -202,24 +202,29 @@
   <hr />
 
   {#if !student_event}
-    {#if transaction_stored && available_tickets > 0}
+    {#if event_details?.reg_frozen}
       <p>
-        Payment found, but registration is not complete. Please fill out the
-        following form to proceed.
+        This event is now closed for registration.
       </p>
-      <br />
-    {:else if transaction_stored && available_tickets == 0}
-      <Alert border color="red">
-        <InfoCircleSolid slot="icon" class="w-5 h-5" />
-        <span class="font-medium">Your ticket has been refunded.</span>
-        <Button
-        href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
-        pill>View Requests</Button
-      >
-      </Alert>
-      <br />
+    {:else if transaction_stored}
+      {#if available_tickets > 0}
+        <p>
+          Payment found, but registration is not complete. Please fill out the
+          following form to proceed.
+        </p>
+        <br />
+      {:else if available_tickets == 0}
+        <Alert border color="red">
+          <InfoCircleSolid slot="icon" class="w-5 h-5" />
+          <span class="font-medium">Your ticket has been refunded.</span>
+          <Button
+          href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
+          pill>View Requests</Button
+        >
+        </Alert>
+        <br />
+      {/if}
     {/if}
-
   {/if}
 
   {#if student_event}
@@ -461,27 +466,30 @@
   {/if}
 
   <hr />
-  <StudentForm
-    bind:student_event
-    user={{ ...student, ...$user }}
-    {event_id}
-    editing={student_event ? true : false}
-    afterSubmit={() => {
-      let org_join_code = $page.url.searchParams.get("org_join_code");
-      if (org_join_code) {
-        document.location.assign(
-          `/student/${$page.params.host_id}/${$page.params.event_id}/join-org/${org_join_code}`,
-        );
-      }
+
+  {#if !event_details?.reg_frozen}
+    <StudentForm
+      bind:student_event
+      user={{ ...student, ...$user }}
+      {event_id}
+      editing={student_event ? true : false}
+      afterSubmit={() => {
+        let org_join_code = $page.url.searchParams.get("org_join_code");
+        if (org_join_code) {
+          document.location.assign(
+            `/student/${$page.params.host_id}/${$page.params.event_id}/join-org/${org_join_code}`,
+          );
+        }
       
-      let team_join_code = $page.url.searchParams.get("team_join_code");
-      if (team_join_code) {
-        document.location.assign(
-          `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${team_join_code}`,
-        );
-      }
-    }}
-  />
+        let team_join_code = $page.url.searchParams.get("team_join_code");
+        if (team_join_code) {
+          document.location.assign(
+            `/student/${$page.params.host_id}/${$page.params.event_id}/join-team/${team_join_code}`,
+          );
+        }
+      }}
+    />
+  {/if}
   {#if student_event && !org_event}
   <Button
           href={`/student/${$page.params.host_id}/${$page.params.event_id}/request-refund`}
