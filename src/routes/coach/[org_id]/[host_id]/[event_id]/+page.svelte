@@ -45,6 +45,7 @@
   let organizationDetails: any = $state(null);
   let ticketCount: number = $state(0);
   let event_details: Tables<"events"> | null = $state(null);
+  let teams_editable: boolean = $state(true);
   const event_id = parseInt($page.params.event_id);
   const org_id = parseInt($page.params.org_id);
   let draggedMember: any = null;
@@ -85,6 +86,7 @@
   (async () => {
     host = await getHostInformation(host_id);
     event_details = await getEventInformation(event_id);
+    teams_editable=!(event_details?.reg_frozen ?? true);
 
     if (event_details?.eventbrite_event_id) {
       // Load the Eventbrite widget
@@ -588,7 +590,7 @@
 
       <div style="margin: 10px 0;">
         <ButtonGroup>
-          <Button pill outline color="primary" onclick={openAddModal}>
+          <Button pill outline color="primary" onclick={openAddModal} disabled={event_details?.reg_frozen}>
             <UsersGroupSolid class="w-4 h-4 me-2" />
             Create Team
           </Button>
@@ -635,6 +637,7 @@
               onDragStart={handleDragStart}
               onDeleteStudent={handleDeleteStudentTeam}
               waiverType={event_details?.waivers?.type ?? "none"}
+              editableFeatures={teams_editable}
               {handleDeleteTeam}
               {handleDragOver}
               {handleDragLeave}
@@ -663,6 +666,7 @@
               {event_id}
               waiverType={event_details?.waivers?.type ?? "none"}
               onDragStart={handleDragStart}
+              editableFeatures={teams_editable}
               onDeleteStudent={() => {
                 handleDeletingStudent(student);
               }}
