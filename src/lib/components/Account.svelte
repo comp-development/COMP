@@ -325,10 +325,14 @@
     padding: 0px;
   }
 
-  :global(.tabs [role="tabpanel"]) {
+  /* :global(.tabs [role="tabpanel"]) {
     padding: 0px;
     background: transparent;
   }
+
+  :global(.tabs [role="tabpanel"] .no-padding) {
+    padding: 0px;
+  } */
 
   @media only screen and (max-width: 700px) {
     .bottomSection {

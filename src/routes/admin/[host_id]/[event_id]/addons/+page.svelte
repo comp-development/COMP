@@ -157,9 +157,3 @@
     </TabItem>
   </Tabs>
 {/if}
-
-<style>
-  :global([role="tabpanel"]) {
-    background-color: transparent;
-  }
-</style> 

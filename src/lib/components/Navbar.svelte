@@ -324,9 +324,8 @@
           {#if eventId}
             {#each adminEventPages as adminEventRoute}
               <NavLi
-                class="cursor-pointer navli {$page.route.id?.includes(
-                  adminEventRoute.route,
-                ) && adminEventRoute.route != ''
+                class="cursor-pointer navli 
+                {($page.route.id?.split('/').slice(-1)[0] === adminEventRoute.route || (adminEventRoute.route === '' && $page.route.id?.split('/').slice(-1)[0] === '[event_id]'))
                   ? 'active'
                   : ''}"
                 href="/admin/{hostId}/{eventId}/{adminEventRoute.route}"
@@ -336,9 +335,8 @@
           {:else if hostId}
             {#each adminHostPages as adminHostPage}
               <NavLi
-                class="cursor-pointer navli {$page.route.id?.includes(
-                  adminHostPage.route,
-                ) && adminHostPage.route != ''
+                class="cursor-pointer navli 
+                {($page.route.id?.split('/').slice(-1)[0] === adminHostPage.route || (adminHostPage.route === '' && $page.route.id?.split('/').slice(-1)[0] === '[host_id]'))
                   ? 'active'
                   : ''}"
                 href="/admin/{hostId}/{eventId}{adminHostPage.route}"
@@ -385,19 +383,35 @@
     background-color: white;
   }
 
+  :global(.cursor-pointer:hover) {
+    background-color: rgb(221, 221, 221) !important;
+  }
+
   :global([role="link"]:hover) {
     background-color: rgb(221, 221, 221) !important;
   }
 
   :global(nav .active) {
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 4px;
+    text-decoration: none;
   }
 
   :global(.navli) {
     background-color: transparent;
     color: white;
+    padding: 4px 12px;
+    border-radius: 6px;
+  }
+
+  :global(.navli:hover) {
+    outline: 1px solid var(--primary-tint);
+    transition: outline 0.2s ease;
+  }
+
+  :global(.navli.active) {
+    background-color: var(--primary-light);
+    outline: none;
+    padding: 5px 14px;
+    border-radius: 8px;
   }
 
   :global(.hamburgerClass) {
