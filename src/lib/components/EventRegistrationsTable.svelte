@@ -703,6 +703,13 @@
         };
       },
     },
+    {
+      key: "studentCount",
+      label: "Students",
+      visible: true,
+      searchable: false,
+      dataType: "number" as const,
+    },
   ]);
 
   const orgColumns = $derived([
