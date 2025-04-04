@@ -22,9 +22,9 @@ npx tsx src/lib/scripts/test-taker.ts
 # load-test.ts
 This the actual load test. It will take the 10 student accounts (student@gmail.com ... student9@gmail.com) created with fake-users.ts, take the inputted test pick a problem at random from the given list, and keep saving new answers. 
 
-Note, before this test is run, you need to manually go log in to each student account and start a test. Note the id and event of the test in the database, and pass them as inputs at the top of load-tests.ts file. Also, note a few problem on the given test (and input them at the top of load-tests.ts). 
+Note, before this test is run, you need to manually go log in to each student account and start a test. Yes, this is annoying, and will ideally add this to test-students. Note the id and event of the test in the database, and pass them as inputs at the top of load-tests.ts file. Also, note a few problem on the given test (and input them at the top of load-tests.ts). 
 
-Run the below command(from root directory of COMP) in order to run the test
+Run the below command(from root directory of COMP) in order to run the load test
 
 ```
 npx tsx src/lib/scripts/test-taker.ts 
