@@ -6,11 +6,14 @@
     getHostInformation,
     getAllHostEvents,
     createEvent,
+    getAdminHosts,
   } from "$lib/supabase";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
   import TournamentForm from "$lib/components/TournamentForm.svelte";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
+  import { user } from "$lib/sessionStore";
+  import type { Tables } from "../../../../db/database.types";
 
   let all_events: {
     event_id: number;
@@ -19,6 +22,7 @@
   }[] = $state([]);
   let loading = $state(true);
   let host: any = $state();
+  let admin: null | (Tables<"hosts"> & {host_admins: Tables<"host_admins">[]}) = $state(null);
   const host_id = parseInt($page.params.host_id);
 
   let newResponses = $state({
@@ -31,6 +35,7 @@
 
   (async () => {
     host = await getHostInformation(host_id);
+    admin = (await getAdminHosts($user!.id)).find(h => h.host_id == host_id)!;
     all_events = await getAllHostEvents(host_id);
 
     loading = false;
@@ -57,7 +62,7 @@
   <EventDisplay
     id={host_id}
     host={host}
-    editable={true}
+    editable={ admin?.host_admins.find(ha => ha.host_id == host_id)?.owner }
   />
 
   <div class="mb-4">

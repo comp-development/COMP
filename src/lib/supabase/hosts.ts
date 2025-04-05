@@ -71,10 +71,10 @@ export async function getHostInformation(
   return data;
 }
 
-export async function getAdminHosts(admin_id: string, select: string = "*") {
+export async function getAdminHosts(admin_id: string) {
   const { data, error } = await supabase
     .from("hosts")
-    .select(`${select}, host_admins!inner(*)`)
+    .select("*, host_admins!inner(*)")
     .eq("host_admins.admin_id", admin_id);
 
   if (error) throw error;
