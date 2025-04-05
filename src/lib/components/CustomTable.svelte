@@ -68,7 +68,8 @@
     DownloadSolid,
     PenSolid,
     TrashBinSolid,
-    CogOutline
+    CogOutline,
+    CogSolid
   } from "flowbite-svelte-icons";
   
   import { onMount, createEventDispatcher, onDestroy, type Snippet } from 'svelte';
@@ -92,6 +93,14 @@
   type FormattedValue = 
     | { text: string; isBadge: true; color?: string; cellStyle?: string; } 
     | { text: any; isBadge: false; cellStyle?: string; component?: any; props?: any; };
+
+  // Define row action type
+  type RowAction = {
+    icon: any; // Icon component
+    callback: (row: any) => void;
+    tooltip?: string;
+    color?: string;
+  };
 
   // Props definitions using runes API - updated to use arrays
   const props: {
@@ -120,7 +129,9 @@
     lazyLoad?: boolean; // Optional flag to enable lazy loading of table rows
     initialBatchSize?: number; // Initial number of rows to render when using lazy loading
     batchSize?: number; // Number of rows to add in each batch when using lazy loading
-    actions?: Snippet,
+    actions?: Snippet;
+    rowActions?: RowAction[]; // New prop for row actions
+    forceLoadVisibility?: boolean; // New prop to force load visibility from localStorage on initial render
   } = $props();
 
   console.log("PROPS", props)
@@ -1159,6 +1170,38 @@
   // Track if we're showing all rows or have more to load
   const hasMoreRows = $derived(filteredData.length > visibleRowCount);
   const visibleRows = $derived(getVisibleRows());
+
+  // Effect to handle force loading visibility from localStorage on initial render
+  let visibilityInitialized = $state(false);
+
+  $effect(() => {
+    if (!visibilityInitialized && props.forceLoadVisibility && props.tableId && props.columns) {
+      visibilityInitialized = true;
+      // Small delay to ensure allColumns is populated first
+      setTimeout(() => {
+        const savedState = getSavedState();
+        if (savedState?.visibility) {
+          const mergedVisibility: Record<string, boolean> = {};
+          
+          // Start with all columns with their default visibility
+          allColumns.forEach(col => {
+            // Frozen columns must always be visible
+            if (col.frozen) {
+              mergedVisibility[col.displayKey] = true;
+            } 
+            // Use saved visibility if available, otherwise use column definition
+            else if (savedState.visibility[col.displayKey] !== undefined) {
+              mergedVisibility[col.displayKey] = savedState.visibility[col.displayKey];
+            } else {
+              mergedVisibility[col.displayKey] = col.visible;
+            }
+          });
+          
+          internalVisibleColumns = mergedVisibility;
+        }
+      }, 0);
+    }
+  });
 </script>
 
 {#if props.isLoading}
@@ -1399,14 +1442,21 @@
   </Modal>
   
   <!-- Improved table container with better overflow handling -->
-  <div class="relative overflow-x-auto rounded-md border border-gray-200 shadow-lg">
-    <div class="max-h-[650px] overflow-y-auto overflow-x-visible">
+  <div class="relative rounded-md border border-gray-200 shadow-lg">
+    <div class="max-h-[650px] table-wrapper">
       <table class="w-full text-sm text-left border-collapse table-compact themed-table table-auto">
-        <thead class="text-xs uppercase border-b align-middle sticky top-0 z-10 bg-[color:var(--primary)] text-white">
+        <thead class="text-xs uppercase border-b align-middle sticky top-0 z-30 bg-[color:var(--primary)] text-white">
           <tr>
             {#if props.selectable !== false}
               <th class="w-10 px-4 py-3 whitespace-nowrap align-middle identity-column-checkbox">
                 <Checkbox checked={allRowsSelected} indeterminate={someRowsSelected} on:change={toggleAllRows} class="header-checkbox checkbox" />
+              </th>
+            {/if}
+            {#if props.rowActions && props.rowActions.length > 0}
+              <th class="w-10 px-4 py-3 whitespace-nowrap align-middle identity-column-actions">
+                <div class="flex justify-center items-center">
+                  <CogSolid class="w-4 h-4 text-white" />
+                </div>
               </th>
             {/if}
             {#each allColumns as column, colIndex}
@@ -1415,13 +1465,16 @@
                 {@const frozenIndex = frozenColumns.indexOf(column.displayKey)}
                 {@const isSticky = column.frozen}
                 {@const isLastSticky = column.frozen && frozenIndex === (frozenColumns.length - 1)}
-                {@const leftPosition = props.selectable !== false ? 40 + (frozenIndex * 100) : (frozenIndex * 100)}
+                {@const hasRowActions = props.rowActions && props.rowActions.length > 0}
+                {@const leftPosition = props.selectable !== false 
+                  ? (hasRowActions ? 80 : 40) + (frozenIndex * 150) 
+                  : (hasRowActions ? 40 : 0) + (frozenIndex * 150)}
                 <th 
                   on:click={() => handleSort(column.displayKey)}
                   class="px-6 py-3 align-middle select-none sortable-header whitespace-nowrap
                          {isSticky ? 'identity-column-sticky' : ''}
                          {isLastSticky ? 'identity-column-last-sticky' : ''}"
-                  style={isSticky ? `left: ${leftPosition}px !important;` : ''}
+                  style={isSticky ? `left: ${leftPosition}px !important; min-width: 150px;` : ''}
                 >
                   <span class="inline-flex items-center select-none header-label">
                     {column.displayLabel}
@@ -1457,21 +1510,39 @@
                     />
                   </td>
                 {/if}
+                {#if props.rowActions && props.rowActions.length > 0}
+                  <td class="w-10 px-2 py-3 whitespace-nowrap align-middle identity-column-actions">
+                    <div class="flex items-center space-x-1">
+                      {#each props.rowActions as action}
+                        <button
+                          class="text-{action.color || 'gray'}-600 hover:text-{action.color || 'gray'}-800 dark:text-{action.color || 'gray'}-300 dark:hover:text-{action.color || 'gray'}-200 p-1 rounded-full row-action-button"
+                          on:click={() => action.callback(row)}
+                          title={action.tooltip || ''}
+                        >
+                          <svelte:component this={action.icon} class="w-4 h-4" />
+                        </button>
+                      {/each}
+                    </div>
+                  </td>
+                {/if}
                 {#each allColumns as column, colIndex}
                   {#if internalVisibleColumns[column.displayKey]}
                     {@const frozenColumns = allColumns.filter(c => c.frozen && internalVisibleColumns[c.displayKey]).map(c => c.displayKey)}
                     {@const frozenIndex = frozenColumns.indexOf(column.displayKey)}
                     {@const isSticky = column.frozen}
                     {@const isLastSticky = column.frozen && frozenIndex === (frozenColumns.length - 1)}
-                    {@const leftPosition = props.selectable !== false ? 40 + (frozenIndex * 100) : (frozenIndex * 100)}
+                    {@const hasRowActions = props.rowActions && props.rowActions.length > 0}
+                    {@const leftPosition = props.selectable !== false 
+                      ? (hasRowActions ? 80 : 40) + (frozenIndex * 150) 
+                      : (hasRowActions ? 40 : 0) + (frozenIndex * 150)}
                     {@const formatted = getFormattedValue(column, row)}
                     <td class="px-6 py-3 whitespace-nowrap
                               {isSticky ? 'identity-column-sticky' : ''}
                               {isLastSticky ? 'identity-column-last-sticky' : ''}"
-                        style={`${formatted.cellStyle ?? (formatted.component ? 'padding: 0;' : '')}${isSticky ? ` left: ${leftPosition}px !important;` : ''}`}>
-                      {#if formatted.component}
-                        <div class="h-full {formatted.props?.fitContent ? 'w-auto' : 'w-full'}">
-                          <svelte:component this={formatted.component} {...formatted.props} />
+                        style={`${formatted.cellStyle ?? (!formatted.isBadge && formatted.component ? 'padding: 0;' : '')}${isSticky ? ` left: ${leftPosition}px !important; min-width: 150px;` : ''}`}>
+                      {#if !formatted.isBadge && formatted.component}
+                        <div class="h-full {!formatted.isBadge && formatted.props?.fitContent ? 'w-auto' : 'w-full'}">
+                          <svelte:component this={formatted.component} {...(!formatted.isBadge ? formatted.props : {})} />
                         </div>
                       {:else if formatted.isBadge}
                         <Badge color={formatted.color === "blue" || formatted.color === "green" || formatted.color === "red" || 
@@ -1603,17 +1674,58 @@
   /* FROZEN COLUMNS - SIMPLIFIED UNIFIED IMPLEMENTATION */
   /* Base styles for all frozen columns */
   :global(.identity-column-checkbox),
+  :global(.identity-column-actions),
   :global(.identity-column-sticky) {
     position: sticky !important;
-    z-index: 2;
     background-color: white; /* Ensure background is solid */
+    box-shadow: 4px 0 5px -4px rgba(0, 0, 0, 0.15);
+    will-change: transform;
+    transform: translateZ(0);
+    z-index: 3; /* Base z-index for all sticky columns */
   }
 
   /* Specific positioning for checkbox column */
   :global(.identity-column-checkbox) {
     left: 0 !important;
-    z-index: 3; /* Higher z-index for the checkbox column */
-    box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1); /* Shadow for checkbox column */
+    z-index: 5; /* Higher z-index for the checkbox column */
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+  }
+
+  /* Specific positioning for actions column */
+  :global(.identity-column-actions) {
+    left: 40px !important; /* Position after the checkbox column */
+    z-index: 4; /* Lower z-index than checkbox but higher than other columns */
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+  }
+
+  /* Ensure non-sticky content stays below sticky columns */
+  :global(td:not(.identity-column-checkbox):not(.identity-column-actions):not(.identity-column-sticky)) {
+    z-index: 1;
+    position: relative;
+  }
+
+  /* Ensure badges and components inside cells don't override z-index */
+  :global(td .badge),
+  :global(td [class*="badge"]),
+  :global(td div) {
+    z-index: 1;
+    position: relative;
+  }
+
+  /* Visual separator for the last sticky column */
+  :global(.identity-column-last-sticky:after) {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2px; /* Thicker line for the last sticky column */
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.2); /* Darker color for better visibility */
   }
 
   /* Visual separator for checkbox column */
@@ -1623,55 +1735,105 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 4px;
+    width: 1px;
     pointer-events: none;
-    box-shadow: inset -1px 0 1px rgba(0, 0, 0, 0.15);
+    background-color: rgba(0, 0, 0, 0.1);
   }
 
-  /* Visual separator only for the last sticky column */
-  :global(.identity-column-last-sticky:after) {
+  /* Visual separator for actions column */
+  :global(.identity-column-actions:after) {
     content: '';
     position: absolute;
     top: 0;
     right: 0;
     bottom: 0;
-    width: 4px;
+    width: 1px;
     pointer-events: none;
-    box-shadow: inset -1px 0 1px rgba(0, 0, 0, 0.15);
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Add vertical dividers to all table cells using the same approach as the frozen column dividers */
+  :global(td:not(:last-child):not(.identity-column-checkbox):not(.identity-column-actions):not(.identity-column-last-sticky)):after,
+  :global(th:not(:last-child):not(.identity-column-checkbox):not(.identity-column-actions):not(.identity-column-last-sticky)):after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    pointer-events: none;
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Ensure all cells have position relative for the :after pseudo-element */
+  :global(td), :global(th) {
+    position: relative;
+  }
+
+  /* Remove the border approach */
+  :global(td:not(:last-child)),
+  :global(th:not(:last-child)) {
+    border-right: none;
+  }
+
+  /* Headers special handling */
+  :global(thead th) {
+    background-color: var(--primary); /* Use primary color for headers */
   }
 
   /* Headers need higher z-index to stay on top */
   :global(thead .identity-column-checkbox),
+  :global(thead .identity-column-actions),
   :global(thead .identity-column-sticky) {
     position: sticky !important;
-    top: 0 !important;
-    z-index: 20 !important; /* Increased z-index to ensure headers stay fixed */
-    background-color: var(--primary); /* Use primary color for headers */
+    top: 0;
+    z-index: 20; /* Higher z-index for header cells */
+    background-color: var(--primary); /* Keep header color consistent */
   }
 
-  /* Make sure the header specifically stays fixed with both horizontal and vertical stickiness */
-  :global(table.themed-table thead th.identity-column-checkbox),
-  :global(table.themed-table thead th.identity-column-sticky) {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 25 !important; /* Even higher z-index for header cells */
+  /* Specific z-index values for each type of sticky header to create proper stacking context */
+  :global(thead .identity-column-checkbox) {
+    z-index: 30; /* Highest z-index for the checkbox header */
   }
 
-  /* Add proper background colors to frozen columns in tbody to prevent content showing through */
+  :global(thead .identity-column-actions) {
+    z-index: 25; /* Second highest z-index for the actions header */
+  }
+
+  :global(thead .identity-column-sticky) {
+    z-index: 20; /* Base z-index for other sticky headers */
+  }
+
+  /* Add proper background colors to frozen columns in tbody */
   :global(tbody tr:nth-child(odd) .identity-column-checkbox),
+  :global(tbody tr:nth-child(odd) .identity-column-actions),
   :global(tbody tr:nth-child(odd) .identity-column-sticky) {
     background-color: var(--primary-tint, #f9fafb);
   }
 
   :global(tbody tr:nth-child(even) .identity-column-checkbox),
+  :global(tbody tr:nth-child(even) .identity-column-actions),
   :global(tbody tr:nth-child(even) .identity-column-sticky) {
     background-color: white;
   }
 
   /* Ensure frozen columns' background color changes on hover */
   :global(tbody tr:hover .identity-column-checkbox),
+  :global(tbody tr:hover .identity-column-actions),
   :global(tbody tr:hover .identity-column-sticky) {
     background-color: var(--primary-light, #f3f4f6);
+  }
+
+  /* Ensure proper table scrolling behavior */
+  :global(.table-wrapper) {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: auto;
+    width: 100%;
+    will-change: transform;
+    transform: translateZ(0);
+    /* Ensure content below doesn't overlap with fixed elements */
+    isolation: isolate;
   }
 
   /* Add fallback CSS variables in case the global ones aren't defined */
@@ -1796,5 +1958,50 @@
 
   :global(tbody tr:hover) {
     background-color: var(--primary-light, #f3f4f6);
+  }
+
+  /* Row action button styling */
+  :global(.row-action-button) {
+    background: linear-gradient(to bottom, rgba(249, 250, 251, 0.9), rgba(229, 231, 235, 0.9));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  :global(.dark .row-action-button) {
+    background: linear-gradient(to bottom, rgba(55, 65, 81, 0.9), rgba(31, 41, 55, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.row-action-button:hover) {
+    background: linear-gradient(to bottom, rgba(243, 244, 246, 1), rgba(229, 231, 235, 1));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  :global(.dark .row-action-button:hover) {
+    background: linear-gradient(to bottom, rgba(75, 85, 99, 0.9), rgba(55, 65, 81, 0.9));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Improve sticky headers to ensure they remain visible during scrolling */
+  :global(th.sortable-header) {
+    position: relative;
+  }
+
+  /* Fix for sticky headers disappearing during scroll */
+  :global(thead) {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background-color: var(--primary);
+  }
+
+  :global(thead::after) {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.2);
   }
 </style> 
