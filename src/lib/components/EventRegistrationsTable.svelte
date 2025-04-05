@@ -20,6 +20,11 @@
     getEventInformation,
   } from "$lib/supabase/events";
   import { getEventAddonQuantities } from "$lib/supabase";
+  import {
+    deleteStudentFromEvent,
+    deleteTeamFromEvent, 
+    deleteOrganizationFromEvent
+  } from "$lib/supabase/deletion";
 
   import {
     getOrganizationDetails,
@@ -43,6 +48,7 @@
     CirclePlusSolid,
     UserSolid,
     TicketSolid,
+    TrashBinSolid
   } from "flowbite-svelte-icons";
   import type { Tables } from "../../../db/database.types";
   import { supabase } from "$lib/supabaseClient";
@@ -238,6 +244,16 @@
   let showTeamTransferModal = $state(false);
   let teamTransferInProgress = $state(false);
   let failedTeams = $state<TeamRowData[]>([]); // Track teams that failed to transfer
+
+  // Delete confirmation modal state
+  let showDeleteModal = $state(false);
+  let deleteType = $state<"student" | "team" | "org">("student");
+  let entityToDelete = $state<any>(null);
+  let deleteInProgress = $state(false);
+  let deleteError = $state<string | null>(null);
+  let deleteSuccess = $state(false);
+  let deleteNestedTeams = $state(false); // New state for deleting teams within an org
+  let deleteNestedStudents = $state(false); // New state for deleting students within an org/team
 
   // State for ticket order modal
   let showTicketOrderModal = $state(false);
@@ -2592,6 +2608,103 @@
     'organizations': 2,
     'tickets': 3
   };
+
+  /**
+   * Opens the delete confirmation modal
+   * @param type The type of entity being deleted
+   * @param entity The entity to delete
+   */
+  function openDeleteModal(type: "student" | "team" | "org", entity: any) {
+    deleteType = type;
+    entityToDelete = entity;
+    deleteError = null;
+    deleteSuccess = false;
+    // Reset the delete options
+    deleteNestedTeams = false;
+    deleteNestedStudents = false;
+    showDeleteModal = true;
+  }
+
+  // Add result state to store the deletion result
+  let deleteResult = $state<any>(null);
+
+  /**
+   * Handles the deletion of an entity
+   */
+  async function handleDelete() {
+    if (!entityToDelete) return;
+    
+    deleteInProgress = true;
+    deleteError = null;
+    deleteResult = null;
+    
+    try {
+      let result;
+      
+      switch (deleteType) {
+        case "student":
+          result = await deleteStudentFromEvent(entityToDelete.student_event_id);
+          break;
+        case "team":
+          result = await deleteTeamFromEvent(entityToDelete.team_id, deleteNestedStudents);
+          break;
+        case "org":
+          result = await deleteOrganizationFromEvent(
+            entityToDelete.org_id, 
+            event_id, 
+            deleteNestedTeams, 
+            deleteNestedStudents
+          );
+          break;
+      }
+      
+      deleteSuccess = true;
+      deleteResult = result;
+      
+      // Reload the data for the affected entity type
+      await reloadData([
+        deleteType === "student" ? "students" : 
+        deleteType === "team" ? "teams" : 
+        "organizations"
+      ]);
+      
+      // If we deleted nested entities, also reload those
+      if (deleteNestedTeams) {
+        await reloadData(["teams"]);
+      }
+      if (deleteNestedStudents) {
+        await reloadData(["students"]);
+      }
+      
+      // Close the modal after a short delay
+      setTimeout(() => {
+        showDeleteModal = false;
+      }, 1000);
+    } catch (error) {
+      console.error(error);
+      deleteError = error?.message || "An error occurred while deleting the entity";
+    } finally {
+      deleteInProgress = false;
+    }
+  }
+
+  /**
+   * Gets the display name for an entity
+   */
+  function getEntityDisplayName() {
+    if (!entityToDelete) return "";
+    
+    switch (deleteType) {
+      case "student":
+        return `Student ${entityToDelete.first_name || ''} ${entityToDelete.last_name || ''}`.trim();
+      case "team":
+        return `Team ${entityToDelete.team_name || 'Unknown Team'}`;
+      case "org":
+        return `Organization ${entityToDelete.name || `#${entityToDelete.org_id}`}`;
+      default:
+        return "";
+    }
+  }
 </script>
 
 <div class="w-full">
@@ -2715,8 +2828,17 @@
         idField="student_id"
         debounceSearch={400}
         lazyLoad={true}
+        forceLoadVisibility={true}
         on:selectionChange={handleStudentSelectionChange}
         actions={student_actions}
+        rowActions={[
+          {
+            icon: TrashBinSolid,
+            callback: (row) => openDeleteModal("student", row),
+            tooltip: "Delete Student",
+            color: "red"
+          }
+        ]}
       />
     {:else if activeTabId === 'teams'}
       <CustomTable
@@ -2731,8 +2853,17 @@
         selectable={true}
         debounceSearch={400}
         lazyLoad={true}
+        forceLoadVisibility={true}
         on:selectionChange={handleTeamSelectionChange}
         actions={team_actions}
+        rowActions={[
+          {
+            icon: TrashBinSolid,
+            callback: (row) => openDeleteModal("team", row),
+            tooltip: "Delete Team",
+            color: "red"
+          }
+        ]}
       />
     {:else if activeTabId === 'organizations'}
       <CustomTable
@@ -2746,6 +2877,15 @@
         idField="org_id"
         debounceSearch={400}
         lazyLoad={true}
+        forceLoadVisibility={true}
+        rowActions={[
+          {
+            icon: TrashBinSolid,
+            callback: (row) => openDeleteModal("org", row),
+            tooltip: "Delete Organization",
+            color: "red"
+          }
+        ]}
       />
     {:else if activeTabId === 'tickets'}
       {#snippet actions()}
@@ -2786,6 +2926,7 @@
         idField="id"
         debounceSearch={400}
         lazyLoad={true}
+        forceLoadVisibility={true}
         on:selectionChange={handleTicketOrderSelectionChange}
         {actions}
       />
@@ -3764,6 +3905,136 @@
       </div>
     </div>
   </Modal>
+
+  <!-- Refund Modal End -->
+
+  <!-- Delete Confirmation Modal -->
+  <Modal
+    title="Confirm Deletion"
+    bind:open={showDeleteModal}
+    size="md"
+    autoclose={false}
+  >
+    <div class="space-y-4">
+      {#if deleteSuccess}
+        <Alert color="green" class="mb-4">
+          <span class="font-medium">Success!</span> The {deleteType} has been deleted.
+          {#if deleteResult}
+            <div class="mt-2 text-sm">
+              {#if deleteType === "team" && deleteResult.deletedStudents > 0}
+                <p>Also deleted {deleteResult.deletedStudents} student{deleteResult.deletedStudents !== 1 ? 's' : ''}.</p>
+              {:else if deleteType === "org"}
+                {#if deleteResult.deletedTeams > 0}
+                  <p>Also deleted {deleteResult.deletedTeams} team{deleteResult.deletedTeams !== 1 ? 's' : ''}.</p>
+                {/if}
+                {#if deleteResult.deletedStudents > 0}
+                  <p>Also deleted {deleteResult.deletedStudents} student{deleteResult.deletedStudents !== 1 ? 's' : ''}.</p>
+                {/if}
+              {/if}
+            </div>
+          {/if}
+        </Alert>
+      {:else if deleteError}
+        <Alert color="red" class="mb-4">
+          <span class="font-medium">Error!</span> {deleteError}
+        </Alert>
+      {:else}
+        <div class="p-4 bg-red-50 border border-red-200 rounded-md">
+          <p class="text-red-800 font-medium">
+            Are you sure you want to delete {getEntityDisplayName()}?
+          </p>
+          <p class="mt-2 text-sm text-red-700">
+            This action cannot be undone and all registration data will be deleted.
+            {#if deleteType === "team"}
+              Students in this team will be {deleteNestedStudents ? "also be deleted" : "be removed from the team"}.
+            {:else if deleteType === "org"}
+              Teams in this organization will {deleteNestedTeams ? "also be deleted" : "be removed from the organization"}.
+              Students in this organization will {deleteNestedStudents ? "also be deleted" : "be removed from the organization"}.
+            {/if}
+          </p>
+          
+          {#if deleteType === "team"}
+            <div class="mt-4 p-2 bg-red-100 rounded">
+              <label class="flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  bind:checked={deleteNestedStudents}
+                  class="mr-2 text-red-700 focus:ring-red-500"
+                />
+                <span class="text-sm text-red-900 font-medium">
+                  Also delete all students in this team
+                  <p class="text-xs font-normal text-red-800 mt-1">
+                    Warning: This will permanently delete all students associated with this team. Only check this if you are absolutely sure.
+                  </p>
+                </span>
+              </label>
+            </div>
+          {/if}
+          
+          {#if deleteType === "org"}
+            <div class="mt-4 p-2 bg-red-100 rounded">
+              <label class="flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  bind:checked={deleteNestedTeams}
+                  class="mr-2 text-red-700 focus:ring-red-500"
+                />
+                <span class="text-sm text-red-900 font-medium">
+                  Also delete all teams in this organization
+                  <p class="text-xs font-normal text-red-800 mt-1">
+                    Warning: This will permanently delete all teams associated with this organization. 
+                    {#if !deleteNestedStudents}
+                      Students in these teams will be preserved but removed from their teams.
+                    {:else}
+                      Combined with the option below, this will delete all teams AND their students.
+                    {/if}
+                  </p>
+                </span>
+              </label>
+            </div>
+            
+            <div class="mt-2 p-2 bg-red-100 rounded">
+              <label class="flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  bind:checked={deleteNestedStudents}
+                  class="mr-2 text-red-700 focus:ring-red-500"
+                />
+                <span class="text-sm text-red-900 font-medium">
+                  Also delete all students in this organization
+                  <p class="text-xs font-normal text-red-800 mt-1">
+                    Warning: This will permanently delete all students associated with this organization
+                    {#if deleteNestedTeams}
+                      , including students in teams that will be deleted.
+                    {:else}
+                      that are not in teams. Students in teams will remain in the system.
+                    {/if}
+                    Only check this if you are absolutely sure.
+                  </p>
+                </span>
+              </label>
+            </div>
+          {/if}
+        </div>
+      {/if}
+      
+      <div class="flex justify-end gap-3">
+        <Button color="alternative" on:click={() => (showDeleteModal = false)} disabled={deleteInProgress}>
+          {deleteSuccess ? "Close" : "Cancel"}
+        </Button>
+        {#if !deleteSuccess}
+          <Button color="red" on:click={handleDelete} disabled={deleteInProgress}>
+            {#if deleteInProgress}
+              <Spinner class="mr-2" size="sm" /> Deleting...
+            {:else}
+              Delete
+            {/if}
+          </Button>
+        {/if}
+      </div>
+    </div>
+  </Modal>
+  <!-- Delete Confirmation Modal End -->
 </div>
 
 <style>
