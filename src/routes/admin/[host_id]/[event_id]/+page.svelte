@@ -7,6 +7,7 @@
     getEventIndependentTeams,
     getEventStudents,
     getHostInformation,
+    getAdminHosts,
   } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
   import Loading from "$lib/components/Loading.svelte";
@@ -15,11 +16,14 @@
   import { Button, Modal, TabItem, Tabs } from "flowbite-svelte";
   import StudentForm from "$lib/components/StudentForm.svelte";
   import EventRegistrationsTable from "$lib/components/EventRegistrationsTable.svelte";
+  import { user } from "$lib/sessionStore";
+  import { type Tables } from "../../../../../db/database.types";
   let hostId = Number($page.params.host_id);
   let eventId = Number($page.params.event_id);
   let teams = $state([]);
   let students = $state([]);
   let host = $state([]);
+  let admin: null | (Tables<"hosts"> & {host_admins: Tables<"host_admins">[]}) = $state(null);
   let event_information = $state({});
   let loading = $state(true);
   let organizations = $state([]);
@@ -31,6 +35,7 @@
 
   async function loadInformation() {
     try {
+      admin = (await getAdminHosts($user!.id)).find(ha => ha.host_id == hostId)!;
       teams = await getEventTeams(eventId);
       host = await getHostInformation(hostId);
       teams = teams.map(({ team_id: id, ...rest }) => ({ id, ...rest }));
@@ -51,7 +56,7 @@
 {#if loading}
   <Loading />
 {:else}
-  <EventDisplay id={eventId} {host} event={event_information} editable={true} />
+  <EventDisplay id={eventId} {host} event={event_information} editable={ admin?.host_admins.find(ha => ha.host_id == hostId)?.owner } />
 
   <hr />
 
