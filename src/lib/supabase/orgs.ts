@@ -66,15 +66,56 @@ export async function getCoachOrganization(
   return data;
 }
 
-export async function getTicketCount(event_id: number, org_id: number) {
+export async function getOrgTicketOrders(
+  org_id: string,
+  event_id: number
+) {
   const { data, error } = await supabase
     .from("ticket_orders")
-    .select("quantity")
+    .select("*, refund_requests(*)")
     .eq("org_id", org_id)
-    .eq("event_id", event_id);
+    .eq("event_id", event_id)
   if (error) throw error;
-  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
-  return sum(data.map((to) => to.quantity));
+
+  console.log("DATTAAAA", data);
+  return data;
+}
+
+export async function getTicketCount(event_id: number, org_id: number) {
+
+  const { data: active_tickets, error: active_tickets_error } = await supabase
+  .from("ticket_orders")
+  .select("quantity")
+  .eq("org_id", org_id) 
+  .eq("event_id", event_id);
+
+if (active_tickets_error) throw active_tickets_error;
+
+const total_active_tickets: number =
+  active_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) || 0;
+
+const { data: refunded_tickets, error: refunded_tickets_error } =
+  await supabase
+  .from("refund_requests")
+  .select("quantity, ticket_orders!inner(id, org_id, event_id)") // Select id and org_id from ticket_orders
+  .in("refund_status", ["PENDING", "APPROVED"])
+  .eq("ticket_orders.org_id", org_id)
+  .eq("ticket_orders.event_id", event_id);
+
+
+console.log("refunded_tickets", refunded_tickets);
+
+
+// if (refunded_tickets_error) throwx refunded_tickets_error;
+
+const total_refunded_tickets: number =
+  refunded_tickets?.reduce((sum, order) => sum + (order.quantity || 0), 0) ||
+  0;
+  console.log("total_refunded_tickets", total_refunded_tickets);
+  console.log("total_active_tickets", total_active_tickets);
+
+return total_active_tickets - total_refunded_tickets;
+
 }
 
 export async function getCoachOrganizations(coach_id: string) {

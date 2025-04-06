@@ -153,3 +153,10 @@ export async function getEventAddonQuantities(event_id: number) {
     orgQuantities
   };
 }
+
+// Export from deletion.ts
+export { 
+  deleteStudentFromEvent,
+  deleteTeamFromEvent,
+  deleteOrganizationFromEvent
+} from './deletion';

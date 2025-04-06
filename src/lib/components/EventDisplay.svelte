@@ -116,6 +116,24 @@
               {/if}
             </span>
           {/if}
+          <span
+            class="mr-2 flex {editable ? 'editableField' : ''}"
+            onclick={() => editable && (editingField = "reg_frozen")}
+          >
+            {#if editingField === "reg_frozen"}
+              <Checkbox
+                bind:checked={newResponses.reg_frozen}
+                on:change={handleEdit}
+                onmouseleave={() => (editingField = null)}
+              >
+                Registration Frozen
+              </Checkbox>
+            {:else if newResponses.reg_frozen}
+              <Badge large color="red">Registration Closed</Badge>
+            {:else}
+              <Badge large color="green">Registration Open</Badge>
+            {/if}
+          </span>
         </h2>
       {:else}
         <h1
