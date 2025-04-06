@@ -415,8 +415,11 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     }),
   );
   coaches.push(debug_coach);
-  const { hosts } = await seed.hosts((x) => x(3));
+  await seed.hosts((x) => x(3));
+  // Include the debug student's debug host.
+  const hosts = seed.$store.hosts;
 
+  // Make sure the debug admin is attached to every host.
   await seed.host_admins(
     admins
       .filter((a) => a.admin_id != debug_admin.admin_id)
