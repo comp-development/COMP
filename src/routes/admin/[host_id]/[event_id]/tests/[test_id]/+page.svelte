@@ -302,268 +302,273 @@
     </div>
     <br />
   </div>
-  <div class="box-basic">
-    <p style="font-weight: bold; font-size: 24px;">Problem Rearrangement</p>
-    <div>
-      {#each groupByPageNumber(problems, test.settings.pages.length) as pageProblems, pageNumber}
-        <div class="page-container">
-          <div class="flex">
-            <TextInput
-              labelText="Page Title"
-              bind:value={test.settings.pages[pageNumber]}
-              style="width: 500px"
-              on:blur={(e) => {
-                test.settings.pages[pageNumber] = e.target.value;
-              }}
-            />
-            <button
-              class="arrow-button"
-              onclick={async () => {
-                test.settings.pages.splice(pageNumber, 1);
-                test = { ...test };
-                await saveTest();
-              }}>🗑️</button
-            >
-          </div>
-          <br />
-          {#each pageProblems as problem, index}
-            <div class="container">
-              <div class="row">
-                <div>
-                  <h4>Editable</h4>
-                  <div class="arrows">
-                    <p style="margin: 0; padding: 0">
-                      {problem.problem_number}.
-                    </p>
-                    <button
-                      class="arrow-button"
-                      onclick={() => {
-                        modalProblem = problems.indexOf(problem);
-                      }}>🔁</button
-                    >
-                    <button
-                      class="arrow-button"
-                      onclick={() => moveUp(problems.indexOf(problem))}
-                      disabled={problems.indexOf(problem) === 0}>⬆️</button
-                    >
 
-                    <button
-                      class="arrow-button"
-                      onclick={() => moveDown(problems.indexOf(problem))}
-                      disabled={problems.indexOf(problem) ===
-                        problems.length - 1}>⬇️</button
-                    >
-
-                    <button
-                      class="arrow-button"
-                      onclick={async () => {
-                        await deleteTestProblem(problem.test_problem_id);
-
-                        const curIndex = problems.indexOf(problem);
-
-                        problems.splice(curIndex, 1);
-
-                        for (let i = curIndex; i < problems.length; i++) {
-                          problems[curIndex].problem_number -= 1;
-                        }
-
-                        problems = [...problems];
-
-                        await saveTest();
-                      }}>🗑️</button
-                    >
-                  </div>
-                  <br />
-                  <TextInput
-                    labelText="Name"
-                    bind:value={problem.name}
-                    on:input={(e) => {
-                      problem.edits = true;
-                      problems[problems.problem_number - 1]["name"] =
-                        e.target.value;
-                    }}
-                  />
-
-                  <br />
-                  <div class="row">
-                    <TextInput
-                      labelText="Page Number"
-                      bind:value={problem.page_number}
-                      on:input={(e) => {
-                        problem.edits = true;
-                        problems[problems.indexOf(problem)]["page_number"] =
-                          e.target.value;
-                      }}
-                    />
-                    <TextInput
-                      labelText="Points"
-                      bind:value={problem.points}
-                      on:input={(e) => {
-                        problem.edits = true;
-                        problems[problems.indexOf(problem)]["points"] =
-                          e.target.value;
-                      }}
-                    />
-                  </div>
-                  <br />
-                  <TextArea
-                    labelText="Problem Latex"
-                    bind:value={problem.problems.problem_latex}
-                    on:input={(e) => {
-                      problem.edits = true;
-                      problems[problems.indexOf(problem)]["problems"][
-                        "problem_latex"
-                      ] = e.target.value;
-                    }}
-                  />
-                  <br />
-                  <TextArea
-                    labelText="Clarification Latex"
-                    bind:value={
-                      clarifications[problem.test_problem_id]
-                        .clarification_latex
-                    }
-                    on:input={(e) => {
-                      problem.edits = true;
-                      clarifications[
-                        problem.test_problem_id
-                      ].clarification_latex = e.target.value;
-                    }}
-                  />
-                  <br />
-                  <TextInput
-                    labelText="Answer Latex"
-                    bind:value={problem.problems.answer_latex}
-                    on:input={(e) => {
-                      problem.edits = true;
-                      problems[problems.indexOf(problem)]["problems"][
-                        "answer_latex"
-                      ] = e.target.value;
-                    }}
-                  />
-                  <br />
-                  {#if problem.edits}
-                    <Button
-                      title="Save Changes"
-                      action={async () => {
-                        try {
-                          delete problem.edits;
-                          await updateTestProblem(
-                            test.test_id,
-                            problems[problems.indexOf(problem)],
-                          );
-                          clarifications[problem.test_problem_id] =
-                            await updateClarification({
-                              ...clarifications[problem.test_problem_id],
-                            });
-                          toast.success("Saved problem");
-                        } catch (e) {
-                          await handleError(e);
-                        }
-                      }}
-                    />
-                  {/if}
-                  <br />
-                </div>
-                <div>
-                  <h4>Display</h4>
-                  <Problem
-                    {problem}
-                    clarification={clarifications[problem.test_problem_id]
-                      .clarification_latex}
-                  />
-                  <br /><br />
-                  <MathJax math={"Answer: " + problem.problems.answer_latex} />
-                </div>
-              </div>
+  {#if test.test_mode != "Puzzle"}
+    <div class="box-basic">
+      <p style="font-weight: bold; font-size: 24px;">Problem Rearrangement</p>
+      <div>
+        {#each groupByPageNumber(problems, test.settings.pages.length) as pageProblems, pageNumber}
+          <div class="page-container">
+            <div class="flex">
+              <TextInput
+                labelText="Page Title"
+                bind:value={test.settings.pages[pageNumber]}
+                style="width: 500px"
+                on:blur={(e) => {
+                  test.settings.pages[pageNumber] = e.target.value;
+                }}
+              />
+              <button
+                class="arrow-button"
+                onclick={async () => {
+                  test.settings.pages.splice(pageNumber, 1);
+                  test = { ...test };
+                  await saveTest();
+                }}>🗑️</button
+              >
             </div>
             <br />
-          {/each}
+            {#each pageProblems as problem, index}
+              <div class="container">
+                <div class="row">
+                  <div>
+                    <h4>Editable</h4>
+                    <div class="arrows">
+                      <p style="margin: 0; padding: 0">
+                        {problem.problem_number}.
+                      </p>
+                      <button
+                        class="arrow-button"
+                        onclick={() => {
+                          modalProblem = problems.indexOf(problem);
+                        }}>🔁</button
+                      >
+                      <button
+                        class="arrow-button"
+                        onclick={() => moveUp(problems.indexOf(problem))}
+                        disabled={problems.indexOf(problem) === 0}>⬆️</button
+                      >
 
+                      <button
+                        class="arrow-button"
+                        onclick={() => moveDown(problems.indexOf(problem))}
+                        disabled={problems.indexOf(problem) ===
+                          problems.length - 1}>⬇️</button
+                      >
+
+                      <button
+                        class="arrow-button"
+                        onclick={async () => {
+                          await deleteTestProblem(problem.test_problem_id);
+
+                          const curIndex = problems.indexOf(problem);
+
+                          problems.splice(curIndex, 1);
+
+                          for (let i = curIndex; i < problems.length; i++) {
+                            problems[curIndex].problem_number -= 1;
+                          }
+
+                          problems = [...problems];
+
+                          await saveTest();
+                        }}>🗑️</button
+                      >
+                    </div>
+                    <br />
+                    <TextInput
+                      labelText="Name"
+                      bind:value={problem.name}
+                      on:input={(e) => {
+                        problem.edits = true;
+                        problems[problems.problem_number - 1]["name"] =
+                          e.target.value;
+                      }}
+                    />
+
+                    <br />
+                    <div class="row">
+                      <TextInput
+                        labelText="Page Number"
+                        bind:value={problem.page_number}
+                        on:input={(e) => {
+                          problem.edits = true;
+                          problems[problems.indexOf(problem)]["page_number"] =
+                            e.target.value;
+                        }}
+                      />
+                      <TextInput
+                        labelText="Points"
+                        bind:value={problem.points}
+                        on:input={(e) => {
+                          problem.edits = true;
+                          problems[problems.indexOf(problem)]["points"] =
+                            e.target.value;
+                        }}
+                      />
+                    </div>
+                    <br />
+                    <TextArea
+                      labelText="Problem Latex"
+                      bind:value={problem.problems.problem_latex}
+                      on:input={(e) => {
+                        problem.edits = true;
+                        problems[problems.indexOf(problem)]["problems"][
+                          "problem_latex"
+                        ] = e.target.value;
+                      }}
+                    />
+                    <br />
+                    <TextArea
+                      labelText="Clarification Latex"
+                      bind:value={
+                        clarifications[problem.test_problem_id]
+                          .clarification_latex
+                      }
+                      on:input={(e) => {
+                        problem.edits = true;
+                        clarifications[
+                          problem.test_problem_id
+                        ].clarification_latex = e.target.value;
+                      }}
+                    />
+                    <br />
+                    <TextInput
+                      labelText="Answer Latex"
+                      bind:value={problem.problems.answer_latex}
+                      on:input={(e) => {
+                        problem.edits = true;
+                        problems[problems.indexOf(problem)]["problems"][
+                          "answer_latex"
+                        ] = e.target.value;
+                      }}
+                    />
+                    <br />
+                    {#if problem.edits}
+                      <Button
+                        title="Save Changes"
+                        action={async () => {
+                          try {
+                            delete problem.edits;
+                            await updateTestProblem(
+                              test.test_id,
+                              problems[problems.indexOf(problem)],
+                            );
+                            clarifications[problem.test_problem_id] =
+                              await updateClarification({
+                                ...clarifications[problem.test_problem_id],
+                              });
+                            toast.success("Saved problem");
+                          } catch (e) {
+                            await handleError(e);
+                          }
+                        }}
+                      />
+                    {/if}
+                    <br />
+                  </div>
+                  <div>
+                    <h4>Display</h4>
+                    <Problem
+                      {problem}
+                      clarification={clarifications[problem.test_problem_id]
+                        .clarification_latex}
+                    />
+                    <br /><br />
+                    <MathJax math={"Answer: " + problem.problems.answer_latex} />
+                  </div>
+                </div>
+              </div>
+              <br />
+            {/each}
+
+            <br />
+            <Button
+              title="Add New Problem"
+              action={async () => {
+                loading = true;
+                curPage = pageNumber;
+                openAddProblemModal = true;
+                loading = false;
+              }}
+            />
+            <br /><br />
+          </div>
           <br />
-          <Button
-            title="Add New Problem"
-            action={async () => {
-              loading = true;
-              curPage = pageNumber;
-              openAddProblemModal = true;
-              loading = false;
-            }}
-          />
-          <br /><br />
-        </div>
+        {/each}
+        <Button
+          title="Add New Page"
+          action={async () => {
+            loading = true;
+            await addNewProblemPage(
+              problems[problems.length - 1].page_number + 1,
+            );
+            loading = false;
+          }}
+        />
         <br />
-      {/each}
-      <Button
-        title="Add New Page"
-        action={async () => {
-          loading = true;
-          await addNewProblemPage(
-            problems[problems.length - 1].page_number + 1,
-          );
-          loading = false;
-        }}
-      />
-      <br />
+      </div>
     </div>
-  </div>
 
-  <SelectProblem
-    open={modalProblem != null}
-    changeNewProblem={() => {
-      modalProblem = null;
-      newProblemModal = true;
-    }}
-    host_id={host_id}
-    closeModal={() => (modalProblem = null)}
-    onSelect={async (row) => {
-      try {
-        const newProblem = await replaceTestProblem(
-          problems[modalProblem].test_problem_id,
-          row.problem_id,
-          "*, problems(*)",
-        );
-        problems[modalProblem] = newProblem;
-        problems = [...problems];
-
+    <SelectProblem
+      open={modalProblem != null}
+      changeNewProblem={() => {
         modalProblem = null;
-      } catch (e) {
-        handleError(e);
-      }
-    }}
-  />
+        newProblemModal = true;
+      }}
+      host_id={host_id}
+      closeModal={() => (modalProblem = null)}
+      onSelect={async (row) => {
+        try {
+          const newProblem = await replaceTestProblem(
+            problems[modalProblem].test_problem_id,
+            row.problem_id,
+            "*, problems(*)",
+          );
+          problems[modalProblem] = newProblem;
+          problems = [...problems];
 
-  <SelectProblem
-    open={openAddProblemModal}
-    changeNewProblem={() => {
-      openAddProblemModal = false;
-      newProblemModal = true;
-    }}
-    closeModal={() => {
-      openAddProblemModal = false;
-    }}
-    host_id={host_id}
-    onSelect={async (row) => {
-      console.log("ROW", row);
-      await addNewProblemToTest(row);
-    }}
-  />
+          modalProblem = null;
+        } catch (e) {
+          handleError(e);
+        }
+      }}
+    />
 
-  <CreateProblemModal
-    open={newProblemModal}
-    host_id={host_id}
-    changeNewProblem={() => {
-      newProblemModal = true;
-    }}
-    closeModal={() => {
-      newProblemModal = false;
-    }}
-    addProblemFunction={async (problem) => {
-      console.log("PROBLEM", problem);
-      await addNewProblemToTest(problem);
-      newProblemModal = false;
-    }}
-  />
+    <SelectProblem
+      open={openAddProblemModal}
+      changeNewProblem={() => {
+        openAddProblemModal = false;
+        newProblemModal = true;
+      }}
+      closeModal={() => {
+        openAddProblemModal = false;
+      }}
+      host_id={host_id}
+      onSelect={async (row) => {
+        console.log("ROW", row);
+        await addNewProblemToTest(row);
+      }}
+    />
+
+    <CreateProblemModal
+      open={newProblemModal}
+      host_id={host_id}
+      changeNewProblem={() => {
+        newProblemModal = true;
+      }}
+      closeModal={() => {
+        newProblemModal = false;
+      }}
+      addProblemFunction={async (problem) => {
+        console.log("PROBLEM", problem);
+        await addNewProblemToTest(problem);
+        newProblemModal = false;
+      }}
+    />
+  {:else}
+    <PuzzleNavigation />
+  {/if}
 {/if}
 
 <style>
