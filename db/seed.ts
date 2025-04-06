@@ -409,10 +409,16 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     }),
   );
   coaches.push(debug_coach);
-  const { hosts } = await seed.hosts((x) => x(3));
+  await seed.hosts((x) => x(3));
+  // Include the debug student's debug host.
+  const hosts = seed.$store.hosts;
 
+  // Make sure the debug admin is attached to every host.
   await seed.host_admins(
-    admins.flatMap((a) => [{ admin_id: a.admin_id }, { admin_id: a.admin_id }]),
+    admins
+      .filter((a) => a.admin_id != debug_admin.admin_id)
+      .flatMap((a) => [{ admin_id: a.admin_id }, { admin_id: a.admin_id }])
+      .concat(hosts.map((h) => ({ host_id: h.host_id, admin_id: debug_admin.admin_id }))),
     {
       connect: { hosts },
     },
