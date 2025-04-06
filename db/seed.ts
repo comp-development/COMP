@@ -333,7 +333,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
   // (the postgres seed client has no permission over those tables and errors
   // if trying to clear them out.)
   await seed.$resetDatabase([
-    "!_realtime.*",
+    // "!_realtime.*",
     "!net.*",
     "!pgsodium.*",
     "!realtime.*",

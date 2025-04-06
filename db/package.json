@@ -10,12 +10,12 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@snaplet/copycat": "^5.1.0",
+    "@snaplet/copycat": "^5.1.1",
     "@snaplet/seed": "^0.98.0",
-    "@types/node": "^22.9.0",
-    "@types/pg": "^8.11.10",
+    "@types/node": "^22.14.0",
+    "@types/pg": "^8.11.11",
     "pg": "^8.14.1",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.3"
   },
   "postinstall": "patch-package",
   "dependencies": {

@@ -24,6 +24,1921 @@
   import Problem from "$lib/components/Problem.svelte";
   import SelectProblem from "$lib/components/SelectProblem.svelte";
   import CreateProblemModal from "$lib/components/CreateProblemModal.svelte";
+  import PuzzleNavigation from "$lib/components/PuzzleNavigation.svelte";
+
+  let puzzles = [
+    [
+      {
+        loc: [
+          [0, 8],
+          [0, 6],
+          [2, 6],
+          [2, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 6],
+          [0, 4],
+          [2, 4],
+          [2, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 4],
+          [0, 2],
+          [2, 2],
+          [2, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 2],
+          [0, 0],
+          [2, 0],
+          [2, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 8],
+          [2, 6],
+          [4, 6],
+          [4, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 6],
+          [2, 4],
+          [4, 4],
+          [4, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 4],
+          [2, 2],
+          [4, 2],
+          [4, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 2],
+          [2, 0],
+          [4, 0],
+          [4, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 8],
+          [4, 6],
+          [6, 6],
+          [6, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 6],
+          [4, 4],
+          [6, 4],
+          [6, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 4],
+          [4, 2],
+          [6, 2],
+          [6, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 2],
+          [4, 0],
+          [6, 0],
+          [6, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 8],
+          [6, 6],
+          [8, 6],
+          [8, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 6],
+          [6, 4],
+          [8, 4],
+          [8, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 4],
+          [6, 2],
+          [8, 2],
+          [8, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 2],
+          [6, 0],
+          [8, 0],
+          [8, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 0],
+          [2, 0],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 0],
+          [4, 0],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 0],
+          [6, 0],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 0],
+          [8, 0],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 0],
+          [0, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 0],
+          [2, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 0],
+          [4, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 0],
+          [6, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [8, 0],
+          [8, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 2],
+          [2, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 2],
+          [4, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 2],
+          [6, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 2],
+          [8, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 2],
+          [0, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 2],
+          [2, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 2],
+          [4, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 2],
+          [6, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [8, 2],
+          [8, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 4],
+          [2, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 4],
+          [4, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 4],
+          [6, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 4],
+          [8, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 4],
+          [0, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 4],
+          [2, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 4],
+          [4, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 4],
+          [6, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [8, 4],
+          [8, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 6],
+          [2, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 6],
+          [4, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 6],
+          [6, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 6],
+          [8, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 6],
+          [0, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 6],
+          [2, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 6],
+          [4, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 6],
+          [6, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [8, 6],
+          [8, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 8],
+          [2, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 8],
+          [4, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 8],
+          [6, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 8],
+          [8, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [[0, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[5, 1]],
+        type: "text",
+        state: "3",
+      },
+      {
+        loc: [[1, 3]],
+        type: "text",
+        state: "3",
+      },
+      {
+        loc: [[3, 3]],
+        type: "text",
+        state: "0",
+      },
+      {
+        loc: [[5, 5]],
+        type: "text",
+        state: "0",
+      },
+      {
+        loc: [[7, 5]],
+        type: "text",
+        state: "2",
+      },
+      {
+        loc: [[3, 7]],
+        type: "text",
+        state: "1",
+      },
+    ],
+    [
+      {
+        loc: [
+          [0, 8],
+          [0, 6],
+          [2, 6],
+          [2, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 6],
+          [0, 4],
+          [2, 4],
+          [2, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 4],
+          [0, 2],
+          [2, 2],
+          [2, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 2],
+          [0, 0],
+          [2, 0],
+          [2, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 8],
+          [2, 6],
+          [4, 6],
+          [4, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 6],
+          [2, 4],
+          [4, 4],
+          [4, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 4],
+          [2, 2],
+          [4, 2],
+          [4, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 2],
+          [2, 0],
+          [4, 0],
+          [4, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 8],
+          [4, 6],
+          [6, 6],
+          [6, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 6],
+          [4, 4],
+          [6, 4],
+          [6, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 4],
+          [4, 2],
+          [6, 2],
+          [6, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 2],
+          [4, 0],
+          [6, 0],
+          [6, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 8],
+          [6, 6],
+          [8, 6],
+          [8, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 6],
+          [6, 4],
+          [8, 4],
+          [8, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 4],
+          [6, 2],
+          [8, 2],
+          [8, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 2],
+          [6, 0],
+          [8, 0],
+          [8, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 0],
+          [2, 0],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 0],
+          [4, 0],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 0],
+          [6, 0],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 0],
+          [8, 0],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 0],
+          [0, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 0],
+          [2, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 0],
+          [4, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 0],
+          [6, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [8, 0],
+          [8, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 2],
+          [2, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 2],
+          [4, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 2],
+          [6, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 2],
+          [8, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 2],
+          [0, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 2],
+          [2, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 2],
+          [4, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 2],
+          [6, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [8, 2],
+          [8, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 4],
+          [2, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 4],
+          [4, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 4],
+          [6, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 4],
+          [8, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 4],
+          [0, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 4],
+          [2, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 4],
+          [4, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 4],
+          [6, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [8, 4],
+          [8, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 6],
+          [2, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 6],
+          [4, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 6],
+          [6, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 6],
+          [8, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 6],
+          [0, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 6],
+          [2, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 6],
+          [4, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 6],
+          [6, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [8, 6],
+          [8, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 8],
+          [2, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 8],
+          [4, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 8],
+          [6, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 8],
+          [8, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [[0, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[5, 1]],
+        type: "text",
+        state: "3",
+      },
+      {
+        loc: [[1, 3]],
+        type: "text",
+        state: "3",
+      },
+      {
+        loc: [[3, 3]],
+        type: "text",
+        state: "0",
+      },
+      {
+        loc: [[5, 5]],
+        type: "text",
+        state: "0",
+      },
+      {
+        loc: [[7, 5]],
+        type: "text",
+        state: "2",
+      },
+      {
+        loc: [[3, 7]],
+        type: "text",
+        state: "1",
+      },
+    ],
+    [
+      {
+        loc: [
+          [0, 8],
+          [0, 6],
+          [2, 6],
+          [2, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 6],
+          [0, 4],
+          [2, 4],
+          [2, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 4],
+          [0, 2],
+          [2, 2],
+          [2, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 2],
+          [0, 0],
+          [2, 0],
+          [2, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 8],
+          [2, 6],
+          [4, 6],
+          [4, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 6],
+          [2, 4],
+          [4, 4],
+          [4, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 4],
+          [2, 2],
+          [4, 2],
+          [4, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [2, 2],
+          [2, 0],
+          [4, 0],
+          [4, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 8],
+          [4, 6],
+          [6, 6],
+          [6, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 6],
+          [4, 4],
+          [6, 4],
+          [6, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 4],
+          [4, 2],
+          [6, 2],
+          [6, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [4, 2],
+          [4, 0],
+          [6, 0],
+          [6, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 8],
+          [6, 6],
+          [8, 6],
+          [8, 8],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 6],
+          [6, 4],
+          [8, 4],
+          [8, 6],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 4],
+          [6, 2],
+          [8, 2],
+          [8, 4],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [6, 2],
+          [6, 0],
+          [8, 0],
+          [8, 2],
+        ],
+        type: "surface",
+        state: "",
+      },
+      {
+        loc: [
+          [0, 0],
+          [2, 0],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 0],
+          [4, 0],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 0],
+          [6, 0],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 0],
+          [8, 0],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 0],
+          [0, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 0],
+          [2, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 0],
+          [4, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 0],
+          [6, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [8, 0],
+          [8, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 2],
+          [2, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 2],
+          [4, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 2],
+          [6, 2],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 2],
+          [8, 2],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 2],
+          [0, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 2],
+          [2, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 2],
+          [4, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 2],
+          [6, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [8, 2],
+          [8, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 4],
+          [2, 4],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 4],
+          [4, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 4],
+          [6, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 4],
+          [8, 4],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 4],
+          [0, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [2, 4],
+          [2, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 4],
+          [4, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 4],
+          [6, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [8, 4],
+          [8, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 6],
+          [2, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 6],
+          [4, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 6],
+          [6, 6],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 6],
+          [8, 6],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [0, 6],
+          [0, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 6],
+          [2, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [4, 6],
+          [4, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [6, 6],
+          [6, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [8, 6],
+          [8, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [
+          [0, 8],
+          [2, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [2, 8],
+          [4, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [4, 8],
+          [6, 8],
+        ],
+        type: "edge",
+        state: "+",
+      },
+      {
+        loc: [
+          [6, 8],
+          [8, 8],
+        ],
+        type: "edge",
+        state: "-",
+      },
+      {
+        loc: [[0, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 0]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 2]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 4]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 6]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[0, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[2, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[4, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[6, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[8, 8]],
+        type: "point",
+        state: "true",
+      },
+      {
+        loc: [[5, 1]],
+        type: "text",
+        state: "3",
+      },
+      {
+        loc: [[1, 3]],
+        type: "text",
+        state: "3",
+      },
+      {
+        loc: [[3, 3]],
+        type: "text",
+        state: "0",
+      },
+      {
+        loc: [[5, 5]],
+        type: "text",
+        state: "0",
+      },
+      {
+        loc: [[7, 5]],
+        type: "text",
+        state: "2",
+      },
+      {
+        loc: [[3, 7]],
+        type: "text",
+        state: "1",
+      },
+    ],
+  ];
 
   // Define interfaces for our data structures
   interface TestProblem {
@@ -83,7 +1998,7 @@
   (async () => {
     user = await getThisUser();
     test = await getTest(test_id);
-    problems = await getTestProblems(test_id, null, "*, problems(*)") || [];
+    problems = (await getTestProblems(test_id, null, "*, problems(*)")) || [];
     allProblems = await getAllProblems(host_id);
     allProblems.forEach((problem) => {
       problem.id = problem.problem_id;
@@ -118,7 +2033,7 @@
       // Resort problems after the swap
       problems.sort(
         (a: TestProblem, b: TestProblem) =>
-          a.page_number - b.page_number || a.problem_number - b.problem_number,
+          a.page_number - b.page_number || a.problem_number - b.problem_number
       );
     }
   }
@@ -149,12 +2064,16 @@
       // Resort problems after the swap
       problems.sort(
         (a: TestProblem, b: TestProblem) =>
-          a.page_number - b.page_number || a.problem_number - b.problem_number,
+          a.page_number - b.page_number || a.problem_number - b.problem_number
       );
     }
   }
 
-  async function updateTestWithKey(event: { target: { value: any } }, key: string, autoUpdate = false) {
+  async function updateTestWithKey(
+    event: { target: { value: any } },
+    key: string,
+    autoUpdate = false
+  ) {
     if (test) {
       test[key] = event.target.value;
       if (autoUpdate) {
@@ -185,7 +2104,10 @@
 
   // Group problems by page_number
   const groupByPageNumber = (problems: TestProblem[], totalPages: number) => {
-    const grouped: TestProblem[][] = Array.from({ length: totalPages }, () => []);
+    const grouped: TestProblem[][] = Array.from(
+      { length: totalPages },
+      () => []
+    );
 
     problems.forEach((problem: TestProblem) => {
       const pageNumber = problem.page_number - 1;
@@ -203,10 +2125,10 @@
   async function addNewProblemToTest(row: { problem_id: number }) {
     try {
       if (!test) return;
-      
+
       const groupedProblems = groupByPageNumber(
         problems,
-        test.settings.pages.length,
+        test.settings.pages.length
       );
       let prob_number = 0;
       const idx = curPage !== null ? curPage : test.settings.pages.length - 1;
@@ -233,7 +2155,7 @@
           points: 1,
           problem_number: prob_number + 1,
         },
-        "*, problems(*)",
+        "*, problems(*)"
       );
 
       problems.push(newProblem);
@@ -452,7 +2374,7 @@
                             delete problem.edits;
                             await updateTestProblem(
                               test.test_id,
-                              problems[problems.indexOf(problem)],
+                              problems[problems.indexOf(problem)]
                             );
                             clarifications[problem.test_problem_id] =
                               await updateClarification({
@@ -475,7 +2397,9 @@
                         .clarification_latex}
                     />
                     <br /><br />
-                    <MathJax math={"Answer: " + problem.problems.answer_latex} />
+                    <MathJax
+                      math={"Answer: " + problem.problems.answer_latex}
+                    />
                   </div>
                 </div>
               </div>
@@ -501,7 +2425,7 @@
           action={async () => {
             loading = true;
             await addNewProblemPage(
-              problems[problems.length - 1].page_number + 1,
+              problems[problems.length - 1].page_number + 1
             );
             loading = false;
           }}
@@ -516,14 +2440,14 @@
         modalProblem = null;
         newProblemModal = true;
       }}
-      host_id={host_id}
+      {host_id}
       closeModal={() => (modalProblem = null)}
       onSelect={async (row) => {
         try {
           const newProblem = await replaceTestProblem(
             problems[modalProblem].test_problem_id,
             row.problem_id,
-            "*, problems(*)",
+            "*, problems(*)"
           );
           problems[modalProblem] = newProblem;
           problems = [...problems];
@@ -544,7 +2468,7 @@
       closeModal={() => {
         openAddProblemModal = false;
       }}
-      host_id={host_id}
+      {host_id}
       onSelect={async (row) => {
         console.log("ROW", row);
         await addNewProblemToTest(row);
@@ -553,7 +2477,7 @@
 
     <CreateProblemModal
       open={newProblemModal}
-      host_id={host_id}
+      {host_id}
       changeNewProblem={() => {
         newProblemModal = true;
       }}
@@ -567,7 +2491,7 @@
       }}
     />
   {:else}
-    <PuzzleNavigation />
+    <PuzzleNavigation bind:puzzles isAdmin={true} />
   {/if}
 {/if}
 
