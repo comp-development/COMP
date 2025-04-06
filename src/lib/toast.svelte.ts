@@ -87,5 +87,5 @@ class Toaster {
   }
 }
 
-const toast: Toaster = new Toaster(2000);
+const toast: Toaster = new Toaster(5000);
 export default toast;
