@@ -17,14 +17,12 @@ const example_problems = [
     solution_latex:
       "many people have the same number of toes as fingers. so, count your toes (10) and that is the answer.",
     answer_type: "Integer",
-    host_id: 1,
   },
   {
     problem_latex: "what is thirteen plus fourteen minus two",
     answer_latex: "25",
     solution_latex: "compute it.",
     answer_type: "Integer",
-    host_id: 1,
   },
   {
     problem_latex:
@@ -32,7 +30,6 @@ const example_problems = [
     answer_latex: "Inequality gives proof.",
     solution_latex: "do it",
     answer_type: "Text",
-    host_id: 1,
   },
   {
     problem_latex:
@@ -40,7 +37,6 @@ const example_problems = [
     answer_latex: "pi",
     solution_latex: "look up stack exchange",
     answer_type: "AsciiMath",
-    host_id: 1,
   },
   {
     problem_latex: `how many ways are there to arrange the letters in the word allergies \\image{${EXAMPLE_IMAGE_PATH}}`,
@@ -48,7 +44,6 @@ const example_problems = [
     solution_latex:
       "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
     answer_type: "AsciiMath",
-    host_id: 1,
   },
 ] satisfies Partial<Tables<"problems">>[];
 
@@ -104,13 +99,15 @@ async function create_user(
 // Seed an event and test with explicit parameters for ease of testing.
 async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
   // Put the student in an event with a test that opens now.
-  const {
+  const {hosts: [{host_id}]} = await seed.hosts([{}]);
+    const {
     events: [event],
   } = await seed.events([
     {
       event_name: "Example Event",
       event_date: new Date(),
       published: true,
+      host_id,
       summary: "debug event for testing",
       eventbrite_event_id: null,
       tests: [
@@ -124,7 +121,7 @@ async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
           visible: true,
           test_mode: "Standard",
           access_rules: null,
-          test_problems: example_problems.map((p) => ({ problems: p })),
+          test_problems: example_problems.map((p) => ({ problems: {...p, host_id} })),
         },
       ],
       ticket_orders: [
@@ -287,7 +284,7 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
           name: (ctx) =>
             "Organization " + copycat.word(ctx.seed, { capitalize: true }),
           address: (ctx) => copycat.postalAddress(ctx.seed),
-          address_latitude: null, 
+          address_latitude: null,
           address_longitude: null,
         },
       },
@@ -412,7 +409,16 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
   const { hosts } = await seed.hosts((x) => x(3));
 
   await seed.host_admins(
-    admins.flatMap((a) => [{ admin_id: a.admin_id }, { admin_id: a.admin_id }]),
+    admins
+      .filter((a) => a.admin_id != debug_admin.admin_id)
+      .flatMap((a) => [{ admin_id: a.admin_id }, { admin_id: a.admin_id }])
+      .concat(
+        hosts.map((h) => ({
+          host_id: h.host_id,
+          admin_id: debug_admin.admin_id,
+          owner: true,
+        })),
+      ),
     {
       connect: { hosts },
     },
