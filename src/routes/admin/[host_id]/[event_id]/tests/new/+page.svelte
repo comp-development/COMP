@@ -322,6 +322,7 @@
 
       toast.success("Tests uploaded successfully!");
     } catch (error) {
+      console.error("COOOOOOKED. Error in handleSubmit:", error);
       handleError(error); // Log and display errors
       toast.error(error.message);
     }
