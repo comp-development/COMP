@@ -411,6 +411,20 @@
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
         </button>
+        <!-- <button
+          class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
+          onclick={() => openTestModal(false)}
+        >
+        </button> -->
+      </div>
+      <div style="padding: 15px;">
+        <a href="./tests/new">
+          <button
+            class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
+          >
+            Import Tests
+          </button>
+        </a>
       </div>
       <div class="test-grid">
         {#each Object.values(testStatusMap).sort((a, b) => {

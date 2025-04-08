@@ -1,6 +1,5 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
-  import Papa from "papaparse";
   import { page } from "$app/stores";
   import Button from "$lib/components/Button.svelte";
   import {
@@ -41,16 +40,38 @@
     getEventTests,
     getTeamId,
     updateTest,
-    insertTest,
+    upsertTest,
+    upsertTestProblems,
+    upsertProblems,
+    upsertIntoBucket,
+    getTest,
+    getTestFromComposeId,
+    getProblem,
+    getProblemFromComposeID,
   } from "$lib/supabase";
+  import { get } from "svelte/store";
   // import { Checkbox } from "flowbite-svelte";
 
   let loading = $state(true);
 
   let open = $state(false);
   let instructions = "";
-  let name = "";
-  let description = "";
+  // let name = "";
+  // let description = "";
+  // let isTeamTest = false;
+  let uploadedFile = $state(null);
+  let testData: {
+    tests: any[];
+    test_problems: any[];
+    problem_images: any[];
+    problems: any[];
+  } = {
+    tests: [],
+    test_problems: [],
+    problem_images: [],
+    problems: [],
+  };
+  let isUploading = $state(false);
 
   let availableTests = [];
   let testStatusMap = $state({});
@@ -140,66 +161,170 @@
     Object.values(testStatusMap).forEach(updateStatus);
   }, 1000);
 
-  async function handleSubmit() {
-    curTest.buffer_time = parseInt(curTest.buffer_time);
-    let [hours, minutes] = curTest.time.split(":");
-    if (curTest.amPm === "pm" && hours !== "12") {
-      hours = parseInt(hours) + 12;
-    } else if (curTest.amPm === "am" && hours === "12") {
-      hours = "00"; // Handle midnight
+  function validateJson(jsonData: JSON) {
+    const requiredHeaders = [
+      "tests",
+      "test_problems",
+      "problem_images",
+      "problems",
+    ];
+    const errors = [];
+
+    // Check if each required header exists in the JSON data
+    for (const header of requiredHeaders) {
+      if (!jsonData.hasOwnProperty(header)) {
+        errors.push(`Missing required header: "${header}"`);
+      }
     }
 
-    const splitDate = curTest.date.split("/");
-    console.log(splitDate);
-    const year2 = splitDate[2];
-    const month2 = splitDate[0];
-    const day2 = splitDate[1];
-
-    const dateTimeString = `${year2}-${month2}-${day2}T${hours}:${minutes}:00`;
-    console.log(dateTimeString);
-    const timestampz = new Date(dateTimeString).toISOString(); // Supabase expects ISO format for timestamptz
-    console.log(timestampz);
-    const data = {
-      opening_time: timestampz,
-      buffer_time: curTest.buffer_time,
+    return {
+      isValid: errors.length === 0,
+      errors: errors,
     };
-
-    await updateTest(curTest.test_id, data);
-    curTest.opening_time = timestampz;
-    console.log("CUR", curTest);
-    console.log("TEST", testStatusMap[curTest.test_id]);
-    console.log(
-      new Date(curTest.opening_time),
-      curTest.length,
-      curTest.buffer_time
-    );
-    console.log(
-      addTime(
-        new Date(curTest.opening_time),
-        curTest.length + curTest.buffer_time,
-        "seconds"
-      )
-    );
-    console.log(
-      formatDuration(
-        Math.abs(
-          diffBetweenDates(
-            new Date(),
-            addTime(
-              new Date(curTest.opening_time),
-              curTest.length + curTest.buffer_time,
-              "seconds"
-            ),
-            "seconds"
-          )
-        )
-      )
-    );
   }
 
-  function validateInput() {
-    // Check if the value is a nonnegative integer using regex
-    isInvalid = !/^\d+$/.test(curTest.buffer_time);
+  async function handleFileUpload(event) {
+    console.log("Handling file upload...");
+    isUploading = true;
+
+    const file = event.detail[0];
+    if (!file) {
+      isUploading = false;
+      return;
+    }
+
+    try {
+      // Read the file as text
+      const fileText = await file.text();
+
+      // Parse the JSON
+      const jsonData = JSON.parse(fileText);
+
+      // Validate the JSON structure
+      const validation = validateJson(jsonData);
+
+      if (!validation.isValid) {
+        toast.error(
+          "Invalid JSON structure. Please check the file and try again."
+        );
+        uploadedFile = null; // Clear the file if validation fails
+      } else {
+        console.log("JSON file validated successfully!");
+        // Store the validated data
+        testData = jsonData;
+        uploadedFile = file; // Set the uploaded file
+        toast.success("File uploaded and validated successfully!");
+      }
+    } catch (error) {
+      toast.error("Error parsing JSON file: " + error.message);
+      uploadedFile = null; // Clear the file if there's an error
+    } finally {
+      isUploading = false;
+    }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault(); // Ensure default form submission is prevented
+
+    if (!uploadedFile) {
+      toast.error("Please complete all fields and upload a file.");
+      return;
+    }
+
+    console.log("Handling submit...");
+
+    let event_id = $page.params.event_id;
+
+    try {
+      // Reformat test data
+      testData.tests = testData.tests.map((test) => ({
+        event_id: event_id,
+        test_name: test.test_name,
+        is_team: test.is_team,
+        instructions: test.test_description,
+        compose_test_id: test.id,
+        compose_tournament_id: test.tournament_id,
+      }));
+
+      // Upsert test data into Supabase
+      console.log("Upserting test data: ", JSON.stringify(testData.tests));
+      // console.log(typeof testData.tests);
+      const { data, error } = await upsertTest(testData.tests);
+      if (error) {
+        console.error("COOOOOOKED. Error upserting test data:", error);
+        throw new Error("Error uploading test data: " + error.message);
+      }
+
+      // Format and upsert problems
+      console.log("Upserting problems data");
+      testData.problems = testData.problems.map((problem) => ({
+        problem_latex: problem.problem_latex,
+        answer_latex: problem.answer_latex,
+        solution_latex: problem.solution_latex,
+        answer_type: "AsciiMath",
+        host_id: $page.params.host_id,
+        compose_problem_id: problem.id,
+      }));
+      console.log("HOST ID:", $page.params.host_id);
+      const { data: problemsData, error: problemsError } = await upsertProblems(
+        testData.problems
+      );
+      if (problemsError) {
+        console.error("COOOOOOKED. Error upserting problems data:", error);
+        throw new Error(
+          "Error uploading problems data: " + problemsError.message
+        );
+      }
+
+      // Format test_problems data
+      testData.test_problems = await Promise.all(
+        testData.test_problems.map(async (test_problem) => {
+          const test = await getTestFromComposeId(test_problem.test_id);
+          const problem = await getProblemFromComposeID(
+            test_problem.problem_id
+          );
+          return {
+            test_id: test.test_id,
+            problem_id: problem.problem_id,
+            problem_number: test_problem.problem_number,
+            points: test_problem.problem_weights || 0,
+          };
+        })
+      );
+
+      // Upsert test_problems
+      console.log("Upserting test problems data");
+      const { data: testProblemsData, error: testProblemsError } =
+        await upsertTestProblems(testData.test_problems);
+      if (testProblemsError) {
+        console.error(
+          "COOOOOOKED. Error upserting test problems data:",
+          testProblemsError
+        );
+        throw new Error(
+          "Error uploading test problems data: " + testProblemsError.message
+        );
+      }
+
+      // Upsert problem_images
+      console.log("Upserting problem images data");
+      const { data: problemImagesData, error: problemImagesError } =
+        await upsertIntoBucket($page.params.host_id, testData.problem_images);
+      if (problemImagesError) {
+        console.error(
+          "COOOOOOKED. Error upserting problem images data:",
+          problemImagesError
+        );
+        throw new Error(
+          "Error uploading problem images data: " + problemImagesError.message
+        );
+      }
+
+      toast.success("Tests uploaded successfully!");
+    } catch (error) {
+      handleError(error); // Log and display errors
+      toast.error(error.message);
+    }
   }
 
   async function getTests() {
@@ -214,268 +339,27 @@
       handleError(error);
     }
   }
-
-  // Add CSV schema validation
-  const CSVSchema = z
-    .object({
-      problem_latex: z.string(),
-      answer_latex: z.string(),
-      problem_number: z.number().int().positive(),
-    })
-    .passthrough(); // Allow for any other headers, which will be ignored
-
-  // Add state variables
-  let csvData = $state<any[]>([]);
-  let csvErrors = $state<string[]>([]);
-  let isUploading = $state(false);
-  let isSubmitting = $state(false);
-  let fileUploaderRef;
-
-  async function createTestSubmit() {
-    try {
-      const { data, error } = await insertTest({
-        name,
-        description,
-        event_id: $page.params.event_id,
-      });
-
-      if (error) throw error;
-
-      toast.success("Test added successfully!");
-      await getTests(); // Refresh the test list
-    } catch (error) {
-      handleError(error);
-    }
-  }
-
-  // Create a key to force re-render
-  let fileUploaderKey = 0;
-
-  onMount(() => {
-    // Get a reference to the actual file input element
-    fileInputElement = document.querySelector(".bx--file-input");
-  });
-
-  // Add CSV handler function
-  async function handleCSVUpload(event: CustomEvent<{ files: FileList }>) {
-    console.log("Handling CSV upload...");
-    isUploading = true;
-    csvData = [];
-    csvErrors = [];
-    console.log(event.detail);
-    const file = event.detail[0];
-    if (!file) {
-      isUploading = false;
-      return;
-    }
-
-    Papa.parse(file, {
-      header: true,
-      dynamicTyping: true,
-      skipEmptyLines: true,
-
-      // Do the following upon completion
-      complete: async (results) => {
-        console.log(results.data);
-        if (results.errors.length > 0) {
-          console.log("errors: " + results.errors);
-          csvErrors = results.errors.map((e) => `Row ${e.row}: ${e.message}`);
-          toast.error(csvErrors.join("\n"));
-          isUploading = false;
-          clearFileInput();
-          return;
-        }
-
-        const validationErrors = validateCSV(results.data);
-        if (validationErrors.length > 0) {
-          csvErrors = validationErrors;
-          isUploading = false;
-          toast.error(csvErrors[0] + "\nReload the page and try again");
-
-          // Force re-render the FileUploader
-          isUploading = false;
-          await tick();
-          fileUploaderKey++;
-        } else {
-          csvData = results.data;
-          toast.success("CSV uploaded and validated successfully!");
-          isUploading = false;
-        }
-      },
-      error: () => {
-        toast.error("An error occurred while parsing the CSV file.");
-        isUploading = false; // Reset on parsing failure
-      },
-    });
-  }
-
-  // Function to clear the file input
-  function clearFileInput() {
-    // Find and click the close button
-    const closeButton = document.querySelector(".bx--file-close");
-    if (closeButton) {
-      closeButton.click();
-    }
-
-    // As a fallback, also clear the input value using DataTransfer
-    if (fileInputElement) {
-      // Create an empty DataTransfer object
-      const dt = new DataTransfer();
-      // Set the files property to the empty DataTransfer files
-      fileInputElement.files = dt.files;
-    }
-  }
-
-  function validateCSV(data: any[]) {
-    const errors: string[] = [];
-
-    if (!data[0]?.problem_latex) {
-      console.log("Missing test_name header");
-      errors.push("Missing test_name header");
-    }
-    if (!data[0]?.answer_latex) {
-      console.log("Missing problem_question header");
-      errors.push("Missing problem_question header");
-    }
-    if (!data[0]?.problem_number) {
-      console.log("Missing problem_number header");
-      errors.push("Missing problem_number header");
-    }
-
-    data.forEach((row, index) => {
-      try {
-        CSVSchema.parse({
-          ...row,
-          problem_order: Number(row.problem_order),
-        });
-      } catch (err) {
-        if (err instanceof z.ZodError) {
-          errors.push(`Row ${index + 1}: ${err.issues[0].message}`);
-        }
-      }
-    });
-    return errors;
-  }
-
-  async function submitCSVToSupabase() {
-    if (csvData.length === 0) {
-      toast.error("Please upload a valid CSV file first");
-      return;
-    }
-
-    if (!name || !description) {
-      toast.error("Test name and description are required");
-      return;
-    }
-
-    isSubmitting = true;
-
-    try {
-      // 1. Create a new test
-      const { data: testData, error: testError } = await insertTest({
-        name,
-        description,
-        event_id: $page.params.event_id,
-        // Add any other test properties you need
-      });
-
-      if (testError) throw testError;
-
-      const testId = testData[0].id;
-
-      // 2. Create problems from CSV data
-      const problems = csvData.map((row) => ({
-        test_id: testId,
-        problem_latex: row.problem_latex,
-        answer_latex: row.answer_latex,
-        problem_number: row.problem_number,
-      }));
-
-      const { error: problemsError } = await supabase
-        .from("problems")
-        .insert(problems);
-
-      if (problemsError) throw problemsError;
-
-      // 3. Success handling
-      toast.success("Test and problems successfully created!");
-
-      // 4. Reset form
-      name = "";
-      description = "";
-      csvData = [];
-      fileUploaderKey++; // Reset file uploader
-
-      // 5. Refresh tests list
-      await getTests();
-    } catch (error) {
-      handleError(error);
-    } finally {
-      isSubmitting = false;
-    }
-  }
-
-  async function handleImgUpload(event: CustomEvent<{ files: FileList }>) {}
 </script>
 
-<br />
-<h1>Add Test</h1>
-<br />
+<h1>Add Tests</h1>
 <div>
-  <form on:submit|preventDefault style="padding: 20px;">
-    <TextInput
-      bind:value={name}
-      class="textInput"
-      label="Test Name"
-      placeholder="Test Name (required)"
-      required
-    />
-    <br />
-    <TextArea
-      bind:value={description}
-      label="Test Description"
-      class="textArea"
-      placeholder="Test Description (required)"
-      required
-    />
-    <br />
-    <div>
-      <Checkbox labelText="Is this a team test?" />
-    </div>
-    <br />
-    <div class="csv-container">
+  <form on:submit={handleSubmit} style="padding: 20px;">
+    <div class="file-upload-container">
       <FileUploader
-        key={fileUploaderKey}
-        accept={[".csv"]}
-        labelTitle="Upload CSV"
-        labelDescription=".csv files only. Only one file will be accepted."
-        buttonLabel="Add CSV file"
-        on:add={handleCSVUpload}
-        status={isUploading
-          ? "loading"
-          : csvErrors.length > 0
-            ? "error"
-            : "complete"}
-        required
-      />
-      <!-- </div>
-    <div class="img-container"> -->
-      <FileUploader
-        accept={[".txt"]}
-        labelTitle="Upload Text File of Image Links"
-        labelDescription=".txt files only. Only one file will be accepted."
-        buttonLabel="Add .txt file"
-        on:add={handleImgUpload}
-        status={isUploading ? "uploading" : "complete"}
+        accept={[".json"]}
+        labelTitle="Upload JSON File"
+        labelDescription=".json files only. Only one file will be accepted."
+        buttonLabel="Add JSON file"
+        on:change={handleFileUpload}
+        status={isUploading ? "loading" : uploadedFile ? "complete" : "edit"}
+        maxFiles={1}
         required
       />
     </div>
     <br />
-    <Button
-      action={submitCSVToSupabase}
-      title={isSubmitting ? "Creating Test..." : "Create Test"}
-      disabled={isSubmitting || csvData.length === 0}
-    />
+
+    <!-- Submit Button -->
+    <Button title="Submit Form" disabled={!uploadedFile || isUploading} />
   </form>
 </div>
 

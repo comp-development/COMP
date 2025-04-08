@@ -13,6 +13,29 @@ export async function addProblem(problem) {
   return data;
 }
 
+export async function getProblem(problem_id: number, customSelect: string = "*") {
+  const { data, error } = await supabase
+    .from("problems")
+    .select(customSelect)
+    .eq("problem_id", problem_id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getProblemFromComposeID(
+  compose_id: string,
+  customSelect: string = "*",
+) {
+  const { data, error } = await supabase
+    .from("problems")
+    .select(customSelect)
+    .eq("compose_problem_id", compose_id)
+    .single();
+  if (error) throw error;
+  return data;
+}    
+
 export async function getAllProblems(host_id: number, customSelect: string = "*") {
   const { data, error } = await supabase.from("problems").select("*").eq("host_id", host_id);
 
