@@ -13,6 +13,11 @@
   let teamId = "";
   let sectionStart = 1;
 
+  let showOverridePrompt = false;
+  let overrideConfirmed = false;
+  let pendingTeamId = "";
+  let pendingSectionStart = 1;
+
   const sections = [
     { label: "1–4", value: 1 },
     { label: "5–8", value: 5 },
@@ -59,16 +64,57 @@
     loading = false;
   });
 
-  function goToGrading() {
+  async function goToGrading() {
+    pendingTeamId = teamId;
+    pendingSectionStart = sectionStart;
+
+    const sectionProblemIds = problems
+      .filter(p => p.problem_id >= sectionStart && p.problem_id <= sectionStart + 3)
+      .map(p => p.problem_id);
+
+    const { data: existing, error } = await supabase
+      .from("guts_grades")
+      .select("guts_grade_id")
+      .eq("team_id", teamId)
+      // .eq("test_id", testId)
+      .in("test_problem_id", sectionProblemIds);
+
+    if (error) {
+      console.error("Error checking for existing submission:", error.message);
+      return;
+    }
+
+    if (existing.length > 0 && !overrideConfirmed) {
+      showOverridePrompt = true;
+      return;
+    }
+
+    // If we're overriding, delete old entries first
+    if (existing.length > 0 && overrideConfirmed) {
+      const { error: deleteError } = await supabase
+        .from("guts_grades")
+        .delete()
+        .eq("team_id", teamId)
+        // .eq("test_id", testId)
+        .in("test_problem_id", sectionProblemIds);
+
+      if (deleteError) {
+        console.error("Error deleting previous entries for override:", deleteError.message);
+        return;
+      }
+    }
+    // Navigate to grading page with query parameters
     goto(
       `/admin/${$page.params.host_id}/${$page.params.event_id}/guts/${testId}/submit?team=${teamId}&section=${sectionStart}`
     );
-  }
+}
+
 </script>
 
 <div class="container">
   <h1>Problems for Test {testId}</h1>
 
+  <!-- Grading Form -->
   <form class="grading-form" on:submit|preventDefault={goToGrading}>
     <label>
       Team ID:
@@ -92,6 +138,24 @@
     <button type="submit">Input Answers</button>
   </form>
 
+  <!-- Override Warning Prompt -->
+  {#if showOverridePrompt}
+    <div class="override-warning">
+      <p>This section has already been submitted for Team {pendingTeamId}. Do you want to override it?</p>
+      <button
+        on:click={() => {
+          overrideConfirmed = true;
+          showOverridePrompt = false;
+          goToGrading();
+        }}
+      >
+        Yes, override
+      </button>
+      <button on:click={() => (showOverridePrompt = false)}>Cancel</button>
+    </div>
+  {/if}
+
+  <!-- Problems Display -->
   {#if loading}
     <p>Loading problems...</p>
   {:else if problems.length === 0}
@@ -154,4 +218,35 @@
      color: #333;
      margin-bottom: 0.5rem;
   }
+
+  .override-warning {
+  background-color: #fff8dc;
+  border: 1px solid #e0c97f;
+  padding: 1rem;
+  border-radius: 6px;
+  color: #5c4400;
+}
+
+.override-warning button {
+  padding: 0.4rem 0.8rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  margin-right: 1rem;
+  cursor: pointer;
+}
+
+.override-warning button:first-of-type {
+  background-color: #007bff; /* blue for override */
+  color: white;
+  margin-top: 0.5rem;
+}
+
+.override-warning button:last-of-type {
+  background-color: #ccc; /* gray for cancel */
+  color: #333;
+  margin-top: 0.5rem;
+}
+
 </style>
