@@ -24,7 +24,7 @@
       21: 15,
       25: 17
     };
-  
+
     async function fetchProblems() {
       try {
         const { data: testProblems, error: testProblemsError } = await supabase
@@ -76,7 +76,6 @@
   
         let score = 0;
         if (status === "correct") score = groupScore;
-        else if (status === "incorrect") score = -1;
         else score = 0;
   
         entries.push({
