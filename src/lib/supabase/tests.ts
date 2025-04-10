@@ -272,7 +272,8 @@ export async function upsertTest(testData) {
     .from("tests")
     .upsert(testData, {
       onConflict: "compose_test_id",
-      ignoreDuplicates: false,
+      returning: "representation",
+      // ignoreDuplicates: false,
     })
     .select();
 
@@ -292,7 +293,8 @@ export async function upsertTestProblems(testData) {
     .from("test_problems")
     .upsert(testData, {
       onConflict: ["test_id", "problem_id"],
-      ignoreDuplicates: false,
+      returning: "representation",
+      // ignoreDuplicates: false,
     })
     .select();
   console.log("error is coooooked brotha", error);
@@ -374,7 +376,8 @@ export async function upsertProblems(problemData) {
     .from("problems")
     .upsert(problemData, {
       onConflict: "compose_problem_id",
-      ignoreDuplicates: false,
+      returning: "representation",
+      // ignoreDuplicates: false,
     })
     .select();
 

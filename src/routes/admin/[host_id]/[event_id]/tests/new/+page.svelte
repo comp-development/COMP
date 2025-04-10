@@ -286,7 +286,7 @@
           return {
             test_id: test.test_id,
             problem_id: problem.problem_id,
-            problem_number: test_problem.problem_number,
+            problem_number: test_problem.problem_number + 1,
             points: test_problem.problem_weights || 0,
           };
         })
