@@ -10,8 +10,7 @@
     let sectionStart = Number($page.url.searchParams.get("section") ?? 1);
     $: selectedSection = { start: sectionStart, end: sectionStart + 3 };
   
-    let problems: { problem_id: number; problem_latex: string; answer_latex: string }[] = [];
-    let filteredProblems = [];
+    let problems: { problem_id: number; problem_latex: string; answer_latex: string | null, problem_number: number }[] = [];
     let answerStates: Record<number, "correct" | "incorrect" | "blank"> = {};
     let loading = true;
   
@@ -29,24 +28,19 @@
       try {
         const { data: testProblems, error: testProblemsError } = await supabase
           .from("test_problems")
-          .select("problem_id")
-          .eq("test_id", testId); 
+          .select("problem_id, problem_number, problems(problem_latex, answer_latex)")
+          .eq("test_id", testId)
+          .gte("problem_number", selectedSection.start)
+          .lte("problem_number", selectedSection.end); 
   
         if (testProblemsError) throw testProblemsError;
-  
-        const problemIds = testProblems.map(p => p.problem_id);
-  
-        const { data: problemData, error: problemError } = await supabase
-          .from("problems")
-          .select("problem_id, problem_latex, answer_latex")
-          .in("problem_id", problemIds)
-          .order("problem_id", { ascending: true });
-  
-        if (problemError) throw problemError;
-        problems = problemData;
-        filteredProblems = problems.filter(
-          (p) => p.problem_id >= selectedSection.start && p.problem_id <= selectedSection.end
-        );
+        problems = testProblems.map(p => ({
+          problem_id: p.problem_id,
+          problem_latex: p.problems.problem_latex,
+          answer_latex: p.problems.answer_latex,
+          problem_number: p.problem_number,
+        }))
+ 
       } catch (err) {
         console.error("Error loading problems:", err);
       }
@@ -56,7 +50,7 @@
     onMount(fetchProblems);
   
     async function submitAnswers() {
-      const unanswered = filteredProblems.filter(
+      const unanswered = problems.filter(
         (p) => !answerStates[p.problem_id]
       );
 
@@ -79,7 +73,7 @@
         else score = 0;
   
         entries.push({
-          team_id: teamId,
+          team_id: Number(teamId),
           test_problem_id: pid,
           status,
           score,
@@ -106,9 +100,9 @@
     {#if loading}
       <p>Loading problems...</p>
     {:else}
-      {#each filteredProblems as problem}
+      {#each problems as problem}
         <div class="problem-card">
-          <div class="problem-id">Problem ID: {problem.problem_id}</div>
+          <div class="problem-id">Problem Number: {problem.problem_number}</div>
           <Latex value={problem.problem_latex} style="font-size: 1.2em;" />
   
           {#if problem.answer_latex}
