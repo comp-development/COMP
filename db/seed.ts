@@ -99,8 +99,10 @@ async function create_user(
 // Seed an event and test with explicit parameters for ease of testing.
 async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
   // Put the student in an event with a test that opens now.
-  const {hosts: [{host_id}]} = await seed.hosts([{}]);
-    const {
+  const {
+    hosts: [{ host_id }],
+  } = await seed.hosts([{}]);
+  const {
     events: [event],
   } = await seed.events([
     {
@@ -121,7 +123,14 @@ async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
           visible: true,
           test_mode: "Standard",
           access_rules: null,
-          test_problems: example_problems.map((p) => ({ problems: {...p, host_id} })),
+          test_problems: example_problems.map((p, i) => ({
+            problems: {
+              ...p,
+              host_id,
+
+              problem_number: i + 1,
+            },
+          })),
         },
       ],
       ticket_orders: [
@@ -435,26 +444,29 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     {
       problem_latex: "what is thirteen plus fourteen minus two",
       answer_latex: "25",
-      solution_latex:
-        "compute it.",
+      solution_latex: "compute it.",
       answer_type: "Integer",
     },
     {
-      problem_latex: "Suppose $X$ is a random variable taking values in ${ 1 , dots.h , n }$ such that $\\bb{E} X = n \\/ 2$. Prove that $X \\geq n \\/ 10$ with probability at least $1 \\/ 10$.",
+      problem_latex:
+        "Suppose $X$ is a random variable taking values in ${ 1 , dots.h , n }$ such that $\\bb{E} X = n \\/ 2$. Prove that $X \\geq n \\/ 10$ with probability at least $1 \\/ 10$.",
       answer_latex: "Inequality gives proof.",
       solution_latex: "do it",
       answer_type: "Text",
     },
     {
-      problem_latex: "integral of $\\int_{-\infty}^\infty \\frac{\\sin(x)}{x} d x$",
+      problem_latex:
+        "integral of $\\int_{-infty}^infty \\frac{\\sin(x)}{x} d x$",
       answer_latex: "pi",
       solution_latex: "look up stack exchange",
       answer_type: "AsciiMath",
     },
     {
-      problem_latex: "how many ways are there to arrange the letters in the word allergies",
+      problem_latex:
+        "how many ways are there to arrange the letters in the word allergies",
       answer_latex: "(9!)/2",
-      solution_latex: "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
+      solution_latex:
+        "count the number of ways to arrange two letters, then divide to account for overcounting of the order of the l's and the e's.",
       answer_type: "AsciiMath",
     },
   ] satisfies Partial<Tables<"problems">>[];
@@ -472,11 +484,12 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
                     [1, 5],
                     example_problems,
                   )(seed)
-                  .map((p) => ({
+                  .map((p, i) => ({
                     problems: {
                       ...p,
                       host_id,
                     },
+                    problem_number: i + 1,
                   })),
               };
             }),
