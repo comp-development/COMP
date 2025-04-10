@@ -95,3 +95,7 @@ alter table "public"."problems" add constraint "problems_compose_problem_id_key"
 alter table "public"."test_problems" add constraint "unique_test_problem" UNIQUE using index "unique_test_problem";
 
 alter table "public"."tests" add constraint "tests_compose_test_id_key" UNIQUE using index "tests_compose_test_id_key";
+
+CREATE UNIQUE INDEX test_and_problem_id_unique ON public.test_problems USING btree (test_id, problem_id);
+
+alter table "public"."test_problems" add constraint "test_and_problem_id_unique" UNIQUE using index "test_and_problem_id_unique";
