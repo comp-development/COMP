@@ -10,6 +10,9 @@
   - Custom formatting
   - Frozen columns (using the `frozen: true` property on column definitions)
   - Linked columns
+  - Row actions
+  - Delete functionality
+  - Inline row editing (using the `editable: true` property on column definitions)
 
   Usage:
   ```svelte
@@ -18,11 +21,14 @@
     columns={[
       { key: 'id', label: 'ID', visible: false },
       { key: 'name', label: 'Name', visible: true, frozen: true },  // This column will be frozen
-      { key: 'email', label: 'Email', visible: true }
+      { key: 'email', label: 'Email', visible: true, editable: true }  // This column can be edited
     ]}
     entityType="user"
     idField="id"
     tableId="users_table"
+    onDelete={(row) => handleDelete(row)} // Optional delete action that will add a delete button
+    editable={true} // Enable row editing
+    onEdit={(row, updatedData) => handleEdit(row, updatedData)} // Handle edit submissions
   />
   ```
 
@@ -35,6 +41,7 @@
   - format: Function to format the cell value
   - frozen: When true, the column stays fixed on the left side while scrolling horizontally
   - linkedToColumn: Associates this column with another visible column for search/filtering/export
+  - editable: When true, allows the column value to be edited in the edit form
 -->
 
 <script lang="ts">
@@ -74,6 +81,7 @@
   
   import { onMount, createEventDispatcher, onDestroy, type Snippet } from 'svelte';
   // Using custom icons instead of svelte-heros-v2 to avoid dependency issues
+  import EditableTableForm from "./EditableTableForm.svelte";
 
   // Define the TableColumn type
   type TableColumn = {
@@ -87,6 +95,7 @@
     dataKey?: string;
     displayLabel?: string;
     linkedToColumn?: string; // New property to link this column to another column
+    editable?: boolean; // New property to indicate if this column is editable
   };
 
   // Fixed return type for formatted values
@@ -113,6 +122,7 @@
       dataType?: 'string' | 'number' | 'date' | 'boolean'; // Added dataType for sorting
       format?: "column-snippet" | ((value: any, row: any) => { text: string; isBadge: boolean; color?: string } | string);
       linkedToColumn?: string; // Add linkedToColumn property to props interface
+      editable?: boolean; // New property to indicate if this column is editable
     }[]);
     entityType: string;  // Changed from enum to string to make it more generic
     // A custom renderer for specific columns.
@@ -132,6 +142,9 @@
     actions?: Snippet;
     rowActions?: RowAction[]; // New prop for row actions
     forceLoadVisibility?: boolean; // New prop to force load visibility from localStorage on initial render
+    onDelete?: (row: any) => void; // New prop for delete action
+    onEdit?: (row: any, updatedData: any) => void; // New prop for edit action
+    editable?: boolean; // New prop to enable editing of table rows
   } = $props();
 
   console.log("PROPS", props)
@@ -141,7 +154,7 @@
   let sortColumn = $state<string | null>(null);
   let sortDirection = $state<'asc' | 'desc'>('asc');
   
-  // Get the ID field to use for each row
+  // Get the ID field to use for each row 
   const idField = $derived(props.idField || 'id');
 
   // Filter related states
@@ -173,6 +186,7 @@
     dataType?: 'string' | 'number' | 'date' | 'boolean';
     linkedToColumn?: string; 
     frozen?: boolean; // New property to determine if a column should be frozen
+    editable?: boolean; // New property to determine if a column is editable
   };
 
   let allColumns = $state<UnifiedColumn[]>([]);
@@ -330,6 +344,30 @@
     });
   }
 
+  // Combine rowActions with onDelete action if provided
+  const combinedRowActions = $derived(
+    [
+      // Include existing rowActions
+      ...(props.rowActions || []),
+      
+      // Add delete action if onDelete is provided
+      ...(props.onDelete ? [{
+        icon: TrashBinSolid,
+        callback: props.onDelete,
+        tooltip: 'Delete',
+        color: 'red'
+      }] : []),
+      
+      // Add edit action if table is editable and onEdit is provided
+      ...(props.editable && props.onEdit ? [{
+        icon: PenSolid,
+        callback: (row) => openEditModal(row),
+        tooltip: 'Edit',
+        color: 'blue'
+      }] : [])
+    ]
+  );
+
   // Effect to re-process columns when they change
   $effect(() => {
     if (props.columns) {
@@ -358,7 +396,8 @@
           displayKey: column,
           dataKey: column,
           displayLabel: column,
-          frozen: props.identityColumns?.includes(column) || false // Set frozen based on identityColumns for backward compatibility
+          frozen: props.identityColumns?.includes(column) || false, // Set frozen based on identityColumns for backward compatibility
+          editable: false // Default to not editable for string-based columns
         });
       } else {
         // This is an object-based column
@@ -371,7 +410,8 @@
           displayKey: column.key, // The key as displayed/used in the component
           dataKey: column.key, // The key used to access data in the row object
           displayLabel: column.label, // The label displayed in the header
-          frozen: isFrozen // Set frozen state from column property or identityColumns
+          frozen: isFrozen, // Set frozen state from column property or identityColumns
+          editable: column.editable || false // Set editable state from column property or default to false
         });
       }
     });
@@ -1202,6 +1242,30 @@
       }, 0);
     }
   });
+
+  // State for edit modal
+  let showEditModal = $state(false);
+  let currentEditRow = $state<any>(null);
+  
+  // Function to open the edit modal
+  function openEditModal(row: any) {
+    currentEditRow = row;
+    showEditModal = true;
+  }
+  
+  // Handle edit form submission
+  function handleEditSave(event: CustomEvent<{data: Record<string, any>}>) {
+    const updatedData = event.detail.data;
+    
+    // Call the onEdit callback with the updated data
+    if (props.onEdit && currentEditRow) {
+      props.onEdit(currentEditRow, updatedData);
+    }
+    
+    // Close the modal
+    showEditModal = false;
+    currentEditRow = null;
+  }
 </script>
 
 {#if props.isLoading}
@@ -1452,7 +1516,7 @@
                 <Checkbox checked={allRowsSelected} indeterminate={someRowsSelected} on:change={toggleAllRows} class="header-checkbox checkbox" />
               </th>
             {/if}
-            {#if props.rowActions && props.rowActions.length > 0}
+            {#if combinedRowActions.length > 0}
               <th class="w-10 px-4 py-3 whitespace-nowrap align-middle identity-column-actions">
                 <div class="flex justify-center items-center">
                   <CogSolid class="w-4 h-4 text-white" />
@@ -1465,7 +1529,7 @@
                 {@const frozenIndex = frozenColumns.indexOf(column.displayKey)}
                 {@const isSticky = column.frozen}
                 {@const isLastSticky = column.frozen && frozenIndex === (frozenColumns.length - 1)}
-                {@const hasRowActions = props.rowActions && props.rowActions.length > 0}
+                {@const hasRowActions = combinedRowActions.length > 0}
                 {@const leftPosition = props.selectable !== false 
                   ? (hasRowActions ? 80 : 40) + (frozenIndex * 150) 
                   : (hasRowActions ? 40 : 0) + (frozenIndex * 150)}
@@ -1510,10 +1574,10 @@
                     />
                   </td>
                 {/if}
-                {#if props.rowActions && props.rowActions.length > 0}
+                {#if combinedRowActions.length > 0}
                   <td class="w-10 px-2 py-3 whitespace-nowrap align-middle identity-column-actions">
                     <div class="flex items-center space-x-1">
-                      {#each props.rowActions as action}
+                      {#each combinedRowActions as action}
                         <button
                           class="text-{action.color || 'gray'}-600 hover:text-{action.color || 'gray'}-800 dark:text-{action.color || 'gray'}-300 dark:hover:text-{action.color || 'gray'}-200 p-1 rounded-full row-action-button"
                           on:click={() => action.callback(row)}
@@ -1531,7 +1595,7 @@
                     {@const frozenIndex = frozenColumns.indexOf(column.displayKey)}
                     {@const isSticky = column.frozen}
                     {@const isLastSticky = column.frozen && frozenIndex === (frozenColumns.length - 1)}
-                    {@const hasRowActions = props.rowActions && props.rowActions.length > 0}
+                    {@const hasRowActions = combinedRowActions.length > 0}
                     {@const leftPosition = props.selectable !== false 
                       ? (hasRowActions ? 80 : 40) + (frozenIndex * 150) 
                       : (hasRowActions ? 40 : 0) + (frozenIndex * 150)}
@@ -1580,6 +1644,18 @@
       {/if}
     </div>
   </div>
+{/if}
+
+<!-- Edit Modal Form -->
+{#if props.editable && props.onEdit}
+  <EditableTableForm 
+    open={showEditModal}
+    columns={allColumns}
+    rowData={currentEditRow}
+    title={`Edit ${props.entityType}`}
+    on:close={() => showEditModal = false}
+    on:save={handleEditSave}
+  />
 {/if}
 
 <style>

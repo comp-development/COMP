@@ -15,6 +15,7 @@
     getEventTeams,
     getEventCustomFields,
     getCustomFieldResponsesBatch,
+    upsertCustomFieldResponses,
     getEventTicketCount,
     getEventOrganizations,
     getEventInformation,
@@ -337,6 +338,8 @@
       searchable: true,
       dataType: "string" as const,
       linkedToColumn: "student_name",
+      editable: true,
+      table: 'students'
     },
     {
       key: "student_name",
@@ -391,6 +394,7 @@
       visible: waiverEnabled,
       searchable: false,
       dataType: "string" as const,
+      editable: true,
       format: (value: any, row: any) => {
         if (!waiverEnabled) return { text: "-", isBadge: false };
 
@@ -599,6 +603,8 @@
       searchable: true,
       dataType: "string" as const,
       frozen: true,
+      editable: true,
+      table: 'teams',
       format: (value: any, row: any) => {
         // Use the pre-computed badge configuration if available
         if (row._teamNameBadge) {
@@ -638,16 +644,18 @@
       },
     },
     {
-      key: "join_code",
-      label: "Join Code",
+      key: "front_id",
+      label: "Team #",
       visible: false,
       searchable: true,
       dataType: "string" as const,
       linkedToColumn: "team_name",
+      editable: true,
+      table: 'teams'
     },
     {
-      key: "front_id",
-      label: "Team #",
+      key: "join_code",
+      label: "Join Code",
       visible: false,
       searchable: true,
       dataType: "string" as const,
@@ -744,6 +752,8 @@
       searchable: true,
       dataType: "string" as const,
       frozen: true,
+      editable: true,
+      table: 'orgs',
       format: (value: any, row: any) => {
         // Use the pre-computed badge configuration if available
         if (row._orgNameBadge) {
@@ -2481,6 +2491,7 @@
       visible: true,
       searchable: true,
       dataType: field.dataType || ("string" as const),
+      editable: true
     }));
 
     return [...regularColumns, ...customColumns];
@@ -2515,6 +2526,7 @@
       visible: true,
       searchable: true,
       dataType: field.dataType || ("string" as const),
+      editable: true,
     }));
 
     return [...regularColumns, ...customColumns];
@@ -2549,7 +2561,9 @@
       visible: true,
       searchable: true,
       dataType: field.dataType || ("string" as const),
+      editable: true // Make custom fields editable
     }));
+
 
     return [...regularColumns, ...customColumns];
   }
@@ -2705,6 +2719,294 @@
         return "";
     }
   }
+
+  // Helper function to get editable fields from columns
+  function getEditableFields(columns: any[], table: string): string[] {
+    return columns
+      .filter(col => col.editable && col.table === table)
+      .map(col => col.key);
+  }
+
+  // Handle student edit
+  async function handleStudentEdit(originalRow: any, updatedData: any) {
+    try {
+      // Show loading state
+      loading = true;
+      
+      // Extract the student_id
+      const studentId = originalRow.student_id;
+      const studentEventId = originalRow.student_event_id;
+      
+      // Track which fields were actually changed
+      const standardFieldChanges: Record<string, any> = {}; // Changes to the students table
+      const studentEventChanges: Record<string, any> = {}; // Changes to the student_events table
+      const customFieldChanges: Record<number, any> = {}; // Changes to custom fields
+      
+      // Get editable fields from column definitions
+      const standardEditableFields = getEditableFields(studentColumns, 'students');
+      
+      // Check standard fields for changes (student table)
+      standardEditableFields.forEach(field => {
+        if (updatedData[field] !== undefined && updatedData[field] !== originalRow[field]) {
+          standardFieldChanges[field] = updatedData[field];
+        }
+      });
+      
+      // Check for waiver field changes - this is stored in student_events table
+      if (updatedData.waiver !== undefined && updatedData.waiver !== originalRow.waiver) {
+        studentEventChanges.waiver = updatedData.waiver;
+      }
+      
+      // Check custom fields for changes
+      studentCustomFields.forEach(field => {
+        const key = `custom_field.${field.key}`;
+        const originalValue = originalRow[key];
+        const newValue = updatedData[key];
+        
+        if (newValue !== undefined && newValue !== originalValue) {
+          // Use event_custom_field_id as key
+          customFieldChanges[field.event_custom_field_id] = newValue;
+        }
+      });
+      
+      // Only update if there are changes to the students table
+      if (Object.keys(standardFieldChanges).length > 0) {
+        // Update the student record with standard fields
+        const { error } = await supabase
+          .from('students')
+          .update(standardFieldChanges)
+          .eq('student_id', studentId);
+        
+        if (error) throw error;
+      }
+      
+      // Only update if there are changes to the student_events table
+      if (Object.keys(studentEventChanges).length > 0 && studentEventId) {
+        // Update the student_events record
+        const { error } = await supabase
+          .from('student_events')
+          .update(studentEventChanges)
+          .eq('student_event_id', studentEventId);
+        
+        if (error) throw error;
+      }
+      
+      // Handle custom field updates if any changed
+      if (Object.keys(customFieldChanges).length > 0) {
+        if (studentEventId) {
+          await upsertCustomFieldResponses(customFieldChanges, studentEventId, 'students');
+        }
+      }
+      
+      // Only reload and show success if any changes were made
+      if (Object.keys(standardFieldChanges).length > 0 || 
+          Object.keys(studentEventChanges).length > 0 || 
+          Object.keys(customFieldChanges).length > 0) {
+        // Reload student data
+        await reloadData(['students']);
+        
+        // Show success message
+        toast.success('Student updated successfully');
+      }
+      
+    } catch (error) {
+      console.error('Error updating student:', error);
+      handleError(error as Error);
+      toast.error('Failed to update student');
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Handle team edit
+  async function handleTeamEdit(originalRow: any, updatedData: any) {
+    try {
+      // Show loading state
+      loading = true;
+      
+      // Extract the team_id and team_event_id if it exists
+      const teamId = originalRow.team_id;
+      const teamEventId = originalRow.team_event_id; // Only if this exists in your schema
+      
+      // Track which fields were actually changed
+      const standardFieldChanges: Record<string, any> = {}; // Changes to the teams table
+      const teamEventChanges: Record<string, any> = {}; // Changes to the team_events table if it exists
+      const customFieldChanges: Record<number, any> = {}; // Changes to custom fields
+      
+      // Get editable fields from column definitions
+      const standardEditableFields = getEditableFields(teamColumns, 'teams');
+      
+      // Check standard fields for changes
+      standardEditableFields.forEach(field => {
+        if (updatedData[field] !== undefined && updatedData[field] !== originalRow[field]) {
+          standardFieldChanges[field] = updatedData[field];
+        }
+      });
+      
+      // Check for team_events fields changes if applicable
+      // Add any fields here that should be stored in team_events table
+      const teamEventFields = ['waiver']; // Add other team_events fields here as needed
+      if (teamEventId) { // Only process if team_events table is used in your schema
+        teamEventFields.forEach(field => {
+          if (updatedData[field] !== undefined && updatedData[field] !== originalRow[field]) {
+            teamEventChanges[field] = updatedData[field];
+          }
+        });
+      }
+      
+      // Check custom fields for changes
+      teamCustomFields.forEach(field => {
+        const key = `custom_field.${field.key}`;
+        const originalValue = originalRow[key];
+        const newValue = updatedData[key];
+        
+        if (newValue !== undefined && newValue !== originalValue) {
+          // Use event_custom_field_id as key
+          customFieldChanges[field.event_custom_field_id] = newValue;
+        }
+      });
+      
+      // Only update if there are changes to the teams table
+      if (Object.keys(standardFieldChanges).length > 0) {
+        // Update the team record with standard fields
+        const { error } = await supabase
+          .from('teams')
+          .update(standardFieldChanges)
+          .eq('team_id', teamId);
+        
+        if (error) throw error;
+      }
+      
+      // Only update if there are changes to the team_events table and it exists
+      if (teamEventId && Object.keys(teamEventChanges).length > 0) {
+        // Update the team_events record
+        const { error } = await supabase
+          .from('team_events')
+          .update(teamEventChanges)
+          .eq('team_event_id', teamEventId);
+        
+        if (error) throw error;
+      }
+      
+      // Handle custom field updates if any changed
+      if (Object.keys(customFieldChanges).length > 0) {
+        await upsertCustomFieldResponses(customFieldChanges, teamId, 'teams');
+      }
+      
+      // Only reload and show success if any changes were made
+      if (Object.keys(standardFieldChanges).length > 0 || 
+          Object.keys(teamEventChanges).length > 0 || 
+          Object.keys(customFieldChanges).length > 0) {
+        // Reload team data
+        await reloadData(['teams']);
+        
+        // Show success message
+        toast.success('Team updated successfully');
+      }
+      
+    } catch (error) {
+      console.error('Error updating team:', error);
+      handleError(error as Error);
+      toast.error('Failed to update team');
+    } finally {
+      loading = false;
+    }
+  }
+
+  // Handle organization edit
+  async function handleOrgEdit(originalRow: any, updatedData: any) {
+    try {
+      // Show loading state
+      loading = true;
+      
+      // Extract the org_id and org_event_id
+      const orgId = originalRow.org_id;
+      const orgEventId = originalRow.event?.org_event_id;
+      
+      // Track which fields were actually changed
+      const standardFieldChanges: Record<string, any> = {}; // Changes to the orgs table
+      const orgEventChanges: Record<string, any> = {}; // Changes to the org_events table
+      const customFieldChanges: Record<number, any> = {}; // Changes to custom fields
+      
+      // Get editable fields from column definitions
+      const standardEditableFields = getEditableFields(orgColumns, 'orgs');
+      
+      // Check standard fields for changes
+      standardEditableFields.forEach(field => {
+        if (updatedData[field] !== undefined && updatedData[field] !== originalRow[field]) {
+          standardFieldChanges[field] = updatedData[field];
+        }
+      });
+      
+      // Check for org_events fields changes
+      // Add any fields here that should be stored in org_events table
+      const orgEventFields = ['waiver']; // Add other org_events fields here as needed
+      orgEventFields.forEach(field => {
+        if (updatedData[field] !== undefined && updatedData[field] !== originalRow[field]) {
+          orgEventChanges[field] = updatedData[field];
+        }
+      });
+      
+      // Check custom fields for changes
+      orgCustomFields.forEach(field => {
+        const key = `custom_field.${field.key}`;
+        const originalValue = originalRow[key];
+        const newValue = updatedData[key];
+        
+        if (newValue !== undefined && newValue !== originalValue) {
+          // Use event_custom_field_id as key
+          customFieldChanges[field.event_custom_field_id] = newValue;
+        }
+      });
+      
+      // Only update if there are changes to the orgs table
+      if (Object.keys(standardFieldChanges).length > 0) {
+        // Update the organization record with standard fields
+        const { error } = await supabase
+          .from('orgs')
+          .update(standardFieldChanges)
+          .eq('org_id', orgId);
+        
+        if (error) throw error;
+      }
+      
+      // Only update if there are changes to the org_events table
+      if (Object.keys(orgEventChanges).length > 0 && orgEventId) {
+        // Update the org_events record
+        const { error } = await supabase
+          .from('org_events')
+          .update(orgEventChanges)
+          .eq('org_event_id', orgEventId);
+        
+        if (error) throw error;
+      }
+      
+      // Handle custom field updates if any changed
+      if (Object.keys(customFieldChanges).length > 0) {
+        if (orgEventId) {
+          await upsertCustomFieldResponses(customFieldChanges, orgEventId, 'orgs');
+        }
+      }
+      
+      // Only reload and show success if any changes were made
+      if (Object.keys(standardFieldChanges).length > 0 || 
+          Object.keys(orgEventChanges).length > 0 || 
+          Object.keys(customFieldChanges).length > 0) {
+        // Reload organization data
+        await reloadData(['organizations']);
+        
+        // Show success message
+        toast.success('Organization updated successfully');
+      }
+      
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      handleError(error as Error);
+      toast.error('Failed to update organization');
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
 <div class="w-full">
@@ -2831,14 +3133,9 @@
         forceLoadVisibility={true}
         on:selectionChange={handleStudentSelectionChange}
         actions={student_actions}
-        rowActions={[
-          {
-            icon: TrashBinSolid,
-            callback: (row) => openDeleteModal("student", row),
-            tooltip: "Delete Student",
-            color: "red"
-          }
-        ]}
+        onDelete={(row) => openDeleteModal("student", row)}
+        editable={true}
+        onEdit={handleStudentEdit}
       />
     {:else if activeTabId === 'teams'}
       <CustomTable
@@ -2856,14 +3153,9 @@
         forceLoadVisibility={true}
         on:selectionChange={handleTeamSelectionChange}
         actions={team_actions}
-        rowActions={[
-          {
-            icon: TrashBinSolid,
-            callback: (row) => openDeleteModal("team", row),
-            tooltip: "Delete Team",
-            color: "red"
-          }
-        ]}
+        onDelete={(row) => openDeleteModal("team", row)}
+        editable={true}
+        onEdit={handleTeamEdit}
       />
     {:else if activeTabId === 'organizations'}
       <CustomTable
@@ -2878,14 +3170,9 @@
         debounceSearch={400}
         lazyLoad={true}
         forceLoadVisibility={true}
-        rowActions={[
-          {
-            icon: TrashBinSolid,
-            callback: (row) => openDeleteModal("org", row),
-            tooltip: "Delete Organization",
-            color: "red"
-          }
-        ]}
+        onDelete={(row) => openDeleteModal("org", row)}
+        editable={true}
+        onEdit={handleOrgEdit}
       />
     {:else if activeTabId === 'tickets'}
       {#snippet actions()}
