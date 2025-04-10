@@ -20,6 +20,7 @@
   "postinstall": "patch-package",
   "dependencies": {
     "@sveltejs/kit": "^2.17.3",
+    "@unified-latex/unified-latex": "^1.8.2",
     "dotenv": "^16.4.7",
     "patch-package": "^8.0.0"
   }
