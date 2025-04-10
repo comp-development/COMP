@@ -4,7 +4,7 @@ export async function getGutsScores(test_id: number) {
   const { data, error } = await supabase
     .from("guts_grades")
     .select("team_id, score, test_problem_id, teams(team_name)")
-    // .eq("test_id", test_id); !!! UNCOMMENT LATER
+    .eq("test_id", test_id);
 
   if (error) {
     console.error("Error fetching grades:", error.message);
@@ -21,7 +21,7 @@ export async function getGutsScores(test_id: number) {
     const teamName = row.teams?.team_name ?? "Unknown";
     const problemId = row.test_problem_id;
 
-    const page = [1, 5, 9, 13, 17, 21, 25].find((start) =>
+    const page = [1, 5, 9, 13, 17, 21, 25, 29].find((start) =>
       problemId >= start && problemId <= start + 3
     ) ?? 1;
 

@@ -19,13 +19,14 @@
   let pendingSectionStart = 1;
 
   const sections = [
-    { label: "1–4", value: 1 },
-    { label: "5–8", value: 5 },
-    { label: "9–12", value: 9 },
-    { label: "13–16", value: 13 },
-    { label: "17–20", value: 17 },
-    { label: "21–24", value: 21 },
-    { label: "25–28", value: 25 }
+    { label: "1–4", value: 8 },
+    { label: "5–8", value: 9 },
+    { label: "9–12", value: 10 },
+    { label: "13–16", value: 11 },
+    { label: "17–20", value: 13 },
+    { label: "21–24", value: 15 },
+    { label: "25–28", value: 17 },
+    { label: "29–32", value: 20 },
   ];
 
   onMount(async () => {
@@ -77,7 +78,7 @@
       .from("guts_grades")
       .select("guts_grade_id")
       .eq("team_id", teamId)
-      // .eq("test_id", testId)
+      .eq("test_id", testId)
       .in("test_problem_id", sectionProblemIds);
 
     if (error) {
@@ -96,7 +97,7 @@
         .from("guts_grades")
         .delete()
         .eq("team_id", teamId)
-        // .eq("test_id", testId)
+        .eq("test_id", testId)
         .in("test_problem_id", sectionProblemIds);
 
       if (deleteError) {

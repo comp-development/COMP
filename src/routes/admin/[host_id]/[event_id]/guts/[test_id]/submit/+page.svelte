@@ -22,7 +22,8 @@
       13: 11,
       17: 13,
       21: 15,
-      25: 17
+      25: 17,
+      29: 20
     };
 
     async function fetchProblems() {
@@ -71,7 +72,7 @@
         const status = answerStates[problem_id];
         const pid = Number(problem_id);
   
-        const sectionStart = [1, 5, 9, 13, 17, 21, 25].find(start => pid >= start && pid <= start + 3);
+        const sectionStart = [1, 5, 9, 13, 17, 21, 25, 29].find(start => pid >= start && pid <= start + 3);
         const groupScore = groupScores[sectionStart ?? 1];
   
         let score = 0;
