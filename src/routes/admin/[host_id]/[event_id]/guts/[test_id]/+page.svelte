@@ -33,7 +33,7 @@
     const { data: testProblems, error: testProblemsError } = await supabase
       .from("test_problems")
       .select("problem_id")
-      // .eq("test_id", testId); !!! UNCOMMENT LATER
+      .eq("test_id", testId);
 
     if (testProblemsError) {
       console.error("Error loading problems:", testProblemsError.message);
@@ -51,7 +51,7 @@
     if (problemError) {
       console.error("Error loading problem details:", problemError.message);
     } else {
-      problems = problemData;
+      problems = problemData.map(p => p.problems);
     }
 
     // Fetch team IDs
