@@ -7,7 +7,9 @@ export async function createTest(testData: {}) {
     .select("*")
     .single();
 
-  if (error) { throw error; }
+  if (error) {
+    throw error;
+  }
   return data;
 }
 
@@ -19,7 +21,9 @@ export async function editTest(test_id: number, testData: {}) {
     .select("*")
     .single();
 
-  if (error) { throw error; }
+  if (error) {
+    throw error;
+  }
   return data;
 }
 
@@ -32,7 +36,7 @@ export async function editTest(test_id: number, testData: {}) {
 export async function getTestProblems(
   test_id: number,
   page_num: number | null = null,
-  customSelect: string = "*",
+  customSelect: string = "*"
 ) {
   if (page_num) {
     let { data, error } = await supabase
@@ -73,7 +77,7 @@ export async function fetchTestProblems(test_taker_id: number) {
  */
 export async function getTestAnswers(
   test_taker_id: number,
-  customSelect: string = "*",
+  customSelect: string = "*"
 ) {
   console.log("GET TEST ANSWERS");
   console.log(test_taker_id);
@@ -91,6 +95,21 @@ export async function getTest(test_id, detailed = false, customSelect = "*") {
     .from(detailed ? "tests_detailed" : "tests")
     .select(customSelect)
     .eq("test_id", test_id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getTestFromComposeId(
+  compose_test_id,
+  detailed = false,
+  customSelect = "*"
+) {
+  const { data, error } = await supabase
+    .from(detailed ? "tests_detailed" : "tests")
+    .select(customSelect)
+    .eq("compose_test_id", compose_test_id)
     .single();
 
   if (error) throw error;
@@ -125,7 +144,7 @@ export async function addTestTaker(test_id) {
 export async function upsertTestAnswer(
   test_taker_id: number,
   test_problem_id: number,
-  answer: string,
+  answer: string
 ) {
   // console.log("adding", answer);
   // console.log("TAKERID", test_taker_id);
@@ -175,7 +194,7 @@ export async function getTestTaker(
   test_id,
   taker_id,
   is_team = false,
-  customSelect = "*",
+  customSelect = "*"
 ) {
   console.log(test_id, taker_id, is_team, customSelect);
   try {
@@ -215,7 +234,7 @@ export async function getTestTaker(
 export async function getTestTakers(
   test_id,
   detailed = false,
-  customSelect = "*",
+  customSelect = "*"
 ) {
   const { data, error } = await supabase
     .from(detailed ? "test_takers_detailed" : "test_takers")
@@ -236,4 +255,131 @@ export async function updateTest(test_id, testData) {
   }
 
   return true;
+}
+
+export async function insertTest(testData) {
+  const { data, error } = await supabase.from("tests").insert([testData]);
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function upsertTest(testData) {
+  const { data, error } = await supabase
+    .from("tests")
+    .upsert(testData, {
+      onConflict: "compose_test_id",
+      ignoreDuplicates: false,
+    })
+    .select();
+
+  if (error) {
+    throw error;
+  }
+  return data;
+}
+
+export async function upsertTestProblems(testData) {
+  if (testData.length === 0) {
+    console.log("No test data provided for upsert.");
+    return [];
+  }
+  console.log("testData", testData);
+  const { data, error } = await supabase
+    .from("test_problems")
+    .upsert(testData, {
+      onConflict: ["test_id", "problem_id"],
+      ignoreDuplicates: false,
+    })
+    .select();
+  console.log("error is coooooked brotha", error);
+  console.log("data is coooooked brotha", testData);
+  if (error) {
+    console.error("Error upserting test problems:", error);
+    throw error;
+  }
+  console.log("Upserted test problems successfully:", data);
+  return data;
+}
+
+// export async function upsertIntoBucket(problemImages, bucketName="problem-images") {
+//   try {
+//     // Check if bucket exists
+//     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+//     if (listError) throw listError;
+
+//     const existingBuckets = buckets.map(bucket => bucket.name);
+
+//     // Create the bucket if it doesn't exist
+//     if (!existingBuckets.includes(bucketName)) {
+//       const { data: createData, error: createError } = await supabase.storage.createBucket(bucketName, { public: true });
+//       if (createError) throw createError;
+//       console.log('Bucket created:', createData);
+//     } else {
+//       console.log('Bucket already exists.');
+//     }
+
+//     // Upload images to the bucket
+//     for (const imageUrl of problemImages) {
+//       const fileName = imageUrl.split('/').pop(); // Extract file name from URL
+//       const { data: uploadData, error: uploadError } = await supabase.storage.from(bucketName).upload(fileName, imageUrl);
+//       if (uploadError) {
+//         console.error(`Failed to upload ${fileName}:`, uploadError.message);
+//         continue;
+//       }
+//       console.log(`Uploaded ${fileName}:`, uploadData);
+//     }
+
+//     console.log('All images processed successfully.');
+//   } catch (error) {
+//     console.error('Error during upsert process:', error.message);
+//   }
+// }
+
+export async function upsertIntoBucket(
+  host_id: number,
+  problemImages: Array<{ path: string; base64: string }>,
+  bucketName = "problem-images"
+) {
+  for (const imageData of problemImages) {
+    // Convert base64 to Uint8Array
+    const binaryString = atob(imageData.base64);
+    const uint8Array = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      uint8Array[i] = binaryString.charCodeAt(i);
+    }
+
+    // Create Blob (use appropriate MIME type if known)
+    const blob = new Blob([uint8Array], { type: "image/png" });
+
+    // Upload with upsert capability
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(`host_${host_id}/` + imageData.path, blob, {
+        upsert: true,
+      });
+
+    if (uploadError) return { error: uploadError };
+    console.log(`Uploaded ${imageData.path}:`, uploadData);
+  }
+  console.log("All images processed successfully.");
+  return { data: [] };
+}
+
+export async function upsertProblems(problemData) {
+  const { data, error } = await supabase
+    .from("problems")
+    .upsert(problemData, {
+      onConflict: "compose_problem_id",
+      ignoreDuplicates: false,
+    })
+    .select();
+
+  if (error) {
+    throw error;
+  }
+  return data;
 }
