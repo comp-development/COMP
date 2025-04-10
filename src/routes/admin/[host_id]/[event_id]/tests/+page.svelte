@@ -45,6 +45,7 @@
 
   let open = $state(false);
   let testModalOpen = $state(false);
+  let accessRulesModalOpen = $state(false);
   let isEditMode = $state(false);
 
   let instructions = "";
@@ -77,6 +78,8 @@
     instructions?: string;
     test_mode?: string;
     visible?: boolean;
+    access_rules?: any;
+    
   }
 
   let curTest: TestData = $state({} as TestData);
@@ -210,7 +213,7 @@
     clearInterval(interval);
   });
 
-  async function handleSubmit() {
+  async function handleTestSubmit() {
     curTest.buffer_time = parseInt(curTest.buffer_time?.toString() || "0");
     let [hours, minutes] = (curTest.time || "12:00").split(":");
     if (curTest.amPm === "pm" && hours !== "12") {
@@ -290,6 +293,23 @@
     }
   }
 
+  let accessPreview = $state([]);
+	async function fetchAccessPreview() {
+		try {
+			// Replace this with the appropriate query to fetch all students
+			const { data } = await supabase.rpc('get_students_with_access_updated', {
+				p_test_id: curTest.test_id,
+			});
+			console.log("DATA",data)
+			// Filter out null results
+			accessPreview = data
+      console.log(`${accessPreview.length}`);
+			console.log("ACCESS PREVIEW", accessPreview)
+		} catch (error) {
+			handleError(error as Error);
+		}
+	}
+
   function handleDateTimeChange(event: CustomEvent) {
     const { date, formattedDate, time, amPm } = event.detail;
     curTest.date = formattedDate;
@@ -304,7 +324,7 @@
 
   async function saveAndClose() {
     open = false;
-    await handleSubmit();
+    await handleTestSubmit();
   }
 
   function handleOpenClick(test: TestData) {
@@ -313,6 +333,29 @@
       curTest.opening_time ? new Date(curTest.opening_time) : new Date()
     );
     open = true;
+  }
+
+  function handleSettingsClick(test: TestData) {
+    openTestModal(true, test);
+  }
+
+  function handleAccessRulesClick(test: TestData){
+    curTest = test;
+		console.log("CURTEST", curTest);
+		accessRulesModalOpen = true;
+  }
+
+  //handles the submission of test access rules, eg. info like what grade a student needs to be to be able to take a test.
+  async function handleAccessRulesSubmit() {
+		const data = {
+			access_rules: curTest.access_rules
+		};
+		try {
+			await updateTest(curTest.test_id, data);
+			console.log("Access rules updated for test:", curTest.test_id);
+		} catch (error) {
+			handleError(error as Error);
+		}
   }
 
   function openTestModal(isEdit: boolean, test?: TestData) {
@@ -339,9 +382,7 @@
     testModalOpen = true;
   }
 
-  function handleSettingsClick(test: TestData) {
-    openTestModal(true, test);
-  }
+
 
   function closeTestModal() {
     testModalOpen = false;
@@ -448,6 +489,7 @@
               onOpenClick={() => handleOpenClick(test)}
               onInstructionsClick={() => {}}
               onSettingsClick={() => handleSettingsClick(test)}
+              onAccessRulesClick={() => handleAccessRulesClick(test)}
             />
           </div>
         {/each}
@@ -640,9 +682,148 @@
           </div>
         </div>
       </Modal>
+
+      <Modal
+			bind:open={accessRulesModalOpen}
+			modalHeading="{curTest.test_name} Access Rules" 
+			on:open 
+			on:close={async () => {
+				accessRulesModalOpen = false;
+				await handleAccessRulesSubmit();
+			}}
+			primaryButtonText="Save"
+			secondaryButtonText="Cancel" 
+			size="lg"
+			on:click:button--secondary={() => (accessRulesModalOpen = false)}
+			on:submit={async () => {
+				accessRulesModalOpen = false;
+				await handleAccessRulesSubmit();
+			}}
+		>
+			{curTest.test_name} Test Access Rules
+			<div>
+				<!-- Rules List -->
+				{#if curTest.access_rules?.rules?.length > 0}
+					<!-- Combine Logic -->
+					{#if curTest.access_rules.rules.length > 1}
+						<div class="rule-group">
+							<label>Combine Logic</label>
+							<select bind:value={curTest.access_rules.combine}>
+								<option value="AND">AND</option>
+								<option value="OR">OR</option>
+							</select>
+						</div>
+					{/if}
+					{#each curTest.access_rules.rules as rule, index}
+						<div class="rule" style="display: flex; align-items: center; gap: 10px;">
+							<!-- Field -->
+							<Textarea
+								labelText="Field"
+								bind:value={rule.field}
+								placeholder="Enter field name (e.g., grade, subject)"
+							/>
+
+							<!-- Operator -->
+							<select bind:value={rule.operator}>
+								<option value="=">Equals</option>
+								<option value="!=">Not Equals</option>
+								<option value=">">Greater Than</option>
+								<option value="<">Less Than</option>
+								<option value=">=">Greater Than or Equals</option>
+								<option value="<=">Less Than or Equals</option>
+								<option value="~">Contains Regex (case-sensitive)</option>
+								<option value="!~">Does Not Contain Regex (case-sensitive)</option>
+								<option value="~*">Contains Regex (case-insensitive)</option>
+								<option value="!~*">Does Not Contain Regex (case-insensitive)</option>
+								<option value="IN">One Of (comma-separated)</option>
+								<option value="NOT IN">Not One Of (comma-separated)</option>
+							</select>
+
+							<!-- Value -->
+							<Textarea
+								labelText="Value"
+								bind:value={rule.value}
+								placeholder="Enter value (e.g., 7, Algebra)"
+							/>
+
+							<!-- Remove Rule Button -->
+							<Button
+								title="Remove Rule"
+								action={() => {
+									console.log("REMOVE");
+									curTest.access_rules.rules = curTest.access_rules.rules.filter((_, i) => i !== index);
+									if (curTest.access_rules.rules.length == 0) {
+										curTest.access_rules = null;
+									}
+								}}
+
+							>
+								Remove Rule
+							</Button>
+						</div>
+					{/each}
+				{:else}
+					<p>All students can access the test.</p>
+				{/if}
+
+				<!-- Add New Rule -->
+				<Button
+					title="Add Rule"
+					action={() => {
+						if (curTest.access_rules) {
+							console.log(curTest.access_rules)
+							console.log(("rules" in curTest.access_rules))
+						}
+
+						if (!curTest.access_rules || !("rules" in curTest.access_rules)) {
+							curTest.access_rules = { combine: 'AND', rules: [] };
+						}
+						console.log("PUSHING")
+						curTest.access_rules.rules.push({ field: '', operator: '==', value: '' });
+						curTest.access_rules = curTest.access_rules
+					}}
+				>
+					Add Rule
+				</Button>
+        
+        <!-- Save Rules -->
+        <Button 
+          title = "Save"
+          action= {async () => {
+            await handleAccessRulesSubmit();
+          }}
+          > Save  
+        </Button>
+			</div>
+			{JSON.stringify(curTest.access_rules, null, 2)}
+			<div>
+				<!-- Preview Access -->
+				<Button
+					title="Preview Access"
+					action={async () => {
+						await fetchAccessPreview();
+					}}
+				>
+					Preview Access
+				</Button>
+
+				<!-- Access Preview -->
+				{#if accessPreview && accessPreview.length > 0}
+					<h3>Students with Access: {accessPreview.length}</h3>
+					<ul>
+						{#each accessPreview as student}
+							<!-- <li>{student.first_name} {student.last_name}</li> -->
+						{/each}
+					</ul>
+				{:else if accessPreview && accessPreview.length === 0}
+					<p>No students have access based on the current rules.</p>
+				{/if}
+			</div>
+		</Modal>
     {/if}
   </div>
 </div>
+
 
 <style>
   .page-container {
