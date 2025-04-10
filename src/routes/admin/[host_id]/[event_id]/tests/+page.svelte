@@ -26,8 +26,7 @@
     EditOutline,
     ClipboardCheckOutline,
     TableRowOutline,
-    PlusOutline,
-    PlusOutline,
+    PlusOutline
   } from "flowbite-svelte-icons";
   import { handleError } from "$lib/handleError";
   import { onDestroy, onMount } from "svelte";
@@ -36,8 +35,7 @@
     getEventTests,
     getTeamId,
     updateTest,
-    createTest,
-    createTest,
+    createTest
   } from "$lib/supabase";
   import { supabase } from "$lib/supabaseClient";
   import DateTimePicker from "$lib/components/DateTimePicker.svelte";
