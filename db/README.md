@@ -37,7 +37,6 @@ SUPABASE_SERVICE_KEY=service_role_key
 
 See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
 
-
 For eventbrite seeding, you need to create an event to which the
 `EVENTBRITE_TOKEN` in the root `.env` has access. On the publish page, choose
 "Is your event public or private?" to be "private." 
@@ -59,17 +58,17 @@ Ensure your API key private token is in the root `.env`.
 Add to the `db/.env` file the following. Note that if you do not fill this
 entry out, then seeding will succeed with no events using the eventbrite
 payment system. The tests for eventbrite payments, however, will not work.
+
 ```
 EVENTBRITE_SAMPLE_EVENT_ID=event_id
 ```
-
 
 ## Dev+Update Workflow:
 
 1. start supabase. run `supabase db reset` to get remote changes applied locally.
 2. fill out seed data with `npx @snaplet/seed sync`, `npx tsx seed.ts`
 3. edit the db via UI or SQL commands
-4. run `supabase db diff`, put diff in new migration: `supabase migration new migration_name`
+4. run `supabase db diff --schema public,storage`, put diff in new migration: `supabase migration new migration_name`
 5. sync the db `npx @snaplet/seed sync`, add new sample seed data to `seed.ts`, and reseed with `npx tsx seed.ts`
 6. run `supabase db reset` and `npx tsx seed.ts` to test running the migrations and adding seed data in sequence
 7. run `supabase gen types typescript --local --schema public,auth > database.types.ts` for DB types

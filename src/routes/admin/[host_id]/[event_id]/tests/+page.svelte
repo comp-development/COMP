@@ -1,6 +1,6 @@
 <script lang="ts">
   import { run } from "svelte/legacy";
-
+  import Papa from "papaparse";
   import { page } from "$app/stores";
   import Button from "$lib/components/Button.svelte";
   import {
@@ -9,6 +9,7 @@
     Input,
     Textarea,
     Toggle,
+    Select,
     Select,
   } from "flowbite-svelte";
   import {
@@ -25,7 +26,12 @@
     FileLinesOutline,
     EditOutline,
     ClipboardCheckOutline,
+  import {
+    FileLinesOutline,
+    EditOutline,
+    ClipboardCheckOutline,
     TableRowOutline,
+    PlusOutline,
     PlusOutline,
   } from "flowbite-svelte-icons";
   import { handleError } from "$lib/handleError";
@@ -36,6 +42,7 @@
     getTeamId,
     updateTest,
     createTest,
+    createTest,
   } from "$lib/supabase";
   import { supabase } from "$lib/supabaseClient";
   import DateTimePicker from "$lib/components/DateTimePicker.svelte";
@@ -45,6 +52,7 @@
 
   let open = $state(false);
   let testModalOpen = $state(false);
+  let accessRulesModalOpen = $state(false);
   let isEditMode = $state(false);
 
   let instructions = "";
@@ -77,6 +85,8 @@
     instructions?: string;
     test_mode?: string;
     visible?: boolean;
+    access_rules?: any;
+    
   }
 
   let curTest: TestData = $state({} as TestData);
@@ -88,6 +98,7 @@
     length: 3600,
     buffer_time: 300,
     test_mode: "Standard",
+    instructions: "",
     instructions: "",
   } as TestData);
   let dateValue: Date = $state(new Date());
@@ -113,6 +124,7 @@
   const handleTestUpdate = (payload: any) => {
     console.log("TEST UPDATE PAYLOAD", payload);
 
+
     if (payload.eventType === "DELETE") {
       // Remove the deleted test from testStatusMap
       if (testStatusMap[payload.old.test_id]) {
@@ -120,6 +132,7 @@
       }
       return;
     }
+
 
     // Handle INSERT and UPDATE events
     testStatusMap[payload.new.test_id] = {
@@ -148,6 +161,7 @@
           filter: "event_id=eq." + eventId,
         },
         handleTestUpdate
+        handleTestUpdate
       )
       .subscribe();
   })();
@@ -164,6 +178,7 @@
         test.opening_time,
         currentTime,
         "seconds"
+        "seconds"
       );
       if (test.opening_time && timeTillTest < 86400) {
         newStatus.countdown = "Time till open: " + formatDuration(timeTillTest);
@@ -174,7 +189,9 @@
           new Date(test.opening_time),
           test.length + test.buffer_time,
           "seconds"
+          "seconds"
         ),
+        currentTime
         currentTime
       )
     ) {
@@ -189,7 +206,11 @@
                 new Date(test.opening_time),
                 test.length + test.buffer_time,
                 "seconds"
+                "seconds"
               ),
+              "seconds"
+            )
+          )
               "seconds"
             )
           )
@@ -210,7 +231,7 @@
     clearInterval(interval);
   });
 
-  async function handleSubmit() {
+  async function handleTestSubmit() {
     curTest.buffer_time = parseInt(curTest.buffer_time?.toString() || "0");
     let [hours, minutes] = (curTest.time || "12:00").split(":");
     if (curTest.amPm === "pm" && hours !== "12") {
@@ -242,11 +263,14 @@
       new Date(curTest.opening_time),
       curTest.length,
       curTest.buffer_time
+      curTest.buffer_time
     );
     console.log(
       addTime(
         new Date(curTest.opening_time),
         curTest.length + curTest.buffer_time,
+        "seconds"
+      )
         "seconds"
       )
     );
@@ -259,7 +283,12 @@
               new Date(curTest.opening_time),
               curTest.length + curTest.buffer_time,
               "seconds"
+              "seconds"
             ),
+            "seconds"
+          )
+        )
+      )
             "seconds"
           )
         )
@@ -278,6 +307,10 @@
         Number($page.params.event_id),
         true
       );
+      const fetchedTests = await getEventTests(
+        Number($page.params.event_id),
+        true
+      );
       console.log(fetchedTests);
       if (fetchedTests) {
         for (const test of fetchedTests) {
@@ -289,6 +322,23 @@
       handleError(error as Error);
     }
   }
+
+  let accessPreview = $state([]);
+	async function fetchAccessPreview() {
+		try {
+			// Replace this with the appropriate query to fetch all students
+			const { data } = await supabase.rpc('get_students_with_access_updated', {
+				p_test_id: curTest.test_id,
+			});
+			console.log("DATA",data)
+			// Filter out null results
+			accessPreview = data
+      console.log(`${accessPreview.length}`);
+			console.log("ACCESS PREVIEW", accessPreview)
+		} catch (error) {
+			handleError(error as Error);
+		}
+	}
 
   function handleDateTimeChange(event: CustomEvent) {
     const { date, formattedDate, time, amPm } = event.detail;
@@ -304,19 +354,44 @@
 
   async function saveAndClose() {
     open = false;
-    await handleSubmit();
+    await handleTestSubmit();
   }
 
   function handleOpenClick(test: TestData) {
     curTest = test;
     setupTime(
       curTest.opening_time ? new Date(curTest.opening_time) : new Date()
+      curTest.opening_time ? new Date(curTest.opening_time) : new Date()
     );
     open = true;
   }
 
+  function handleSettingsClick(test: TestData) {
+    openTestModal(true, test);
+  }
+
+  function handleAccessRulesClick(test: TestData){
+    curTest = test;
+		console.log("CURTEST", curTest);
+		accessRulesModalOpen = true;
+  }
+
+  //handles the submission of test access rules, eg. info like what grade a student needs to be to be able to take a test.
+  async function handleAccessRulesSubmit() {
+		const data = {
+			access_rules: curTest.access_rules
+		};
+		try {
+			await updateTest(curTest.test_id, data);
+			console.log("Access rules updated for test:", curTest.test_id);
+		} catch (error) {
+			handleError(error as Error);
+		}
+  }
+
   function openTestModal(isEdit: boolean, test?: TestData) {
     isEditMode = isEdit;
+
 
     if (isEdit && test) {
       // Edit mode - clone the existing test
@@ -332,16 +407,16 @@
         buffer_time: 300,
         test_mode: "Standard",
         instructions: "",
+        instructions: "",
       } as TestData;
     }
+
 
     nameError = "";
     testModalOpen = true;
   }
 
-  function handleSettingsClick(test: TestData) {
-    openTestModal(true, test);
-  }
+
 
   function closeTestModal() {
     testModalOpen = false;
@@ -364,7 +439,9 @@
         visible: activeTest.visible,
         test_mode: activeTest.test_mode,
         instructions: activeTest.instructions,
+        instructions: activeTest.instructions,
       };
+
 
       if (isEditMode) {
         // Update existing test
@@ -374,8 +451,10 @@
         await createTest({
           ...data,
           event_id: eventId,
+          event_id: eventId,
         });
       }
+
 
       testModalOpen = false;
       nameError = "";
@@ -395,6 +474,7 @@
     {:else if !tests || tests.length === 0}
       <div class="text-center">
         <button
+        <button
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-auto flex items-center"
           onclick={() => openTestModal(false)}
         >
@@ -405,12 +485,27 @@
     {:else}
       <div class="flex justify-between items-center mb-6">
         <button
+        <button
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
           onclick={() => openTestModal(false)}
         >
           <PlusOutline class="w-4 h-4 mr-2" />
           Create Test
         </button>
+        <!-- <button
+          class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
+          onclick={() => openTestModal(false)}
+        >
+        </button> -->
+      </div>
+      <div style="padding: 15px;">
+        <a href="./tests/new">
+          <button
+            class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
+          >
+            Import Tests
+          </button>
+        </a>
       </div>
       <div class="test-grid">
         {#each Object.values(testStatusMap).sort((a, b) => {
@@ -426,19 +521,24 @@
 
           // Finally sort by test_division
           return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
+          return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
         }) as test}
           <div class="test-card-container">
+            <TestCard
+              {test}
             <TestCard
               {test}
               isHostView={true}
               onOpenClick={() => handleOpenClick(test)}
               onInstructionsClick={() => {}}
               onSettingsClick={() => handleSettingsClick(test)}
+              onAccessRulesClick={() => handleAccessRulesClick(test)}
             />
           </div>
         {/each}
       </div>
       <br />
+
 
       <!-- Combined Test Modal (Create/Edit) -->
       <div class="modalExterior">
@@ -645,6 +745,7 @@
   </div>
 </div>
 
+
 <style>
   .page-container {
     max-width: 1600px;
@@ -694,3 +795,4 @@
     }
   }
 </style>
+
