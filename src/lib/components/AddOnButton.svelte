@@ -208,7 +208,7 @@
 </script>
 
 {#if hasAddons}
-  <Button color="primary" outline pill on:click={openModal}>
+  <Button color="primary" outline pill onclick={openModal}>
     <GiftBoxSolid class="w-4 h-4 me-2" />
     {buttonLabel}
     {#if totalPurchasedItems > 0}
@@ -255,7 +255,7 @@
                   {#if canPurchase(addon)}
                     <div class="flex items-center space-x-2">
                       <button 
-                        on:click={() => decrementQuantity(addon.addon_id)}
+                        onclick={() => decrementQuantity(addon.addon_id)}
                         class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                         disabled={!canPurchase(addon)}
                       >
@@ -271,7 +271,7 @@
                         disabled={!canPurchase(addon)}
                       />
                       <button 
-                        on:click={() => incrementQuantity(addon.addon_id)}
+                        onclick={() => incrementQuantity(addon.addon_id)}
                         class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                         disabled={!canPurchase(addon)}
                       >
@@ -298,7 +298,7 @@
         </Table>
         
         <div class="flex justify-end mt-4">
-          <Button color="primary" disabled={getTotalItems() === 0} on:click={purchaseAddons}>
+          <Button color="primary" disabled={getTotalItems() === 0} onclick={purchaseAddons}>
             <CartSolid class="w-4 h-4 me-2" />
             Checkout
           </Button>

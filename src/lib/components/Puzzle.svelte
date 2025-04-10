@@ -1,8 +1,8 @@
-<script>
+<script lang="ts">
 	import { onMount } from "svelte";
-	import { fabric } from "fabric";
+	import * as fabric from "fabric";
 	import { rearrangeItems } from "$lib/sort_dictionary";
-	import { supabase } from "$lib/supabase";
+	import { supabase } from "$lib/supabaseClient";
 
 	const cellSize = 30;
 	const strokeWidth = 6;
@@ -16,16 +16,19 @@
 	let lineDragType = true; //true = line, false = surface
 
 	let canvas;
-	export let puzzle;
-	export let is_puzzle = false;
-	export let relation_id;
-	export let team_id
-	export let lastUpdated = "";
-	export let onChange = async (ind, new_state) => {
-		console.log(ind, new_state);
-	};
-	export let opacity = 100;
-	export let editable = true;
+
+	let {
+		puzzle = $bindable(),
+		is_puzzle = false,
+		relation_id,
+		team_id,
+		lastUpdated = "",
+		onChange = async (ind, new_state) => {
+			console.log(ind, new_state);
+		},
+		opacity=100,
+		editable=true
+	} = $props();
 
 	let styles = {
 		x: {

@@ -2753,7 +2753,7 @@
     {#if hasSelectedStudents}
       <Button
         color="primary"
-        on:click={openTransferModal}
+        onclick={openTransferModal}
         class="flex items-center gap-2"
       >
         <ArrowRightAltSolid class="w-4 h-4" />
@@ -2765,7 +2765,7 @@
     {#if hasSelectedTeams}
       <Button
         color="primary"
-        on:click={openTeamTransferModal}
+        onclick={openTeamTransferModal}
         class="flex items-center gap-2"
       >
         <ArrowRightAltSolid class="w-4 h-4" />
@@ -2891,7 +2891,7 @@
       {#snippet actions()}
         <Button
           color="primary"
-          on:click={openTicketModal}
+          onclick={openTicketModal}
           class="flex items-center gap-2"
         >
           <CirclePlusSolid class="w-4 h-4" />
@@ -2899,7 +2899,7 @@
         </Button>
         <Button
           color="primary"
-          on:click={() => reloadData(["ticket_orders"])}
+          onclick={() => reloadData(["ticket_orders"])}
           class="flex items-center gap-2"
         >
           Reload
@@ -2907,7 +2907,7 @@
         {#if hasSelectedTicketOrders}
             <Button
               color="primary"
-              on:click={openRefundModal}
+              onclick={openRefundModal}
               class="flex items-center gap-2"
             >
               <ArrowRightAltSolid class="w-4 h-4" />
@@ -3134,13 +3134,13 @@
 
     <!-- Modal Footer -->
     <svelte:fragment slot="footer">
-      <Button color="alternative" on:click={() => (showTransferModal = false)}>
+      <Button color="alternative" onclick={() => (showTransferModal = false)}>
         {transferSuccess && !transferError ? "Close" : "Cancel"}
       </Button>
       {#if !transferSuccess || (transferSuccess && transferError)}
         <Button
           color="primary"
-          on:click={executeTransfer}
+          onclick={executeTransfer}
           disabled={transferInProgress ||
             (transferType === "team" && !selectedTeamId) ||
             (transferType === "org" && !selectedOrgId)}
@@ -3317,14 +3317,14 @@
     <svelte:fragment slot="footer">
       <Button
         color="alternative"
-        on:click={() => (showTeamTransferModal = false)}
+        onclick={() => (showTeamTransferModal = false)}
       >
         {transferSuccess && !transferError ? "Close" : "Cancel"}
       </Button>
       {#if !transferSuccess || (transferSuccess && transferError)}
         <Button
           color="primary"
-          on:click={executeTeamTransfer}
+          onclick={executeTeamTransfer}
           disabled={teamTransferInProgress || !selectedOrgId}
         >
           {#if teamTransferInProgress}
@@ -3518,14 +3518,14 @@
     <svelte:fragment slot="footer">
       <Button
         color="alternative"
-        on:click={() => (showTicketOrderModal = false)}
+        onclick={() => (showTicketOrderModal = false)}
       >
         {ticketOrderSuccess ? "Close" : "Cancel"}
       </Button>
       {#if !ticketOrderSuccess}
         <Button
           color="primary"
-          on:click={attemptTicketOrderInsert}
+          onclick={attemptTicketOrderInsert}
           disabled={ticketOrderInsertInProgress || !isFormValid}
         >
           {#if ticketOrderInsertInProgress}
@@ -3645,7 +3645,7 @@
                       {:else}
                         <Button
                           class="bg-green-600"
-                          on:click={() =>
+                          onclick={() =>
                             executeRefund(
                               currentTicketOrder.id,
                               "APPROVED",
@@ -3658,7 +3658,7 @@
                         >
                         <Button
                           class="bg-red-600"
-                          on:click={() =>
+                          onclick={() =>
                             executeRefund(
                               currentTicketOrder.id,
                               "DENIED",
@@ -3771,7 +3771,7 @@
                     {:else}
                       <Button
                         class="bg-green-600"
-                        on:click={() =>
+                        onclick={() =>
                           executeRefund(
                             currentTicketOrder.id,
                             "APPROVED",
@@ -3784,7 +3784,7 @@
                       >
                       <Button
                         class="bg-red-600"
-                        on:click={() =>
+                        onclick={() =>
                           executeRefund(
                             currentTicketOrder.id,
                             "DENIED",
@@ -3881,7 +3881,7 @@
               <Spinner class="mr-2" size="4" />
             {:else}
               <Button
-                on:click={() =>
+                onclick={() =>
                   executeRefund(
                     currentTicketOrder.id,
                     "APPROVED",
@@ -3901,7 +3901,7 @@
         </TabItem>
       </Tabs>
       <div class="mt-6 flex justify-end gap-2">
-        <Button on:click={() => (showRefundModal = false)}>Close</Button>
+        <Button onclick={() => (showRefundModal = false)}>Close</Button>
       </div>
     </div>
   </Modal>
@@ -4019,11 +4019,11 @@
       {/if}
       
       <div class="flex justify-end gap-3">
-        <Button color="alternative" on:click={() => (showDeleteModal = false)} disabled={deleteInProgress}>
+        <Button color="alternative" onclick={() => (showDeleteModal = false)} disabled={deleteInProgress}>
           {deleteSuccess ? "Close" : "Cancel"}
         </Button>
         {#if !deleteSuccess}
-          <Button color="red" on:click={handleDelete} disabled={deleteInProgress}>
+          <Button color="red" onclick={handleDelete} disabled={deleteInProgress}>
             {#if deleteInProgress}
               <Spinner class="mr-2" size="sm" /> Deleting...
             {:else}

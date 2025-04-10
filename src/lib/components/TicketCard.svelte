@@ -51,13 +51,13 @@
       </div>
     {#if (ticket?.refund_requests?.length || 0) == 0}
       <div class="flex items-center justify-between">
-        <Button color="red" class="w-full" on:click={() => (showModal = true)}>
+        <Button color="red" class="w-full" onclick={() => (showModal = true)}>
           Request Refund
         </Button>
       </div>
     {:else if (ticket?.refund_requests?.length || 0) > 0}
       <div class="mt-4">
-        <Button color="red" class="w-full" on:click={() => (showModal = true)}>
+        <Button color="red" class="w-full" onclick={() => (showModal = true)}>
           View Refund Status
         </Button>
       </div>
@@ -94,8 +94,8 @@
     </div>
 
     <div class="mt-6 flex justify-end gap-2">
-      <Button on:click={() => (showModal = false)}>Cancel</Button>
-      <Button on:click={handleRefundRequest} color="blue">Submit</Button>
+      <Button onclick={() => (showModal = false)}>Cancel</Button>
+      <Button onclick={handleRefundRequest} color="blue">Submit</Button>
     </div>
   </div>
   

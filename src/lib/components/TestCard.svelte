@@ -107,7 +107,7 @@
       <div class="action-buttons host-actions">
         <div class="left-buttons">
           <div class="tooltip-container">
-            <button class="test-button empty" on:click={onSettingsClick}>
+            <button class="test-button empty" onclick={onSettingsClick}>
                 <CogOutline class="w-5 h-5 icon" />
             </button>
             <span class="tooltip">Settings</span>
@@ -145,7 +145,7 @@
         <div class="right-buttons">
           <button
             class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-            on:click={onOpenClick}
+            onclick={onOpenClick}
           >
             Open
           </button>
@@ -157,7 +157,7 @@
         <div class="left-buttons">
           {#if test.instructions !== undefined && test.instructions !== "" && test.instructions !== null}
             <div class="tooltip-container">
-              <button class="test-button empty" on:click={onInstructionsClick} disabled={!test.instructions}>
+              <button class="test-button empty" onclick={onInstructionsClick} disabled={!test.instructions}>
                 <FileLinesSolid class="w-5 h-5 icon" />
               </button>
               <span class="tooltip">
@@ -171,7 +171,7 @@
           <button
             class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
             disabled={test.disabled}
-            on:click={onOpenClick}
+            onclick={onOpenClick}
           >
             {test.status}
           </button>

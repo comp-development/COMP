@@ -11,7 +11,7 @@
   } from "carbon-components-svelte";
   import Button from "$lib/components/Button.svelte";
   import MathJax from "$lib/components/MathJax.svelte";
-  import { getAllProblems } from "$lib/supabase";
+  import Puzzle from "./Puzzle.svelte";
 
   let pageSize = $state(25);
   let pageT = $state(1);
@@ -24,25 +24,16 @@
     host_id: number;
   }
 
-  let { open, onSelect, closeModal, changeNewProblem, host_id }: Props = $props();
-
-  let allProblems = $state();
-
-  (async () => {
-    allProblems = await getAllProblems(host_id);
-    allProblems.forEach((problem) => {
-      problem.id = problem.problem_id;
-    });
-  })();
+  let { open, onSelect, closeModal, changeNewProblem, host_id, typeProblem="Problem", allProblems }: Props = $props();
 </script>
 
 {#if open}
   <div class="modal-overlay" onclick={closeModal}>
     <div class="modal" onclick={stopPropagation(bubble("click"))}>
       <button class="close-button" onclick={closeModal}>✖</button>
-      <h2>Select Problem</h2>
+      <h2>Select {typeProblem}</h2>
       <br />
-      <Button title="Write New Problem" action={changeNewProblem} />
+      <Button title="Write New {typeProblem}" action={changeNewProblem} />
       <br /><br />
       <DataTable
         expandable
@@ -51,11 +42,15 @@
         headers={[
           { key: "edit", value: "Select", width: "50px" },
           { key: "id", value: "ID", width: "50px" },
-          {
-            key: "problem_latex",
-            value: "Problem Latex",
-            width: "250px",
-          },
+          ...(typeProblem !== "Puzzle"
+            ? [
+                {
+                  key: "problem_latex",
+                  value: "Problem Latex",
+                  width: "250px",
+                },
+              ]
+            : []),
         ]}
         rows={allProblems}
         {pageSize}
@@ -86,7 +81,11 @@
 
         <!-- @migration-task: migrate this slot by hand, `expanded-row` is an invalid identifier -->
         <svelte:fragment slot="expanded-row" let:row>
-          <MathJax math={row.problem_latex} />
+          {#if typeProblem == "Puzzle"}
+            <Puzzle puzzle={row.puzzle} />
+          {:else}
+            <MathJax math={row.problem_latex} />
+          {/if}
         </svelte:fragment>
       </DataTable>
 

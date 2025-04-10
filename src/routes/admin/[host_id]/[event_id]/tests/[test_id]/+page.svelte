@@ -2,7 +2,6 @@
   import { page } from "$app/stores";
   import toast from "$lib/toast.svelte";
   import { TextArea, TextInput } from "carbon-components-svelte";
-  import {} from "carbon-components-svelte";
   import MathJax from "$lib/components/MathJax.svelte";
   import Button from "$lib/components/Button.svelte";
   import { handleError } from "$lib/handleError";
@@ -20,1925 +19,19 @@
     updateProblemClarifications,
     updateTestProblem,
     updateClarification,
+    getAllPuzzles,
+    insertPuzzle,
+    updateTestPuzzle,
+    replaceTestPuzzle,
   } from "$lib/supabase";
   import Problem from "$lib/components/Problem.svelte";
   import SelectProblem from "$lib/components/SelectProblem.svelte";
   import CreateProblemModal from "$lib/components/CreateProblemModal.svelte";
-  import PuzzleNavigation from "$lib/components/PuzzleNavigation.svelte";
-
-  let puzzles = [
-    [
-      {
-        loc: [
-          [0, 8],
-          [0, 6],
-          [2, 6],
-          [2, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 6],
-          [0, 4],
-          [2, 4],
-          [2, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 4],
-          [0, 2],
-          [2, 2],
-          [2, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 2],
-          [0, 0],
-          [2, 0],
-          [2, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 8],
-          [2, 6],
-          [4, 6],
-          [4, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 6],
-          [2, 4],
-          [4, 4],
-          [4, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 4],
-          [2, 2],
-          [4, 2],
-          [4, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 2],
-          [2, 0],
-          [4, 0],
-          [4, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 8],
-          [4, 6],
-          [6, 6],
-          [6, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 6],
-          [4, 4],
-          [6, 4],
-          [6, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 4],
-          [4, 2],
-          [6, 2],
-          [6, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 2],
-          [4, 0],
-          [6, 0],
-          [6, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 8],
-          [6, 6],
-          [8, 6],
-          [8, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 6],
-          [6, 4],
-          [8, 4],
-          [8, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 4],
-          [6, 2],
-          [8, 2],
-          [8, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 2],
-          [6, 0],
-          [8, 0],
-          [8, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 0],
-          [2, 0],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 0],
-          [4, 0],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 0],
-          [6, 0],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 0],
-          [8, 0],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 0],
-          [0, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 0],
-          [2, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 0],
-          [4, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 0],
-          [6, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [8, 0],
-          [8, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 2],
-          [2, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 2],
-          [4, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 2],
-          [6, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 2],
-          [8, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 2],
-          [0, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 2],
-          [2, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 2],
-          [4, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 2],
-          [6, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [8, 2],
-          [8, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 4],
-          [2, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 4],
-          [4, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 4],
-          [6, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 4],
-          [8, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 4],
-          [0, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 4],
-          [2, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 4],
-          [4, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 4],
-          [6, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [8, 4],
-          [8, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 6],
-          [2, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 6],
-          [4, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 6],
-          [6, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 6],
-          [8, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 6],
-          [0, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 6],
-          [2, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 6],
-          [4, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 6],
-          [6, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [8, 6],
-          [8, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 8],
-          [2, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 8],
-          [4, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 8],
-          [6, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 8],
-          [8, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [[0, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[5, 1]],
-        type: "text",
-        state: "3",
-      },
-      {
-        loc: [[1, 3]],
-        type: "text",
-        state: "3",
-      },
-      {
-        loc: [[3, 3]],
-        type: "text",
-        state: "0",
-      },
-      {
-        loc: [[5, 5]],
-        type: "text",
-        state: "0",
-      },
-      {
-        loc: [[7, 5]],
-        type: "text",
-        state: "2",
-      },
-      {
-        loc: [[3, 7]],
-        type: "text",
-        state: "1",
-      },
-    ],
-    [
-      {
-        loc: [
-          [0, 8],
-          [0, 6],
-          [2, 6],
-          [2, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 6],
-          [0, 4],
-          [2, 4],
-          [2, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 4],
-          [0, 2],
-          [2, 2],
-          [2, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 2],
-          [0, 0],
-          [2, 0],
-          [2, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 8],
-          [2, 6],
-          [4, 6],
-          [4, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 6],
-          [2, 4],
-          [4, 4],
-          [4, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 4],
-          [2, 2],
-          [4, 2],
-          [4, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 2],
-          [2, 0],
-          [4, 0],
-          [4, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 8],
-          [4, 6],
-          [6, 6],
-          [6, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 6],
-          [4, 4],
-          [6, 4],
-          [6, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 4],
-          [4, 2],
-          [6, 2],
-          [6, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 2],
-          [4, 0],
-          [6, 0],
-          [6, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 8],
-          [6, 6],
-          [8, 6],
-          [8, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 6],
-          [6, 4],
-          [8, 4],
-          [8, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 4],
-          [6, 2],
-          [8, 2],
-          [8, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 2],
-          [6, 0],
-          [8, 0],
-          [8, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 0],
-          [2, 0],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 0],
-          [4, 0],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 0],
-          [6, 0],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 0],
-          [8, 0],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 0],
-          [0, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 0],
-          [2, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 0],
-          [4, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 0],
-          [6, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [8, 0],
-          [8, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 2],
-          [2, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 2],
-          [4, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 2],
-          [6, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 2],
-          [8, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 2],
-          [0, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 2],
-          [2, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 2],
-          [4, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 2],
-          [6, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [8, 2],
-          [8, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 4],
-          [2, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 4],
-          [4, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 4],
-          [6, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 4],
-          [8, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 4],
-          [0, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 4],
-          [2, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 4],
-          [4, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 4],
-          [6, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [8, 4],
-          [8, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 6],
-          [2, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 6],
-          [4, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 6],
-          [6, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 6],
-          [8, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 6],
-          [0, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 6],
-          [2, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 6],
-          [4, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 6],
-          [6, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [8, 6],
-          [8, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 8],
-          [2, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 8],
-          [4, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 8],
-          [6, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 8],
-          [8, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [[0, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[5, 1]],
-        type: "text",
-        state: "3",
-      },
-      {
-        loc: [[1, 3]],
-        type: "text",
-        state: "3",
-      },
-      {
-        loc: [[3, 3]],
-        type: "text",
-        state: "0",
-      },
-      {
-        loc: [[5, 5]],
-        type: "text",
-        state: "0",
-      },
-      {
-        loc: [[7, 5]],
-        type: "text",
-        state: "2",
-      },
-      {
-        loc: [[3, 7]],
-        type: "text",
-        state: "1",
-      },
-    ],
-    [
-      {
-        loc: [
-          [0, 8],
-          [0, 6],
-          [2, 6],
-          [2, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 6],
-          [0, 4],
-          [2, 4],
-          [2, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 4],
-          [0, 2],
-          [2, 2],
-          [2, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 2],
-          [0, 0],
-          [2, 0],
-          [2, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 8],
-          [2, 6],
-          [4, 6],
-          [4, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 6],
-          [2, 4],
-          [4, 4],
-          [4, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 4],
-          [2, 2],
-          [4, 2],
-          [4, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [2, 2],
-          [2, 0],
-          [4, 0],
-          [4, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 8],
-          [4, 6],
-          [6, 6],
-          [6, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 6],
-          [4, 4],
-          [6, 4],
-          [6, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 4],
-          [4, 2],
-          [6, 2],
-          [6, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [4, 2],
-          [4, 0],
-          [6, 0],
-          [6, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 8],
-          [6, 6],
-          [8, 6],
-          [8, 8],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 6],
-          [6, 4],
-          [8, 4],
-          [8, 6],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 4],
-          [6, 2],
-          [8, 2],
-          [8, 4],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [6, 2],
-          [6, 0],
-          [8, 0],
-          [8, 2],
-        ],
-        type: "surface",
-        state: "",
-      },
-      {
-        loc: [
-          [0, 0],
-          [2, 0],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 0],
-          [4, 0],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 0],
-          [6, 0],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 0],
-          [8, 0],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 0],
-          [0, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 0],
-          [2, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 0],
-          [4, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 0],
-          [6, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [8, 0],
-          [8, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 2],
-          [2, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 2],
-          [4, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 2],
-          [6, 2],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 2],
-          [8, 2],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 2],
-          [0, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 2],
-          [2, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 2],
-          [4, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 2],
-          [6, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [8, 2],
-          [8, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 4],
-          [2, 4],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 4],
-          [4, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 4],
-          [6, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 4],
-          [8, 4],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 4],
-          [0, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [2, 4],
-          [2, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 4],
-          [4, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 4],
-          [6, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [8, 4],
-          [8, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 6],
-          [2, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 6],
-          [4, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 6],
-          [6, 6],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 6],
-          [8, 6],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [0, 6],
-          [0, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 6],
-          [2, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [4, 6],
-          [4, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [6, 6],
-          [6, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [8, 6],
-          [8, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [
-          [0, 8],
-          [2, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [2, 8],
-          [4, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [4, 8],
-          [6, 8],
-        ],
-        type: "edge",
-        state: "+",
-      },
-      {
-        loc: [
-          [6, 8],
-          [8, 8],
-        ],
-        type: "edge",
-        state: "-",
-      },
-      {
-        loc: [[0, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 0]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 2]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 4]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 6]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[0, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[2, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[4, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[6, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[8, 8]],
-        type: "point",
-        state: "true",
-      },
-      {
-        loc: [[5, 1]],
-        type: "text",
-        state: "3",
-      },
-      {
-        loc: [[1, 3]],
-        type: "text",
-        state: "3",
-      },
-      {
-        loc: [[3, 3]],
-        type: "text",
-        state: "0",
-      },
-      {
-        loc: [[5, 5]],
-        type: "text",
-        state: "0",
-      },
-      {
-        loc: [[7, 5]],
-        type: "text",
-        state: "2",
-      },
-      {
-        loc: [[3, 7]],
-        type: "text",
-        state: "1",
-      },
-    ],
-  ];
+  import CustomForm from "$lib/components/CustomForm.svelte";
+  import { Modal } from "flowbite-svelte";
+  import Puzzle from "$lib/components/Puzzle.svelte";
+  import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
+  import EditPuzzle from "$lib/components/EditPuzzle.svelte";
 
   // Define interfaces for our data structures
   interface TestProblem {
@@ -1993,19 +86,168 @@
   let problems = $state<TestProblem[]>([]);
   let test_taker: any;
   let clarifications = $state<Record<number, Clarification>>({});
-  let allProblems: any[];
+  let allProblems: any[] = $state([]);
+
+  let showDeleteModal = $state(false);
+  let fieldToDelete: number | null = $state(null);
+  let showDeletePageModal = $state(false);
+  let pageToDelete: number | null = $state(null);
+
+  let typeProblem = $state("problem");
+
+  let createModal = $state(false);
+  let newResponses = $state({
+    puzzle: "",
+    solution: "",
+  });
 
   (async () => {
     user = await getThisUser();
     test = await getTest(test_id);
-    problems = (await getTestProblems(test_id, null, "*, problems(*)")) || [];
-    allProblems = await getAllProblems(host_id);
-    allProblems.forEach((problem) => {
-      problem.id = problem.problem_id;
-    });
+    await getNewValues();
     clarifications = await getAllProblemClarifications(problems);
     loading = false;
   })();
+
+  async function getNewValues() {
+    if (test.test_mode == "Puzzle") {
+      problems = (await getTestProblems(test_id, null, "*, puzzles(*)")) || [];
+      allProblems = await getAllPuzzles(host_id);
+      allProblems.forEach((problem) => {
+        problem.id = problem.puzzle_id;
+      });
+      typeProblem = "Puzzle";
+    } else {
+      problems = (await getTestProblems(test_id, null, "*, problems(*)")) || [];
+      allProblems = await getAllProblems(host_id);
+      allProblems.forEach((problem) => {
+        problem.id = problem.problem_id;
+      });
+    }
+  }
+
+  function confirmDelete(index: number) {
+    fieldToDelete = index;
+    showDeleteModal = true;
+  }
+
+  type PuzzleElement =
+    | { loc: number[][]; type: "point"; state: "true" }
+    | { loc: number[][]; type: "edge"; state: "-" }
+    | { loc: number[][]; type: "surface"; state: string }
+    | { loc: number[][]; type: "text"; state: string };
+
+  export function parsePuzzleGrid(grid: string): PuzzleElement[] {
+    const lines = grid.trim().split("\n");
+    const result: PuzzleElement[] = [];
+
+    const height = lines.length;
+    const width = lines[0].length;
+
+    for (let r = 0; r < height; r++) {
+      for (let c = 0; c < width; c++) {
+        const ch = lines[r][c];
+
+        // Points at even rows and even columns
+        if (r % 2 === 0 && c % 2 === 0 && ch === ".") {
+          result.push({
+            loc: [[r, c]],
+            type: "point",
+            state: "true",
+          });
+        }
+
+        // Horizontal edges: underscore between two points
+        if (r % 2 === 0 && c % 2 === 1 && ch === "_") {
+          result.push({
+            loc: [
+              [r, c - 1],
+              [r, c + 1],
+            ],
+            type: "edge",
+            state: "-",
+          });
+        }
+
+        // Vertical edges: pipe between two points
+        if (r % 2 === 1 && c % 2 === 0 && ch === "|") {
+          result.push({
+            loc: [
+              [r - 1, c],
+              [r + 1, c],
+            ],
+            type: "edge",
+            state: "-",
+          });
+        }
+
+        // Surfaces: empty space between four points
+        if (r % 2 === 1 && c % 2 === 1 && ch === " ") {
+          result.push({
+            loc: [
+              [r - 1, c - 1],
+              [r - 1, c + 1],
+              [r + 1, c + 1],
+              [r + 1, c - 1],
+            ],
+            type: "surface",
+            state: "",
+          });
+        }
+
+        // Text inside a surface cell (numbers)
+        if (r % 2 === 1 && c % 2 === 1 && /\d/.test(ch)) {
+          result.push({
+            loc: [[r, c]],
+            type: "text",
+            state: ch,
+          });
+          result.push({
+            loc: [
+              [r - 1, c - 1],
+              [r - 1, c + 1],
+              [r + 1, c + 1],
+              [r + 1, c - 1],
+            ],
+            type: "surface",
+            state: "",
+          });
+        }
+      }
+    }
+
+    const typeOrder = { surface: 0, edge: 1, point: 2, text: 3 };
+    result.sort((a, b) => typeOrder[a.type] - typeOrder[b.type]);
+
+    return result;
+  }
+
+  async function handleCreatePuzzle() {
+    try {
+      // Retrieve the puzzle and solution from newResponses
+      const puzzleGrid = newResponses.puzzle;
+      const solutionGrid = newResponses.solution;
+
+      // Convert both puzzle and solution grids into the required format
+      const puzzleLocations = parsePuzzleGrid(puzzleGrid);
+      const solutionLocations = parsePuzzleGrid(solutionGrid);
+
+      // Add the puzzle and solution to the puzzles array
+      const puzzle = await insertPuzzle(
+        puzzleLocations,
+        solutionLocations,
+        host_id
+      );
+
+      await addNewProblemToTest(puzzle);
+
+      // Reset modal and responses
+      createModal = false;
+      newResponses = { puzzle: "", solution: "" };
+    } catch (e) {
+      handleError(e);
+    }
+  }
 
   // Function to move the problem up (and across pages if necessary)
   function moveUp(index: number) {
@@ -2086,7 +328,11 @@
     try {
       if (test) {
         await updateTest(test.test_id, test);
-        await updateTestProblems(test.test_id, problems);
+        await updateTestProblems(
+          test.test_id,
+          problems,
+          test.test_mode == "Puzzle"
+        );
         clarifications = await updateProblemClarifications(clarifications);
         toast.success("Successfully saved");
       }
@@ -2122,7 +368,7 @@
     return grouped;
   };
 
-  async function addNewProblemToTest(row: { problem_id: number }) {
+  async function addNewProblemToTest(row: {}) {
     try {
       if (!test) return;
 
@@ -2147,16 +393,31 @@
         }
       }
 
-      const newProblem = await addNewTestProblem(
-        {
-          problem_id: row.problem_id,
-          test_id: test.test_id,
-          page_number: idx + 1,
-          points: 1,
-          problem_number: prob_number + 1,
-        },
-        "*, problems(*)"
-      );
+      let newProblem;
+
+      if (test.test_mode == "Puzzle") {
+        newProblem = await addNewTestProblem(
+          {
+            puzzle_id: row.puzzle_id,
+            test_id: test.test_id,
+            page_number: idx + 1,
+            points: 1,
+            problem_number: prob_number + 1,
+          },
+          "*, puzzles(*)"
+        );
+      } else {
+        newProblem = await addNewTestProblem(
+          {
+            problem_id: row.problem_id,
+            test_id: test.test_id,
+            page_number: idx + 1,
+            points: 1,
+            problem_number: prob_number + 1,
+          },
+          "*, problems(*)"
+        );
+      }
 
       problems.push(newProblem);
 
@@ -2177,7 +438,6 @@
       clarifications = { ...clarifications };
 
       curPage = null;
-
       await saveTest();
     } catch (e) {
       handleError(e as Error);
@@ -2225,111 +485,114 @@
     <br />
   </div>
 
-  {#if test.test_mode != "Puzzle"}
-    <div class="box-basic">
-      <p style="font-weight: bold; font-size: 24px;">Problem Rearrangement</p>
-      <div>
-        {#each groupByPageNumber(problems, test.settings.pages.length) as pageProblems, pageNumber}
-          <div class="page-container">
-            <div class="flex">
-              <TextInput
-                labelText="Page Title"
-                bind:value={test.settings.pages[pageNumber]}
-                style="width: 500px"
-                on:blur={(e) => {
-                  test.settings.pages[pageNumber] = e.target.value;
-                }}
-              />
-              <button
-                class="arrow-button"
-                onclick={async () => {
-                  test.settings.pages.splice(pageNumber, 1);
-                  test = { ...test };
-                  await saveTest();
-                }}>🗑️</button
-              >
-            </div>
-            <br />
-            {#each pageProblems as problem, index}
-              <div class="container">
-                <div class="row">
-                  <div>
-                    <h4>Editable</h4>
-                    <div class="arrows">
-                      <p style="margin: 0; padding: 0">
-                        {problem.problem_number}.
-                      </p>
-                      <button
-                        class="arrow-button"
-                        onclick={() => {
-                          modalProblem = problems.indexOf(problem);
-                        }}>🔁</button
-                      >
-                      <button
-                        class="arrow-button"
-                        onclick={() => moveUp(problems.indexOf(problem))}
-                        disabled={problems.indexOf(problem) === 0}>⬆️</button
-                      >
+  <div class="box-basic">
+    <p style="font-weight: bold; font-size: 24px;">
+      {typeProblem} Rearrangement
+    </p>
+    <div>
+      {#each groupByPageNumber(problems, test.settings.pages.length) as pageProblems, pageNumber}
+        <div class="page-container">
+          <div class="flex">
+            <TextInput
+              labelText="Page Title"
+              bind:value={test.settings.pages[pageNumber]}
+              style="width: 500px"
+              on:blur={(e) => {
+                test.settings.pages[pageNumber] = e.target.value;
+              }}
+            />
+            <button
+              class="arrow-button"
+              onclick={() => {
+                pageToDelete = pageNumber;
+                showDeletePageModal = true;
+              }}>🗑️</button
+            >
+          </div>
+          <br />
+          {#each pageProblems as problem, index}
+            <div class="container">
+              <div class="row">
+                <div>
+                  <h4>Editable</h4>
+                  <div class="arrows">
+                    <p style="margin: 0; padding: 0">
+                      {problem.problem_number}.
+                    </p>
+                    <button
+                      class="arrow-button"
+                      onclick={() => {
+                        modalProblem = problems.indexOf(problem);
+                      }}>🔁</button
+                    >
+                    <button
+                      class="arrow-button"
+                      onclick={() => moveUp(problems.indexOf(problem))}
+                      disabled={problems.indexOf(problem) === 0}>⬆️</button
+                    >
 
-                      <button
-                        class="arrow-button"
-                        onclick={() => moveDown(problems.indexOf(problem))}
-                        disabled={problems.indexOf(problem) ===
-                          problems.length - 1}>⬇️</button
-                      >
+                    <button
+                      class="arrow-button"
+                      onclick={() => moveDown(problems.indexOf(problem))}
+                      disabled={problems.indexOf(problem) ===
+                        problems.length - 1}>⬇️</button
+                    >
 
-                      <button
-                        class="arrow-button"
-                        onclick={async () => {
-                          await deleteTestProblem(problem.test_problem_id);
+                    <button
+                      class="arrow-button"
+                      onclick={async () => {
+                        confirmDelete(index);
+                      }}>🗑️</button
+                    >
+                  </div>
+                  <br />
+                  <TextInput
+                    labelText="Name"
+                    bind:value={problem.name}
+                    on:input={(e) => {
+                      problem.edits = true;
+                      problems[problems.problem_number - 1]["name"] =
+                        e.target.value;
+                    }}
+                  />
 
-                          const curIndex = problems.indexOf(problem);
-
-                          problems.splice(curIndex, 1);
-
-                          for (let i = curIndex; i < problems.length; i++) {
-                            problems[curIndex].problem_number -= 1;
-                          }
-
-                          problems = [...problems];
-
-                          await saveTest();
-                        }}>🗑️</button
-                      >
-                    </div>
-                    <br />
+                  <br />
+                  <div class="row">
                     <TextInput
-                      labelText="Name"
-                      bind:value={problem.name}
+                      labelText="Page Number"
+                      bind:value={problem.page_number}
                       on:input={(e) => {
                         problem.edits = true;
-                        problems[problems.problem_number - 1]["name"] =
+                        problems[problems.indexOf(problem)]["page_number"] =
                           e.target.value;
                       }}
                     />
-
-                    <br />
-                    <div class="row">
-                      <TextInput
-                        labelText="Page Number"
-                        bind:value={problem.page_number}
-                        on:input={(e) => {
-                          problem.edits = true;
-                          problems[problems.indexOf(problem)]["page_number"] =
-                            e.target.value;
-                        }}
-                      />
-                      <TextInput
-                        labelText="Points"
-                        bind:value={problem.points}
-                        on:input={(e) => {
-                          problem.edits = true;
-                          problems[problems.indexOf(problem)]["points"] =
-                            e.target.value;
-                        }}
-                      />
-                    </div>
-                    <br />
+                    <TextInput
+                      labelText="Points"
+                      bind:value={problem.points}
+                      on:input={(e) => {
+                        problem.edits = true;
+                        problems[problems.indexOf(problem)]["points"] =
+                          e.target.value;
+                      }}
+                    />
+                  </div>
+                  <br />
+                  <TextArea
+                    labelText="Clarification Latex"
+                    bind:value={
+                      clarifications[problem.test_problem_id]
+                        .clarification_latex
+                    }
+                    on:input={(e) => {
+                      problem.edits = true;
+                      clarifications[
+                        problem.test_problem_id
+                      ].clarification_latex = e.target.value;
+                    }}
+                  />
+                  <br />
+                  {#if test.test_mode != "Puzzle"}
                     <TextArea
                       labelText="Problem Latex"
                       bind:value={problem.problems.problem_latex}
@@ -2338,20 +601,6 @@
                         problems[problems.indexOf(problem)]["problems"][
                           "problem_latex"
                         ] = e.target.value;
-                      }}
-                    />
-                    <br />
-                    <TextArea
-                      labelText="Clarification Latex"
-                      bind:value={
-                        clarifications[problem.test_problem_id]
-                          .clarification_latex
-                      }
-                      on:input={(e) => {
-                        problem.edits = true;
-                        clarifications[
-                          problem.test_problem_id
-                        ].clarification_latex = e.target.value;
                       }}
                     />
                     <br />
@@ -2365,31 +614,46 @@
                         ] = e.target.value;
                       }}
                     />
-                    <br />
-                    {#if problem.edits}
-                      <Button
-                        title="Save Changes"
-                        action={async () => {
-                          try {
-                            delete problem.edits;
+                  {/if}
+                  <br />
+                  {#if problem.edits}
+                    <Button
+                      title="Save Changes"
+                      action={async () => {
+                        try {
+                          delete problem.edits;
+                          if (test.test_mode == "Puzzle") {
+                            await updateTestPuzzle(
+                              test.test_id,
+                              problems[problems.indexOf(problem)]
+                            );
+                          } else {
                             await updateTestProblem(
                               test.test_id,
                               problems[problems.indexOf(problem)]
                             );
-                            clarifications[problem.test_problem_id] =
-                              await updateClarification({
-                                ...clarifications[problem.test_problem_id],
-                              });
-                            toast.success("Saved problem");
-                          } catch (e) {
-                            await handleError(e);
                           }
-                        }}
-                      />
-                    {/if}
-                    <br />
-                  </div>
-                  <div>
+                          clarifications[problem.test_problem_id] =
+                            await updateClarification({
+                              ...clarifications[problem.test_problem_id],
+                            });
+                          toast.success("Saved problem");
+                        } catch (e) {
+                          await handleError(e);
+                        }
+                      }}
+                    />
+                  {/if}
+                  <br />
+                </div>
+                <div>
+                  {#if test.test_mode == "Puzzle"}
+                    <h4>Edit Puzzle</h4>
+                    <EditPuzzle bind:puzzle={problem.puzzles.puzzle} />
+                    <br /><br />
+                    <h4>Edit Solution</h4>
+                    <EditPuzzle bind:puzzle={problem.puzzles.solution} />
+                  {:else}
                     <h4>Display</h4>
                     <Problem
                       {problem}
@@ -2400,104 +664,258 @@
                     <MathJax
                       math={"Answer: " + problem.problems.answer_latex}
                     />
-                  </div>
+                  {/if}
                 </div>
               </div>
-              <br />
-            {/each}
-
+            </div>
             <br />
-            <Button
-              title="Add New Problem"
-              action={async () => {
-                loading = true;
-                curPage = pageNumber;
-                openAddProblemModal = true;
-                loading = false;
-              }}
-            />
-            <br /><br />
-          </div>
-          <br />
-        {/each}
-        <Button
-          title="Add New Page"
-          action={async () => {
-            loading = true;
-            await addNewProblemPage(
-              problems[problems.length - 1].page_number + 1
-            );
-            loading = false;
-          }}
-        />
-        <br />
-      </div>
-    </div>
+          {/each}
 
-    <SelectProblem
-      open={modalProblem != null}
-      changeNewProblem={() => {
-        modalProblem = null;
+          <br />
+          <Button
+            title="Add New {typeProblem}"
+            action={async () => {
+              loading = true;
+              curPage = pageNumber;
+              openAddProblemModal = true;
+              loading = false;
+            }}
+          />
+          <br /><br />
+        </div>
+        <br />
+      {/each}
+      <Button
+        title="Add New Page"
+        action={async () => {
+          loading = true;
+          await addNewProblemPage();
+          loading = false;
+        }}
+      />
+      <br />
+    </div>
+  </div>
+
+  <SelectProblem
+    open={modalProblem != null}
+    changeNewProblem={() => {
+      modalProblem = null;
+      if (test.test_mode == "Puzzle") {
+        createModal = true;
+      } else {
         newProblemModal = true;
-      }}
-      {host_id}
-      closeModal={() => (modalProblem = null)}
-      onSelect={async (row) => {
-        try {
-          const newProblem = await replaceTestProblem(
+      }
+    }}
+    {allProblems}
+    {host_id}
+    closeModal={() => (modalProblem = null)}
+    onSelect={async (row) => {
+      try {
+        let newProblem;
+
+        if (test.test_mode == "Puzzle") {
+          newProblem = await replaceTestPuzzle(
+            problems[modalProblem].test_problem_id,
+            row.puzzle_id,
+            "*, puzzles(*)"
+          );
+        } else {
+          newProblem = await replaceTestProblem(
             problems[modalProblem].test_problem_id,
             row.problem_id,
             "*, problems(*)"
           );
-          problems[modalProblem] = newProblem;
-          problems = [...problems];
-
-          modalProblem = null;
-        } catch (e) {
-          handleError(e);
         }
-      }}
-    />
 
-    <SelectProblem
-      open={openAddProblemModal}
-      changeNewProblem={() => {
-        openAddProblemModal = false;
-        newProblemModal = true;
-      }}
-      closeModal={() => {
-        openAddProblemModal = false;
-      }}
-      {host_id}
-      onSelect={async (row) => {
-        console.log("ROW", row);
-        await addNewProblemToTest(row);
-      }}
-    />
+        problems[modalProblem] = newProblem;
+        problems = [...problems];
 
-    <CreateProblemModal
-      open={newProblemModal}
-      {host_id}
-      changeNewProblem={() => {
+        toast.success("Problem successfully replaced");
+        modalProblem = null;
+      } catch (e) {
+        handleError(e);
+      }
+    }}
+    {typeProblem}
+  />
+
+  <SelectProblem
+    open={openAddProblemModal}
+    {allProblems}
+    changeNewProblem={() => {
+      openAddProblemModal = false;
+      if (test.test_mode == "Puzzle") {
+        createModal = true;
+      } else {
         newProblemModal = true;
-      }}
-      closeModal={() => {
-        newProblemModal = false;
-      }}
-      addProblemFunction={async (problem) => {
-        console.log("PROBLEM", problem);
-        await addNewProblemToTest(problem);
-        newProblemModal = false;
-      }}
-    />
-  {:else}
-    <PuzzleNavigation bind:puzzles isAdmin={true} />
-  {/if}
+      }
+    }}
+    closeModal={() => {
+      openAddProblemModal = false;
+    }}
+    {host_id}
+    onSelect={async (row) => {
+      console.log("ROW", row);
+      await addNewProblemToTest(row);
+      openAddProblemModal = false;
+    }}
+    {typeProblem}
+  />
+
+  <CreateProblemModal
+    open={newProblemModal}
+    {host_id}
+    changeNewProblem={() => {
+      newProblemModal = true;
+    }}
+    closeModal={() => {
+      newProblemModal = false;
+    }}
+    addProblemFunction={async (problem) => {
+      console.log("PROBLEM", problem);
+      await addNewProblemToTest(problem);
+      newProblemModal = false;
+    }}
+  />
+
+  <ConfirmationModal
+    isShown={showDeletePageModal}
+    actionName="delete this page"
+    warning="Deleting this page will remove all problems on it."
+    onCancel={() => {
+      showDeletePageModal = false;
+      pageToDelete = null;
+    }}
+    onConfirm={async () => {
+      try {
+        if (pageToDelete !== null) {
+          test.settings.pages.splice(pageToDelete, 1);
+
+          let problem_number_decrease = 0;
+
+          // Filter out problems on the deleted page and count them
+          problems = problems.filter(async (problem) => {
+            console.log(problem.page_number + " " + (pageToDelete+1));
+            if (problem.page_number == (pageToDelete+1)) {
+              problem_number_decrease++;
+              const testProblemId = problem.test_problem_id;
+              await deleteTestProblem(testProblemId);
+              return false; // Remove the problem
+            }
+            return true; // Keep the problem
+          });
+
+          // Adjust the page_number and problem_number for remaining problems
+          problems.forEach((problem) => {
+            if (problem.page_number > (pageToDelete+1)) {
+              problem.page_number -= 1;
+              problem.problem_number -= problem_number_decrease;
+            }
+          });
+
+          await saveTest();
+          await getNewValues();
+        }
+
+        showDeletePageModal = false;
+        pageToDelete = null;
+      } catch (e) {
+        handleError(e);
+      }
+    }}
+  />
+
+  <ConfirmationModal
+    isShown={showDeleteModal}
+    actionName="delete this custom field"
+    warning="It may delete existing user registration data"
+    onCancel={() => {
+      showDeleteModal = false;
+      fieldToDelete = null;
+    }}
+    onConfirm={async () => {
+      try {
+        const testProblemId = problems[fieldToDelete].test_problem_id;
+        await deleteTestProblem(testProblemId);
+
+        problems.splice(fieldToDelete, 1);
+
+        for (let i = fieldToDelete; i < problems.length; i++) {
+          problems[i].problem_number -= 1;
+        }
+
+        await saveTest();
+
+        if (test.test_mode == "Puzzle") {
+          problems =
+            (await getTestProblems(test_id, null, "*, puzzles(*)")) || [];
+        } else {
+          problems =
+            (await getTestProblems(test_id, null, "*, problems(*)")) || [];
+        }
+
+        showDeleteModal = false;
+        fieldToDelete = null;
+      } catch (e) {
+        handleError(e);
+      }
+    }}
+  />
+
+  <div class="modalExterior">
+    <Modal bind:open={createModal}>
+      <div class="specificModalMax">
+        <h3
+          class="text-xl font-medium text-gray-900 dark:text-white text-center"
+        >
+          Create Puzzle
+        </h3>
+        <p class="italic text-gray-500 text-center text-sm">
+          Input the puzzle and solution in text format
+        </p>
+        <CustomForm
+          fields={[
+            {
+              event_custom_field_id: "puzzle",
+              key: "puzzle",
+              label: "Puzzle",
+              required: true,
+              editable: true,
+              custom_field_type: "paragraph",
+              value: newResponses.puzzle,
+            },
+            {
+              event_custom_field_id: "solution",
+              key: "solution",
+              label: "Solution",
+              required: true,
+              editable: true,
+              custom_field_type: "paragraph",
+              value: newResponses.solution,
+            },
+          ]}
+          bind:newResponses
+          handleSubmit={handleCreatePuzzle}
+          showBorder={false}
+          buttonText="Create"
+        />
+      </div>
+    </Modal>
+  </div>
 {/if}
 
 <style>
   h1 {
     text-align: center;
+  }
+
+  :global(.specificModalMax) {
+    max-height: 400px !important;
+  }
+
+  :global(.specificModalMax .registrationForm) {
+    padding: 0px;
   }
 
   .box {

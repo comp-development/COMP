@@ -227,7 +227,7 @@
         type="button"
         class={getTabClasses(tab, tab.id === activeTabId)}
         style={getTabStyle(tab, tab.id === activeTabId)}
-        on:click={() => !tab.disabled && handleTabClick(tab.id)}
+        onclick={() => !tab.disabled && handleTabClick(tab.id)}
         role="tab"
         aria-selected={tab.id === activeTabId}
         disabled={tab.disabled}

@@ -1258,7 +1258,7 @@
   <div class="mb-4 flex flex-row justify-between w-full">
     <!-- Left-aligned buttons -->
     <div class="flex items-center gap-2">
-      <Button color="primary" class="btn-primary flex items-center gap-1" on:click={openFilterEditor}>
+      <Button color="primary" class="btn-primary flex items-center gap-1" onclick={openFilterEditor}>
         <FilterSolid class="w-4 h-4" />
         Filters
         {#if filters.length > 0}
@@ -1322,7 +1322,7 @@
               <span class="text-sm">Include filtered rows only</span>
             </div>
             <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
-              <Button size="sm" color="primary" class="w-full" on:click={exportToCSV}>Export to CSV</Button>
+              <Button size="sm" color="primary" class="w-full" onclick={exportToCSV}>Export to CSV</Button>
             </div>
           </div>
         </Dropdown>
@@ -1350,7 +1350,7 @@
     <div class="space-y-4">
       <!-- Add Filter Button -->
       <div class="mb-4">
-        <Button color="light" class="flex items-center gap-1" on:click={addFilter}>
+        <Button color="light" class="flex items-center gap-1" onclick={addFilter}>
           <PlusOutline class="w-4 h-4" />
           Add Filter
         </Button>
@@ -1416,7 +1416,7 @@
                 <div class="flex-shrink-0 flex justify-center">
                   <button 
                     class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 p-2"
-                    on:click={() => removePendingFilter(filter.id)}
+                    onclick={() => removePendingFilter(filter.id)}
                     aria-label="Remove filter"
                   >
                     <CloseOutline class="w-4 h-4" />
@@ -1433,9 +1433,9 @@
     <svelte:fragment slot="footer">
       <div class="flex w-full justify-between items-center">
         <div class="flex gap-3">
-          <Button color="red" on:click={clearAllFilters} disabled={pendingFilters.length === 0 && filters.length === 0}>Clear All Filters</Button>
-          <Button color="alternative" on:click={cancelFilterEditing}>Cancel</Button>
-          <Button color="primary" on:click={saveFilters}>Apply Filters</Button>
+          <Button color="red" onclick={clearAllFilters} disabled={pendingFilters.length === 0 && filters.length === 0}>Clear All Filters</Button>
+          <Button color="alternative" onclick={cancelFilterEditing}>Cancel</Button>
+          <Button color="primary" onclick={saveFilters}>Apply Filters</Button>
         </div>
       </div>
     </svelte:fragment>
@@ -1470,7 +1470,7 @@
                   ? (hasRowActions ? 80 : 40) + (frozenIndex * 150) 
                   : (hasRowActions ? 40 : 0) + (frozenIndex * 150)}
                 <th 
-                  on:click={() => handleSort(column.displayKey)}
+                  onclick={() => handleSort(column.displayKey)}
                   class="px-6 py-3 align-middle select-none sortable-header whitespace-nowrap
                          {isSticky ? 'identity-column-sticky' : ''}
                          {isLastSticky ? 'identity-column-last-sticky' : ''}"
@@ -1516,7 +1516,7 @@
                       {#each props.rowActions as action}
                         <button
                           class="text-{action.color || 'gray'}-600 hover:text-{action.color || 'gray'}-800 dark:text-{action.color || 'gray'}-300 dark:hover:text-{action.color || 'gray'}-200 p-1 rounded-full row-action-button"
-                          on:click={() => action.callback(row)}
+                          onclick={() => action.callback(row)}
                           title={action.tooltip || ''}
                         >
                           <svelte:component this={action.icon} class="w-4 h-4" />

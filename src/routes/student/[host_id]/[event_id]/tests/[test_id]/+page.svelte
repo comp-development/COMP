@@ -172,6 +172,7 @@
       <div class="test-container">
         <TestView 
           {test_taker} 
+          {test}
           is_team={test.is_team} 
           settings={test.settings} 
           timeRemaining={timeRemaining}

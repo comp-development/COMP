@@ -1,16 +1,13 @@
-<script>
+<script lang="ts">
   import Puzzle from "$lib/components/Puzzle.svelte";
 
   let selectedProblem = $state(0);
-  let { puzzles = $bindable([]), isAdmin = $bindable(false) } = $props();
 
-  async function updatePuzzle() {
-    //to be implemented
-  }
+  let { puzzles = $bindable([]) } = $props();
 </script>
 
 <br />
-<h1>Puzzle</h1>
+<h1>Puzzles</h1>
 <br />
 <div class="row">
   <div>
@@ -28,21 +25,10 @@
     {/each}
   </div>
   <div>
-    <div style="border: 1px solid gray; border-radius: 10px; padding: 10px;">
-      <h3>Problem {selectedProblem + 1}</h3>
-      <p>Problem</p>
-      {#if isAdmin}
-        <Puzzle puzzle={puzzles[selectedProblem].puzzle} />
-        <h2>Solution</h2>
-        <p>
-          This is modifiable, and will directly change the solution stored in
-          the database.
-        </p>
-        <Puzzle
-          puzzle={puzzles[selectedProblem].solution}
-          onChange={updatePuzzle}
-        />
-      {:else}
+    {#if puzzles.length != 0}
+      <div style="border: 1px solid gray; border-radius: 10px; padding: 10px;">
+        <h2>Problem {selectedProblem + 1}</h2>
+        <p>Problem</p>
         <div style="justify-content: center; display:flex">
           <Puzzle
             puzzle={puzzles[selectedProblem]}
@@ -50,13 +36,14 @@
             is_puzzle={true}
           />
         </div>
-      {/if}
-      <br />
-      <p>Answer</p>
-      <div>Answer {selectedProblem + 1}</div>
-    </div>
-    <br /><br />
+      </div>
+      <br /><br />
+    {:else}
+      <p>No puzzle available</p>
+    {/if}
   </div>
+
+  
 </div>
 
 <style>
@@ -77,13 +64,10 @@
     margin-bottom: 10px;
   }
 
-  h3,
-  p {
-    font-weight: bold;
-  }
-
-  h3 {
-    font-size: 24px;
+  button {
+    background-color: #efefef;
+    padding: 5px 10px;
+    border: 1px solid black;
   }
 
   .grid {

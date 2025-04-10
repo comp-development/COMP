@@ -63,7 +63,7 @@
      class="badge-wrapper relative {fitContent ? 'inline-block' : 'block w-full'}"
      class:clickable={isClickable}
      class:disabled
-     on:click={handleClick}
+     onclick={handleClick}
      style="--badge-bg: {backgroundColor || 'rgba(243, 244, 246, 1)'}; 
             --badge-hover-bg: {hoverBackgroundColor || 'rgba(229, 231, 235, 1)'};
             --badge-accent: {accentColor};
@@ -112,7 +112,7 @@
     class="badge-wrapper relative {fitContent ? 'inline-block' : 'w-full'}"
     class:clickable={isClickable && !disabled}
     class:disabled
-    on:click={handleClick}
+    onclick={handleClick}
     on:keydown={(e) => e.key === 'Enter' && handleClick(e)}
     role={isClickable ? "button" : "presentation"}
     tabindex={isClickable ? 0 : undefined}

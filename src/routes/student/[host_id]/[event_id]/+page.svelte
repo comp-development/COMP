@@ -430,7 +430,7 @@
             <br />
             <div class="flex">
               <Button
-                on:click={() => {
+                onclick={() => {
                   if (
                     event_details?.eventbrite_event_id &&
                     !transaction_stored

@@ -1,5 +1,6 @@
 import { error } from "@sveltejs/kit";
 import { supabase } from "../supabaseClient";
+import { updateTestPuzzle } from "./puzzles";
 
 export async function addProblem(problem) {
   const { data, error } = await supabase
@@ -13,8 +14,14 @@ export async function addProblem(problem) {
   return data;
 }
 
-export async function getAllProblems(host_id: number, customSelect: string = "*") {
-  const { data, error } = await supabase.from("problems").select("*").eq("host_id", host_id);
+export async function getAllProblems(
+  host_id: number,
+  customSelect: string = "*"
+) {
+  const { data, error } = await supabase
+    .from("problems")
+    .select("*")
+    .eq("host_id", host_id);
 
   if (error) throw error;
   return data;
@@ -36,7 +43,7 @@ export async function getAllProblemClarifications(problems) {
   for (const problem of problems) {
     try {
       const clarification = await getProblemClarification(
-        problem.test_problem_id,
+        problem.test_problem_id
       );
       if (!clarification || clarification.length <= 0) {
         throw new Error("no clarification found");
@@ -84,10 +91,14 @@ export async function updateClarification(clarification) {
   return clarification;
 }
 
-export async function updateTestProblems(test_id: number, oldProblems) {
+export async function updateTestProblems(test_id: number, oldProblems, is_test_puzzle: boolean = false) {
   const problems = JSON.parse(JSON.stringify(oldProblems));
   for (const oldProblem of problems) {
-    await updateTestProblem(test_id, oldProblem);
+    if (is_test_puzzle) {
+      await updateTestPuzzle(test_id, oldProblem);
+    } else {
+      await updateTestProblem(test_id, oldProblem);
+    }
   }
 }
 
@@ -113,7 +124,7 @@ export async function updateTestProblem(test_id: number, oldProblem) {
 
 export async function addNewTestProblem(
   problem_info,
-  customSelect: string = "*",
+  customSelect: string = "*"
 ) {
   const { data, error } = await supabase
     .from("test_problems")
@@ -136,7 +147,7 @@ export async function deleteTestProblem(test_problem_id: number) {
 export async function replaceTestProblem(
   test_problem_id: number,
   new_problem_id: number,
-  customSelect: string = "*",
+  customSelect: string = "*"
 ) {
   const { data, error } = await supabase
     .from("test_problems")
@@ -175,7 +186,7 @@ export async function updateGradedAnswer(gradedAnswer) {
         problem_id: gradedAnswer.problem_id,
         answer_latex: gradedAnswer.answer_latex,
       },
-      { onConflict: "problem_id, answer_latex" },
+      { onConflict: "problem_id, answer_latex" }
     )
     .select("*")
     .single();
@@ -193,7 +204,7 @@ export async function insertGradedAnswers(gradedAnswer) {
         problem_id: gradedAnswer.problem_id,
         answer_latex: gradedAnswer.answer_latex,
       },
-      { onConflict: "problem_id, answer_latex" },
+      { onConflict: "problem_id, answer_latex" }
     );
 
     if (error2) throw error2;

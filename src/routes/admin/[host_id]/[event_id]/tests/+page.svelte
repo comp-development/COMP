@@ -9,7 +9,7 @@
     Input,
     Textarea,
     Toggle,
-    Select
+    Select,
   } from "flowbite-svelte";
   import {
     formatTime,
@@ -21,12 +21,12 @@
     diffBetweenDates,
   } from "$lib/dateUtils";
   import Loading from "$lib/components/Loading.svelte";
-  import { 
-    FileLinesOutline, 
-    EditOutline, 
-    ClipboardCheckOutline, 
+  import {
+    FileLinesOutline,
+    EditOutline,
+    ClipboardCheckOutline,
     TableRowOutline,
-    PlusOutline
+    PlusOutline,
   } from "flowbite-svelte-icons";
   import { handleError } from "$lib/handleError";
   import { onDestroy, onMount } from "svelte";
@@ -35,7 +35,7 @@
     getEventTests,
     getTeamId,
     updateTest,
-    createTest
+    createTest,
   } from "$lib/supabase";
   import { supabase } from "$lib/supabaseClient";
   import DateTimePicker from "$lib/components/DateTimePicker.svelte";
@@ -88,7 +88,7 @@
     length: 3600,
     buffer_time: 300,
     test_mode: "Standard",
-    instructions: ""
+    instructions: "",
   } as TestData);
   let dateValue: Date = $state(new Date());
 
@@ -112,7 +112,7 @@
 
   const handleTestUpdate = (payload: any) => {
     console.log("TEST UPDATE PAYLOAD", payload);
-    
+
     if (payload.eventType === "DELETE") {
       // Remove the deleted test from testStatusMap
       if (testStatusMap[payload.old.test_id]) {
@@ -120,7 +120,7 @@
       }
       return;
     }
-    
+
     // Handle INSERT and UPDATE events
     testStatusMap[payload.new.test_id] = {
       ...testStatusMap[payload.new.test_id],
@@ -147,7 +147,7 @@
           table: "tests",
           filter: "event_id=eq." + eventId,
         },
-        handleTestUpdate,
+        handleTestUpdate
       )
       .subscribe();
   })();
@@ -163,7 +163,7 @@
       const timeTillTest = diffBetweenDates(
         test.opening_time,
         currentTime,
-        "seconds",
+        "seconds"
       );
       if (test.opening_time && timeTillTest < 86400) {
         newStatus.countdown = "Time till open: " + formatDuration(timeTillTest);
@@ -173,9 +173,9 @@
         addTime(
           new Date(test.opening_time),
           test.length + test.buffer_time,
-          "seconds",
+          "seconds"
         ),
-        currentTime,
+        currentTime
       )
     ) {
       newStatus.status = "Open";
@@ -188,11 +188,11 @@
               addTime(
                 new Date(test.opening_time),
                 test.length + test.buffer_time,
-                "seconds",
+                "seconds"
               ),
-              "seconds",
-            ),
-          ),
+              "seconds"
+            )
+          )
         );
     }
     testStatusMap[test.test_id] = {
@@ -241,14 +241,14 @@
     console.log(
       new Date(curTest.opening_time),
       curTest.length,
-      curTest.buffer_time,
+      curTest.buffer_time
     );
     console.log(
       addTime(
         new Date(curTest.opening_time),
         curTest.length + curTest.buffer_time,
-        "seconds",
-      ),
+        "seconds"
+      )
     );
     console.log(
       formatDuration(
@@ -258,12 +258,12 @@
             addTime(
               new Date(curTest.opening_time),
               curTest.length + curTest.buffer_time,
-              "seconds",
+              "seconds"
             ),
-            "seconds",
-          ),
-        ),
-      ),
+            "seconds"
+          )
+        )
+      )
     );
   }
 
@@ -274,7 +274,10 @@
 
   async function getTests() {
     try {
-      const fetchedTests = await getEventTests(Number($page.params.event_id), true);
+      const fetchedTests = await getEventTests(
+        Number($page.params.event_id),
+        true
+      );
       console.log(fetchedTests);
       if (fetchedTests) {
         for (const test of fetchedTests) {
@@ -307,16 +310,14 @@
   function handleOpenClick(test: TestData) {
     curTest = test;
     setupTime(
-      curTest.opening_time
-        ? new Date(curTest.opening_time)
-        : new Date(),
+      curTest.opening_time ? new Date(curTest.opening_time) : new Date()
     );
     open = true;
   }
 
   function openTestModal(isEdit: boolean, test?: TestData) {
     isEditMode = isEdit;
-    
+
     if (isEdit && test) {
       // Edit mode - clone the existing test
       activeTest = { ...test };
@@ -330,10 +331,10 @@
         length: 3600,
         buffer_time: 300,
         test_mode: "Standard",
-        instructions: ""
+        instructions: "",
       } as TestData;
     }
-    
+
     nameError = "";
     testModalOpen = true;
   }
@@ -362,9 +363,9 @@
         is_team: activeTest.is_team,
         visible: activeTest.visible,
         test_mode: activeTest.test_mode,
-        instructions: activeTest.instructions
+        instructions: activeTest.instructions,
       };
-      
+
       if (isEditMode) {
         // Update existing test
         await updateTest(activeTest.test_id, data);
@@ -372,10 +373,10 @@
         // Create new test
         await createTest({
           ...data,
-          event_id: eventId
+          event_id: eventId,
         });
       }
-      
+
       testModalOpen = false;
       nameError = "";
     } catch (error) {
@@ -393,7 +394,7 @@
       <Loading />
     {:else if !tests || tests.length === 0}
       <div class="text-center">
-        <button 
+        <button
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-auto flex items-center"
           onclick={() => openTestModal(false)}
         >
@@ -403,7 +404,7 @@
       </div>
     {:else}
       <div class="flex justify-between items-center mb-6">
-        <button 
+        <button
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none flex items-center"
           onclick={() => openTestModal(false)}
         >
@@ -424,11 +425,11 @@
           if (nameComparison !== 0) return nameComparison;
 
           // Finally sort by test_division
-          return (a.division?.localeCompare(b.division || "") || 0); // Handle undefined division
+          return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
         }) as test}
           <div class="test-card-container">
-            <TestCard 
-              test={test} 
+            <TestCard
+              {test}
               isHostView={true}
               onOpenClick={() => handleOpenClick(test)}
               onInstructionsClick={() => {}}
@@ -438,151 +439,208 @@
         {/each}
       </div>
       <br />
-      
+
       <!-- Combined Test Modal (Create/Edit) -->
-      <Modal bind:open={testModalOpen} size="xl" autoclose={false} class="w-full max-w-4xl">
-        <div class="text-center">
-          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">
-            {isEditMode ? 'Test Settings' : 'Create New Test'}
-          </h3>
-          
-          <!-- Form layout using centered columns -->
-          <div class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8">
-            <!-- Row 1: Test Name and Visibility -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Test Name <span class="text-red-500">*</span>
-                </span>
-                <div class="w-64">
-                  <Input 
-                    bind:value={activeTest.test_name}
-                    color={nameError ? "red" : "base"}
+      <div class="modalExterior">
+        <Modal
+          bind:open={testModalOpen}
+          size="xl"
+          autoclose={false}
+          class="w-full max-w-4xl"
+        >
+          <div class="specificModalMax">
+            <div class="text-center">
+              <h3
+                class="mb-4 text-xl font-medium text-gray-900 dark:text-white"
+              >
+                {isEditMode ? "Test Settings" : "Create New Test"}
+              </h3>
+
+              <!-- Form layout using centered columns -->
+              <div
+                class="flex flex-col items-center px-4 max-w-screen-md mx-auto space-y-8"
+              >
+                <!-- Row 1: Test Name and Visibility -->
+                <div
+                  class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0"
+                >
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >
+                      Test Name <span class="text-red-500">*</span>
+                    </span>
+                    <div class="w-64">
+                      <Input
+                        bind:value={activeTest.test_name}
+                        color={nameError ? "red" : "base"}
+                      />
+                      {#if nameError}
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+                          {nameError}
+                        </p>
+                      {/if}
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >Visibility</span
+                    >
+                    <div class="flex items-center justify-center gap-3">
+                      <Toggle bind:checked={activeTest.visible} />
+                      <span>{activeTest.visible ? "Visible" : "Hidden"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Row 2: Test Type and Test Mode -->
+                <div
+                  class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0"
+                >
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >Test Type</span
+                    >
+                    <div class="flex items-center justify-center gap-3">
+                      <Toggle bind:checked={activeTest.is_team} />
+                      <span>{activeTest.is_team ? "Team" : "Individual"}</span>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >Test Mode</span
+                    >
+                    <div class="w-64">
+                      <Select bind:value={activeTest.test_mode}>
+                        <option value="Standard">Standard</option>
+                        <option value="Puzzle">Puzzle</option>
+                        <option value="Guts">Guts</option>
+                        <option value="Meltdown">Meltdown</option>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Row 3: Test Length and Buffer Time -->
+                <div
+                  class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0"
+                >
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >Test Length (seconds)</span
+                    >
+                    <div class="w-64">
+                      <Input type="number" bind:value={activeTest.length} />
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col items-center">
+                    <span
+                      class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                      >Buffer Time (seconds)</span
+                    >
+                    <div class="w-64">
+                      <Input
+                        type="number"
+                        bind:value={activeTest.buffer_time}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Row 4: Instructions -->
+                <div class="w-full flex flex-col items-center">
+                  <span
+                    class="mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >Instructions</span
+                  >
+                  <div class="w-full max-w-2xl">
+                    <Textarea rows={5} bind:value={activeTest.instructions} />
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-center gap-4 mt-8">
+                <button
+                  class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
+                  onclick={closeTestModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+                  onclick={saveTestAndClose}
+                >
+                  {isEditMode ? "Save" : "Create"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      </div>
+
+      <div class="modalExterior">
+        <Modal bind:open size="lg" autoclose={false}>
+          <div class="specificModalMax">
+            <div class="text-center">
+              <h3
+                class="mb-4 text-xl font-medium text-gray-900 dark:text-white"
+              >
+                Set open time
+              </h3>
+
+              <DateTimePicker
+                bind:date={dateValue}
+                bind:time={curTest.time}
+                bind:amPm={curTest.amPm}
+                dateLabel="Test Date"
+                timeLabel="Test Time"
+                on:dateTimeChange={handleDateTimeChange}
+              />
+
+              <div class="mb-4">
+                <div>
+                  <span
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                    >Buffer Time (seconds)</span
+                  >
+                  <Input
+                    bind:value={curTest.buffer_time}
+                    color={isInvalid ? "red" : "base"}
+                    on:input={validateInput}
                   />
-                  {#if nameError}
-                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">{nameError}</p>
+                  {#if isInvalid}
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-500">
+                      Input must be a nonnegative integer
+                    </p>
                   {/if}
                 </div>
               </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Visibility</span>
-                <div class="flex items-center justify-center gap-3">
-                  <Toggle bind:checked={activeTest.visible} />
-                  <span>{activeTest.visible ? 'Visible' : 'Hidden'}</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 2: Test Type and Test Mode -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Type</span>
-                <div class="flex items-center justify-center gap-3">
-                  <Toggle bind:checked={activeTest.is_team} />
-                  <span>{activeTest.is_team ? 'Team' : 'Individual'}</span>
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Mode</span>
-                <div class="w-64">
-                  <Select bind:value={activeTest.test_mode}>
-                    <option value="Standard">Standard</option>
-                    <option value="Puzzle">Puzzle</option>
-                    <option value="Guts">Guts</option>
-                    <option value="Meltdown">Meltdown</option>
-                  </Select>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 3: Test Length and Buffer Time -->
-            <div class="w-full flex flex-col md:flex-row justify-center md:space-x-12 space-y-6 md:space-y-0">
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Test Length (seconds)</span>
-                <div class="w-64">
-                  <Input type="number" bind:value={activeTest.length} />
-                </div>
-              </div>
-              
-              <div class="flex flex-col items-center">
-                <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
-                <div class="w-64">
-                  <Input type="number" bind:value={activeTest.buffer_time} />
-                </div>
-              </div>
-            </div>
-            
-            <!-- Row 4: Instructions -->
-            <div class="w-full flex flex-col items-center">
-              <span class="mb-2 text-sm font-medium text-gray-900 dark:text-white">Instructions</span>
-              <div class="w-full max-w-2xl">
-                <Textarea rows={5} bind:value={activeTest.instructions} />
+
+              <div class="flex justify-center gap-4 mt-6">
+                <button
+                  class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
+                  onclick={closeModal}
+                >
+                  Cancel
+                </button>
+                <button
+                  class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
+                  onclick={saveAndClose}
+                >
+                  Save
+                </button>
               </div>
             </div>
           </div>
-          
-          <div class="flex justify-center gap-4 mt-8">
-            <button 
-              class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              onclick={closeTestModal}
-            >
-              Cancel
-            </button>
-            <button 
-              class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              onclick={saveTestAndClose}
-            >
-              {isEditMode ? 'Save' : 'Create'}
-            </button>
-          </div>
-        </div>
-      </Modal>
-      
-      <Modal bind:open size="lg" autoclose={false}>
-        <div class="text-center">
-          <h3 class="mb-4 text-xl font-medium text-gray-900 dark:text-white">Set open time</h3>
-          
-          <DateTimePicker 
-            bind:date={dateValue}
-            bind:time={curTest.time}
-            bind:amPm={curTest.amPm}
-            dateLabel="Test Date"
-            timeLabel="Test Time"
-            on:dateTimeChange={handleDateTimeChange}
-          />
-          
-          <div class="mb-4">
-            <div>
-              <span class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Buffer Time (seconds)</span>
-              <Input
-                bind:value={curTest.buffer_time}
-                color={isInvalid ? "red" : "base"}
-                on:input={validateInput}
-              />
-              {#if isInvalid}
-                <p class="mt-2 text-sm text-red-600 dark:text-red-500">Input must be a nonnegative integer</p>
-              {/if}
-            </div>
-          </div>
-          
-          <div class="flex justify-center gap-4 mt-6">
-            <button 
-              class="py-2.5 px-5 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-100"
-              onclick={closeModal}
-            >
-              Cancel
-            </button>
-            <button 
-              class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none"
-              onclick={saveAndClose}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>
+      </div>
     {/if}
   </div>
 </div>

@@ -15,7 +15,7 @@
 <div class="accordion">
   <button 
     class="accordion-header" 
-    on:click={toggleAccordion}
+    onclick={toggleAccordion}
     aria-expanded={open}
     type="button"
   >

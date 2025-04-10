@@ -8,6 +8,7 @@
   import { InfoCircleSolid } from 'flowbite-svelte-icons';
   import { supabase } from "$lib/supabaseClient";
   import { formatDuration } from "$lib/dateUtils";
+  import PuzzleNavigation from "$lib/components/PuzzleNavigation.svelte";
 
   import { handleError } from "$lib/handleError";
   import {
@@ -28,7 +29,7 @@
     timeElapsed?: number; // New prop to receive timeElapsed from parent
   }
 
-  let { test_taker = $bindable(), settings, is_team = false, timeRemaining = 0, timeElapsed = 0 }: Props = $props();
+  let { test_taker = $bindable(), settings, is_team = false, timeRemaining = 0, timeElapsed = 0, test=null }: Props = $props();
   let pages = settings.pages;
   let meltTime = settings.meltTime;
   //console.log("TESTAKER", test_taker);
@@ -457,6 +458,17 @@
       <p>Loading...</p>
     {:else}
       <h2 class="page-subtitle">{pages[test_taker.page_number - 1]}</h2>
+
+      <!--if test.test_mode == "Puzzle"
+      //show puzzlenavigation component -> pass in the list of puzzles as a variable "problems"
+
+      //else
+      //show each problems as problem component below VVV-->
+
+      {#if test.test_mode == "Puzzle"}
+        <PuzzleNavigation puzzles = {problems}/>
+      
+      {:else}
       {#each problems as problem}
         <div class="problem-container">
           <div class="problem-div">
@@ -540,6 +552,8 @@
           </div>
         </div>
       {/each}
+      {/if}
+
       {#if test_taker.page_number < pages.length}
         <div class="page-actions-bottom">
           <Button

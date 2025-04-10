@@ -92,7 +92,7 @@
 
 <button 
   class="text-gray-700 hover:text-black dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none ml-2" 
-  on:click={openModal} 
+  onclick={openModal} 
   aria-label="Edit name"
   title="Edit name"
 >
@@ -132,7 +132,7 @@
     </div>
     
     <div class="flex justify-end space-x-2">
-      <Button color="alternative" type="button" on:click={() => showModal = false}>
+      <Button color="alternative" type="button" onclick={() => showModal = false}>
         Cancel
       </Button>
       <Button type="submit" disabled={isSubmitting || !!firstNameError || !!lastNameError}>

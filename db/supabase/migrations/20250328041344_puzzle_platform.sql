@@ -114,3 +114,7 @@ FOR EACH ROW EXECUTE FUNCTION enforce_puzzle_test_mode_constraint();
 CREATE TRIGGER check_test_puzzle_problem_constraint
 BEFORE INSERT OR UPDATE ON public.test_problems
 FOR EACH ROW EXECUTE FUNCTION enforce_test_puzzle_problem_constraint();
+
+CREATE TRIGGER enforce_test_problem_host_match 
+BEFORE INSERT OR UPDATE ON public.test_problems 
+FOR EACH ROW EXECUTE FUNCTION check_test_problem_host_match();
