@@ -30,7 +30,7 @@
         const { data: testProblems, error: testProblemsError } = await supabase
           .from("test_problems")
           .select("problem_id")
-          // .eq("test_id", testId); !!! UNCOMMENT LATER
+          .eq("test_id", testId); 
   
         if (testProblemsError) throw testProblemsError;
   
