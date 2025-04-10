@@ -25,10 +25,6 @@
     FileLinesOutline,
     EditOutline,
     ClipboardCheckOutline,
-  import {
-    FileLinesOutline,
-    EditOutline,
-    ClipboardCheckOutline,
     TableRowOutline,
     PlusOutline,
     PlusOutline,

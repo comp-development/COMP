@@ -144,7 +144,7 @@
     <div class="override-warning">
       <p>This section has already been submitted for Team {pendingTeamId}. Do you want to override it?</p>
       <button
-        on:click={() => {
+        onclick={() => {
           overrideConfirmed = true;
           showOverridePrompt = false;
           goToGrading();
@@ -152,7 +152,7 @@
       >
         Yes, override
       </button>
-      <button on:click={() => (showOverridePrompt = false)}>Cancel</button>
+      <button onclick={() => (showOverridePrompt = false)}>Cancel</button>
     </div>
   {/if}
 

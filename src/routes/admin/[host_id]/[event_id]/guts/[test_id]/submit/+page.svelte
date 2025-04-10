@@ -121,7 +121,7 @@
       {/each}
   
       <div class="submit-answers">
-        <button on:click={submitAnswers}>Submit Answers</button>
+        <button onclick={submitAnswers}>Submit Answers</button>
       </div>
 
     {/if}

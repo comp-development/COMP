@@ -23,6 +23,7 @@
 		relation_id,
 		team_id,
 		lastUpdated = "",
+		isAdmin = false, // New parameter to enable admin-specific features
 		onChange = async (ind, new_state) => {
 			console.log(ind, new_state);
 		},
@@ -417,6 +418,17 @@
 				}
 			}
 		});
+	}
+
+	function handleDelete(x, y) {
+		if (isAdmin) {
+			const index = puzzle.findIndex(
+				(item) => item.loc[0][0] === x && item.loc[0][1] === y
+			);
+			if (index !== -1) {
+				puzzle.splice(index, 1);
+			}
+		}
 	}
 
 	if (is_puzzle) {

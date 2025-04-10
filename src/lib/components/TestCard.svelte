@@ -142,7 +142,7 @@
           </div>
 
           <div class="tooltip-container">
-              <button class="test-button empty" on:click={onAccessRulesClick}>
+              <button class="test-button empty" onclick={onAccessRulesClick}>
                 <LockOutline class="w-5 h-5 icon" />
               </button>
               <span class="tooltip">Access rules</span>
