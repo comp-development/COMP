@@ -22,6 +22,9 @@
   } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
 
+  // Maximum length for team name
+  const MAX_TEAM_NAME_LENGTH = 40;
+
   let {
     team = $bindable(),
     event_id,
@@ -38,7 +41,7 @@
   let validationErrors = $state({});
   let custom_fields = $state([]);
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: Event) {
     try {
       if (team) {
         team = await upsertTeam(event_id, {
@@ -101,8 +104,9 @@
       key: "team_name",
       label: "Team Name",
       required: true,
-      regex: null,
-      placeholder: null,
+      regex: new RegExp(`^.{1,${MAX_TEAM_NAME_LENGTH}}$`),
+      regex_error_message: `Team name must be ${MAX_TEAM_NAME_LENGTH} characters or less`,
+      placeholder: "Enter team name",
       value: team?.team_name ?? null,
       choices: null,
       editable: true,

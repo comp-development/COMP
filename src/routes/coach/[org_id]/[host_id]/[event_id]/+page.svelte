@@ -14,10 +14,17 @@
     getStudentsWithoutTeam,
     removeStudentFromOrganization,
     getTicketCount,
+    getOrganization,
+    inviteUserToOrgEvent,
   } from "$lib/supabase";
   import { Button, ButtonGroup, Timeline, TimelineItem } from "flowbite-svelte";
   import type { Tables } from "../../../../../../db/database.types";
-  import { CartSolid, UsersGroupSolid, CalendarWeekSolid, CheckCircleSolid, ClockSolid, CloseCircleSolid } from "flowbite-svelte-icons";
+  import {
+    CartSolid,
+    UsersGroupSolid,
+    CheckCircleSolid,
+    UserAddSolid,
+  } from "flowbite-svelte-icons";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
   import OrgForm from "$lib/components/OrgForm.svelte";
@@ -29,13 +36,16 @@
   import CustomForm from "$lib/components/CustomForm.svelte";
   import { supabase } from "$lib/supabaseClient";
   import InfoToolTip from "$lib/components/InfoToolTip.svelte";
-  import { onMount } from 'svelte';
+  import AddOnButton from "$lib/components/AddOnButton.svelte";
+  import InvitedUser from "$lib/components/InvitedUser.svelte";
+  import { generateEmail } from "$lib/emailTemplate";
 
   let loading = $state(true);
   let coach: any = $state();
   let organizationDetails: any = $state(null);
   let ticketCount: number = $state(0);
   let event_details: Tables<"events"> | null = $state(null);
+  let teams_editable: boolean = $state(true);
   const event_id = parseInt($page.params.event_id);
   const org_id = parseInt($page.params.org_id);
   let draggedMember: any = null;
@@ -43,13 +53,9 @@
 
   let studentsWithoutTeams = $state([]);
   let isTeamModalOpen = $state(false);
-  let teamName = $state("");
-  let editingTeamId: number | null = $state(null);
 
   let isPurchaseModalOpen = $state(false);
-  let ticketQuantity = $state(0);
   let newResponses = $state({});
-  
 
   let showDeleteTeamConfirmation = $state(false);
   let deleteTeamId = $state(null);
@@ -59,14 +65,33 @@
   let host: any = $state();
   const host_id = parseInt($page.params.host_id);
 
+  let isModalOpen = $state(false);
+  let newResponses2 = $state({});
+  let validationErrors = $state({});
+
+  let invites = $state([]);
+
+  const fields = [
+    {
+      name: "email",
+      label: "Student Emails",
+      required: false,
+      editable: true,
+      custom_field_type: "text",
+      placeholder: "",
+      value: newResponses2.email || "",
+    }
+  ];
+
   (async () => {
     host = await getHostInformation(host_id);
     event_details = await getEventInformation(event_id);
+    teams_editable=!(event_details?.reg_frozen ?? true);
 
     if (event_details?.eventbrite_event_id) {
       // Load the Eventbrite widget
-      const script = document.createElement('script');
-      script.src = 'https://www.eventbrite.com/static/widgets/eb_widgets.js';
+      const script = document.createElement("script");
+      script.src = "https://www.eventbrite.com/static/widgets/eb_widgets.js";
       script.async = true;
       document.body.appendChild(script);
     }
@@ -78,6 +103,8 @@
       org_id,
     );
 
+    invites = organizationDetails?.event?.invites ?? [];
+
     console.log("ORG", organizationDetails);
     ticketCount = await getTicketCount(event_id, org_id);
 
@@ -87,7 +114,7 @@
   })();
 
   function handleDragStart(event: DragEvent, team_member: any) {
-    console.log("EVENT", event)
+    console.log("EVENT", event);
     if (event.dataTransfer) {
       draggedMember = team_member;
       sourceTeamId = team_member.team_id;
@@ -103,9 +130,18 @@
       stepNumber = 2;
     } else if (ticketCount === 0) {
       stepNumber = 3;
-    } else if (organizationDetails.teams.every((team: any) => team.teamMembers.length === 0) && studentsWithoutTeams.length === 0) {
+    } else if (
+      organizationDetails.teams.every(
+        (team: any) => team.teamMembers.length === 0,
+      ) &&
+      studentsWithoutTeams.length === 0
+    ) {
       stepNumber = 4;
-    } else if (organizationDetails.teams.every((team: any) => team.teamMembers.length === 0)) {
+    } else if (
+      organizationDetails.teams.every(
+        (team: any) => team.teamMembers.length === 0,
+      )
+    ) {
       stepNumber = 5;
     } else {
       stepNumber = 6;
@@ -122,7 +158,11 @@
 
       // Early return if dragging to same team
       console.log(sourceTeamId, targetTeam?.team_id);
-      if ((sourceTeamId && targetTeam?.team_id === sourceTeamId) || (!targetTeam && !sourceTeamId)) return;
+      if (
+        (sourceTeamId && targetTeam?.team_id === sourceTeamId) ||
+        (!targetTeam && !sourceTeamId)
+      )
+        return;
       if (!draggedMember) return;
 
       if (targetTeam === null) {
@@ -247,7 +287,6 @@
   }
 
   function openPurchaseModal() {
-    ticketQuantity = 0;
     isPurchaseModalOpen = true;
   }
 
@@ -298,7 +337,6 @@
     try {
       let newOrganizationDetails = { ...organizationDetails };
 
-      
       newOrganizationDetails = {
         ...newOrganizationDetails,
         teams: [
@@ -310,14 +348,11 @@
         ],
       };
       toast.success("Team created successfully");
-      
 
       organizationDetails = newOrganizationDetails;
 
       // Close the modal and reset the input
       isTeamModalOpen = false;
-      teamName = "";
-      editingTeamId = null;
     } catch (error) {
       handleError(error);
     }
@@ -401,98 +436,136 @@
   async function eventbritePurchase(data) {
     console.log("Order completed with ID:", data);
     try {
-        const { data: authData, error } = await supabase.auth.getSession();
-        if (error != null) {
-          handleError(error);
-        }
-        const token = authData.session?.access_token ?? null;
-        const response = await fetch('/api/purchase-eventbrite-ticket', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                event_id,
-                host_id,
-                token,
-                creating_team: false, // or true based on your logic
-                joining_team_code: null, // or your joining team code
-                target_org_id: org_id, // or null if not applicable
-                eventbrite_order_id: data.orderId,
-            }),
-        });
-        const text = await response.text();
-        if (response.ok) {
-          document.location.assign(text);
-        } else {
-          handleError(new Error(text));
-        }
-        // Handle success (e.g., redirect or show a success message)
+      const { data: authData, error } = await supabase.auth.getSession();
+      if (error != null) {
+        handleError(error);
+      }
+      const token = authData.session?.access_token ?? null;
+      const response = await fetch("/api/purchase-eventbrite-ticket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          event_id,
+          host_id,
+          token,
+          creating_team: false, // or true based on your logic
+          joining_team_code: null, // or your joining team code
+          target_org_id: org_id, // or null if not applicable
+          eventbrite_order_id: data.orderId,
+        }),
+      });
+      const text = await response.text();
+      if (response.ok) {
+        document.location.assign(text);
+      } else {
+        handleError(new Error(text));
+      }
+      // Handle success (e.g., redirect or show a success message)
     } catch (error) {
-        console.error('Error processing Eventbrite order:', error);
-        toast.error("Error processing Eventbrite order. Please reach out to the tournament organizers.");
+      console.error("Error processing Eventbrite order:", error);
+      toast.error(
+        "Error processing Eventbrite order. Please reach out to the tournament organizers.",
+      );
     }
   }
-
 
   function openEventbriteWidget() {
     const eventbriteEventId = event_details?.eventbrite_event_id; // Replace with your actual Eventbrite event ID
-    if (eventbriteEventId) { // Check if the event ID is valid
-        window.EBWidgets.createWidget({
-            widgetType: 'checkout',
-            eventId: eventbriteEventId,
-            modal: true,
-            modalTriggerElementId: 'eventbrite-widget-container',
-            onOrderComplete: eventbritePurchase,
-            promoCode: "org",
-        });
+    if (eventbriteEventId) {
+      // Check if the event ID is valid
+      window.EBWidgets.createWidget({
+        widgetType: "checkout",
+        eventId: eventbriteEventId,
+        modal: true,
+        modalTriggerElementId: "eventbrite-widget-container",
+        onOrderComplete: eventbritePurchase,
+        promoCode: "org",
+      });
     }
   }
 
+  async function handleSubmit() {
+    try {
+      let emails = newResponses2.email.split(";");
+      const org = await getOrganization(org_id);
+      const data = await inviteUserToOrgEvent(org_id, event_id, emails);
+
+      emails = data.newInvites;
+      invites = data.invites;
+
+      for (let email of emails) {
+        email = email.trim();
+
+        const response = await fetch("/api/sendmail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: email,
+            subject: `Join Organization '${org.name}' on COMP for ${event_details?.event_name}`,
+            message: generateEmail('org_invite', { host, host_id, event_id, coach, org, event_details, organizationDetails })
+          }),
+        });
+
+        const data = await response.json();
+        if (data.error) {
+          throw data.error;
+        }
+      }
+
+      isModalOpen = false;
+    } catch (e) {
+      handleError(e);
+      isModalOpen = false;
+    }
+  }
 </script>
 
 {#if loading}
   <Loading />
 {:else}
-  <EventDisplay
-    id={event_id}
-    host={host}
-    event={event_details}
-    editable={false}
-  />
-  <hr /><br><br>
-  
+  <EventDisplay id={event_id} {host} event={event_details} editable={false} />
+  <hr />
+  <br /><br />
+
   <div class="flex justify-center">
     <div class="mx-10">
-      <Timeline order="horizontal">
-        {#each [
-          { title: "Register", step: 1, description: "Fill out the registration form below." },
-          { title: "Create Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" },
-          { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." },
-          { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the org join code. You can also have them added directly to teams by sending them the team join code, but you must have enough unsued tickets to do so." },
-          { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams. You can do this by clicking and dragging students from the 'Unassigned Students' section into one of your teams!" },
-          { title: "Done!", step: 6, description: null }
-        ] as { title, step, description }}
-        <div style="max-width: 500px; margin: 0 auto;">
-          <TimelineItem title={title} classLi="text-left mx-2" classH3="text-left">
+      <Timeline order="horizontal" class="timeline">
+        {#each [{ title: "Register", step: 1, description: "Fill out the registration form below." }, { title: "Create Teams", step: 2, description: "Click the 'Create Team' button to make your first team!" }, { title: "Purchase Tickets", step: 3, description: "Buy your first ticket(s) by clicking the 'Purchase Tickets' button. Each ticket is valid for one student." }, { title: "Invite Students", step: 4, description: "Have your students join your organization by having them create a student account and sending them the org join code." }, { title: "Assign Students", step: 5, description: "Once students have joined your organization, assign them onto teams. You can do this by clicking and dragging students from the 'Unassigned Students' section into one of your teams!" }, { title: "Done!", step: 6, description: null }] as { title, step, description }}
+          <div style="max-width: 500px; margin: 0 auto;">
+            <TimelineItem {title} classLi="text-left mx-2" classH3="text-left">
               <svelte:fragment slot="icon">
                 <div class="flex items-center justify-center">
-                  <div class="flex z-10 justify-center items-center w-6 h-6 
-                    {step < stepNumber || stepNumber === 6 ? 'bg-primary-200 rounded-full border border-gray-900' : step === stepNumber ? 'rounded-full bg-primary-200 border border-gray-900' : 'rounded-full border border-gray-900 bg-gray-200'} ">
+                  <div
+                    class="flex z-10 justify-center items-center w-6 h-6
+                    {step < stepNumber || stepNumber === 6
+                      ? 'bg-primary-200 rounded-full border border-gray-900'
+                      : step === stepNumber
+                        ? 'rounded-full bg-primary-200 border border-gray-900'
+                        : 'rounded-full border border-gray-900 bg-gray-200'} "
+                  >
                     {#if step < stepNumber || stepNumber === 6}
-                      <CheckCircleSolid class="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                      <CheckCircleSolid
+                        class="w-4 h-4 text-primary-600 dark:text-primary-400"
+                      />
                     {:else if step === stepNumber}
-                      <div class="w-3 h-3" style="background-color: var(--background); border-radius: 50%;"></div>
+                      <div
+                        class="w-3 h-3"
+                        style="background-color: var(--background); border-radius: 50%;"
+                      ></div>
                     {/if}
                   </div>
                   {#if step < 6}
-                    <div class="hidden sm:flex w-full bg-gray-200 h-0.5 dark:bg-gray-700 -mx-4"></div>
+                    <div
+                      class="hidden sm:flex w-full bg-gray-200 h-0.5 dark:bg-gray-700 -mx-4"
+                    ></div>
                   {/if}
                 </div>
               </svelte:fragment>
                 {#if step === stepNumber && description}
                   <div class="border-box">
-                    <p class="text-base font-normal text-gray-500 dark:text-gray-400 text-left">
+                    <p class="text-base font-normal text-gray-800 dark:text-gray-400 text-left">
                       {description}
                     </p>
                   </div>
@@ -503,33 +576,55 @@
       </Timeline>
     </div>
   </div>
-  <br>
-  <hr>
+  <br />
+  <hr />
 
   {#if organizationDetails.event}
-    
     <div class="organization">
       <div class="flex">
         <InfoToolTip
-          text="Send this code to your students and they will be able to join your organization after they create an account"
+          text="Send this link to your students and they will be able to join your organization after they create an account"
         />
-        Org Join Code: <CopyText text={organizationDetails.event.join_code} />
+        Org Join Code: <CopyText frontText={organizationDetails.event.join_code} text={`https://comp.mt/student/${host_id}/${event_id}/join-org/${organizationDetails.event.join_code}`} successMessage="Successfully copied join link to clipboard" />
       </div>
 
       <div style="margin: 10px 0;">
         <ButtonGroup>
-          <Button pill outline color="primary" onclick={openAddModal}>
+          <Button pill outline color="primary" onclick={openAddModal} disabled={event_details?.reg_frozen}>
             <UsersGroupSolid class="w-4 h-4 me-2" />
             Create Team
           </Button>
-          <Button pill outline color="primary" id={event_details.eventbrite_event_id ? 'eventbrite-widget-container' : 'purchase-modal-container'} onclick={event_details.eventbrite_event_id ? openEventbriteWidget : openPurchaseModal}>
+          <Button
+            pill
+            outline
+            color="primary"
+            id={event_details.eventbrite_event_id
+              ? "eventbrite-widget-container"
+              : "purchase-modal-container"}
+            onclick={event_details.eventbrite_event_id
+              ? openEventbriteWidget
+              : openPurchaseModal}
+          >
             <CartSolid class="w-4 h-4 me-2" />
             Purchase Tickets ({ticketCount} bought)
           </Button>
+          <Button pill outline color="primary" href={`/coach/${$page.params.org_id}/${$page.params.host_id}/${$page.params.event_id}/request-refund`}>
+            <CartSolid class="w-4 h-4 me-2" />
+            Request Ticket Refund
+          </Button>
+          <AddOnButton 
+            event_id={event_id} 
+            host_id={host_id} 
+            org_event_id={organizationDetails.event?.org_event_id} 
+            buttonLabel="Purchase Add-ons"
+          />
+          <Button pill outline color="primary" onclick={() => (isModalOpen = true)}>
+            <UserAddSolid class="w-4 h-4 me-2" />
+            Invite Students
+          </Button>
+          
         </ButtonGroup>
       </div>
-
-      
 
       <div class="grid-container">
         <div class="teams-grid">
@@ -541,6 +636,8 @@
               onDrop={handleDrop}
               onDragStart={handleDragStart}
               onDeleteStudent={handleDeleteStudentTeam}
+              waiverType={event_details?.waivers?.type ?? "none"}
+              editableFeatures={teams_editable}
               {handleDeleteTeam}
               {handleDragOver}
               {handleDragLeave}
@@ -566,12 +663,22 @@
           {#each studentsWithoutTeams as student}
             <DraggableStudent
               team_member={student}
+              {event_id}
+              waiverType={event_details?.waivers?.type ?? "none"}
               onDragStart={handleDragStart}
+              editableFeatures={teams_editable}
               onDeleteStudent={() => {
                 handleDeletingStudent(student);
               }}
             />
           {/each}
+          <h3 class="text-lg font-semibold mt-2 mb-2 flex">Invited</h3>
+          {#each invites as invitation}
+            <InvitedUser email={invitation} type="coachOrg" id={org_id} {event_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
+          {/each}
+          {#if invites.length == 0}
+            <p>No students invited</p>
+          {/if}
         </div>
       </div>
     </div>
@@ -584,6 +691,24 @@
     editing={organizationDetails.event ? true : false}
   />
 {/if}
+
+<div class="modalExterior">
+  <Modal bind:open={isModalOpen} size="md" autoclose={false}>
+    <div class="specificModalMax">
+      <h3 class="text-xl font-medium text-gray-900 dark:text-white">
+        Add User
+      </h3>
+      <p class="text-sm text-gray-600 dark:text-gray-400">Multiple emails should be separated by a semi-colon</p>
+      <CustomForm
+        {fields}
+        bind:newResponses={newResponses2}
+        bind:validationErrors
+        {handleSubmit}
+        showBorder={false}
+      />
+    </div>
+  </Modal>
+</div>
 
 <div class="modalExterior">
   <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
@@ -638,6 +763,18 @@
     margin: 20px;
   }
 
+  @media only screen and (max-width: 900px) {
+    .grid-container {
+      grid-template-columns: 100%;
+    }
+  }
+
+  @media only screen and (max-width: 650px) {
+    :global(.timeline h3) {
+      text-align: center !important;
+    }
+  }
+
   .teams-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -648,6 +785,6 @@
   .border-box {
     padding: 20px;
     border-radius: 15px;
-    border: 2px solid var(--primary-tint);
+    border: 2px solid var(--primary-light);
   }
 </style>

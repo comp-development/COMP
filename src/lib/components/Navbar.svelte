@@ -53,13 +53,15 @@
   const adminEventPages = [
     { name: "Home", route: "" },
     { name: "Tests", route: "tests" },
-    { name: "Registration", route: "registration" },
+    { name: "Waivers", route: "waivers" },
+    { name: "Custom Fields", route: "custom-fields" },
+    { name: "Stats", route: "data-visualization" },
   ];
 
   const adminHostPages = [
     { name: "Home", route: "" },
     { name: "Users", route: "users" },
-    { name: "Custom Fields", route: "custom_fields" },
+    { name: "Custom Fields", route: "custom-fields" },
   ];
 
   async function initializeNavbar() {
@@ -121,20 +123,23 @@
   };
 </script>
 
-<div style="background-color: var(--primary-dark);">
+<div class="exteriorNavBar">
   <Navbar rounded color="transparent">
     <NavBrand href="/">
       <div class="me-3 p-1">
         <Logo />
       </div>
     </NavBrand>
-    <div class="md:order-2">
+    <div
+      class="md:order-2"
+      style="display: flex; align-items: center; justify-content: end;"
+    >
       <Button size="sm" onclick={handleSignout} pill color="primary"
         >Sign Out</Button
       >
-      <NavHamburger />
+      <NavHamburger class="hamburgerClass" />
     </div>
-    <NavUl>
+    <NavUl class="navigationList">
       {#if $page.route.id?.includes("/coach")}
         <NavLi class="cursor-pointer">
           <BuildingSolid class="h-6 text-primary-800 dark:text-white inline" />
@@ -347,10 +352,31 @@
 </div>
 
 <style>
+  .exteriorNavBar {
+    background-color: var(--primary-dark);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
   :global(nav div.flex) {
     justify-content: space-between;
     margin: 0;
     min-width: 100% !important;
+    position: relative;
+  }
+
+  :global(.navigationList) {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  :global(.navigationList ul),
+  :global(.navigationList ul li),
+  :global(.navigationList ul li button) {
+    min-width: fit-content !important;
   }
 
   :global(.cursor-pointer) {
@@ -358,16 +384,11 @@
     background-color: white;
   }
 
-  .logo {
-    background-color: black;
-    border-radius: 50px;
-  }
-
   :global([role="link"]:hover) {
     background-color: rgb(221, 221, 221) !important;
   }
 
-  :global(.active) {
+  :global(nav .active) {
     text-decoration: underline;
     text-decoration-thickness: 2px;
     text-underline-offset: 4px;
@@ -376,5 +397,36 @@
   :global(.navli) {
     background-color: transparent;
     color: white;
+  }
+
+  :global(.hamburgerClass) {
+    color: white;
+  }
+
+  :global(.hamburgerClass:hover) {
+    background-color: transparent;
+    border: 2px solid white;
+  }
+
+  @media only screen and (max-width: 800px) {
+    :global(.navigationList) {
+      position: relative;
+    }
+
+    :global(.navigationList ul) {
+      background-color: var(--primary);
+    }
+
+    :global(.navigationList ul li) {
+      padding: 5px;
+    }
+
+    :global(.navigationList ul [role="tooltip"]) {
+      color: white;
+    }
+
+    :global(.navigationList ul li a:hover) {
+      background-color: transparent !important;
+    }
   }
 </style>

@@ -12,6 +12,7 @@
   import { Tabs, TabItem, Alert } from "flowbite-svelte";
   import { InfoCircleSolid } from "flowbite-svelte-icons";
   import Logo from "$lib/components/Logo.svelte";
+  import { page } from '$app/stores';
 
   // Instead of using an enum for login state, we'll just use string literals.
   // Define the allowed login states.
@@ -21,6 +22,12 @@
   interface Props {
     logInState: LogInState;
   }
+
+  // Regex for name validation
+  // Allows English letters, spaces, hyphens, apostrophes, and periods
+  // First letter should be uppercase (Pascal Casing)
+  const nameRegex = /^(?=.{1,30}$)[\p{Lu}][\p{Ll}\p{M}]*(?:(?:[\p{Ll}\p{M}]*[\p{Lu}][\p{Ll}\p{M}]+)|(?:[ '-][\p{Lu}][\p{Ll}\p{M}]+))*$/u;
+  const NAME_ERROR_MESSAGE = "Name should be in typical capitalization, and contain only English letters, spaces, hyphens, apostrophes, accents, and periods. Maximum 30 characters.";
 
   // Destructure the prop (if not provided, you can set a default value)
   let { logInState = "LOGIN" }: Props = $props();
@@ -50,6 +57,7 @@
           const user = await createAccount(
             newResponses.email,
             newResponses.password,
+            $page.url.pathname
           );
 
           console.log("USER", user)
@@ -65,6 +73,9 @@
           );
           logInState = "LOGIN";
         } catch (error) {
+          if (error.code === "weak_password"){
+            error.message = "Password must contain at least 6 characters, a letter, and a number.";
+          }
           throw error;
         }
       } else {
@@ -108,7 +119,7 @@
       label: "Password",
       editable: true,
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "current-password",
       placeholder: "Password",
     },
   ];
@@ -122,7 +133,9 @@
       hidden: false,
       custom_field_type: "text",
       placeholder: "First Name",
-    },
+      regex: nameRegex,
+      regex_error_message: NAME_ERROR_MESSAGE
+      },
     {
       name: "last_name",
       label: "Last Name",
@@ -131,6 +144,8 @@
       hidden: false,
       custom_field_type: "text",
       placeholder: "Last Name",
+      regex: nameRegex,
+      regex_error_message: NAME_ERROR_MESSAGE
     },
     {
       name: "email",
@@ -145,7 +160,7 @@
       label: "Password",
       editable: true,
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "new-password",
       placeholder: "Password",
     },
     {
@@ -153,7 +168,7 @@
       label: "Retype Password",
       editable: true,
       required: true,
-      custom_field_type: "password",
+      custom_field_type: "new-password",
       placeholder: "Retype Password",
     },
   ];
@@ -224,6 +239,7 @@
               onclick={() => (selectedOption = "student")}
               open={selectedOption === "student"}
               title="Student"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <div class="no-padding">
                 <CustomForm
@@ -239,6 +255,7 @@
               onclick={() => (selectedOption = "coach")}
               open={selectedOption === "coach"}
               title="Coach"
+              style="border: 2px solid var(--primary); padding: 10px 16px;"
             >
               <div class="no-padding">
                 <CustomForm
@@ -311,11 +328,6 @@
   :global(.tabs [role="tabpanel"]) {
     padding: 0px;
     background: transparent;
-  }
-
-  :global([role=presentation] :not(.active)) {
-    border: 2px solid var(--primary);
-    padding: 10px 16px;
   }
 
   @media only screen and (max-width: 700px) {

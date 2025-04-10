@@ -1,5 +1,28 @@
 import { supabase } from "../supabaseClient";
 
+export async function createTest(testData: {}) {
+  const { data, error } = await supabase
+    .from("tests")
+    .insert([testData])
+    .select("*")
+    .single();
+
+  if (error) { throw error; }
+  return data;
+}
+
+export async function editTest(test_id: number, testData: {}) {
+  const { data, error } = await supabase
+    .from("tests")
+    .update(testData)
+    .eq("test_id", test_id)
+    .select("*")
+    .single();
+
+  if (error) { throw error; }
+  return data;
+}
+
 /** Fetches test problems given a test id. Ordered by problem number
  *
  * @param test_id number
@@ -87,7 +110,7 @@ export async function getGutsTest(test_id, customSelect = "*") {
 
 export async function addTestTaker(test_id) {
   console.log("TESTID", test_id);
-  const { data, error } = await supabase.rpc("add_test_taker_2", {
+  const { data, error } = await supabase.rpc("add_test_taker", {
     p_test_id: test_id,
   });
   console.log("ERROR", error);
@@ -104,9 +127,9 @@ export async function upsertTestAnswer(
   test_problem_id: number,
   answer: string,
 ) {
-  console.log("adding", answer);
-  console.log("TAKERID", test_taker_id);
-  console.log("ANSWSER", answer);
+  // console.log("adding", answer);
+  // console.log("TAKERID", test_taker_id);
+  // console.log("ANSWSER", answer);
   const { data, error } = await supabase.rpc("upsert_test_answer", {
     p_answer: answer,
     p_test_taker_id: test_taker_id,

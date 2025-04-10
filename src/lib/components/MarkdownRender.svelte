@@ -1,15 +1,15 @@
 <script>
   import { marked } from "marked";
-  let { source } = $props();
+  let { source = $bindable() } = $props();
 </script>
 
 <div class="summary">
-  <div class="officialMarkdown">{@html marked(source)}</div>
+  <div class="officialMarkdown">{@html marked(source ?? "")}</div>
 </div>
 
 <style>
   .summary {
-    border: 3px solid var(--primary-tint);
+    border: 3px solid var(--primary-light);
     padding: 20px;
     margin: 10px;
     margin-top: 0px;

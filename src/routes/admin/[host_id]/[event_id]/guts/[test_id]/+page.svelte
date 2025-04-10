@@ -33,7 +33,7 @@
     const { data: testProblems, error: testProblemsError } = await supabase
       .from("test_problems")
       .select("problem_id")
-      // .eq("test_id", testId); !!! UNCOMMENT LATER
+      .eq("test_id", testId);
 
     if (testProblemsError) {
       console.error("Error loading problems:", testProblemsError.message);
@@ -42,15 +42,16 @@
 
     const problemIds = testProblems.map(p => p.problem_id);
     const { data: problemData, error: problemError } = await supabase
-      .from("problems")
-      .select("problem_id, problem_latex")
+      .from("test_problems")
+      .select("problems(problem_id, problem_latex)")
       .in("problem_id", problemIds)
-      .order("problem_id", { ascending: true });
+      .order("problem_id", { ascending: true })
+      .eq("test_id", testId);
 
     if (problemError) {
       console.error("Error loading problem details:", problemError.message);
     } else {
-      problems = problemData;
+      problems = problemData.map(p => p.problems);
     }
 
     // Fetch team IDs

@@ -23,24 +23,59 @@
   } from "flowbite-svelte-icons";
   import ConfirmationModal from "$lib/components/ConfirmationModal.svelte";
   import TableName from "$lib/components/TableName.svelte";
-  import { getCustomFields } from "$lib/supabase";
+  import { deleteCustomFields, getCustomFields } from "$lib/supabase";
   import toast from "$lib/toast.svelte";
   import { handleError } from "$lib/handleError";
+  import Loading from "./Loading.svelte";
 
   let {
     custom_fields = $bindable(),
     action,
     host_id,
+    is_event_fields = false,
     table,
+    title="Custom Field Builder",
     editableHostFields,
   } = $props();
+
+  let loading = $state(true);
   let showCustomFieldModal = $state(false);
   let availableCustomFields = $state([]);
-  let originalCustomFields = $state("");
+  let originalCustomFields = $state([]);
+  let hideComponent = $state(false);
+
+  let inputTypes = [
+    { icon: TextSizeOutline, type: "text", tooltip: "Text" },
+    { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
+    { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
+    { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
+    {
+      icon: ListOutline,
+      type: "multiple_choice",
+      tooltip: "Multiple Choice",
+    },
+    { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
+    { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
+    { icon: PhoneOutline, type: "phone", tooltip: "Number" },
+  ];
 
   async function onLoad() {
-    availableCustomFields = await getCustomFields(host_id, table);
-    originalCustomFields = JSON.stringify(custom_fields);
+    if (table) {
+      availableCustomFields = await getCustomFields(host_id, table);
+      inputTypes = [
+        ...inputTypes,
+        {
+          icon: CirclePlusSolid,
+          type: "add_existing",
+          tooltip: "Add Existing Field",
+          onClick: openCustomFieldModal,
+        },
+      ];
+    }
+    originalCustomFields = await JSON.parse(
+      await JSON.stringify(custom_fields),
+    );
+    loading = false;
   }
 
   onLoad();
@@ -54,27 +89,6 @@
       handleError(error);
     }
   }
-
-  const inputTypes = [
-    { icon: TextSizeOutline, type: "text", tooltip: "Text" },
-    { icon: CalendarMonthOutline, type: "date", tooltip: "Date" },
-    { icon: ParagraphOutline, type: "paragraph", tooltip: "Paragraph" },
-    { icon: CheckCircleOutline, type: "checkboxes", tooltip: "Checkboxes" },
-    {
-      icon: ListOutline,
-      type: "multiple_choice",
-      tooltip: "Multiple Choice",
-    },
-    { icon: CaretDownOutline, type: "dropdown", tooltip: "Dropdown" },
-    { icon: EnvelopeOutline, type: "email", tooltip: "Email" },
-    { icon: PhoneOutline, type: "phone", tooltip: "Number" },
-    {
-      icon: CirclePlusSolid,
-      type: "add_existing",
-      tooltip: "Add Existing Field",
-      onClick: openCustomFieldModal,
-    },
-  ];
 
   // Generate unique IDs for each button
   const buttonIds = inputTypes.map(
@@ -146,9 +160,13 @@
     showDeleteModal = true;
   }
 
-  function removeField() {
+  async function removeField() {
     if (fieldToDelete !== null) {
+      await deleteCustomFields(custom_fields[fieldToDelete], is_event_fields);
       custom_fields = custom_fields.filter((_, i) => i !== fieldToDelete);
+      originalCustomFields = await JSON.parse(await JSON.stringify(custom_fields));
+
+      toast.success("Field deleted successfully");
       showDeleteModal = false;
       fieldToDelete = null;
     }
@@ -178,6 +196,36 @@
     return editableHostFields !== false || !field.host_id;
   }
 
+  function deepEqual(obj1, obj2) {
+    if (obj1 === obj2) return true;
+
+    if (
+      typeof obj1 !== "object" ||
+      typeof obj2 !== "object" ||
+      obj1 === null ||
+      obj2 === null
+    ) {
+      return false;
+    }
+
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+
+    if (keys1.length !== keys2.length) return false;
+
+    for (const key of keys1) {
+      if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  function hasChanges() {
+    return !deepEqual(originalCustomFields, custom_fields);
+  }
+
   async function handleSubmit() {
     try {
       const invalidFields = custom_fields.filter(
@@ -193,10 +241,27 @@
         );
       }
 
-      console.log("custom_fields", custom_fields);
+      deletedFields = originalCustomFields.filter(
+        (field) => !custom_fields.some((cf) => cf.key === field.key),
+      );
 
+      if (deletedFields.length > 0) {
+        showConfirmDeleteModal = true;
+      } else {
+        await action();
+        originalCustomFields = await JSON.parse(
+          await JSON.stringify(custom_fields),
+        );
+        toast.success("Custom fields saved successfully");
+      }
+    } catch (error) {
+      handleError(error);
+    }
+  }
+
+  async function confirmDeleteFields() {
+    try {
       await action();
-
       toast.success("Custom fields saved successfully");
     } catch (error) {
       handleError(error);
@@ -204,205 +269,210 @@
   }
 </script>
 
-<div class="space-y-2">
-  <h2>Custom Field Builder</h2>
-  {#if JSON.stringify(custom_fields) !== originalCustomFields}
-    <Button pill onclick={handleSubmit}>Submit</Button>
-  {/if}
+{#if loading}
+  <Loading />
+{:else}
+  <div class="space-y-2">
+    <h2>{title}</h2>
+    {#if hasChanges()}
+      <Button pill onclick={handleSubmit}>Submit</Button>
+    {/if}
 
-  <div class="flex gap-2 rounded-lg">
-    {#each inputTypes as { icon: Icon, type, tooltip, onClick }, i}
-      <div class="relative">
-        <Button
-          id={buttonIds[i]}
-          size="sm"
-          color="light"
-          class="p-2.5"
-          onclick={onClick || (() => addField(type))}
-        >
-          <svelte:component this={Icon} class="w-4 h-4" />
-        </Button>
-        <Popover
-          triggeredBy="#{buttonIds[i]}"
-          class="w-36 text-sm bg-white font-normal"
-        >
-          <div class="p-2">
-            {tooltip}
-          </div>
-        </Popover>
-      </div>
-    {/each}
-  </div>
-
-  <!-- Draggable Fields -->
-  <div class="space-y-4">
-    {#each custom_fields as field, index}
-      <div
-        class="p-4 border rounded-lg relative editable-field"
-        draggable="true"
-        ondragstart={(e) => handleDragStart(e, index)}
-        ondragend={handleDragEnd}
-        ondragover={(e) => handleDragOver(e, index)}
-      >
-        <Button
-          class="absolute top-2 right-2"
-          color="red"
-          size="xs"
-          onclick={(e) => {
-            e.preventDefault();
-            confirmDelete(index);
-          }}
-        >
-          <TrashBinOutline class="w-4 h-4" />
-        </Button>
-
-        <div class="absolute top-2 left-2 flex">
-          <div class="cursor-move">
-            <CaretSortOutline class="w-4 h-4 text-gray-500" />
-          </div>
-          <div class:rotate-180={expandedSections[index]}>
-            <ChevronDownOutline
-              class="w-4 h-4 text-gray-500"
-              onclick={() => toggleSection(index)}
-            />
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <Button size="xs" color="light" class="p-1.5">
-            <svelte:component
-              this={getIconForType(field.custom_field_type)}
-              class="w-4 h-4"
-            />
+    <div class="flex gap-2 rounded-lg" style="flex-wrap: wrap;">
+      {#each inputTypes as { icon: Icon, type, tooltip, onClick }, i}
+        <div class="relative">
+          <Button
+            id={buttonIds[i]}
+            size="sm"
+            color="light"
+            class="p-2.5"
+            onclick={onClick || (() => addField(type))}
+          >
+            <svelte:component this={Icon} class="w-4 h-4" />
           </Button>
-          <h3 class="text-lg font-semibold">
-            {field.key}
-          </h3>
-        </div>
-
-        {#if expandedSections[index]}
-          <div class="mt-8 space-y-4">
-            <!-- Field Label and Key -->
-            <div class="grid grid-cols-3 gap-4">
-              <div>
-                <Label for="key-{index}" class="mb-2 text-left"
-                  >Field Key<span class="text-red-600 ml-1">*</span></Label
-                >
-                <Input
-                  id="key-{index}"
-                  type="text"
-                  required
-                  disabled={!isFieldEditable(field)}
-                  bind:value={field.key}
-                />
-              </div>
-              <div>
-                <Label for="label-{index}" class="mb-2 text-left"
-                  >Field Label<span class="text-red-600 ml-1">*</span></Label
-                >
-                <Input
-                  id="label-{index}"
-                  type="text"
-                  required
-                  disabled={!isFieldEditable(field)}
-                  bind:value={field.label}
-                />
-              </div>
-              <div>
-                <Label for="label-{index}" class="mb-2 text-left"
-                  >Help Text</Label
-                >
-                <Input
-                  id="label-{index}"
-                  type="text"
-                  disabled={!isFieldEditable(field)}
-                  bind:value={field.help_text}
-                />
-              </div>
+          <Popover
+            triggeredBy="#{buttonIds[i]}"
+            class="w-36 text-sm bg-white font-normal"
+          >
+            <div class="p-2">
+              {tooltip}
             </div>
+          </Popover>
+        </div>
+      {/each}
+    </div>
 
-            <div class="grid grid-cols-3 gap-4">
-              {#if !["email", "phone"].includes(field.custom_field_type)}
-                <div>
-                  <Label for="label-{index}" class="mb-2 text-left">Regex</Label
-                  >
-                  <Input
-                    id="label-{index}"
-                    type="text"
-                    disabled={!isFieldEditable(field)}
-                    bind:value={field.regex}
-                  />
-                </div>
-              {/if}
+    <!-- Draggable Fields -->
+    <div class="space-y-4">
+      {#each custom_fields as field, index}
+        <div
+          class="p-4 border rounded-lg relative editable-field"
+          draggable="true"
+          ondragstart={(e) => handleDragStart(e, index)}
+          ondragend={handleDragEnd}
+          ondragover={(e) => handleDragOver(e, index)}
+        >
+          <Button
+            class="absolute top-2 right-2"
+            color="red"
+            size="xs"
+            onclick={(e) => {
+              e.preventDefault();
+              confirmDelete(index);
+            }}
+          >
+            <TrashBinOutline class="w-4 h-4" />
+          </Button>
 
-              {#if !["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
-                <div>
-                  <Label for="label-{index}" class="mb-2 text-left"
-                    >Placeholder</Label
-                  >
-                  <Input
-                    id="label-{index}"
-                    type="text"
-                    disabled={!isFieldEditable(field)}
-                    bind:value={field.placeholder}
-                  />
-                </div>
-              {:else}
-                <div>
-                  <Label for="label-{index}" class="mb-2 text-left"
-                    >Choices</Label
-                  >
-                  <Input
-                    id="label-{index}"
-                    type="text"
-                    disabled={!isFieldEditable(field)}
-                    placeholder="Separate with a comma"
-                    value={Array.isArray(field.choices)
-                      ? field.choices.join(", ")
-                      : field.choices}
-                    on:input={(e) => {
-                      const choicesArray = e.currentTarget.value
-                        .split(",")
-                        .map((choice) => choice.trim())
-                        .filter(Boolean);
-                      field.choices = choicesArray;
-                    }}
-                  />
-                </div>
-              {/if}
-              <div>
-                <div class="flex-content max-w-[200px] mt-1">
-                  <Checkbox
-                    bind:checked={field.required}
-                    disabled={!isFieldEditable(field)}
-                  >
-                    Required
-                  </Checkbox>
-                </div>
-                <div class="flex-content max-w-[200px]">
-                  <Checkbox
-                    bind:checked={field.hidden}
-                    disabled={!isFieldEditable(field)}
-                  >
-                    Hidden
-                  </Checkbox>
-                </div>
-                <div class="flex-content max-w-[200px]">
-                  <Checkbox
-                    bind:checked={field.editable}
-                    disabled={!isFieldEditable(field)}
-                  >
-                    Editable
-                  </Checkbox>
-                </div>
-              </div>
+          <div class="absolute top-2 left-2 flex">
+            <div class="cursor-move">
+              <CaretSortOutline class="w-4 h-4 text-gray-500" />
+            </div>
+            <div class:rotate-180={expandedSections[index]}>
+              <ChevronDownOutline
+                class="w-4 h-4 text-gray-500"
+                onclick={() => toggleSection(index)}
+              />
             </div>
           </div>
-        {/if}
-      </div>
-    {/each}
+
+          <div class="flex items-center gap-2">
+            <Button size="xs" color="light" class="p-1.5">
+              <svelte:component
+                this={getIconForType(field.custom_field_type)}
+                class="w-4 h-4"
+              />
+            </Button>
+            <h3 class="text-lg font-semibold">
+              {field.key}
+            </h3>
+          </div>
+
+          {#if expandedSections[index]}
+            <div class="mt-8 space-y-4">
+              <!-- Field Label and Key -->
+              <div class="grid grid-cols-3 gap-4">
+                <div>
+                  <Label for="key-{index}" class="mb-2 text-left"
+                    >Field Key<span class="text-red-600 ml-1">*</span></Label
+                  >
+                  <Input
+                    id="key-{index}"
+                    type="text"
+                    required
+                    disabled={!isFieldEditable(field)}
+                    bind:value={field.key}
+                  />
+                </div>
+                <div>
+                  <Label for="label-{index}" class="mb-2 text-left"
+                    >Field Label<span class="text-red-600 ml-1">*</span></Label
+                  >
+                  <Input
+                    id="label-{index}"
+                    type="text"
+                    required
+                    disabled={!isFieldEditable(field)}
+                    bind:value={field.label}
+                  />
+                </div>
+                <div>
+                  <Label for="label-{index}" class="mb-2 text-left"
+                    >Help Text</Label
+                  >
+                  <Input
+                    id="label-{index}"
+                    type="text"
+                    disabled={!isFieldEditable(field)}
+                    bind:value={field.help_text}
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4">
+                {#if !["email", "phone"].includes(field.custom_field_type)}
+                  <div>
+                    <Label for="label-{index}" class="mb-2 text-left"
+                      >Regex</Label
+                    >
+                    <Input
+                      id="label-{index}"
+                      type="text"
+                      disabled={!isFieldEditable(field)}
+                      bind:value={field.regex}
+                    />
+                  </div>
+                {/if}
+
+                {#if !["multiple_choice", "checkboxes", "dropdown"].includes(field.custom_field_type)}
+                  <div>
+                    <Label for="label-{index}" class="mb-2 text-left"
+                      >Placeholder</Label
+                    >
+                    <Input
+                      id="label-{index}"
+                      type="text"
+                      disabled={!isFieldEditable(field)}
+                      bind:value={field.placeholder}
+                    />
+                  </div>
+                {:else}
+                  <div>
+                    <Label for="label-{index}" class="mb-2 text-left"
+                      >Choices</Label
+                    >
+                    <Input
+                      id="label-{index}"
+                      type="text"
+                      disabled={!isFieldEditable(field)}
+                      placeholder="Separate with a comma"
+                      value={Array.isArray(field.choices)
+                        ? field.choices.join(", ")
+                        : field.choices}
+                      on:input={(e) => {
+                        const choicesArray = e.currentTarget.value
+                          .split(",")
+                          .map((choice) => choice.trim())
+                          .filter(Boolean);
+                        field.choices = choicesArray;
+                      }}
+                    />
+                  </div>
+                {/if}
+                <div>
+                  <div class="flex-content max-w-[200px] mt-1">
+                    <Checkbox
+                      bind:checked={field.required}
+                      disabled={!isFieldEditable(field)}
+                    >
+                      Required
+                    </Checkbox>
+                  </div>
+                  <div class="flex-content max-w-[200px]">
+                    <Checkbox
+                      bind:checked={field.hidden}
+                      disabled={!isFieldEditable(field)}
+                    >
+                      Hidden
+                    </Checkbox>
+                  </div>
+                  <div class="flex-content max-w-[200px]">
+                    <Checkbox
+                      bind:checked={field.editable}
+                      disabled={!isFieldEditable(field)}
+                    >
+                      Editable
+                    </Checkbox>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
   </div>
-</div>
+{/if}
 
 <!-- Custom Fields Modal -->
 <Modal bind:open={showCustomFieldModal} size="xl">
@@ -441,6 +511,7 @@
 <ConfirmationModal
   isShown={showDeleteModal}
   actionName="delete this custom field"
+  warning="It may delete existing user registration data"
   onCancel={() => {
     showDeleteModal = false;
     fieldToDelete = null;

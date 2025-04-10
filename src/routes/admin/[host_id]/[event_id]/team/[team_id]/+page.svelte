@@ -10,8 +10,6 @@
   } from "$lib/supabase";
   import Loading from "$lib/components/Loading.svelte";
   import { handleError } from "$lib/handleError";
-  import { Modal } from "flowbite-svelte";
-  import TeamForm from "$lib/components/TeamForm.svelte";
 
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
@@ -21,7 +19,6 @@
   let event_details = $state({});
   let loading = $state(true);
   let studentsWithoutTeams = $state([]);
-  let isTeamModalOpen = $state(false);
 
   (async () => {
     try {
@@ -63,11 +60,6 @@
       await handleError(e);
     }
   }
-
-  async function handleChangeTeam(newTeam) {
-    team = newTeam;
-    isTeamModalOpen = false;
-  }
 </script>
 
 {#if loading}
@@ -81,13 +73,11 @@
       org_id={team?.org_id}
       {team}
       editableFeatures={true}
+      waiverType={event_details?.waivers?.type ?? "none"}
       bind:studentsWithoutTeams
       onDrop={() => {}}
       onDragStart={() => {}}
       onDeleteStudent={handleDeleteStudent}
-      openEditModal={() => {
-        isTeamModalOpen = true;
-      }}
       handleDragOver={() => {}}
       handleDragLeave={() => {}}
       maxTeamSize={event_details?.max_team_size}
@@ -96,23 +86,10 @@
   </div>
 {/if}
 
-<div class="modalExterior">
-  <Modal bind:open={isTeamModalOpen} size="md" autoclose={false}>
-    <h3 class="text-xl font-medium text-gray-900 dark:text-white">Edit Team</h3>
-    <TeamForm
-      title=""
-      {event_id}
-      {team}
-      afterSubmit={async (team) => {
-        await handleChangeTeam(team);
-      }}
-    />
-  </Modal>
-</div>
-
 <style>
   .teamContainer {
     max-width: 800px;
     margin: 0 auto;
+    padding: 0px 20px;
   }
 </style>

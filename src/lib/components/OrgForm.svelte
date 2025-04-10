@@ -1,29 +1,15 @@
 <script lang="ts">
-  import {
-    Button,
-    Input,
-    InputAddon,
-    ButtonGroup,
-    Tabs,
-    TabItem,
-    Helper,
-    Select,
-    Label,
-    Tooltip,
-  } from "flowbite-svelte";
-  import { EnvelopeSolid, InfoCircleSolid } from "flowbite-svelte-icons";
-  import toast from "$lib/toast.svelte";
   import CustomForm from "$lib/components/CustomForm.svelte";
   import {
     getEventCustomFields,
     getCustomFieldResponses,
     upsertCustomFieldResponses,
-    getStudentEvent,
-    getOrgEventByJoinCode,
-    upsertStudentEvent,
     upsertOrgEvent,
   } from "$lib/supabase";
   import { handleError } from "$lib/handleError";
+
+  // Maximum length for organization name
+  const MAX_ORG_NAME_LENGTH = 50;
 
   let {
     org = $bindable(null),
@@ -42,9 +28,8 @@
   let newResponses = $state({});
   let validationErrors = $state({});
   let custom_fields = $state([]);
-  let org_event = $state(null);
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: Event) {
     try {
       org = await upsertOrgEvent(event_id, org_id);
       console.log("ORG", org);
@@ -73,11 +58,10 @@
 
     custom_fields = await getCustomFieldResponses(
       custom_fields,
-      org_event?.org_event_id,
+      org.event.org_event_id,
       "orgs",
     );
     console.log("custom_fields", custom_fields);
-    //token = data.session?.access_token ?? null;
   })();
 </script>
 
@@ -89,8 +73,9 @@
       key: "org_name",
       label: "Organization Name",
       required: true,
-      regex: null,
-      placeholder: null,
+      regex: new RegExp(`^.{1,${MAX_ORG_NAME_LENGTH}}$`),
+      regex_error_message: `Organization name must be ${MAX_ORG_NAME_LENGTH} characters or less`,
+      placeholder: "Enter organization name",
       value: org?.orgs.name ?? null,
       choices: null,
       editable: false,

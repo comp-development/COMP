@@ -358,6 +358,7 @@
             onDrop={handleDrop}
             onDragStart={handleDragStart}
             onDeleteStudent={handleDeleteStudentTeam}
+            waiverType={event_details?.waivers?.type ?? "none"}
             {openEditModal}
             {handleDeleteTeam}
             {handleDragOver}
@@ -385,6 +386,8 @@
         {#each studentsWithoutTeams as student}
           <DraggableStudent
             team_member={student}
+            {event_id}
+            waiverType={event_details?.waivers?.type ?? "none"}
             onDragStart={handleDragStart}
             onDeleteStudent={() => {
               handleDeletingStudent(student);
@@ -430,6 +433,12 @@
     margin: 20px;
   }
 
+  @media only screen and (max-width: 900px) {
+    .grid-container {
+      grid-template-columns: 100%;
+    }
+  }
+
   .teams-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -440,6 +449,6 @@
   .unassigned-students {
     padding: 20px;
     border-radius: 15px;
-    border: 2px solid var(--primary-tint);
+    border: 2px solid var(--primary-light);
   }
 </style>

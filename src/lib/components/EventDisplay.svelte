@@ -96,22 +96,42 @@
               {newResponses.event_date || "None"}
             {/if}
           </span>
+          {#if editable}
+            <span
+              class="mr-2 flex {editable ? 'editableField' : ''}"
+              onclick={() => editable && (editingField = "published")}
+            >
+              {#if editingField === "published"}
+                <Checkbox
+                  bind:checked={newResponses.published}
+                  on:change={handleEdit}
+                  onmouseleave={() => (editingField = null)}
+                >
+                  Public
+                </Checkbox>
+              {:else if newResponses.published}
+                <Badge large color="green">Public</Badge>
+              {:else}
+                <Badge large color="red">Not Public</Badge>
+              {/if}
+            </span>
+          {/if}
           <span
             class="mr-2 flex {editable ? 'editableField' : ''}"
-            onclick={() => editable && (editingField = "published")}
+            onclick={() => editable && (editingField = "reg_frozen")}
           >
-            {#if editingField === "published"}
+            {#if editingField === "reg_frozen"}
               <Checkbox
-                bind:checked={newResponses.published}
+                bind:checked={newResponses.reg_frozen}
                 on:change={handleEdit}
                 onmouseleave={() => (editingField = null)}
               >
-                Public
+                Registration Frozen
               </Checkbox>
-            {:else if newResponses.published}
-              <Badge large color="green">Public</Badge>
+            {:else if newResponses.reg_frozen}
+              <Badge large color="red">Registration Closed</Badge>
             {:else}
-              <Badge large color="red">Not Public</Badge>
+              <Badge large color="green">Registration Open</Badge>
             {/if}
           </span>
         </h2>
@@ -197,7 +217,7 @@
     </div>
   </div>
 
-  <div>
+  <div class="otherContainer">
     {#if editable}
       <div class="flex" style="justify-content: end;">
         <InfoToolTip text="To edit, click on the text that you want to change and update the input field." />
@@ -227,7 +247,7 @@
     {#if event}
       <div class="flex" style="min-height: 45px;">
         <div class="flex" style="justify-content: left;">
-          <div style="width: 350px;">
+          <div class="navigationalWidth">
             <p
               class="flex {editable ? 'editableField' : ''}"
               onclick={() => editable && (editingField = "max_team_size")}
@@ -249,7 +269,7 @@
             </p>
           </div>
           {#if !event.eventbrite_event_id}
-            <div style="width: 350px;">
+            <div class="navigationalWidth">
               <p
                 class="flex {editable ? 'editableField' : ''}"
                 onclick={() => editable && (editingField = "ticket_price_cents")}
@@ -280,11 +300,35 @@
 
 <style>
   .grid {
-    grid-template-columns: 35% auto;
+    grid-template-columns: 35% minmax(0, 1fr);
     column-gap: 40px;
     width: 100%;
     padding: 40px;
     padding-top: 20px;
+  }
+
+  .otherContainer {
+    max-width: 100%;
+  }
+
+  .navigationalWidth {
+    width: 350px;
+  }
+
+  @media only screen and (max-width: 900px) {
+    .grid {
+      grid-template-columns: 97vw;
+      padding: 10px;
+    }
+
+    .grid div {
+      max-width: 100%;
+    }
+
+    .navigationalWidth {
+      width: fit-content;
+      padding-right: 10px;
+    }
   }
 
   :global(.editableField) {

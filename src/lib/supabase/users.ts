@@ -7,10 +7,13 @@ import { supabase, type AsyncReturnType } from "../supabaseClient";
  * @param email string
  * @param password string
  */
-export async function createAccount(email: string, password: string) {
+export async function createAccount(email: string, password: string, redirect: string = "/") {
   const { data, error } = await supabase.auth.signUp({
     email: email,
     password: password,
+    options: {
+      emailRedirectTo: redirect
+    }
   });
   console.log("DATA", data);
   console.log("ERROR", error)
@@ -336,6 +339,32 @@ export async function editUser(
     .from(database)
     .update(userDataToUpdate)
     .eq(userType + "_id", user_id);
+
+  if (error) throw error;
+}
+
+/**
+ * Updates a user's first and last name in the appropriate table
+ * 
+ * @param user_id - The ID of the user
+ * @param first_name - The updated first name
+ * @param last_name - The updated last name
+ * @param user_type - The type of user ("admin", "student", or "coach")
+ * @returns void
+ */
+export async function updateUserName(
+  user_id: string,
+  first_name: string,
+  last_name: string,
+  user_type: "admin" | "student" | "coach"
+) {
+  const database = getUserTypeDatabase(user_type);
+  const id_field = `${user_type}_id`;
+
+  const { error } = await supabase
+    .from(database)
+    .update({ first_name, last_name })
+    .eq(id_field, user_id);
 
   if (error) throw error;
 }
