@@ -154,7 +154,6 @@
           filter: "event_id=eq." + eventId,
         },
         handleTestUpdate
-        handleTestUpdate
       )
       .subscribe();
   })();
@@ -171,7 +170,6 @@
         test.opening_time,
         currentTime,
         "seconds"
-        "seconds"
       );
       if (test.opening_time && timeTillTest < 86400) {
         newStatus.countdown = "Time till open: " + formatDuration(timeTillTest);
@@ -182,9 +180,7 @@
           new Date(test.opening_time),
           test.length + test.buffer_time,
           "seconds"
-          "seconds"
         ),
-        currentTime
         currentTime
       )
     ) {
@@ -199,11 +195,7 @@
                 new Date(test.opening_time),
                 test.length + test.buffer_time,
                 "seconds"
-                "seconds"
               ),
-              "seconds"
-            )
-          )
               "seconds"
             )
           )
@@ -256,14 +248,11 @@
       new Date(curTest.opening_time),
       curTest.length,
       curTest.buffer_time
-      curTest.buffer_time
     );
     console.log(
       addTime(
         new Date(curTest.opening_time),
         curTest.length + curTest.buffer_time,
-        "seconds"
-      )
         "seconds"
       )
     );
@@ -276,12 +265,7 @@
               new Date(curTest.opening_time),
               curTest.length + curTest.buffer_time,
               "seconds"
-              "seconds"
             ),
-            "seconds"
-          )
-        )
-      )
             "seconds"
           )
         )
@@ -296,10 +280,6 @@
 
   async function getTests() {
     try {
-      const fetchedTests = await getEventTests(
-        Number($page.params.event_id),
-        true
-      );
       const fetchedTests = await getEventTests(
         Number($page.params.event_id),
         true
@@ -353,7 +333,6 @@
   function handleOpenClick(test: TestData) {
     curTest = test;
     setupTime(
-      curTest.opening_time ? new Date(curTest.opening_time) : new Date()
       curTest.opening_time ? new Date(curTest.opening_time) : new Date()
     );
     open = true;
@@ -517,8 +496,6 @@
           return a.division?.localeCompare(b.division || "") || 0; // Handle undefined division
         }) as test}
           <div class="test-card-container">
-            <TestCard
-              {test}
             <TestCard
               {test}
               isHostView={true}
