@@ -1,0 +1,1 @@
+drop policy "Host admins can do anything to problem images" on "storage"."objects";
