@@ -46,10 +46,9 @@ begin
             s.email
             -- se.division
         from students s
-        join student_events se on s.student_id = se.student_id;
-        -- where se.event_id = v_event_id
-        --   and (v_test_division is null or v_test_division = '' or se.division = v_test_division)
-        --   and evaluate_access_rules(s.student_id, v_access_rules); -- Apply access rules
+        join student_events se on s.student_id = se.student_id
+        where se.event_id = v_event_id
+          and evaluate_access_rules(s.student_id, v_access_rules); -- Apply access rules
     end if;
 end;
 $function$

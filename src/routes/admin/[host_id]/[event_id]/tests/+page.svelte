@@ -785,6 +785,15 @@
 				>
 					Add Rule
 				</Button>
+        
+        <!-- Save Rules -->
+        <Button 
+          title = "Save"
+          action= {async () => {
+            await handleAccessRulesSubmit();
+          }}
+          > Save  
+        </Button>
 			</div>
 			{JSON.stringify(curTest.access_rules, null, 2)}
 			<div>
