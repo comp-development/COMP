@@ -100,7 +100,7 @@
 </button>
 
 <Modal bind:open={showModal} size="xs" autoclose={false} title="Edit Your Name">
-  <form on:submit={handleSubmit} class="space-y-4">
+  <form onsubmit={handleSubmit} class="space-y-4">
     <div>
       <Label for="firstName" class="mb-2" color={firstNameError ? "red" : "gray"}>First Name</Label>
       <Input 

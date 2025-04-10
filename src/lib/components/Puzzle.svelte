@@ -164,7 +164,7 @@
 						canvas.remove(crossLine1);
 						canvas.remove(crossLine2);
 
-						if (options.button === 1) {
+						if (options.e.buttons === 1) {
 							// Left-click
 							if (item.state === "+") {
 								item.state = "-";
@@ -182,7 +182,7 @@
 							setLineStyle = item.state;
 							lineDragType = true;
 							canvas.renderAll();
-						} else if (options.button === 3) {
+						} else if (options.e.buttons === 2) {
 							// Right-click
 							if (item.state === "x") {
 								item.state = "-";
@@ -207,12 +207,12 @@
 
 					crossLine1.on("mousedown", async function (options) {
 						if (item.state === "x") {
-							if (options.button === 3) {
+							if (options.e.buttons === 2) {
 								item.state = "-";
 								canvas.remove(crossLine1);
 								canvas.remove(crossLine2);
 								await onChange(i, "-");
-							} else if (options.button === 1) {
+							} else if (options.e.buttons === 1) {
 								item.state = "+";
 								canvas.remove(crossLine1);
 								canvas.remove(crossLine2);
@@ -232,12 +232,12 @@
 
 					crossLine2.on("mousedown", async function (options) {
 						if (item.state === "x") {
-							if (options.button === 3) {
+							if (options.e.buttons === 2) {
 								item.state = "-";
 								canvas.remove(crossLine1);
 								canvas.remove(crossLine2);
 								await onChange(i, "-");
-							} else if (options.button === 1) {
+							} else if (options.e.buttons === 1) {
 								item.state = "+";
 								canvas.remove(crossLine1);
 								canvas.remove(crossLine2);
@@ -323,7 +323,7 @@
 					polygon.on("mousedown", async function (options) {
 						canvas.discardActiveObject();
 
-						if (options.button === 1) {
+						if (options.e.buttons === 1) {
 							// Left-click
 							if (item.state === "#bad6ff") {
 								//blue
@@ -338,7 +338,7 @@
 
 							canvas.sendToBack(polygon);
 							canvas.renderAll();
-						} else if (options.button === 3) {
+						} else if (options.e.buttons === 2) {
 							// Right-click
 							if (item.state === "#fff1ba") {
 								//yellow
@@ -478,7 +478,8 @@
 
 <style>
 	.border {
-		padding: 20px;
+		padding: 5px;
+		margin: 5px;
 		border: 2px dotted black;
 		display: inline-block;
 		height: fit-content;

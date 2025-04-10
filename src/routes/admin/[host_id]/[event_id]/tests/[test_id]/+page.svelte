@@ -652,7 +652,14 @@
                     <EditPuzzle bind:puzzle={problem.puzzles.puzzle} />
                     <br /><br />
                     <h4>Edit Solution</h4>
-                    <EditPuzzle bind:puzzle={problem.puzzles.solution} />
+                    <EditPuzzle
+                      bind:puzzle={problem.puzzles.solution}
+                      is_solution={true}
+                      handleReplaceSolution={() => {
+                        problem.puzzles.solution = problem.puzzles.puzzle;
+                        problems[index] = { ...problem };
+                      }}
+                    />
                   {:else}
                     <h4>Display</h4>
                     <Problem
@@ -796,8 +803,8 @@
 
           // Filter out problems on the deleted page and count them
           problems = problems.filter(async (problem) => {
-            console.log(problem.page_number + " " + (pageToDelete+1));
-            if (problem.page_number == (pageToDelete+1)) {
+            console.log(problem.page_number + " " + (pageToDelete + 1));
+            if (problem.page_number == pageToDelete + 1) {
               problem_number_decrease++;
               const testProblemId = problem.test_problem_id;
               await deleteTestProblem(testProblemId);
@@ -808,7 +815,7 @@
 
           // Adjust the page_number and problem_number for remaining problems
           problems.forEach((problem) => {
-            if (problem.page_number > (pageToDelete+1)) {
+            if (problem.page_number > pageToDelete + 1) {
               problem.page_number -= 1;
               problem.problem_number -= problem_number_decrease;
             }

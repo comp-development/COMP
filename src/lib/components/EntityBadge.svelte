@@ -113,7 +113,7 @@
     class:clickable={isClickable && !disabled}
     class:disabled
     onclick={handleClick}
-    on:keydown={(e) => e.key === 'Enter' && handleClick(e)}
+    onkeydown={(e) => e.key === 'Enter' && handleClick(e)}
     role={isClickable ? "button" : "presentation"}
     tabindex={isClickable ? 0 : undefined}
     style="--badge-bg: {backgroundColor || 'rgba(243, 244, 246, 1)'}; 

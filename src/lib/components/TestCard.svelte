@@ -348,12 +348,12 @@
     background-color: #f8f9fa;
   }
   
-  .tooltip-container {
+  :global(.tooltip-container) {
     position: relative;
     display: inline-block;
   }
   
-  .tooltip {
+  :global(.tooltip) {
     visibility: hidden;
     background-color: #333;
     color: white;
@@ -376,7 +376,7 @@
   }
   
   /* Arrow for tooltip */
-  .tooltip::after {
+  :global(.tooltip::after) {
     content: "";
     position: absolute;
     top: 100%;
@@ -387,16 +387,16 @@
     border-color: #333 transparent transparent transparent;
   }
   
-  .tooltip-container:hover .tooltip {
+  :global(.tooltip-container:hover .tooltip) {
     visibility: visible;
     opacity: 1;
   }
   
-  .icon {
+  :global(.icon) {
     color: inherit;
   }
   
-  .hidden-indicator {
+  :global(.hidden-indicator) {
     font-size: 0.8rem;
     color: #e74c3c;
     font-weight: normal;
