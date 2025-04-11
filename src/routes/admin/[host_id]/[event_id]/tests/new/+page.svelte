@@ -285,35 +285,35 @@
       // log success
       console.log("Problems data upserted successfully:", problemsData);
 
-      // // Format test_problems data
-      // testData.test_problems = await Promise.all(
-      //   testData.test_problems.map(async (test_problem) => {
-      //     const test = await getTestFromComposeId(test_problem.test_id);
-      //     const problem = await getProblemFromComposeID(
-      //       test_problem.problem_id
-      //     );
-      //     return {
-      //       test_id: test.test_id,
-      //       problem_id: problem.problem_id,
-      //       problem_number: test_problem.problem_number + 1,
-      //       points: test_problem.problem_weights || 0,
-      //     };
-      //   })
-      // );
+      // Format test_problems data
+      testData.test_problems = await Promise.all(
+        testData.test_problems.map(async (test_problem) => {
+          const test = await getTestFromComposeId(test_problem.test_id);
+          const problem = await getProblemFromComposeID(
+            test_problem.problem_id
+          );
+          return {
+            test_id: test.test_id,
+            problem_id: problem.problem_id,
+            problem_number: test_problem.problem_number + 1,
+            points: test_problem.problem_weights || 0,
+          };
+        })
+      );
 
-      // // Upsert test_problems
-      // console.log("Upserting test problems data");
-      // const { data: testProblemsData, error: testProblemsError } =
-      //   await upsertTestProblems(testData.test_problems);
-      // if (testProblemsError) {
-      //   console.error(
-      //     "COOOOOOKED. Error upserting test problems data:",
-      //     testProblemsError
-      //   );
-      //   throw new Error(
-      //     "Error uploading test problems data: " + testProblemsError.message
-      //   );
-      // }
+      // Upsert test_problems
+      console.log("Upserting test problems data");
+      const { data: testProblemsData, error: testProblemsError } =
+        await upsertTestProblems(testData.test_problems);
+      if (testProblemsError) {
+        console.error(
+          "COOOOOOKED. Error upserting test problems data:",
+          testProblemsError
+        );
+        throw new Error(
+          "Error uploading test problems data: " + testProblemsError.message
+        );
+      }
 
       // Upsert problem_images
       console.log("Upserting problem images data");
