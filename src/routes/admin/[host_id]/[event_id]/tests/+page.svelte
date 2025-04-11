@@ -686,7 +686,9 @@
       <Modal
 			bind:open={accessRulesModalOpen}
 			modalHeading="{curTest.test_name} Access Rules" 
-			on:open 
+			on:open= {async () => {
+        fetchAccessPreview();
+      }}
 			on:close={async () => {
 				accessRulesModalOpen = false;
 				await handleAccessRulesSubmit();
