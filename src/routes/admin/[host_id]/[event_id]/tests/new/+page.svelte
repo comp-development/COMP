@@ -267,10 +267,10 @@
         host_id: $page.params.host_id,
         compose_problem_id: problem.id,
       }));
-      const problem_ids = testData.problems
-        .map((problem) => problem.compose_problem_id)
-        .sort((a, b) => a - b);
-      console.log("Problem IDs:", problem_ids);
+      // const problem_ids = testData.problems
+      //   .map((problem) => problem.compose_problem_id)
+      //   .sort((a, b) => a - b);
+      // console.log("Problem IDs:", problem_ids);
       console.log("HOST ID here:", $page.params.host_id);
       console.log(testData.problems[1]);
       const { data: problemsData, error: problemsError } = await upsertProblems(
