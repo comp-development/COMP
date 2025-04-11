@@ -258,7 +258,8 @@
 
       // Format and upsert problems
       console.log("Upserting problems data");
-      testData.problems = testData.problems.map((problem) => ({
+
+      testData.problems = Object.values(testData.problems).map((problem) => ({
         problem_latex: problem.problem_latex,
         answer_latex: problem.answer_latex,
         solution_latex: problem.solution_latex,
@@ -271,6 +272,7 @@
         .sort((a, b) => a - b);
       console.log("Problem IDs:", problem_ids);
       console.log("HOST ID here:", $page.params.host_id);
+      console.log(testData.problems[1]);
       const { data: problemsData, error: problemsError } = await upsertProblems(
         testData.problems
       );
@@ -280,36 +282,38 @@
           "Error uploading problems data: " + problemsError.message
         );
       }
+      // log success
+      console.log("Problems data upserted successfully:", problemsData);
 
-      // Format test_problems data
-      testData.test_problems = await Promise.all(
-        testData.test_problems.map(async (test_problem) => {
-          const test = await getTestFromComposeId(test_problem.test_id);
-          const problem = await getProblemFromComposeID(
-            test_problem.problem_id
-          );
-          return {
-            test_id: test.test_id,
-            problem_id: problem.problem_id,
-            problem_number: test_problem.problem_number + 1,
-            points: test_problem.problem_weights || 0,
-          };
-        })
-      );
+      // // Format test_problems data
+      // testData.test_problems = await Promise.all(
+      //   testData.test_problems.map(async (test_problem) => {
+      //     const test = await getTestFromComposeId(test_problem.test_id);
+      //     const problem = await getProblemFromComposeID(
+      //       test_problem.problem_id
+      //     );
+      //     return {
+      //       test_id: test.test_id,
+      //       problem_id: problem.problem_id,
+      //       problem_number: test_problem.problem_number + 1,
+      //       points: test_problem.problem_weights || 0,
+      //     };
+      //   })
+      // );
 
-      // Upsert test_problems
-      console.log("Upserting test problems data");
-      const { data: testProblemsData, error: testProblemsError } =
-        await upsertTestProblems(testData.test_problems);
-      if (testProblemsError) {
-        console.error(
-          "COOOOOOKED. Error upserting test problems data:",
-          testProblemsError
-        );
-        throw new Error(
-          "Error uploading test problems data: " + testProblemsError.message
-        );
-      }
+      // // Upsert test_problems
+      // console.log("Upserting test problems data");
+      // const { data: testProblemsData, error: testProblemsError } =
+      //   await upsertTestProblems(testData.test_problems);
+      // if (testProblemsError) {
+      //   console.error(
+      //     "COOOOOOKED. Error upserting test problems data:",
+      //     testProblemsError
+      //   );
+      //   throw new Error(
+      //     "Error uploading test problems data: " + testProblemsError.message
+      //   );
+      // }
 
       // Upsert problem_images
       console.log("Upserting problem images data");
