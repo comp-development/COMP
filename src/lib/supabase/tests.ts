@@ -307,40 +307,6 @@ export async function upsertTestProblems(testData) {
   return data;
 }
 
-// export async function upsertIntoBucket(problemImages, bucketName="problem-images") {
-//   try {
-//     // Check if bucket exists
-//     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-//     if (listError) throw listError;
-
-//     const existingBuckets = buckets.map(bucket => bucket.name);
-
-//     // Create the bucket if it doesn't exist
-//     if (!existingBuckets.includes(bucketName)) {
-//       const { data: createData, error: createError } = await supabase.storage.createBucket(bucketName, { public: true });
-//       if (createError) throw createError;
-//       console.log('Bucket created:', createData);
-//     } else {
-//       console.log('Bucket already exists.');
-//     }
-
-//     // Upload images to the bucket
-//     for (const imageUrl of problemImages) {
-//       const fileName = imageUrl.split('/').pop(); // Extract file name from URL
-//       const { data: uploadData, error: uploadError } = await supabase.storage.from(bucketName).upload(fileName, imageUrl);
-//       if (uploadError) {
-//         console.error(`Failed to upload ${fileName}:`, uploadError.message);
-//         continue;
-//       }
-//       console.log(`Uploaded ${fileName}:`, uploadData);
-//     }
-
-//     console.log('All images processed successfully.');
-//   } catch (error) {
-//     console.error('Error during upsert process:', error.message);
-//   }
-// }
-
 export async function upsertIntoBucket(
   host_id: number,
   problemImages: Array<{ path: string; base64: string }>,
