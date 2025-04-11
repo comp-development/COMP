@@ -8,6 +8,8 @@
   let subscription: ReturnType<typeof supabase.channel> | null = null;
   let realtimeChannel;
 
+  let isGutsTest = true; // for Set 8 (input answers)
+
   let testId = Number($page.params.test_id);
   let loading = true;
   let problems: {
@@ -25,6 +27,8 @@
   let selectedTeam: { team_id: string; team_name: string } | null = null;
 
   let teamOptions: { front_id: string; team_name: string }[] = [];
+
+  let manualAnswers: Record<number, string> = {};
 
   // Reactively watch for teamId being set
   $: if (teamId) {
@@ -62,7 +66,8 @@
       // Fetch problems
       const { data: testProblems, error: testProblemsError } = await supabase
         .from("test_problems")
-        .select("problem_id");
+        .select("problem_id")
+        .eq("test_id", testId);
       if (testProblemsError) {
         console.error("Error loading problems:", testProblemsError.message);
         return;
@@ -169,35 +174,75 @@
       return;
     }
 
-    const incomplete = group.filter(
-      (p) => p.status === null || p.status === undefined,
-    );
-
-    if (incomplete.length > 0) {
-      alert(
-        "Please mark all problems in this set as correct or incorrect before saving.",
-      );
-      return;
-    }
-
     const teamId = selectedTeam.team_id;
 
-    const payload = group.map((problem) => ({
-      test_problem_id: problem.problem_id,
-      team_id: teamId,
-      status: problem.status,
-      test_id: testId,
-    }));
+    const isSet8 = group.some((p) =>
+      manualAnswers.hasOwnProperty(p.problem_id),
+    );
 
-    const { error } = await supabase.from("manual_grades").upsert(payload, {
-      onConflict: ["test_problem_id", "team_id"],
-    });
+    if (isGutsTest && isSet8) {
+      // Handle Set 8 manual answers
+      for (const problem of group) {
+        const ans = manualAnswers[problem.problem_id]?.trim().toUpperCase();
 
-    if (error) {
-      console.error("Error saving grades:", error.message);
-      alert("Failed to save grades.");
+        if (!ans || ans.length !== 5 || /[^YNB]/.test(ans)) {
+          alert(
+            `Invalid answers for Set 8: Answers must be exactly 5 characters and only use Y, N, or B.`,
+          );
+          return;
+        }
+
+        // Normalize for saving
+        manualAnswers[problem.problem_id] = ans;
+      }
+
+      const payload = group.map((problem) => ({
+        test_problem_id: problem.problem_id,
+        team_id: teamId,
+        test_id: testId,
+        answer_latex: manualAnswers[problem.problem_id],
+      }));
+
+      const { error } = await supabase.from("manual_grades").upsert(payload, {
+        onConflict: ["test_problem_id", "team_id"],
+      });
+
+      if (error) {
+        console.error("Error saving manual answers:", error.message);
+        alert("Failed to save answers.");
+      } else {
+        alert("Answers saved successfully!");
+      }
     } else {
-      alert("Grades saved successfully!");
+      // Handle normal sets
+      const incomplete = group.filter(
+        (p) => p.status === null || p.status === undefined,
+      );
+
+      if (incomplete.length > 0) {
+        alert(
+          "Please mark all problems in this set as correct or incorrect before saving.",
+        );
+        return;
+      }
+
+      const payload = group.map((problem) => ({
+        test_problem_id: problem.problem_id,
+        team_id: teamId,
+        status: problem.status,
+        test_id: testId,
+      }));
+
+      const { error } = await supabase.from("manual_grades").upsert(payload, {
+        onConflict: ["test_problem_id", "team_id"],
+      });
+
+      if (error) {
+        console.error("Error saving grades:", error.message);
+        alert("Failed to save grades.");
+      } else {
+        alert("Grades saved successfully!");
+      }
     }
   }
 
@@ -273,14 +318,16 @@
               >
                 <div class="problem-id">Problem ID: {problem.problem_id}</div>
 
-                <div
-                  class="triple-toggle"
-                  on:click|stopPropagation={() =>
-                    cycleGradingState(problem.problem_id)}
-                  data-state={problem.status ?? "neutral"}
-                >
-                  <div class="toggle-slider"></div>
-                </div>
+                {#if i !== 7}
+                  <div
+                    class="triple-toggle"
+                    on:click|stopPropagation={() =>
+                      cycleGradingState(problem.problem_id)}
+                    data-state={problem.status ?? "neutral"}
+                  >
+                    <div class="toggle-slider"></div>
+                  </div>
+                {/if}
 
                 {#if expandedProblemId === problem.problem_id}
                   <Latex
@@ -289,7 +336,16 @@
                   />
                 {/if}
 
-                {#if problem.answer_latex}
+                {#if isGutsTest && i === 7}
+                  <div class="answer-input-wrapper">
+                    <input
+                      type="text"
+                      bind:value={manualAnswers[problem.problem_id]}
+                      placeholder="Enter answer (ex: YNNBB)"
+                      on:click|stopPropagation
+                    />
+                  </div>
+                {:else if problem.answer_latex}
                   <div class="answer-hover-zone">
                     <p class="answer-label">Answer:</p>
                     <div class="hidden-answer">
@@ -492,5 +548,17 @@
 
   .save-button:hover {
     background-color: #4338ca;
+  }
+
+  .answer-input-wrapper {
+    margin-top: 0.5rem;
+  }
+
+  .answer-manual {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
   }
 </style>
