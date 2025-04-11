@@ -243,6 +243,7 @@
         is_team: test.is_team,
         instructions: test.test_description,
         compose_test_id: test.id,
+        visible: false,
         compose_tournament_id: test.tournament_id,
       }));
 
@@ -265,7 +266,11 @@
         host_id: $page.params.host_id,
         compose_problem_id: problem.id,
       }));
-      console.log("HOST ID:", $page.params.host_id);
+      const problem_ids = testData.problems
+        .map((problem) => problem.compose_problem_id)
+        .sort((a, b) => a - b);
+      console.log("Problem IDs:", problem_ids);
+      console.log("HOST ID here:", $page.params.host_id);
       const { data: problemsData, error: problemsError } = await upsertProblems(
         testData.problems
       );
