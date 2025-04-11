@@ -243,8 +243,8 @@
 			  });
         if (has_access){
           testStatusMap[test.test_id] = { ...test, ...testTaker };
+          updateStatus(test);
         }
-        updateStatus(test);
       }
     } catch (error) {
       handleError(error as Error);
