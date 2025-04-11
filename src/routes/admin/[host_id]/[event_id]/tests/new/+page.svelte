@@ -223,6 +223,24 @@
     }
   }
 
+  // Handle basic LaTeX commands like \emph, \item, and \begin{enumerate}
+  function convertLaTeXtoHTML(input) {
+    // Replace \emph{...} with <em>...</em>
+    input = input.replace(/\\emph\{(.*?)\}/g, "<em>$1</em>");
+
+    // Replace \item ... with <li>...</li> — line-based
+    // input = input.replace(/^\\item\s*(.*)$/gm, "<li>$1</li>");
+
+    // Replace \begin{enumerate}... \end{enumerate} with <ol>...</ol>
+    // We assume it contains multiple lines inside and we want to extract only the content
+    // input = input.replace(
+    //   /\\begin\{enumerate\}([\s\S]*?)\\end\{enumerate\}/g,
+    //   "<ol>$1</ol>"
+    // );
+
+    return input;
+  }
+
   async function handleSubmit(event) {
     event.preventDefault(); // Ensure default form submission is prevented
 
@@ -260,7 +278,7 @@
       console.log("Upserting problems data");
 
       testData.problems = Object.values(testData.problems).map((problem) => ({
-        problem_latex: problem.problem_latex,
+        problem_latex: convertLaTeXtoHTML(problem.problem_latex),
         answer_latex: problem.answer_latex,
         solution_latex: problem.solution_latex,
         answer_type: "AsciiMath",
@@ -273,6 +291,7 @@
       // console.log("Problem IDs:", problem_ids);
       // console.log("HOST ID here:", $page.params.host_id);
       // console.log(testData.problems[1]);
+      console.log("Upserting problems data: ", testData.problems);
       const { data: problemsData, error: problemsError } = await upsertProblems(
         testData.problems
       );
