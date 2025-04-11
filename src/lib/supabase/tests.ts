@@ -205,7 +205,7 @@ export async function getTestTaker(
         .select(customSelect)
         .eq("test_id", test_id)
         .eq("team_id", taker_id)
-        .single();
+        .maybeSingle();
 
       if (testTakerError && testTakerError.code != "PGRST116")
         throw testTakerError;
@@ -218,7 +218,7 @@ export async function getTestTaker(
         .select(customSelect)
         .eq("test_id", test_id)
         .eq("student_id", taker_id)
-        .single();
+        .maybeSingle();
 
       if (testTakerError && testTakerError.code != "PGRST116")
         throw testTakerError;
