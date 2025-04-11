@@ -16,6 +16,8 @@
   import CustomAccordion from "$lib/components/CustomAccordion.svelte";
   import FormattedTimeLeft from "$lib/components/FormattedTimeLeft.svelte";
   import { onDestroy, onMount } from "svelte";
+  import { supabase } from "$lib/supabaseClient";
+
 
   let loading = $state(true);
   let disallowed = $state(false);
@@ -102,7 +104,11 @@
     }
     test_taker = await getTestTaker(test_id, taker_id, is_team);
 
-    if (!test_taker) {
+    const { data : has_access } = await supabase.rpc('check_test_access', {
+				  p_test_id: test.test_id,
+		});
+
+    if (!test_taker || !has_access) {
       disallowed = true;
       loading = false;
       throw new Error(

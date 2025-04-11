@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Badge } from "flowbite-svelte";
   import { 
+    LockOutline,
     EditOutline, 
     ClipboardCheckOutline, 
     TableRowOutline,
@@ -30,12 +31,13 @@
   }
 
   // Props
-  let { test, isHostView = true, onOpenClick, onInstructionsClick, onSettingsClick } = $props<{
+  let { test, isHostView = true, onOpenClick, onInstructionsClick, onSettingsClick, onAccessRulesClick} = $props<{
     test: TestData;
     isHostView?: boolean;
     onOpenClick: (e?: Event) => void;
     onInstructionsClick: () => void;
     onSettingsClick?: () => void;
+    onAccessRulesClick?: () => void;
   }>();
 </script>
 
@@ -137,6 +139,13 @@
               </button>
               <span class="tooltip">Results</span>
             </a>
+          </div>
+
+          <div class="tooltip-container">
+              <button class="test-button empty" on:click={onAccessRulesClick}>
+                <LockOutline class="w-5 h-5 icon" />
+              </button>
+              <span class="tooltip">Access rules</span>
           </div>
           
           

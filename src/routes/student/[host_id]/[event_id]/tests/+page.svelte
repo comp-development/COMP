@@ -244,8 +244,13 @@
             test.is_team,
           )) ?? {};
         console.log("TAKER", testTaker, test);
-        testStatusMap[test.test_id] = { ...test, ...testTaker };
-        updateStatus(test);
+        const { data : has_access } = await supabase.rpc('check_test_access', {
+				  p_test_id: test.test_id,
+			  });
+        if (has_access){
+          testStatusMap[test.test_id] = { ...test, ...testTaker };
+          updateStatus(test);
+        }
       }
     } catch (error) {
       handleError(error as Error);
