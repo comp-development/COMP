@@ -376,7 +376,7 @@ export async function upsertProblems(problemData) {
     .from("problems")
     .upsert(problemData, {
       onConflict: "compose_problem_id",
-      returning: "representation",
+      // returning: "representation",
       // ignoreDuplicates: false,
     })
     .select();

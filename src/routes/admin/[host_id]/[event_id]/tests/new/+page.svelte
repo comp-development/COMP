@@ -243,6 +243,7 @@
         is_team: test.is_team,
         instructions: test.test_description,
         compose_test_id: test.id,
+        visible: false,
         compose_tournament_id: test.tournament_id,
       }));
 
@@ -257,7 +258,8 @@
 
       // Format and upsert problems
       console.log("Upserting problems data");
-      testData.problems = testData.problems.map((problem) => ({
+
+      testData.problems = Object.values(testData.problems).map((problem) => ({
         problem_latex: problem.problem_latex,
         answer_latex: problem.answer_latex,
         solution_latex: problem.solution_latex,
@@ -265,7 +267,12 @@
         host_id: $page.params.host_id,
         compose_problem_id: problem.id,
       }));
-      console.log("HOST ID:", $page.params.host_id);
+      // const problem_ids = testData.problems
+      //   .map((problem) => problem.compose_problem_id)
+      //   .sort((a, b) => a - b);
+      // console.log("Problem IDs:", problem_ids);
+      // console.log("HOST ID here:", $page.params.host_id);
+      // console.log(testData.problems[1]);
       const { data: problemsData, error: problemsError } = await upsertProblems(
         testData.problems
       );
@@ -275,6 +282,8 @@
           "Error uploading problems data: " + problemsError.message
         );
       }
+      // log success
+      console.log("Problems data upserted successfully:", problemsData);
 
       // Format test_problems data
       testData.test_problems = await Promise.all(
