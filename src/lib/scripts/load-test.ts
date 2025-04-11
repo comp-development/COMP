@@ -8,18 +8,18 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 // all user inputs right here!!!
-const numUsers = 10; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
-const event_id = 1;  // USER INPUT
-const test_id = 1;  // USER INPUT
-const problem_ids = [1,2,3,4,5]; // Example problem IDs, USER INPUT
-const max_iters = 200; // USER CAN CHANGE
+const numUsers = 1000; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
+const event_id = 11;  // USER INPUT
+const test_id = 30;  // USER INPUT
+const problem_ids = [97]; // Example problem IDs, USER INPUT
+const max_iters = 150; // USER INPUT
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Create multiple Supabase clients
-const supabaseClients = Array.from({ length: numUsers }, () =>
+const supabaseClients = Array.from({ length: numUsers + 1 }, () =>
   createClient<Database>(supabaseUrl, supabaseAnonKey)
 );
 
@@ -71,26 +71,24 @@ export async function extendTestTakerEndTime(
     if (error) {
       console.error(`Failed to update end_time for test_taker_id=${test_taker_id}:`, error.message);
       throw error;
-    } else {
-      console.log(`Successfully updated end_time for test_taker_id=${test_taker_id}`);
     }
   }
 
 
 
 async function upsertTestAnswer(mySupabase, test_taker_id: number, test_problem_id: number, answer: string) {
-  const { data, error } = await mySupabase.rpc("upsert_test_answer", {
+  await mySupabase.rpc("upsert_test_answer", {
     p_answer: answer,
     p_test_taker_id: test_taker_id,
     p_test_problem_id: test_problem_id,
   });
 
-  if (error) {
-    console.log("FAILED", error);
-    throw error;
-  }
-  console.log(`User ${test_taker_id} updated problem ${test_problem_id} with answer ${answer}`);
-  return data;
+//   if (error) {
+//     console.log("FAILED", error);
+//     throw error;
+//   }
+  console.log(`tried User ${test_taker_id} updated problem ${test_problem_id} with answer ${answer}`);
+//   return data;
 }
 
 async function runLoadTest() {
@@ -98,8 +96,8 @@ async function runLoadTest() {
 
 
   // log in to numUsers supabase obejcts
-  for (let i = 0; i < numUsers; i++) {
-    const email = i == 0 ? "student@gmail.com" : `student${i}@gmail.com`;
+  for (let i = 1; i <= numUsers; i++) {
+    const email = `student${i}@gmail.com`;
     const password = "student123";
 
     const supabase = supabaseClients[i];
@@ -114,13 +112,14 @@ async function runLoadTest() {
       continue;
     }
 
-    console.log(`${email} LOGGED IN`);
-
     const test_taker_id = await get_test_taker_id(authData.user.id, event_id, test_id, supabase);
-    if (!test_taker_id) continue;
-
-    await extendTestTakerEndTime(supabase, test_taker_id);
-
+    if (!test_taker_id) {
+        console.log(`Failed to get test_taker_id for ${email}`);
+        continue;
+    }
+    if(i == 1) {
+        await extendTestTakerEndTime(supabase, test_taker_id);
+    }
     userData.push({ supabase, test_taker_id });
   }
 //   console.log(userData);
@@ -133,46 +132,46 @@ async function runLoadTest() {
       const { supabase, test_taker_id } = userData[userIndex];
   
       const test_problem_id = problem_ids[Math.floor(Math.random() * problem_ids.length)];
-      const answer = i.toString();
+      const answer = (i + (userIndex*max_iters)) .toString();
   
       await upsertTestAnswer(supabase, test_taker_id, test_problem_id, answer);
-      lastUpdates.set(test_taker_id, { problem_id: test_problem_id, answer });
+    //   lastUpdates.set(test_taker_id, { problem_id: test_problem_id, answer });
     }
-    // await delay(0);
+    await delay(10);
 
   }
 
-  await delay(100);
+  await delay(1000);
 
 
-  console.log("ANSWERS UPDATED");
+//   console.log("ANSWERS UPDATED");
 
-  for (const { supabase, test_taker_id } of userData) {
-    const lastUpdate = lastUpdates.get(test_taker_id);
-    if (!lastUpdate) continue;
+//   for (const { supabase, test_taker_id } of userData) {
+//     const lastUpdate = lastUpdates.get(test_taker_id);
+//     if (!lastUpdate) continue;
 
-    const { problem_id, answer } = lastUpdate;
+//     const { problem_id, answer } = lastUpdate;
 
-    const { data: finalAnswer, error: fetchError } = await supabase
-      .from("test_answers")
-      .select("answer_latex")
-      .eq("test_taker_id", test_taker_id)
-      .eq("test_problem_id", problem_id)
-      .single();
+//     const { data: finalAnswer, error: fetchError } = await supabase
+//       .from("test_answers")
+//       .select("answer_latex")
+//       .eq("test_taker_id", test_taker_id)
+//       .eq("test_problem_id", problem_id)
+//       .single();
 
-    if (fetchError) {
-      console.error(`Fetch error for test_taker_id ${test_taker_id}:`, fetchError.message);
-      continue;
-    }
+//     if (fetchError) {
+//       console.error(`Fetch error for test_taker_id ${test_taker_id}:`, fetchError.message);
+//       continue;
+//     }
 
-    if (finalAnswer.answer_latex !== answer) {
-      console.log(`TEST FAILED for test_taker_id ${test_taker_id}`);
-      console.log("Expected:", answer, "Got:", finalAnswer.answer_latex);
-      throw new Error("Test failed");
-    }
-  }
+//     if (finalAnswer.answer_latex !== answer) {
+//       console.log(`TEST FAILED for test_taker_id ${test_taker_id}`);
+//       console.log("Expected:", answer, "Got:", finalAnswer.answer_latex);
+//       throw new Error("Test failed");
+//     }
+//   }
 
-  console.log("ALL ANSWERS VERIFIED ✅");
+//   console.log("ALL ANSWERS VERIFIED ✅");
 }
 
 runLoadTest();

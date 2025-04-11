@@ -22,6 +22,7 @@
   import { supabase } from "$lib/supabaseClient";
   import { user } from "$lib/sessionStore";
   import TestCard from "$lib/components/TestCard.svelte";
+  import { CarbonForSalesforce } from "carbon-icons-svelte";
 
   // Define test interface
   interface TestData {
@@ -138,6 +139,7 @@
       countdown: "",
       disabled: true,
     };
+    console.log("test", test);
 
     if (
       test.start_time &&
@@ -231,6 +233,10 @@
     try {
       const testList = (await getEventTests(Number($page.params.event_id), false)) ?? [];
       for (const test of testList) {
+        console.log("teamId", teamId);
+        console.log("user", $user?.id);
+        console.log("is_team", test.is_team);
+
         const testTaker =
           (await getTestTaker(
             test.test_id,
