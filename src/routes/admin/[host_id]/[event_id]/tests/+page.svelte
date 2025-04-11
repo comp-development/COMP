@@ -710,6 +710,7 @@
 			on:submit={async () => {
 				accessRulesModalOpen = false;
 				await handleAccessRulesSubmit();
+        await fetchAccessPreview();
 			}}
 		>
 			{curTest.test_name} Test Access Rules
@@ -767,6 +768,8 @@
 									if (curTest.access_rules.rules.length == 0) {
 										curTest.access_rules = null;
 									}
+                  handleAccessRulesSubmit();
+                  fetchAccessPreview();  //update the counter of number of students.
 								}}
 
 							>
@@ -803,34 +806,37 @@
           title = "Save"
           action= {async () => {
             await handleAccessRulesSubmit();
+            await fetchAccessPreview();
           }}
           > Save  
         </Button>
 			</div>
 			{(curTest.access_rules) ? JSON.stringify(curTest.access_rules, null, 2) : "No Rules Have been Defined"}
 			<div>
-				<!-- Preview Access -->
-				<Button
-					title="Preview Access"
-					action={async () => {
-						await fetchAccessPreview();
-					}}
-				>
-					Preview Access
-				</Button>
-
 				<!-- Access Preview -->
 				{#if accessPreview && accessPreview.length > 0}
-					<h3>Students with Access: {accessPreview.length}</h3>
-					<ul>
-						{#each accessPreview as student}
+					<h3>Number of Students Signed up for Test: {accessPreview.length}</h3>
+            {#if !curTest.visible}
+              Note: The test is not visible to them.
+            {/if}
+						<!-- {#each accessPreview as student} -->
 							<!-- <li>{student.first_name} {student.last_name}</li> -->
-						{/each}
-					</ul>
+						<!-- {/each} -->
 				{:else if accessPreview && accessPreview.length === 0}
 					<p>No students have access based on the current rules.</p>
 				{/if}
 			</div>
+      <div>
+      <!-- Preview Access -->
+				<Button
+        title="Preview Access"
+        action={async () => {
+          await fetchAccessPreview();
+        }}
+      >
+        Preview Access
+      </Button>
+      </div>
 		</Modal>
     {/if}
   </div>
