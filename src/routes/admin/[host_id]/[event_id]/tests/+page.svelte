@@ -42,6 +42,7 @@
   import { supabase } from "$lib/supabaseClient";
   import DateTimePicker from "$lib/components/DateTimePicker.svelte";
   import TestCard from "$lib/components/TestCard.svelte";
+    import toast from "$lib/toast.svelte";
 
   let loading = $state(true);
 
@@ -299,13 +300,13 @@
 	async function fetchAccessPreview() {
 		try {
 			// Replace this with the appropriate query to fetch all students
-			const { data } = await supabase.rpc('get_students_with_access_updated', {
+			const {data, error} = await supabase.rpc('get_students_with_access_updated', {
 				p_test_id: curTest.test_id,
 			});
 			console.log("DATA",data)
 			// Filter out null results
 			accessPreview = data
-      console.log(`${accessPreview.length}`);
+      if (error) {toast.error(error?.message);}
 			console.log("ACCESS PREVIEW", accessPreview)
 		} catch (error) {
 			handleError(error as Error);
@@ -806,7 +807,7 @@
           > Save  
         </Button>
 			</div>
-			{JSON.stringify(curTest.access_rules, null, 2)}
+			{(curTest.access_rules) ? JSON.stringify(curTest.access_rules, null, 2) : "No Rules Have been Defined"}
 			<div>
 				<!-- Preview Access -->
 				<Button

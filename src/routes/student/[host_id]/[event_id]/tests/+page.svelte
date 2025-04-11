@@ -238,9 +238,10 @@
             test.is_team,
           )) ?? {};
         console.log("TAKER", testTaker, test);
-        const { data : has_access } = await supabase.rpc('check_test_access', {
+        const { data : has_access, error} = await supabase.rpc('check_test_access', {
 				  p_test_id: test.test_id,
 			  });
+        toast.error(error);
         if (has_access){
           testStatusMap[test.test_id] = { ...test, ...testTaker };
           updateStatus(test);
