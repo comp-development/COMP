@@ -1,15 +1,37 @@
 <script lang="ts">
   import MathJax from "$lib/components/MathJax.svelte";
+  import { onMount } from "svelte";
 
+  import type { Database } from "../../../db/database.types";
   interface Props {
     clarification?: string | null;
     problem: any;
+    log: (
+      event_type: Database["public"]["Enums"]["test_event"],
+      data: string,
+      problem_id?: number
+    ) => Promise<void>
   }
 
-  let { clarification = null, problem }: Props = $props();
+  let container: HTMLDivElement;
+
+  let { clarification = null, problem, log }: Props = $props();
+
+  onMount(() => {
+    container.addEventListener("keydown", (e) => {
+      if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
+        return;
+      }
+      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + e.key);
+    });
+    container.addEventListener("paste", (e) => {
+      log("paste", e.clipboardData?.getData("text") ?? "unknown");
+    });
+  });
+
 </script>
 
-<p style="margin-bottom: 5px;">
+<p bind:this={container} style="margin-bottom: 5px;">
   <span style="font-size: 20px; font-weight: bold;">
     {problem.name && problem.name != ""
       ? problem.name

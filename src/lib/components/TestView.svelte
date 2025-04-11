@@ -41,17 +41,22 @@
   let startTime = test_taker.start_time;
   let endTime = test_taker.end_time;
   let curPage = $state(test_taker.page_number);
-
-  onMount(() => {
-    async function log(
+  async function log(
       event_type: Database["public"]["Enums"]["test_event"],
       data: string,
+      problem_id?: number
     ) {
+      data = problem_id && event_type == 'keypress' ? `${problem_id}: ${data}` : data;
       // Ignore errors
       await supabase
         .from("test_logs")
         .insert({ test_taker_id: test_taker.test_taker_id, event_type, data });
+
+      console.log("LOGGED", data);
     }
+
+  onMount(() => {
+
     window.addEventListener("keydown", (e) => {
       if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
         return;
@@ -480,6 +485,7 @@
 
             <Problem
               {problem}
+              log={log}
               clarification={clarifications[problem.test_problem_id]}
             />
             <div class="mt-8 w-full max-w-md">
