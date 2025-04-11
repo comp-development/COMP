@@ -1,4 +1,4 @@
-<script lang="ts">
+/* <script lang="ts">
   import { page } from "$app/stores";
   import { formatTime, addTime, subtractTime } from "$lib/dateUtils";
 
@@ -26,4 +26,4 @@
   <p>Loading...</p>
 {:else}
   <LiveScoreBoard {test} />
-{/if}
+{/if} */

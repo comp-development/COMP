@@ -1,161 +1,258 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { supabase } from "$lib/supabaseClient";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import Latex from "$lib/components/Latex.svelte";
 
+  let subscription: ReturnType<typeof supabase.channel> | null = null;
+  let realtimeChannel;
+
   let testId = Number($page.params.test_id);
   let loading = true;
-  let problems: { problem_id: number; problem_latex: string }[] = [];
+  let problems: {
+    problem_id: number;
+    problem_latex: string;
+    answer_latex?: string;
+    status: string | null;
+  }[] = [];
 
-  let teamOptions: string[] = [];
   let teamId = "";
-  let sectionStart = 1;
 
-  let showOverridePrompt = false;
-  let overrideConfirmed = false;
-  let pendingTeamId = "";
-  let pendingSectionStart = 1;
+  let searchTerm = "";
+  let showSuggestions = false;
+  let filteredTeams: { front_id: string; team_name: string }[] = [];
+  let selectedTeam: { team_id: string; team_name: string } | null = null;
 
-  const sections = [
-    { label: "1–4", value: 8 },
-    { label: "5–8", value: 9 },
-    { label: "9–12", value: 10 },
-    { label: "13–16", value: 11 },
-    { label: "17–20", value: 13 },
-    { label: "21–24", value: 15 },
-    { label: "25–28", value: 17 },
-    { label: "29–32", value: 20 },
-  ];
+  let teamOptions: { front_id: string; team_name: string }[] = [];
 
-  onMount(async () => {
-    // Fetch all problems
-    const { data: testProblems, error: testProblemsError } = await supabase
-      .from("test_problems")
-      .select("problem_id")
-      .eq("test_id", testId);
-
-    if (testProblemsError) {
-      console.error("Error loading problems:", testProblemsError.message);
-      return;
+  // Reactively watch for teamId being set
+  $: if (teamId) {
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel); // cleanup if switching teams
     }
 
-    const problemIds = testProblems.map(p => p.problem_id);
-    const { data: problemData, error: problemError } = await supabase
-      .from("test_problems")
-      .select("problems(problem_id, problem_latex)")
-      .in("problem_id", problemIds)
-      .order("problem_id", { ascending: true })
-      .eq("test_id", testId);
+    realtimeChannel = supabase
+      .channel(`manual_grades_team_${teamId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "manual_grades",
+          filter: `team_id=eq.${teamId}`,
+        },
+        (payload) => {
+          console.log("Realtime update received:", payload);
+          loadGradesForTeam(teamId);
+          // toast.success("Grades updated by another grader.");
+        },
+      )
+      .subscribe();
+  }
+  onMount(() => {
+    const cleanup = () => {
+      document.removeEventListener("click", handleClickOutside);
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    };
 
-    if (problemError) {
-      console.error("Error loading problem details:", problemError.message);
-    } else {
-      problems = problemData.map(p => p.problems);
-    }
+    document.addEventListener("click", handleClickOutside);
 
-    // Fetch team IDs
-    const { data: teams, error: teamError } = await supabase.from("teams").select("team_id");
-    if (teamError) {
-      console.error("Error loading teams:", teamError.message);
-    } else {
-      teamOptions = teams.map(t => t.team_id);
-    }
-
-    loading = false;
-  });
-
-  async function goToGrading() {
-    pendingTeamId = teamId;
-    pendingSectionStart = sectionStart;
-
-    const sectionProblemIds = problems
-      .filter(p => p.problem_id >= sectionStart && p.problem_id <= sectionStart + 3)
-      .map(p => p.problem_id);
-
-    const { data: existing, error } = await supabase
-      .from("guts_grades")
-      .select("guts_grade_id")
-      .eq("team_id", teamId)
-      .eq("test_id", testId)
-      .in("test_problem_id", sectionProblemIds);
-
-    if (error) {
-      console.error("Error checking for existing submission:", error.message);
-      return;
-    }
-
-    if (existing.length > 0 && !overrideConfirmed) {
-      showOverridePrompt = true;
-      return;
-    }
-
-    // If we're overriding, delete old entries first
-    if (existing.length > 0 && overrideConfirmed) {
-      const { error: deleteError } = await supabase
-        .from("guts_grades")
-        .delete()
-        .eq("team_id", teamId)
-        .eq("test_id", testId)
-        .in("test_problem_id", sectionProblemIds);
-
-      if (deleteError) {
-        console.error("Error deleting previous entries for override:", deleteError.message);
+    (async () => {
+      // Fetch problems
+      const { data: testProblems, error: testProblemsError } = await supabase
+        .from("test_problems")
+        .select("problem_id");
+      if (testProblemsError) {
+        console.error("Error loading problems:", testProblemsError.message);
         return;
       }
-    }
-    // Navigate to grading page with query parameters
-    goto(
-      `/admin/${$page.params.host_id}/${$page.params.event_id}/guts/${testId}/submit?team=${teamId}&section=${sectionStart}`
-    );
-}
 
+      const problemIds = testProblems.map((p) => p.problem_id);
+
+      const { data: problemData, error: problemError } = await supabase
+        .from("test_problems")
+        .select("problems(problem_id, problem_latex, answer_latex)")
+        .in("problem_id", problemIds)
+        .order("problem_id", { ascending: true });
+
+      if (problemError) {
+        console.error("Error loading problem details:", problemError.message);
+      } else {
+        problems = problemData.map((p) => ({
+          ...p.problems,
+          status: "", // neutral default
+        }));
+      }
+
+      // Fetch teams
+      const { data: teams, error: teamError } = await supabase
+        .from("teams")
+        .select("front_id, team_id, team_name");
+
+      if (teamError) {
+        console.error("Error loading teams:", teamError.message);
+      } else {
+        teamOptions = teams;
+      }
+
+      loading = false;
+    })();
+
+    return cleanup;
+  });
+
+  let groupedProblems: (typeof problems)[][] = [];
+
+  $: if (problems.length) {
+    groupedProblems = [];
+    for (let i = 0; i < problems.length; i += 4) {
+      groupedProblems.push(problems.slice(i, i + 4));
+    }
+  }
+
+  function filterTeams() {
+    showSuggestions = true;
+    const searchLower = searchTerm.toLowerCase();
+    filteredTeams = teamOptions.filter(
+      (team) =>
+        team.front_id.toLowerCase().includes(searchLower) ||
+        team.team_name.toLowerCase().includes(searchLower),
+    );
+  }
+
+  async function selectTeam(team: {
+    team_id: string;
+    front_id: string;
+    team_name: string;
+  }) {
+    selectedTeam = team;
+    teamId = team.team_id;
+    searchTerm = `${team.front_id} - ${team.team_name}`;
+    showSuggestions = false;
+
+    await loadGradesForTeam(team.team_id);
+  }
+
+  // Close suggestions when clicking outside
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest(".autocomplete-wrapper")) {
+      showSuggestions = false;
+    }
+  }
+
+  let expandedProblemId: number | null = null;
+
+  function toggleProblem(problemId: number) {
+    expandedProblemId = expandedProblemId === problemId ? null : problemId;
+  }
+
+  function cycleGradingState(problemId: number) {
+    problems = problems.map((p) => {
+      if (p.problem_id === problemId) {
+        let newStatus: "correct" | "incorrect" | null;
+
+        if (p.status === null || p.status === undefined) newStatus = "correct";
+        else if (p.status === "correct") newStatus = "incorrect";
+        else newStatus = null;
+
+        return { ...p, status: newStatus };
+      }
+      return p;
+    });
+  }
+
+  async function saveSetGrades(group: typeof problems) {
+    if (!selectedTeam) {
+      alert("Please select a team before saving grades.");
+      return;
+    }
+
+    const incomplete = group.filter(
+      (p) => p.status === null || p.status === undefined,
+    );
+
+    if (incomplete.length > 0) {
+      alert(
+        "Please mark all problems in this set as correct or incorrect before saving.",
+      );
+      return;
+    }
+
+    const teamId = selectedTeam.team_id;
+
+    const payload = group.map((problem) => ({
+      test_problem_id: problem.problem_id,
+      team_id: teamId,
+      status: problem.status,
+      test_id: testId,
+    }));
+
+    const { error } = await supabase.from("manual_grades").upsert(payload, {
+      onConflict: ["test_problem_id", "team_id"],
+    });
+
+    if (error) {
+      console.error("Error saving grades:", error.message);
+      alert("Failed to save grades.");
+    } else {
+      alert("Grades saved successfully!");
+    }
+  }
+
+  async function loadGradesForTeam(teamId: string) {
+    console.log("Querying with:", { teamId, testId });
+    const { data, error } = await supabase
+      .from("manual_grades")
+      .select("test_problem_id, status")
+      .eq("team_id", teamId)
+      .eq("test_id", testId);
+
+    if (error) {
+      console.error("Error loading grades:", error.message);
+      return;
+    }
+
+    problems = problems.map((p) => {
+      const match = data.find((d) => d.test_problem_id === p.problem_id);
+      return {
+        ...p,
+        status: match ? match.status : null,
+      };
+    });
+
+    problems = [...problems];
+  }
 </script>
 
 <div class="container">
   <h1>Problems for Test {testId}</h1>
 
   <!-- Grading Form -->
-  <form class="grading-form" on:submit|preventDefault={goToGrading}>
+  <form class="grading-form">
     <label>
-      Team ID:
-      <select bind:value={teamId} required>
-        <option value="" disabled selected>Select a team</option>
-        {#each teamOptions as id}
-          <option value={id}>{id}</option>
-        {/each}
-      </select>
+      Enter Team:
+      <div class="autocomplete-wrapper">
+        <input
+          type="text"
+          bind:value={searchTerm}
+          on:input={filterTeams}
+          placeholder="Search by team ID or name"
+          required
+        />
+        {#if showSuggestions && filteredTeams.length > 0}
+          <ul class="suggestions-list">
+            {#each filteredTeams as team}
+              <li on:click={() => selectTeam(team)} class="suggestion-item">
+                {team.front_id} - {team.team_name}
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
     </label>
-
-    <label>
-      Problem Section:
-      <select bind:value={sectionStart}>
-        {#each sections as section}
-          <option value={section.value}>{section.label}</option>
-        {/each}
-      </select>
-    </label>
-
-    <button type="submit">Input Answers</button>
   </form>
-
-  <!-- Override Warning Prompt -->
-  {#if showOverridePrompt}
-    <div class="override-warning">
-      <p>This section has already been submitted for Team {pendingTeamId}. Do you want to override it?</p>
-      <button
-        on:click={() => {
-          overrideConfirmed = true;
-          showOverridePrompt = false;
-          goToGrading();
-        }}
-      >
-        Yes, override
-      </button>
-      <button on:click={() => (showOverridePrompt = false)}>Cancel</button>
-    </div>
-  {/if}
 
   <!-- Problems Display -->
   {#if loading}
@@ -163,18 +260,62 @@
   {:else if problems.length === 0}
     <p>No problems found for this test.</p>
   {:else}
-    {#each problems as problem}
-      <div class="problem-card">
-        <div class="problem-id">Problem ID: {problem.problem_id}</div>
-        <Latex value={problem.problem_latex} style="font-size: 1.2em;" />
-      </div>
-    {/each}
+    <div class="problems-grid">
+      {#each groupedProblems as group, i}
+        <div class="problem-set">
+          <h2 class="set-label">Set {i + 1}</h2>
+
+          <div class="problem-grid">
+            {#each group as problem}
+              <div
+                class="problem-card"
+                on:click={() => toggleProblem(problem.problem_id)}
+              >
+                <div class="problem-id">Problem ID: {problem.problem_id}</div>
+
+                <div
+                  class="triple-toggle"
+                  on:click|stopPropagation={() =>
+                    cycleGradingState(problem.problem_id)}
+                  data-state={problem.status ?? "neutral"}
+                >
+                  <div class="toggle-slider"></div>
+                </div>
+
+                {#if expandedProblemId === problem.problem_id}
+                  <Latex
+                    value={problem.problem_latex}
+                    style="font-size: 1.2em;"
+                  />
+                {/if}
+
+                {#if problem.answer_latex}
+                  <div class="answer-hover-zone">
+                    <p class="answer-label">Answer:</p>
+                    <div class="hidden-answer">
+                      <Latex
+                        value={problem.answer_latex}
+                        style="font-size: 1.1em; color: blue;"
+                      />
+                    </div>
+                  </div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+
+          <button class="save-button" on:click={() => saveSetGrades(group)}>
+            Save Grades
+          </button>
+        </div>
+      {/each}
+    </div>
   {/if}
 </div>
 
 <style>
   .container {
-    max-width: 700px;
+    max-width: 1400px;
     margin: 0 auto;
     font-family: Optima, sans-serif;
   }
@@ -184,25 +325,6 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
-  }
-
-  .grading-form select {
-    font-size: 1rem;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-  }
-
-  .grading-form button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 0.5rem 1.2rem;
-    font-size: 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    width: fit-content;
-    align-self: center;
-    margin-bottom: 1rem;
   }
 
   .problem-card {
@@ -215,40 +337,160 @@
   }
 
   .problem-id {
-     font-size: 1.5em;
-     font-weight: bold;
-     color: #333;
-     margin-bottom: 0.5rem;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 0.5rem;
   }
 
-  .override-warning {
-  background-color: #fff8dc;
-  border: 1px solid #e0c97f;
-  padding: 1rem;
-  border-radius: 6px;
-  color: #5c4400;
-}
+  .autocomplete-wrapper {
+    position: relative;
+    width: 50%;
+    margin: 0.5rem auto;
+  }
 
-.override-warning button {
-  padding: 0.4rem 0.8rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 4px;
-  margin-right: 1rem;
-  cursor: pointer;
-}
+  input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: Optima, sans-serif;
+  }
 
-.override-warning button:first-of-type {
-  background-color: #007bff; /* blue for override */
-  color: white;
-  margin-top: 0.5rem;
-}
+  .suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 
-.override-warning button:last-of-type {
-  background-color: #ccc; /* gray for cancel */
-  color: #333;
-  margin-top: 0.5rem;
-}
+  .suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+  }
 
+  .suggestion-item:hover {
+    background-color: #f0f0f0;
+  }
+
+  .answer-hover-zone {
+    position: relative;
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin-top: 0.5rem;
+    background-color: rgba(100, 100, 255, 0.1);
+  }
+
+  .hidden-answer {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+
+  .answer-hover-zone:hover .hidden-answer {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .problems-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .triple-toggle {
+    width: 60px;
+    height: 30px;
+    background-color: lightgray;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    overflow: hidden;
+    margin: 0 auto;
+    margin-bottom: 0.5rem;
+  }
+
+  .toggle-slider {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 2px;
+    left: calc(50% - 13px); /* center by default */
+    transition: left 0.25s ease;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+  }
+
+  /* GREEN - correct */
+  .triple-toggle[data-state="correct"] {
+    background-color: #4ade80;
+  }
+  .triple-toggle[data-state="correct"] .toggle-slider {
+    left: calc(100% - 28px);
+  }
+
+  /* RED - incorrect */
+  .triple-toggle[data-state="incorrect"] {
+    background-color: #f87171;
+  }
+  .triple-toggle[data-state="incorrect"] .toggle-slider {
+    left: 2px;
+  }
+
+  .problem-set {
+    width: 100%;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+    background-color: #fafafa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+
+  .set-label {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+
+  .save-button {
+    margin-top: 1.5rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #4f46e5;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .save-button:hover {
+    background-color: #4338ca;
+  }
 </style>
