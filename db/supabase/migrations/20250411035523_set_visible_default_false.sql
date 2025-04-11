@@ -1,0 +1,1 @@
+alter table "public"."tests" alter column "visible" set default false;
