@@ -9,6 +9,8 @@
   let realtimeChannel;
 
   let testId = Number($page.params.test_id);
+  let testName;
+
   let loading = true;
   let problems: {
     problem_id: number;
@@ -22,7 +24,11 @@
   let searchTerm = "";
   let showSuggestions = false;
   let filteredTeams: { front_id: string; team_name: string }[] = [];
-  let selectedTeam: { team_id: string; team_name: string } | null = null;
+  let selectedTeam: {
+    team_id: string;
+    front_id: string;
+    team_name: string;
+  } | null = null;
 
   let teamOptions: { front_id: string; team_name: string }[] = [];
 
@@ -61,11 +67,25 @@
     document.addEventListener("click", handleClickOutside);
 
     (async () => {
+      if (testId) {
+        const { data, error } = await supabase
+          .from("tests")
+          .select("test_name")
+          .eq("test_id", testId)
+          .single();
+
+        if (error) {
+          console.error("Error fetching test name:", error.message);
+        } else {
+          testName = data.test_name;
+        }
+      }
+
       // Fetch problems
       const { data: testProblems, error: testProblemsError } = await supabase
         .from("test_problems")
-        .select("problem_id")
-        .eq("test_id", testId);
+        .select("problem_id");
+      // .eq("test_id", testId);
       if (testProblemsError) {
         console.error("Error loading problems:", testProblemsError.message);
         return;
@@ -271,7 +291,7 @@
 </script>
 
 <div class="container">
-  <h1>Problems for Test {testId}</h1>
+  <h1>{testName}</h1>
 
   <!-- Grading Form -->
   <form class="grading-form">
@@ -294,8 +314,21 @@
             {/each}
           </ul>
         {/if}
-      </div>
-    </label>
+
+        {#if selectedTeam}
+          <!-- Fixed header that stays at top -->
+          <div class="grading-header">
+            Grading: {selectedTeam.front_id}
+            {selectedTeam.team_name}
+          </div>
+
+          <div class="grading-subheader">
+            CURRENTLY GRADING: {selectedTeam.front_id}
+            {selectedTeam.team_name}
+          </div>
+        {/if}
+      </div></label
+    >
   </form>
 
   <!-- Problems Display -->
@@ -308,51 +341,46 @@
       {#each groupedProblems as group, i}
         <div class="problem-set">
           <h2 class="set-label">Set {i + 1}</h2>
-
           <div class="problem-grid">
             {#each group as problem}
               <div
                 class="problem-card"
                 on:click={() => toggleProblem(problem.problem_id)}
               >
-                <div class="problem-id">Problem ID: {problem.problem_id}</div>
+                <!-- Horizontally align ID and toggle/input -->
+                <div class="problem-header-row">
+                  <div class="problem-id">{problem.problem_id}</div>
 
-                {#if expandedProblemId === problem.problem_id}
-                  <Latex
-                    value={problem.problem_latex}
-                    style="font-size: 1.2em;"
-                  />
-                {/if}
-
-                {#if i === groupedProblems.length - 1}
-                  <div class="answer-input-wrapper">
-                    <input
-                      type="text"
-                      bind:value={manualAnswers[problem.problem_id]}
-                      placeholder="Enter answer (ex: YNNBB)"
-                      on:click|stopPropagation
-                    />
-                  </div>
-                {:else}
-                  <div
-                    class="triple-toggle"
-                    on:click|stopPropagation={() =>
-                      cycleGradingState(problem.problem_id)}
-                    data-state={problem.status ?? "neutral"}
-                  >
-                    <div class="toggle-slider"></div>
-                  </div>
-
-                  <div class="answer-hover-zone">
-                    <p class="answer-label">Answer:</p>
-                    <div class="hidden-answer">
-                      <Latex
-                        value={problem.answer_latex}
-                        style="font-size: 1.1em; color: blue;"
+                  {#if i === groupedProblems.length - 1}
+                    <div class="answer-input-wrapper">
+                      <input
+                        type="text"
+                        bind:value={manualAnswers[problem.problem_id]}
+                        placeholder="Answer (ex: YNNBB)"
+                        on:click|stopPropagation
                       />
                     </div>
-                  </div>
-                {/if}
+                  {:else}
+                    <div
+                      class="triple-toggle"
+                      on:click|stopPropagation={() =>
+                        cycleGradingState(problem.problem_id)}
+                      data-state={problem.status ?? "neutral"}
+                    >
+                      <div class="toggle-slider"></div>
+                    </div>
+                    <div class="answer-hover-zone">
+                      <p class="hover-placeholder">Hover for answer</p>
+
+                      <div class="hidden-answer">
+                        <Latex
+                          value={problem.answer_latex}
+                          style="font-size: 1.1em; color: blue;"
+                        />
+                      </div>
+                    </div>
+                  {/if}
+                </div>
               </div>
             {/each}
           </div>
@@ -371,6 +399,9 @@
     max-width: 1400px;
     margin: 0 auto;
     font-family: Optima, sans-serif;
+    padding: 0 1rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .grading-form {
@@ -380,25 +411,63 @@
     gap: 1rem;
   }
 
+  .problem-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.25rem;
+    margin-bottom: 0rem;
+  }
+
+  .answer-input-wrapper input {
+    width: 100%;
+    max-width: 10rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: max-width 0.3s ease;
+  }
+
   .problem-card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 16px;
-    margin: 10px 0;
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.05);
-    background-color: #fff;
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+    display: flex;
   }
 
   .problem-id {
-    font-size: 1.5em;
     font-weight: bold;
-    color: #333;
-    margin-bottom: 0.5rem;
+    font-size: 1.6em;
+  }
+
+  .triple-toggle {
+    width: 60px;
+    height: 30px;
+    background-color: lightgray;
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .toggle-slider {
+    width: 26px;
+    height: 26px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 17px;
+    transition: left 0.2s;
   }
 
   .autocomplete-wrapper {
     position: relative;
-    width: 50%;
+    width: 100%;
+    max-width: 500px;
     margin: 0.5rem auto;
   }
 
@@ -438,98 +507,115 @@
 
   .answer-hover-zone {
     position: relative;
-    padding: 0.5rem;
-    border-radius: 6px;
-    margin-top: 0.5rem;
-    background-color: rgba(100, 100, 255, 0.1);
+    background-color: #cce0ff;
+    width: 7rem;
+    height: 2.5rem;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: height 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hover-placeholder {
+    font-style: italic;
+    color: #666;
+    font-size: 0.8rem;
+    margin: 0;
+    z-index: 1;
+    transition: opacity 0.2s ease;
+  }
+
+  .answer-hover-zone:hover {
+    height: auto;
+    min-height: 2.5rem;
+    padding-bottom: 0.5rem;
   }
 
   .hidden-answer {
-    visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0.5rem;
+    background-color: #cce0ff;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    visibility: hidden;
     pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+    transition:
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+    box-sizing: border-box;
   }
 
   .answer-hover-zone:hover .hidden-answer {
-    visibility: visible;
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
+  }
+
+  .hidden-answer :global(.katex) {
+    margin: 0.2rem;
   }
 
   .problems-grid {
     display: grid;
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1rem;
     margin-top: 1rem;
   }
 
-  .triple-toggle {
-    width: 60px;
-    height: 30px;
-    background-color: lightgray;
-    border-radius: 999px;
-    position: relative;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    overflow: hidden;
-    margin: 0 auto;
-    margin-bottom: 0.5rem;
-  }
-
-  .toggle-slider {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: white;
-    position: absolute;
-    top: 2px;
-    left: calc(50% - 13px); /* center by default */
-    transition: left 0.25s ease;
-    box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
-  }
-
-  /* GREEN - correct */
   .triple-toggle[data-state="correct"] {
     background-color: #4ade80;
   }
+
   .triple-toggle[data-state="correct"] .toggle-slider {
     left: calc(100% - 28px);
   }
 
-  /* RED - incorrect */
   .triple-toggle[data-state="incorrect"] {
     background-color: #f87171;
   }
+
   .triple-toggle[data-state="incorrect"] .toggle-slider {
     left: 2px;
   }
 
   .problem-set {
     width: 100%;
+    max-width: 100%;
     border: 2px solid #ddd;
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
     margin: 2rem 0;
     background-color: #fafafa;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
   }
 
   .set-label {
     font-size: 1.5rem;
     font-weight: bold;
-    margin-bottom: 1rem;
     text-align: center;
   }
 
   .problem-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .save-button {
-    margin-top: 1.5rem;
+    margin-top: 0.3rem;
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -551,11 +637,67 @@
     margin-top: 0.5rem;
   }
 
-  .answer-manual {
+  .grading-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0.8rem;
+    background-color: white;
+    font-weight: bold;
+    font-size: 1.5rem;
+    border-bottom: 1px solid #ddd;
+    z-index: 1000;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+  }
+
+  .grading-subheader {
+    display: block;
+    font-size: 0.9rem;
+    color: #444;
+    font-weight: normal;
+    font-style: italic;
+    letter-spacing: 0.5px;
+    text-align: center;
     width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 1rem;
+    margin-top: 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    .problem-header-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .answer-input-wrapper input {
+      max-width: 100%;
+    }
+
+    .grading-header {
+      font-size: 1.5rem;
+      padding: 0.5rem;
+    }
+
+    .problem-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .problems-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .grading-subheader {
+      display: block;
+      font-size: 0.9rem;
+      color: #444;
+      font-weight: normal;
+      font-style: italic;
+      letter-spacing: 0.5px;
+      text-align: center;
+      width: 100%;
+    }
   }
 </style>
