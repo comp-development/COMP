@@ -261,7 +261,7 @@
 	<h1>Grading {test_data?.test_name}</h1>
 
 	<br />
-	<Button title="Go Back" href="/grading" />
+	<Button title="Go Back" href="/admin/2/{event_id}/grading" />
 	<br /><br />
 	{#if !gradeQueue[currentIndex] && !loaded}
 		<Loading />

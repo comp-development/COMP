@@ -108,52 +108,28 @@ export async function getTest(test_id, detailed = false, customSelect = "*") {
  * @returns Array of scan grade statistics
  */
 export async function getScanGradeStats(test_id: number) {
-
+  console.log("GET SCAN GRADE STATS", test_id);
   const { data, error } = await supabase
-    .from('scan_grades')
-    .select(`
-      scan_id,
-      test_problem_id,
-      grade,
-      test_problems!inner(test_id)
-    `)
-    .eq('test_problems.test_id', test_id)
-    .in('grade', ['Correct', 'Incorrect']);
+    .rpc("get_test_problem_scans_state", {
+      in_test_id: test_id,
+      target_grader: null,
+    })
 
   if (error) throw error;
 
-  // Transform the data to match the required format
-  const stats = data.reduce((acc: any, row: any) => {
-    const key = `${row.scan_id}-${row.test_problem_id}`;
-    if (!acc[key]) {
-      acc[key] = {
-        scan_id: row.scan_id,
-        test_problem_id: row.test_problem_id,
-        num_distinct_grades: 0,
-        num_grades: 0
-      };
-    }
-    acc[key].num_grades++;
-    return acc;
-  }, {});
+  const num_scan_problems = data.length;
 
-  // Count distinct grades
-  const distinctGrades = data.reduce((acc: any, row: any) => {
-    const key = `${row.scan_id}-${row.test_problem_id}`;
-    if (!acc[key]) {
-      acc[key] = new Set();
-    }
-    acc[key].add(row.grade);
-    return acc;
-  }, {});
+  const filteredData = data.filter((row: any) => row.distinct_grades === 1 && row.unsure_grades === 0);
+  const graded_scan_problems = filteredData.length;
 
-  // Combine the results
-  return Object.values(stats).map((stat: any) => ({
-    scan_id: stat.scan_id,
-    test_problem_id: stat.test_problem_id,
-    num_distinct_grades: distinctGrades[`${stat.scan_id}-${stat.test_problem_id}`].size,
-    num_grades: stat.num_grades
-  }));
+  const conflictData = data.filter((row: any) => row.distinct_grades > 1 || row.unsure_grades > 0);
+  const conflict_scan_problems = conflictData.length;
+
+  return [
+    num_scan_problems,
+    graded_scan_problems,
+    conflict_scan_problems,
+  ]
 }
 
 export async function getScanTestStats(test_id: number) {
