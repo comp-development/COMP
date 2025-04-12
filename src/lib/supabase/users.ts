@@ -161,6 +161,18 @@ export async function getAllCoaches() {
   return data;
 }
 
+export async function getHostAdmin(admin_id: string, host_id: number) {
+  const { data, error } = await supabase
+    .from("host_admins")
+    .select("*")
+    .eq("admin_id", admin_id)
+    .eq("host_id", host_id)
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
 export async function getAllCoachesOutsideOrg(org_id: number) {
   const { data: existingCoaches, error: existingError } = await supabase
     .from("org_coaches")

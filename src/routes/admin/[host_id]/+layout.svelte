@@ -4,6 +4,7 @@
   import Loading from "$lib/components/Loading.svelte";
   import { handleError } from "$lib/handleError";
   import { user } from "$lib/sessionStore";
+  import { goto } from "$app/navigation";
 
   const host_id = parseInt($page.params.host_id);
   let loading = $state(true);
@@ -16,15 +17,27 @@
 
       if (host.length == 0) {
         error = "This host organization doesn't exist.";
-      }
+      } else {
+        // Check if user is a host_admin with grader=true but owner=false
+        const hostAdmin = host[0].host_admins.find(ha => ha.admin_id === $user!.id);
+        
+        if (hostAdmin && hostAdmin.grader && !hostAdmin.owner) {
+          // Check if not already on a grading route
+          const currentPath = $page.url.pathname;
+          if (!currentPath.includes('12/grading')) {
+            goto(`/admin/${host_id}/12/grading`);
+          }
+        }
 
-      Object.entries(host[0].styles || {}).forEach(([key, value]) => {
-        document.documentElement.style.setProperty(`--${key}`, value);
-      });
+        // Apply styles
+        Object.entries(host[0].styles || {}).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(`--${key}`, value);
+        });
+      }
 
       loading = false;
     } catch (e) {
-      handleError(e);
+      handleError(e as Error);
     }
   })();
 </script>
