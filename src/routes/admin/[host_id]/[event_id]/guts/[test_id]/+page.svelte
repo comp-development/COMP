@@ -8,8 +8,6 @@
   let subscription: ReturnType<typeof supabase.channel> | null = null;
   let realtimeChannel;
 
-  let isGutsTest = true; // for Set 8 (input answers)
-
   let testId = Number($page.params.test_id);
   let loading = true;
   let problems: {
@@ -176,18 +174,19 @@
 
     const teamId = selectedTeam.team_id;
 
-    const isSet8 = group.some((p) =>
-      manualAnswers.hasOwnProperty(p.problem_id),
-    );
+    // Get the highest problem_id across all problems to identify the last set
+    const maxProblemId = Math.max(...problems.map((p) => p.problem_id));
+    console.log(maxProblemId);
+    const isLastSet = group.some((p) => p.problem_id === maxProblemId);
 
-    if (isGutsTest && isSet8) {
-      // Handle Set 8 manual answers
+    if (isLastSet) {
+      // Handle last set (manual answers)
       for (const problem of group) {
         const ans = manualAnswers[problem.problem_id]?.trim().toUpperCase();
 
         if (!ans || ans.length !== 5 || /[^YNB]/.test(ans)) {
           alert(
-            `Invalid answers for Set 8: Answers must be exactly 5 characters and only use Y, N, or B.`,
+            `Invalid answers for the last set: Answers must be exactly 5 characters and only use Y, N, or B.`,
           );
           return;
         }
@@ -318,17 +317,6 @@
               >
                 <div class="problem-id">Problem ID: {problem.problem_id}</div>
 
-                {#if i !== 7}
-                  <div
-                    class="triple-toggle"
-                    on:click|stopPropagation={() =>
-                      cycleGradingState(problem.problem_id)}
-                    data-state={problem.status ?? "neutral"}
-                  >
-                    <div class="toggle-slider"></div>
-                  </div>
-                {/if}
-
                 {#if expandedProblemId === problem.problem_id}
                   <Latex
                     value={problem.problem_latex}
@@ -336,7 +324,7 @@
                   />
                 {/if}
 
-                {#if isGutsTest && i === 7}
+                {#if i === groupedProblems.length - 1}
                   <div class="answer-input-wrapper">
                     <input
                       type="text"
@@ -345,7 +333,16 @@
                       on:click|stopPropagation
                     />
                   </div>
-                {:else if problem.answer_latex}
+                {:else}
+                  <div
+                    class="triple-toggle"
+                    on:click|stopPropagation={() =>
+                      cycleGradingState(problem.problem_id)}
+                    data-state={problem.status ?? "neutral"}
+                  >
+                    <div class="toggle-slider"></div>
+                  </div>
+
                   <div class="answer-hover-zone">
                     <p class="answer-label">Answer:</p>
                     <div class="hidden-answer">
