@@ -293,7 +293,7 @@
     }
 
     problems = problems.map((p) => {
-      const match = data.find((d) => d.test_problem_id === p.problem_id);
+      const match = data.find((d) => d.test_problem_id === p.test_problem_id);
       return {
         ...p,
         status: match ? match.status : null,
