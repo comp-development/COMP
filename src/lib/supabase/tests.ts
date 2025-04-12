@@ -101,6 +101,85 @@ export async function getTest(test_id, detailed = false, customSelect = "*") {
   return data;
 }
 
+/**
+ * Get statistics about scan grades for a specific test
+ * 
+ * @param test_id The ID of the test to get statistics for
+ * @returns Array of scan grade statistics
+ */
+export async function getScanGradeStats(test_id: number) {
+
+  const { data, error } = await supabase
+    .from('scan_grades')
+    .select(`
+      scan_id,
+      test_problem_id,
+      grade,
+      test_problems!inner(test_id)
+    `)
+    .eq('test_problems.test_id', test_id)
+    .in('grade', ['Correct', 'Incorrect']);
+
+  if (error) throw error;
+
+  // Transform the data to match the required format
+  const stats = data.reduce((acc: any, row: any) => {
+    const key = `${row.scan_id}-${row.test_problem_id}`;
+    if (!acc[key]) {
+      acc[key] = {
+        scan_id: row.scan_id,
+        test_problem_id: row.test_problem_id,
+        num_distinct_grades: 0,
+        num_grades: 0
+      };
+    }
+    acc[key].num_grades++;
+    return acc;
+  }, {});
+
+  // Count distinct grades
+  const distinctGrades = data.reduce((acc: any, row: any) => {
+    const key = `${row.scan_id}-${row.test_problem_id}`;
+    if (!acc[key]) {
+      acc[key] = new Set();
+    }
+    acc[key].add(row.grade);
+    return acc;
+  }, {});
+
+  // Combine the results
+  return Object.values(stats).map((stat: any) => ({
+    scan_id: stat.scan_id,
+    test_problem_id: stat.test_problem_id,
+    num_distinct_grades: distinctGrades[`${stat.scan_id}-${stat.test_problem_id}`].size,
+    num_grades: stat.num_grades
+  }));
+}
+
+export async function getScanTestStats(test_id: number) {
+  const { data, error } = await supabase
+    .from('tests')
+    .select(`
+      test_id,
+      scans (
+        scan_id,
+        test_id
+      ),
+      test_problems (
+        test_problem_id,
+        test_id
+      )
+    `)
+    .eq('tests_problems.test_id', test_id)
+    .single();
+
+
+  if (error) throw error;
+  return data;
+}
+
+
+
 export async function getTestFromComposeId(
   compose_test_id,
   event_id,

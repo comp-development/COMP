@@ -8,6 +8,7 @@
 	import toast from "$lib/toast.svelte";
 	import { handleError } from "$lib/handleError";
 	import Button from "$lib/components/Button.svelte";
+    import { page } from "$app/stores";
     export let host_id;
 
 	// When rendering to canvas, the scaling we use.
@@ -325,7 +326,7 @@
 				pngs_to_upload
 					.entries()
 					.map(([_, png]) =>
-						uploadScan(png.matched_png, host_id, png.test_id, png.page, png.front_id)
+						uploadScan(png.matched_png, host_id, png.test_id, png.page, png.front_id, $page.params.event_id)
 					)
 			);
 			const message = `Successfully uploaded ${pngs_to_upload.size} scan(s)`;

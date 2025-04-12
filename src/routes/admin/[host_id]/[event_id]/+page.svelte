@@ -56,8 +56,15 @@
 {#if loading}
   <Loading />
 {:else}
-  <EventDisplay id={eventId} {host} event={event_information} editable={ admin?.host_admins.find(ha => ha.host_id == hostId)?.owner } />
 
+  <EventDisplay id={eventId} {host} event={event_information} editable={ admin?.host_admins.find(ha => ha.host_id == hostId)?.owner } />
+    {#if eventId === 12}
+    <div class="mb-6 flex justify-center">
+      <a href="/admin/{hostId}/{eventId}/grading">
+        <Button size="lg" color="primary" class="text-lg px-8 py-3">Go to Scan Grading</Button>
+      </a>
+    </div>
+  {/if}
   <hr />
 
   <div class="mt-4">
