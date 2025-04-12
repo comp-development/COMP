@@ -146,7 +146,7 @@
 			);
 			let front_id;
 			try {
-				let cornerPoints, dot_location;
+				let dot_location;
 				dot_location = await detect_alignment_dot(
 					png,
 					expand_box(alignment_dot_box)
