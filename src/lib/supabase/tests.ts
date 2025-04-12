@@ -103,6 +103,7 @@ export async function getTest(test_id, detailed = false, customSelect = "*") {
 
 export async function getTestFromComposeId(
   compose_test_id,
+  event_id,
   detailed = false,
   customSelect = "*"
 ) {
@@ -110,6 +111,7 @@ export async function getTestFromComposeId(
     .from(detailed ? "tests_detailed" : "tests")
     .select(customSelect)
     .eq("compose_test_id", compose_test_id)
+    .eq("event_id", event_id)
     .single();
 
   if (error) throw error;
@@ -271,7 +273,7 @@ export async function upsertTest(testData) {
   const { data, error } = await supabase
     .from("tests")
     .upsert(testData, {
-      onConflict: "compose_test_id",
+      onConflict: ["compose_test_id", "event_id"],
       returning: "representation",
       // ignoreDuplicates: false,
     })
@@ -341,7 +343,7 @@ export async function upsertProblems(problemData) {
   const { data, error } = await supabase
     .from("problems")
     .upsert(problemData, {
-      onConflict: "compose_problem_id",
+      onConflict: ["compose_problem_id", "host_id"],
       // returning: "representation",
       // ignoreDuplicates: false,
     })
