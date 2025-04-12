@@ -12,36 +12,48 @@ function getImageUrl(path: string, bucket: string = "scans"): string | null {
 }
 
 export async function uploadScan(
-	file: any,
-    host_id: string,
-	test_id: string,
-	page_number: string,
-	front_id: string,
+  file: any,
+  host_id: string,
+  compose_test_id: string,
+  page_number: number,
+  front_id: string,
 ) {
-	if (test_id.startsWith("ERROR")) {
-		throw new Error(
-			"Could not read Test QR code. Must manually input the Test ID before uploading.",
-		);
-	}
-	if (front_id.startsWith("ERROR")) {
-		throw new Error(
-			"Could not read Team/Student QR code. Must manually input the Taker ID before uploading scans.",
-		);
-	}
-	let { data, error: upload_error } = await supabase.storage
-		.from("scans")
-		.upload(`host_${host_id}/test_${test_id}/${front_id}/page_${page_number}.png`, file, {
-			upsert: true,
-		});
-	if (upload_error) throw upload_error;
+  if (compose_test_id.startsWith("ERROR")) {
+    throw new Error(
+      "Could not read Test QR code. Must manually input the Test ID before uploading.",
+    );
+  }
+  if (front_id.startsWith("ERROR")) {
+    throw new Error(
+      "Could not read Team/Student QR code. Must manually input the Taker ID before uploading scans.",
+    );
+  }
+  let { data, error: upload_error } = await supabase.storage
+    .from("scans")
+    .upload(
+      `host_${host_id}/test_${compose_test_id}/${front_id}/page_${page_number}.png`,
+      file,
+      {
+        upsert: true,
+      },
+    );
+  if (upload_error) throw upload_error;
 
-	let { error: upsert_error } = await supabase.from("scans").upsert(
-		{ test_id, taker_id: front_id, page_number, scan_path: data.path },
-		{
-			onConflict: "test_id,taker_id,page_number",
-		},
-	);
-	if (upsert_error) throw upsert_error;
+  let { data: id_data, error} = await supabase.from("tests").select("test_id").eq("compose_test_id", compose_test_id).single();
+  if (error) throw error;
+
+  let { error: upsert_error } = await supabase.from("scans").upsert(
+    {
+      test_id: id_data!.test_id,
+      taker_id: front_id,
+      page_number,
+      scan_path: data!.path,
+    },
+    {
+      onConflict: "test_id,taker_id,page_number",
+    },
+  );
+  if (upsert_error) throw upsert_error;
 }
 
 export async function getTestTrackingData(grader_id: number): Promise<any[]> {
