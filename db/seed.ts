@@ -145,7 +145,9 @@ async function seed_debug_student(seed: SeedClient, student: studentsScalars) {
   await seed.teams([
     {
       event_id: event.event_id,
-      student_events: [{ event_id: event.event_id, ...student }],
+      student_events: [
+        { event_id: event.event_id, ...student, front_id: "001A" },
+      ],
     },
   ]);
 }
