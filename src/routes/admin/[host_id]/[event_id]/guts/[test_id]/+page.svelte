@@ -220,9 +220,9 @@
     const teamId = selectedTeam.team_id;
 
     // Get the highest problem_id across all problems to identify the last set
-    const maxProblemId = Math.max(...problems.map((p) => p.problem_id));
+    const maxProblemId = Math.max(...problems.map((p) => p.problem_number));
     console.log(maxProblemId);
-    const isLastSet = group.some((p) => p.problem_id === maxProblemId);
+    const isLastSet = group.some((p) => p.problem_number === maxProblemId);
     let payload;
     if (isLastSet) {
       // Handle last set (manual answers)
