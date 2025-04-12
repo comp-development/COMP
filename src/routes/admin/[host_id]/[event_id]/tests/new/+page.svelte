@@ -119,7 +119,7 @@
       const timeTillTest = diffBetweenDates(
         test.opening_time,
         currentTime,
-        "seconds"
+        "seconds",
       );
       if (test.opening_time && timeTillTest < 86400) {
         newStatus.countdown = "Time till open: " + formatDuration(timeTillTest);
@@ -129,9 +129,9 @@
         addTime(
           new Date(test.opening_time),
           test.length + test.buffer_time,
-          "seconds"
+          "seconds",
         ),
-        currentTime
+        currentTime,
       )
     ) {
       newStatus.status = "Open";
@@ -144,11 +144,11 @@
               addTime(
                 new Date(test.opening_time),
                 test.length + test.buffer_time,
-                "seconds"
+                "seconds",
               ),
-              "seconds"
-            )
-          )
+              "seconds",
+            ),
+          ),
         );
     }
     testStatusMap[test.test_id] = {
@@ -205,7 +205,7 @@
 
       if (!validation.isValid) {
         toast.error(
-          "Invalid JSON structure. Please check the file and try again."
+          "Invalid JSON structure. Please check the file and try again.",
         );
         uploadedFile = null; // Clear the file if validation fails
       } else {
@@ -273,11 +273,7 @@
       // Upsert test data into Supabase
       console.log("Upserting test data: ", JSON.stringify(testData.tests));
       // console.log(typeof testData.tests);
-      const { data, error } = await upsertTest(testData.tests);
-      if (error) {
-        console.error("COOOOOOKED. Error upserting test data:", error);
-        throw new Error("Error uploading test data: " + error.message);
-      }
+      await upsertTest(testData.tests);
 
       // Format and upsert problems
       console.log("Upserting problems data");
@@ -296,18 +292,19 @@
       // console.log("Problem IDs:", problem_ids);
       // console.log("HOST ID here:", $page.params.host_id);
       // console.log(testData.problems[1]);
-      console.log("Upserting problems data: ", testData.problems);
-      const { data: problemsData, error: problemsError } = await upsertProblems(
-        testData.problems
-      );
-      if (problemsError) {
-        console.error("COOOOOOKED. Error upserting problems data:", error);
-        throw new Error(
-          "Error uploading problems data: " + problemsError.message
-        );
+      function deduplicate<T>(
+        values: (T & { compose_problem_id: number })[],
+      ): T[] {
+        return [
+          ...new Map(values.map((v) => [v.compose_problem_id, v])).values(),
+        ];
       }
+      const to_upload = deduplicate(testData.problems).toSorted(
+        (v) => v.problem_id,
+      );
+      console.log("Upserting problems data: ", to_upload);
+      await upsertProblems(to_upload);
       // log success
-      console.log("Problems data upserted successfully:", problemsData);
 
       // Format test_problems data
       console.log("Formatting test problems data");
@@ -315,11 +312,11 @@
         testData.test_problems.map(async (test_problem) => {
           const test = await getTestFromComposeId(
             test_problem.test_id,
-            event_id
+            event_id,
           );
           const problem = await getProblemFromComposeID(
             test_problem.problem_id,
-            host_id
+            host_id,
           );
           return {
             test_id: test.test_id,
@@ -327,7 +324,7 @@
             problem_number: test_problem.problem_number + 1,
             points: test_problem.problem_weights || 0,
           };
-        })
+        }),
       );
 
       // Upsert test_problems
@@ -337,16 +334,16 @@
       if (testProblemsError) {
         console.error(
           "COOOOOOKED. Error upserting test problems data:",
-          testProblemsError
+          testProblemsError,
         );
         throw new Error(
-          "Error uploading test problems data: " + testProblemsError.message
+          "Error uploading test problems data: " + testProblemsError.message,
         );
       }
       // log success
       console.log(
         "Test problems data upserted successfully:",
-        testProblemsData
+        testProblemsData,
       );
 
       // Upsert problem_images
@@ -356,10 +353,10 @@
       if (problemImagesError) {
         console.error(
           "COOOOOOKED. Error upserting problem images data:",
-          problemImagesError
+          problemImagesError,
         );
         throw new Error(
-          "Error uploading problem images data: " + problemImagesError.message
+          "Error uploading problem images data: " + problemImagesError.message,
         );
       }
 

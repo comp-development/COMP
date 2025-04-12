@@ -20,6 +20,8 @@
 		type Unpacked,
 	} from "$lib/supabaseClient";
 	import type { Tables } from "../../../db/database.types";
+	import type { FabricImage as Image } from "fabric";
+	import { FabricImage } from "fabric";
 
 	export let showGrades = false;
 	export let onlyConflicted = false;
@@ -43,7 +45,7 @@
 	let currentProblemID: number | null = null;
 
 	let gradeQueue: (Unpacked<AsyncReturnType<typeof fetchNewScans>> & {
-		image_url: string;
+		image: FabricImage;
 		grade_id: number | null;
 	})[] = [];
 	let loaded_scans = new Set();
@@ -105,12 +107,16 @@
 
 		if (scans.length > 0) {
 			gradeQueue = gradeQueue.concat(
-				scans.map((s) => ({
-					...s,
-					image_url: supabase.storage.from("scans").getPublicUrl(s.scan_path)
-						.data.publicUrl,
-					grade_id: null,
-				})),
+				await Promise.all(
+					scans.map(async (s) => ({
+						...s,
+						image: await FabricImage.fromURL(
+							supabase.storage.from("scans").getPublicUrl(s.scan_path).data
+								.publicUrl,
+						),
+						grade_id: null,
+					})),
+				),
 			);
 		}
 
@@ -276,9 +282,14 @@
 					{@html problem_data.get(gradeQueue[currentIndex].test_problem_id)!
 						.answer_display}
 				</h2>
-				{console.log('Debug - gradeQueue:', gradeQueue, 'currentIndex:', currentIndex)}
+				{console.log(
+					"Debug - gradeQueue:",
+					gradeQueue,
+					"currentIndex:",
+					currentIndex,
+				)}
 				<ImageZoomer
-					imageUrl={gradeQueue[currentIndex].image_url}
+					image={gradeQueue[currentIndex].image}
 					inputCoordinates={calculateDimensions(
 						problem_data.get(gradeQueue[currentIndex].test_problem_id)!
 							.problem_number,
@@ -334,15 +345,17 @@
 				<p>No more problems - check back later!</p>
 				<!-- in case someone messed up on the last grade and wants to go back and fix -->
 				{#if currentIndex > 0}
-					<button style="font-size: 10pt; background-color: #FFFB99;"
+					<button
+						style="font-size: 10pt; background-color: #FFFB99;"
 						on:click={() => {
 							currentIndex = currentIndex > 0 ? currentIndex - 1 : 0;
-						}}
-					>Go Back to UNDO</button>
-					<br>
+						}}>Go Back to UNDO</button
+					>
+					<br />
 				{/if}
 			{/if}
-			Number of problems remaining in local queue: {gradeQueue.length - currentIndex}
+			Number of problems remaining in local queue: {gradeQueue.length -
+				currentIndex}
 		</div>
 	{/if}
 
@@ -356,7 +369,7 @@
 	-->
 	<Modal
 		bind:open={switchingProblems}
-		title={gradeQueue.at(currentIndex) 
+		title={gradeQueue.at(currentIndex)
 			? `Switching to Problem ${problem_data.get(gradeQueue.at(currentIndex)!.test_problem_id)!.problem_number}`
 			: "Searching for new problem"}
 	>
