@@ -10,7 +10,9 @@
 	import Button from "$lib/components/Button.svelte";
 	import { page } from "$app/stores";
 	import type { AsyncReturnType, Unpacked } from "$lib/supabaseClient";
+  import { Input } from "flowbite-svelte";
 	export let host_id;
+	let test_id_override = "";
 
 	// When rendering to canvas, the scaling we use.
 	const PDF_SCALE = 2.0;
@@ -374,6 +376,13 @@
 		}
 	}
 
+	function override_test_ids() {
+		for (let png of pngs_to_upload) {
+			png[1].test_id = test_id_override;
+		}
+		pngs_to_upload = pngs_to_upload;
+	}
+
 	function openModal(row) {
 		selectedRow.set(row);
 		showModal.set(true);
@@ -577,6 +586,8 @@
 <br />
 
 <Button title="Upload Scans" action={upload_scans} />
+<Input placeholder="Test ID Override" bind:value={test_id_override} />
+<Button title="Override Test IDs" action={override_test_ids} />
 
 <br />
 <br />
