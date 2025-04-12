@@ -89,6 +89,15 @@
 
 	<br />
 
+	<div style="text-align: center; margin-top: 20px;">
+		<a class="gutsButton" href={`/admin/${host_id}/${event_id}/grading/guts`} >
+		  📊 Go to Guts Grading
+		</a>
+	  </div>
+
+	  <br />
+
+
 	<p style="font-style: italic;">Pick a test to grade</p>
 	<div class="buttonContainer">
 		{#each tests as test, index (test.test_id)}
@@ -151,4 +160,16 @@
 		margin: 0 auto; /* Center the container horizontally on the page */
 		width: 70%;
 	}
+
+	.gutsButton {
+		display: inline-block;
+		background-color: var(--primary);
+		color: white;
+		padding: 12px 24px;
+		border-radius: 10px;
+		text-decoration: none;
+		font-size: 16px;
+		font-weight: bold;
+		transition: background-color 0.2s ease, transform 0.2s ease;
+		}
 </style>
