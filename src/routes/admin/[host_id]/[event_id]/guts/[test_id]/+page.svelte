@@ -9,11 +9,13 @@
   let realtimeChannel;
 
   let testId = Number($page.params.test_id);
+  let eventId = Number($page.params.event_id);
   let testName;
 
   let loading = true;
   let problems: {
     problem_id: number;
+    problem_number: number;
     problem_latex: string;
     answer_latex?: string;
     status: string | null;
@@ -30,7 +32,8 @@
     team_name: string;
   } | null = null;
 
-  let teamOptions: { front_id: string; team_name: string }[] = [];
+  let teamOptions: { front_id: string; team_id: string; team_name: string }[] =
+    [];
 
   let manualAnswers: Record<number, string> = {};
 
@@ -49,6 +52,7 @@
           schema: "public",
           table: "manual_grades",
           filter: `team_id=eq.${teamId}`,
+          //also filter on current test_id
         },
         (payload) => {
           console.log("Realtime update received:", payload);
@@ -82,36 +86,46 @@
       }
 
       // Fetch problems
-      const { data: testProblems, error: testProblemsError } = await supabase
-        .from("test_problems")
-        .select("problem_id")
-        .eq("test_id", testId);
-      if (testProblemsError) {
-        console.error("Error loading problems:", testProblemsError.message);
-        return;
-      }
+      // const { data: testProblems, error: testProblemsError } = await supabase
+      //   .from("test_problems")
+      //   .select("problem_id")
+      //   .eq("test_id", testId);
+      // if (testProblemsError) {
+      //   console.error("Error loading problems:", testProblemsError.message);
+      //   return;
+      // }
 
-      const problemIds = testProblems.map((p) => p.problem_id);
+      // const problemIds = testProblems.map((p) => p.problem_id);
 
       const { data: problemData, error: problemError } = await supabase
         .from("test_problems")
-        .select("problems(problem_id, problem_latex, answer_latex)")
-        .in("problem_id", problemIds)
-        .order("problem_id", { ascending: true });
+        .select(
+          "problem_number, problems(problem_id, problem_latex, answer_latex)",
+        )
+        .eq("test_id", testId)
+        .order("problem_number", { ascending: true });
+
+      console.log("problems data", problemData);
 
       if (problemError) {
         console.error("Error loading problem details:", problemError.message);
       } else {
         problems = problemData.map((p) => ({
           ...p.problems,
+          problem_number: p.problem_number,
           status: "", // neutral default
         }));
       }
 
+      console.log("problems", problems);
+
       // Fetch teams
       const { data: teams, error: teamError } = await supabase
         .from("teams")
-        .select("front_id, team_id, team_name");
+        .select("front_id, team_id, team_name")
+        .eq("event_id", eventId);
+
+      console.log("teams", teams);
 
       if (teamError) {
         console.error("Error loading teams:", teamError.message);
@@ -137,11 +151,15 @@
   function filterTeams() {
     showSuggestions = true;
     const searchLower = searchTerm.toLowerCase();
-    filteredTeams = teamOptions.filter(
-      (team) =>
-        team.front_id.toLowerCase().includes(searchLower) ||
-        team.team_name.toLowerCase().includes(searchLower),
-    );
+
+    filteredTeams = teamOptions.filter((team) => {
+      const matchesFrontId =
+        team.front_id && team.front_id.toLowerCase().includes(searchLower);
+
+      const matchesName = team.team_name.toLowerCase().includes(searchLower);
+
+      return matchesFrontId || matchesName;
+    });
   }
 
   async function selectTeam(team: {
@@ -151,7 +169,12 @@
   }) {
     selectedTeam = team;
     teamId = team.team_id;
-    searchTerm = `${team.front_id} - ${team.team_name}`;
+    if (team.front_id) {
+      searchTerm = `${team.front_id} - ${team.team_name}`;
+    } else {
+      searchTerm = `${team.team_name}`;
+    }
+
     showSuggestions = false;
 
     await loadGradesForTeam(team.team_id);
@@ -198,7 +221,7 @@
     const maxProblemId = Math.max(...problems.map((p) => p.problem_id));
     console.log(maxProblemId);
     const isLastSet = group.some((p) => p.problem_id === maxProblemId);
-
+    let payload;
     if (isLastSet) {
       // Handle last set (manual answers)
       for (const problem of group) {
@@ -215,23 +238,12 @@
         manualAnswers[problem.problem_id] = ans;
       }
 
-      const payload = group.map((problem) => ({
+      payload = group.map((problem) => ({
         test_problem_id: problem.problem_id,
         team_id: teamId,
         test_id: testId,
         answer_latex: manualAnswers[problem.problem_id],
       }));
-
-      const { error } = await supabase.from("manual_grades").upsert(payload, {
-        onConflict: ["test_problem_id", "team_id"],
-      });
-
-      if (error) {
-        console.error("Error saving manual answers:", error.message);
-        alert("Failed to save answers.");
-      } else {
-        alert("Answers saved successfully!");
-      }
     } else {
       // Handle normal sets
       const incomplete = group.filter(
@@ -245,23 +257,22 @@
         return;
       }
 
-      const payload = group.map((problem) => ({
+      payload = group.map((problem) => ({
         test_problem_id: problem.problem_id,
         team_id: teamId,
         status: problem.status,
         test_id: testId,
       }));
+    }
+    const { error } = await supabase.from("manual_grades").upsert(payload, {
+      onConflict: ["test_problem_id", "team_id", "test_id"],
+    });
 
-      const { error } = await supabase.from("manual_grades").upsert(payload, {
-        onConflict: ["test_problem_id", "team_id"],
-      });
-
-      if (error) {
-        console.error("Error saving grades:", error.message);
-        alert("Failed to save grades.");
-      } else {
-        alert("Grades saved successfully!");
-      }
+    if (error) {
+      console.error("Error saving manual answers:", error.message);
+      alert("Failed to save answers.");
+    } else {
+      alert("Answers saved successfully!");
     }
   }
 
@@ -309,13 +320,22 @@
           <ul class="suggestions-list">
             {#each filteredTeams as team}
               <li on:click={() => selectTeam(team)} class="suggestion-item">
-                {team.front_id} - {team.team_name}
+                {#if team.front_id}
+                  [{team.front_id}] {team.team_name}
+                {:else}
+                  {team.team_name}
+                {/if}
               </li>
             {/each}
           </ul>
         {/if}
 
-        {#if selectedTeam}
+        
+      </div></label
+    >
+  </form>
+
+    {#if selectedTeam}
           <!-- Fixed header that stays at top -->
           <div class="grading-header">
             Grading: {selectedTeam.front_id}
@@ -326,10 +346,7 @@
             CURRENTLY GRADING: {selectedTeam.front_id}
             {selectedTeam.team_name}
           </div>
-        {/if}
-      </div></label
-    >
-  </form>
+    {/if}
 
   <!-- Problems Display -->
   {#if loading}
@@ -349,7 +366,7 @@
               >
                 <!-- Horizontally align ID and toggle/input -->
                 <div class="problem-header-row">
-                  <div class="problem-id">{problem.problem_id}</div>
+                  <div class="problem-id">{problem.problem_number}</div>
 
                   {#if i === groupedProblems.length - 1}
                     <div class="answer-input-wrapper">
@@ -512,7 +529,6 @@
     height: 2.5rem;
     border-radius: 8px;
     overflow: hidden;
-    transition: height 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -527,10 +543,8 @@
     transition: opacity 0.2s ease;
   }
 
-  .answer-hover-zone:hover {
-    height: auto;
-    min-height: 2.5rem;
-    padding-bottom: 0.5rem;
+  .answer-hover-zone:hover .hover-placeholder {
+    opacity: 0;
   }
 
   .hidden-answer {
@@ -539,7 +553,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    padding: 0.5rem;
+    padding: 0.25rem;
     background-color: #cce0ff;
     opacity: 0;
     visibility: hidden;
@@ -552,6 +566,7 @@
       opacity 0.2s ease,
       visibility 0.2s ease;
     box-sizing: border-box;
+    overflow: auto;
   }
 
   .answer-hover-zone:hover .hidden-answer {
@@ -562,6 +577,25 @@
 
   .hidden-answer :global(.katex) {
     margin: 0.2rem;
+    max-width: 100%;
+    font-size: 0.85em;
+    line-height: 1.4;
+    word-break: break-word;
+    white-space: normal;
+    transform: scale(0.9);
+    transform-origin: center;
+  }
+
+  .hidden-answer :global(.katex-html) {
+    max-width: 100%;
+    word-break: break-word;
+    white-space: normal;
+  }
+
+  .hidden-answer :global(.katex-display) {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
   }
 
   .problems-grid {
@@ -655,10 +689,10 @@
 
   .grading-subheader {
     display: block;
-    font-size: 0.9rem;
+    font-size: 1.6rem;
     color: #444;
     font-weight: normal;
-    font-style: italic;
+    font-style: bold;
     letter-spacing: 0.5px;
     text-align: center;
     width: 100%;
