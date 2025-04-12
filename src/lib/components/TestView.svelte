@@ -196,6 +196,7 @@
 
   const handleAnswersUpsert = (payload) => {
     //console.log("UPSERT", payload);
+    console.log("ANSWER UPSERT", payload);
     open = false;
     answersMap[payload.new.test_problem_id] = payload.new.answer_latex;
     saved[payload.new.test_problem_id] = payload.new.answer_latex;
@@ -268,6 +269,12 @@
       handleTestTakerUpsert,
     )
     .subscribe();
+
+
+  console.log("test-answers-for-taker-" +
+        test_taker.test_taker_id +
+        "-page-" +
+        test_taker.page_number);
 
   test_answers_channel = supabase
     .channel(

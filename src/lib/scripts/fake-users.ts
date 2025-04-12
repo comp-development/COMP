@@ -8,9 +8,14 @@ const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const event_id = 14; // USER INPUT;
-const test_id = 78; // USER INPUT;
-const student_nums= 1000; // USER INPUT;
+// const event_id = 14; // USER INPUT;
+// const test_id = 78; // USER INPUT;
+// const student_nums= 1000; // USER INPUT;
+// const same_team = true; // USER INPUT;
+
+const event_id = 1; // USER INPUT;
+const test_id = 1; // USER INPUT;
+const student_nums= 100; // USER INPUT;
 const same_team = true; // USER INPUT;
 
 async function createFakeUsers() {

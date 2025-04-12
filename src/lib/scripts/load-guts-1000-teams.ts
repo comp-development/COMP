@@ -12,7 +12,7 @@ const numUsers = 10; // USER INPUT, should not go above 10 unless accounts for m
 const event_id = 14;  // USER INPUT
 const test_id = 78;  // USER INPUT
 const problem_ids = [531, 529, 530, 509, 520, 511, 532, 513, 518, 508, 523, 527, 525, 516]; // Example problem IDs, USER INPUT
-const max_iters = 10; // USER INPUT
+const max_iters = 100; // USER INPUT
 
 // all user inputs right here!!!
 // const numUsers = 100; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
@@ -190,6 +190,29 @@ async function runLoadTest() {
 //   }
 
 //   console.log("ALL ANSWERS VERIFIED ✅");
+
+
+// in order to load test guys,
+// i need to pick a team (among all of the users)
+// 
 }
 
 runLoadTest();
+
+
+// i want to pick 1000 teams (One with each user)
+// update each answer one
+
+// i want to pick a problem number, this should work just fine!! (i will just make problems 1 - 4 a given set)
+
+// i want to set an answer to all 4
+// what i really want to load test, 1000 graders inputting answers to a thousand teams?
+
+// which means I need to go register a thousand teams
+// i lowkey should not need to add students to the event
+// then, I can query the 1000 team ids by selecting using the team name and the event
+
+// what i actually want
+
+
+
