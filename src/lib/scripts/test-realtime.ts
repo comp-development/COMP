@@ -144,23 +144,6 @@ async function runLoadTest() {
     )
     .subscribe(); 
     
-    const realtimeChannel = supabase
-    .channel(`manual_grades_team_${team_id}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "manual_grades",
-        filter: `team_id=eq.${team_id}`,
-      },
-      (payload) => {
-        if (Math.random() < 0.01) {
-          console.log(`answer updated for grader ${email}`);
-        }
-      },
-    )
-    .subscribe();
 
     await delay(2000);
   }

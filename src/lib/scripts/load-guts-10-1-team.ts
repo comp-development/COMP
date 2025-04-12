@@ -12,6 +12,9 @@ const numUsers = 100; // USER INPUT, should not go above 10 unless accounts for 
 const event_id = 14;  // USER INPUT
 const test_id = 74;  // USER INPUT
 const max_iters = 20; // USER INPUT
+
+const teams_per_grader= 10; // Example problem IDs, USER INPUT
+
 const problem_numbers= [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24, 25, 26, 27, 28]; // Example problem IDs, USER INPUT
 // const problem_numbers= [1]; // Example problem IDs, USER INPUT
 
@@ -175,6 +178,7 @@ async function upsertGutsAnswer(mySupabase, test_problem_id: number, team_id: nu
 async function runLoadTest() {
   const userData = [];
 
+  let total_index: number = 1;
   // log in to numUsers supabase obejcts
   for (let i = 1; i <= numUsers; i++) {
 
@@ -196,13 +200,21 @@ async function runLoadTest() {
       continue;
     }
 
+    const team_ids = [];
+
+    for(let j = 0; j < teams_per_grader; j++) {
+        const team_id = await get_team_id(total_index, event_id, test_id, supabase);
+        total_index += 1;
+        team_ids.push(team_id);
+    }
+
     // I have now logged in as an admin
 
     // i need to grab the corresponding team_id
-    const team_id = await get_team_id(i, event_id, test_id, supabase);
+    // const team_id = await get_team_id(i, event_id, test_id, supabase);
 
     // from there, I want to grab my respective test_takers_id
-    userData.push({ supabase, team_id});
+    userData.push({ supabase, team_ids});
     numSuccess += 1;
     console.log(`num success {${numSuccess}}`);
     await delay(1);
@@ -222,11 +234,11 @@ async function runLoadTest() {
       const test_problem_id = test_problem_ids[problemIndex];
 
       for (let userIndex = 0; userIndex < numSuccess; userIndex++) {
-        const { supabase, team_id } = userData[userIndex];
-  
-  
-        await upsertGutsAnswer(supabase, test_problem_id, team_id, test_id);
+        const { supabase, team_ids} = userData[userIndex];
 
+        for(let teamIndex = 0; teamIndex < team_ids.length; teamIndex++) {
+            await upsertGutsAnswer(supabase, test_problem_id, team_ids[teamIndex], test_id);
+        }
       }
     }
 

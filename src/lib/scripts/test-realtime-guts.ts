@@ -10,7 +10,7 @@ const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 // all user inputs right here!!!
 const numUsers = 1000; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
 const event_id = 14;  // USER INPUT
-const test_id = 78;  // USER INPUT
+const test_id = 74;  // USER INPUT
 
 // const numUsers = 100; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
 // const event_id = 1;  // USER INPUT
@@ -62,6 +62,32 @@ async function get_test_taker_id(student_id: number, event_id: number, test_id: 
     }
   }
 
+
+  async function get_team_id(index: number, event_id: number, test_id: number, mySupabase): Promise<number | null> {
+    const team_name = `Team no student ${index} test`
+    console.log(team_name)
+    try {
+      const { data: studentEvent, error: studentEventError } = await mySupabase
+        .from("teams")
+        .select("team_id")
+        .eq("team_name", team_name)
+        .eq("event_id", event_id)
+        .single();
+  
+      if (studentEventError || !studentEvent) {
+        console.error("Error fetching team_id:", studentEventError?.message);
+        return null;
+      }
+  
+      const team_id = studentEvent.team_id;
+      return team_id;
+
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      return null;
+    }
+  }
+
 async function runLoadTest() {
   const userData = [];
 
@@ -86,39 +112,32 @@ async function runLoadTest() {
       continue;
     }
 
-    const test_taker_id = await get_test_taker_id(authData.user.id, event_id, test_id, supabase);
-    if (!test_taker_id) {
-        console.log(`Failed to get test_taker_id for ${email}`);
-        continue;
-    }
 
-    userData.push({ supabase, test_taker_id });
-    numSuccess += 1;
-    console.log(`num success {${numSuccess}}`);
+    const team_id = await get_team_id(i, event_id, test_id, supabase);
+    console.log(team_id);
 
-    const channel = supabase
-    .channel(
-      "test-answers-for-taker-" +
-        test_taker_id +
-        "-page-" +
-        1,
-    )
+    const realtimeChannel = supabase
+    .channel(`manual_grades_team_${team_id}`)
     .on(
       "postgres_changes",
       {
-        event: "UPDATE",
+        event: "*",
         schema: "public",
-        table: "test_answers",
-        filter: `test_taker_id=eq.${test_taker_id}`,
+        table: "manual_grades",
+        filter: `team_id=eq.${team_id}`,
       },
       (payload) => {
-        if (Math.random() < 0.01) {
-          console.log(`hello from test_taker_id=${test_taker_id}${Math.random()}`);
-        }
+          console.log(`answer updated for grader ${email}`);
       },
     )
-    .subscribe();   
+    .subscribe();
+
+    userData.push({ supabase});
+    numSuccess += 1;
+    console.log(`num success {${numSuccess}}`);
+
     await delay(2000);
+
   }
 }
 
