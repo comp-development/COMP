@@ -7,14 +7,19 @@
 	import Loading from "$lib/components/Loading.svelte";
 
 	import {
-    fetchNewProblem,
+		fetchNewProblem,
 		fetchNewScans,
-		// submitGrade,
-		// undoGrade,
+		submitGrade,
+		undoGrade,
 	} from "$lib/supabase";
-  import toast from "$lib/toast.svelte";
-  import { Modal } from "flowbite-svelte";
-  import { user } from "$lib/sessionStore";
+	import { Modal } from "flowbite-svelte";
+	import { user } from "$lib/sessionStore";
+	import {
+		supabase,
+		type AsyncReturnType,
+		type Unpacked,
+	} from "$lib/supabaseClient";
+	import type { Tables } from "../../../db/database.types";
 
 	export let showGrades = false;
 	export let onlyConflicted = false;
@@ -23,66 +28,92 @@
 	export let testId: number;
 
 	// TODO: handle conflict grading
+	// TODO: delete the tiebreaks test_problem associations in prod DB and communicate it needs to stay that way
 
-	/**
-	 * Possible grades / actions for the grader to submit.
-	 * @enum {{name: string, color: string}}
-	 */
-	const Grade = Object.freeze({
-		CORRECT: { name: "Correct", color: "#9BFF99" },
-		INCORRECT: { name: "Incorrect", color: "#FF9999" },
-		UNSURE: { name: "Unsure", color: "#FFFB99" },
-		UNDO: { name: "Undo", color: "#999999" },
-	});
+	type Action = "Correct" | "Incorrect" | "Unsure" | "Undo";
 
-	// let tournament = "";
-	let test = {test_name: ""};
+	let test_data: null | Tables<"tests"> = null;
+	let problem_data: Map<
+		number,
+		AsyncReturnType<typeof fetchNewProblem> & { answer_display: any }
+	> = new Map();
 	let loaded = false;
 	let switchingProblems = false;
 	let fetching_problems = false;
 	let currentProblemID: number | null = null;
 
-	let gradeQueue: any[] = [];
+	let gradeQueue: (Unpacked<AsyncReturnType<typeof fetchNewScans>> & {
+		image_url: string;
+		grade_id: number | null;
+	})[] = [];
+	let loaded_scans = new Set();
 	let currentIndex = 0;
+	let no_remaining_problems = false;
 
-	async function fetchMoreProblems(num_problems = 10) {
-		if (fetching_problems) {
+	async function fetchNextProblem(): Promise<number | null> {
+		const new_problem = await fetchNewProblem($user!.id, testId);
+		if (!new_problem) {
+			return null;
+		}
+
+		const html_latex = (await displayLatex(new_problem.answer_latex ?? "", []))
+			.out;
+		problem_data.set(new_problem.test_problem_id, {
+			answer_display: html_latex,
+			...new_problem,
+		});
+
+		return new_problem.test_problem_id;
+	}
+
+	async function fetchMoreScans(num_scans = 10) {
+		if (no_remaining_problems || fetching_problems) {
 			return;
 		}
 		fetching_problems = true;
 		loaded = false;
 
 		if (!currentProblemID) {
-			console.log("need to fetch current problem id")
+			const maybe_id = await fetchNextProblem();
+			console.log("maybe id", maybe_id);
+			if (!maybe_id) {
+				no_remaining_problems = true;
+				fetching_problems = false;
+				loaded = true;
+				return;
+			}
+			switchingProblems = true;
+			currentProblemID = maybe_id;
+		}
+
+		const scans = await fetchNewScans(
+			$user!.id,
+			num_scans,
+			testId,
+			currentProblemID,
+			gradeQueue.slice(currentIndex).map((p) => p.scan_id),
+		);
+
+		// If we run out of scans, fetch another problem.
+		if (scans.length == 0 && currentIndex == gradeQueue.length) {
+			console.log("out of problems");
+			currentProblemID = null;
+			fetching_problems = false;
+			await fetchMoreScans(num_scans);
 			return;
 		}
-		
-		// let new_problems = await fetchNewTakerResponses(
-		// 	$user!.id,
-		// 	num_problems,
-		// 	testId,
-		// 	gradeQueue.at(currentIndex)?.problem_id,
-		// 	onlyConflicted,
-		// );
-		// if (new_problems.length == 0) {
-		// 	new_problems = await fetchNewTakerResponses(
-		// 	$user!.id,
-		// 		num_problems,
-		// 		testId,
-		// 		null,
-		// 		onlyConflicted,
-		// 	);
-		// }
-		// if (new_problems.length > 0) {
-		// 	for (let problem of new_problems) {
-		// 		const display = await displayLatex(problem.answer_latex, []);
-		// 		problem.answer_display = display.out;
-		// 	}
-		// 	gradeQueue = gradeQueue.concat(new_problems);
-		// 	console.log(`Fetched ${new_problems.length} new problems!`);
-		// 	console.log(`gradeQueue length ${gradeQueue.length}`);
-		// 	// console.log(gradeQueue);
-		// }
+
+		if (scans.length > 0) {
+			gradeQueue = gradeQueue.concat(
+				scans.map((s) => ({
+					...s,
+					image_url: supabase.storage.from("scans").getPublicUrl(s.scan_path)
+						.data.publicUrl,
+					grade_id: null,
+				})),
+			);
+		}
+
 		fetching_problems = false;
 		loaded = true;
 	}
@@ -90,25 +121,29 @@
 	$: (async () => {
 		// TODO: @tweoss. Check if this is valid (handleAction might assume index is just 1 less)
 		if (gradeQueue.length - currentIndex < 5) {
-			// if (gradeQueue.length - currentIndex < 1 && user != null) {
-			console.log(`Fetching more problems... because length is at ${gradeQueue.length} and currentIndex is at ${currentIndex}`);
-			console.log("boop", [$user!.id, testId])
-			console.log("boop", await fetchNewProblem($user!.id, testId))
-			let temp = await fetchNewProblem($user!.id, testId);
-			console.log("boop", await fetchNewScans($user!.id, 10, testId, (temp!).test_problem_id))
-			await fetchMoreProblems();
-			// console.log(`Fetched more problems!`);
+			console.log(
+				`Fetching more problems... because length is at ${gradeQueue.length} and currentIndex is at ${currentIndex}`,
+			);
+			await fetchMoreScans();
 		}
 	})();
 
 	(async () => {
-  	loaded = true;
+		const { data, error } = await supabase
+			.from("tests")
+			.select("*")
+			.eq("test_id", testId)
+			.single();
+		if (error) handleError(error);
+
+		test_data = data;
+		loaded = true;
 	})();
 
-	function calculateDimensions(problem_data) {
-		const bounding_boxes = JSON.parse(problem_data.bounding_boxes);
-		const bounding_box =
-			bounding_boxes.box_positions[problem_data.problem_number];
+	function calculateDimensions(problem_number: number) {
+		const bounding_boxes = test_data!.bounding_boxes as any;
+		console.log(bounding_boxes, problem_number, gradeQueue, problem_data);
+		const bounding_box = bounding_boxes.box_positions[problem_number];
 
 		// Parse input object
 		const topLeftX = parseFloat(bounding_box.top_left[0]);
@@ -117,10 +152,10 @@
 		const bottomRightY = parseFloat(bounding_box.bottom_right[1]);
 
 		// Calculate dimensions
-		const left = topLeftX.toFixed(2);
-		const top = topLeftY.toFixed(2);
-		const width = (bottomRightX - topLeftX).toFixed(2);
-		const height = (bottomRightY - topLeftY).toFixed(2);
+		const left = topLeftX;
+		const top = topLeftY;
+		const width = bottomRightX - topLeftX;
+		const height = bottomRightY - topLeftY;
 
 		// Return result
 		return {
@@ -132,9 +167,8 @@
 	}
 
 	// Handle swipe actions
-	async function handleAction(action) {
+	async function handleAction(action: Action) {
 		if (switchingProblems || gradeQueue.length <= currentIndex) {
-		// if (switchingProblems || gradeQueue.length <= currentIndex - 1) {
 			return;
 		}
 
@@ -146,28 +180,35 @@
 		const flashOutDuration = 1000; // 1 second
 
 		if (
-			[Grade.CORRECT, Grade.INCORRECT, Grade.UNSURE].find((a) => a == action) !=
-			null
+			(["Correct", "Incorrect", "Unsure"] satisfies Action[]).find(
+				(a) => a == action,
+			) != null
 		) {
-			// await submitGrade($user!.id, {
-			// 	scan_id: gradeQueue[currentIndex].scan_id,
-			// 	test_problem_id: gradeQueue[currentIndex].test_problem_id,
-			// 	grade: action.name,
-			// 	is_override: onlyConflicted,
-			// });
+			const data = await submitGrade($user!.id, {
+				scan_id: gradeQueue[currentIndex].scan_id,
+				test_problem_id: gradeQueue[currentIndex].test_problem_id,
+				grade: action as "Correct" | "Incorrect" | "Unsure",
+				is_override: onlyConflicted,
+			});
+			gradeQueue[currentIndex].grade_id = data.grade_id;
 		}
 
-		if (action == Grade.UNDO) {
-			// await undoGrade(
-			// 	gradeQueue[currentIndex - 1 >= 0 ? currentIndex - 1 : 0].grade_id
-			// );
+		if (action == "Undo") {
+			await undoGrade(
+				gradeQueue[currentIndex - 1 >= 0 ? currentIndex - 1 : 0].grade_id!,
+			);
 		}
 
 		// Change the background color of the entire page to the color with fast transition
 		bodyElement.style.transition = `background-color ${
 			flashInDuration / 1000
 		}s ease-in-out`;
-		bodyElement.style.backgroundColor = action.color;
+		let color = "";
+		if (action == "Correct") color = "#9BFF99";
+		if (action == "Incorrect") color = "#FF9999";
+		if (action == "Unsure") color = "#FFFB99";
+		if (action == "Undo") color = "#999999";
+		bodyElement.style.backgroundColor = color;
 
 		// Revert the background color to original with slower transition after the specified duration
 		setTimeout(() => {
@@ -178,54 +219,39 @@
 		}, flashInDuration);
 
 		// Move to the next card
-		if (action == Grade.UNDO) {
+		if (action == "Undo") {
 			if (currentIndex > 0) {
 				currentIndex -= 1;
 			}
 		} else {
 			currentIndex += 1;
-			const oldScan = gradeQueue.at(currentIndex - 1);
-			const newScan = gradeQueue.at(currentIndex);
-			if (
-				oldScan &&
-				newScan &&
-				(oldScan.test_id != newScan.test_id ||
-					oldScan.problem_number != newScan.problem_number)
-			) {
-				switchingProblems = true;
-			}
 		}
 	}
 
 	async function handleKey(e: KeyboardEvent) {
 		// Check if the pressed key is 'X'
 		if (e.key === "x" || e.key === "X") {
-			await handleAction(Grade.INCORRECT);
+			await handleAction("Incorrect");
 		} else if (e.key === "z" || e.key === "Z") {
-			await handleAction(Grade.UNDO);
+			await handleAction("Undo");
 		} else if (e.key === "c" || e.key === "C") {
-			await handleAction(Grade.UNSURE);
+			await handleAction("Unsure");
 		} else if (e.key === "v" || e.key === "V") {
-			await handleAction(Grade.CORRECT);
+			await handleAction("Correct");
 		}
 	}
 
-	function count_occurences(array: {grade: string}[], grade: string) {
-		return array.map(g => g.grade == grade).reduce((a, e) => a + (e ? 1 : 0), 0);
+	function count_occurences(array: { grade: string }[], grade: string) {
+		return array
+			.map((g) => g.grade == grade)
+			.reduce((a, e) => a + (e ? 1 : 0), 0);
 	}
-
-	onMount(async () => {
-		// Load initial card data
-		// console.log(`Mounting...`);
-		// getTournament();
-		// test = await getTestInfo(testId) as any;
-	});
 </script>
 
 <svelte:window on:keydown={handleKey} />
 
 <div class="grading">
-	<!-- <h1>Grading {tournament}: {test.test_name}</h1> -->
+	<h1>Grading {test_data?.test_name}</h1>
 
 	<br />
 	<Button title="Go Back" href="/grading" />
@@ -237,59 +263,84 @@
 			{#if gradeQueue[currentIndex]}
 				<div class="flex">
 					<div class="sideBySide">
-						<p>{gradeQueue[currentIndex].test_name}</p>
 						<p style="margin-left: 20px">
-							Problem #{gradeQueue[currentIndex].problem_number + 1}
+							Problem #{problem_data.get(
+								gradeQueue[currentIndex].test_problem_id,
+							)!.problem_number + 1}
 						</p>
 					</div>
 				</div>
 				<br />
 				<h2>
-					{@html gradeQueue[currentIndex].answer_display}
+					{@html problem_data.get(gradeQueue[currentIndex].test_problem_id)!
+						.answer_display}
 				</h2>
 				<ImageZoomer
-					imageUrl={gradeQueue[currentIndex].image}
-					inputCoordinates={calculateDimensions(gradeQueue[currentIndex])}
+					imageUrl={gradeQueue[currentIndex].image_url}
+					inputCoordinates={calculateDimensions(
+						problem_data.get(gradeQueue[currentIndex].test_problem_id)!
+							.problem_number,
+					)}
 				/>
 				<br />
 				<div class="flex">
 					<button
 						style="background-color: #999999; color: #282828;"
-						on:click={async () => handleAction(Grade.UNDO)}>↩ (Z)</button
+						on:click={async () => handleAction("Undo")}>↩ (Z)</button
 					>
 					<button
 						style="background-color: #ff9999; color: #AD2828;"
-						on:click={async () => handleAction(Grade.INCORRECT)}>X (X)</button
+						on:click={async () => handleAction("Incorrect")}>X (X)</button
 					>
 					{#if !disableUnsure}
 						<button
 							style="background-color: #FFFB99; color: #7C7215;"
-							on:click={async () => handleAction(Grade.UNSURE)}>? (C)</button
+							on:click={async () => handleAction("Unsure")}>? (C)</button
 						>
 					{/if}
 					<button
 						style="background-color: #9BFF99; color: #157C20;"
-						on:click={async () => handleAction(Grade.CORRECT)}>✔ (V)</button
+						on:click={async () => handleAction("Correct")}>✔ (V)</button
 					>
 				</div>
+				<!-- TODO: add back show grades
 				{#if showGrades}
 					<div class="flex">
 						<button disabled style="background-color: #FFFB99; color: #7C7215;">
-							{count_occurences(gradeQueue[currentIndex].grades, Grade.UNSURE.name)}
+							{count_occurences(
+								gradeQueue[currentIndex].grades,
+								Grade.UNSURE.name,
+							)}
 						</button>
 						<button disabled style="background-color: #ff9999; color: #AD2828;">
-							{count_occurences(gradeQueue[currentIndex].grades, Grade.INCORRECT.name)}
+							{count_occurences(
+								gradeQueue[currentIndex].grades,
+								Grade.INCORRECT.name,
+							)}
 						</button>
 						<button disabled style="background-color: #9BFF99; color: #157C20;">
-							{count_occurences(gradeQueue[currentIndex].grades, Grade.CORRECT.name)}
+							{count_occurences(
+								gradeQueue[currentIndex].grades,
+								Grade.CORRECT.name,
+							)}
 						</button>
 					</div>
 				{/if}
+				-->
 				<br />
 			{:else}
 				<p>No more problems - check back later!</p>
+				<!-- in case someone messed up on the last grade and wants to go back and fix -->
+				{#if currentIndex > 0}
+					<button style="font-size: 10pt; background-color: #FFFB99;"
+						on:click={() => {
+							currentIndex = currentIndex > 0 ? currentIndex - 1 : 0;
+						}}
+					>Go Back to UNDO</button>
+					<br>
+				{/if}
 			{/if}
-			Number of problems remaining in queue: {gradeQueue.length - currentIndex}
+			Number of problems remaining in local queue: {gradeQueue.length - currentIndex}
 		</div>
 	{/if}
 
@@ -304,11 +355,15 @@
 	<Modal
 		bind:open={switchingProblems}
 		title={`Switching to Problem ${
-			gradeQueue.at(currentIndex)?.problem_number + 1
+			gradeQueue.at(currentIndex)
+				? problem_data.get(gradeQueue.at(currentIndex)!.test_problem_id)!
+						.problem_number + 1
+				: 0
 		}`}
 	>
 		New Answer: {@html gradeQueue[currentIndex]
-			? gradeQueue[currentIndex].answer_display
+			? problem_data.get(gradeQueue[currentIndex].test_problem_id)!
+					.answer_display
 			: "<div></div>"}
 	</Modal>
 </div>
@@ -323,7 +378,6 @@
 	}
 
 	.grading {
-
 	}
 
 	.card {

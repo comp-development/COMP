@@ -1,14 +1,10 @@
+import type { Tables } from "../../../db/database.types";
 import { supabase } from "../supabaseClient";
 
 // These two constants control the number of scans that are fetched at a time.
 const MIN_SCAN_INDEX = 0;
 const MAX_SCAN_INDEX = 100;
 // NOTE: const jsonData (a list of JSON dictionaries {scan_id: int, test_id: int}) is hard coded at the bottom of this file. Please update if necessary!
-
-function getImageUrl(path: string, bucket: string = "scans"): string | null {
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return data?.publicUrl || null;
-}
 
 export async function uploadScan(
   file: any,
@@ -102,12 +98,13 @@ export async function fetchNewScans(
   batch_size: number,
   test_id: number,
   test_problem_id: number,
-  // only_conflicted: boolean,
-): Promise<any[]> {
+  filter_scan_ids: number[],
+) {
   // TODO: handle conflicted
   // TODO: handle the fact that this may return problems that have been claimed by this grader but not graded
   // TODO: delete test_problem association for tiebreakers
 
+  console.log("fetching more scans")
   const { data: scans, error: listError } = await supabase
     .rpc("get_test_problem_scans_state", {
       in_test_id: test_id,
@@ -117,6 +114,7 @@ export async function fetchNewScans(
     .eq("grader_graded", false)
     .lt("total_grades", 2)
     .order("total_claims", { ascending: true })
+    .not("scan_id", "in", `(${filter_scan_ids.join(",")})`)
     .limit(batch_size);
   if (listError) {
     throw listError;
@@ -138,42 +136,48 @@ export async function fetchNewScans(
   return scans;
 }
 
-// export async function submitGrade(grader_id: string, data: any): Promise<void> {
-//   // if (data.is_override ?? false) {
-//   // 	const { data: existingRow, error } = await supabase
-//   // 		.from("grades")
-//   // 		.select("*")
-//   // 		.eq("scan_id", data.scan_id)
-//   // 		.eq("test_problem_id", data.test_problem_id)
-//   // 		.eq("is_override", true)
-//   // 		.single();
-//   // 	if (error) {
-//   // 		throw error;
-//   // 	}
-//   // 	if (existingRow) {
-//   // 		return;
-//   // 	}
-//   // }
-//   const { error } = await supabase
-//     .from("grades")
-//     .upsert(
-//       { ...data, grader_id },
-//       { onConflict: "grader_id,scan_id,test_problem_id" },
-//     );
-//   if (error) {
-//     throw error;
-//   }
-// }
+export async function submitGrade(
+  grader_id: string,
+  fields: Partial<Tables<"scan_grades">>,
+): Promise<{ grade_id: number }> {
+  // if (data.is_override ?? false) {
+  // 	const { data: existingRow, error } = await supabase
+  // 		.from("grades")
+  // 		.select("*")
+  // 		.eq("scan_id", data.scan_id)
+  // 		.eq("test_problem_id", data.test_problem_id)
+  // 		.eq("is_override", true)
+  // 		.single();
+  // 	if (error) {
+  // 		throw error;
+  // 	}
+  // 	if (existingRow) {
+  // 		return;
+  // 	}
+  // }
+  const { data, error } = await supabase
+    .from("scan_grades")
+    .upsert(
+      { ...fields, grader_id },
+      { onConflict: "grader_id,scan_id,test_problem_id" },
+    )
+    .select("grade_id")
+    .single();
+  if (error) {
+    throw error;
+  }
+  return data;
+}
 
-// export async function undoGrade(grade_id: number): Promise<void> {
-//   const { error: updateGradeError } = await supabase
-//     .from("grades")
-//     .update({ grade: null })
-//     .eq("id", grade_id);
-//   if (updateGradeError) {
-//     throw updateGradeError;
-//   }
-// }
+export async function undoGrade(grade_id: number): Promise<void> {
+  const { error: updateGradeError } = await supabase
+    .from("scan_grades")
+    .update({ grade: null })
+    .eq("grade_id", grade_id);
+  if (updateGradeError) {
+    throw updateGradeError;
+  }
+}
 
 // export async function getGrades() {
 //   const distinctPairs = Array.from(
