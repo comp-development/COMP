@@ -139,13 +139,13 @@ grant update on table "public"."manual_grades" to "service_role";
 
 
 
-Found drop statements in schema diff. Please double check if these are expected:
-alter table "public"."guts_grades" drop constraint "guts_grades_grader_id_fkey"      
-alter table "public"."guts_grades" drop constraint "guts_grades_team_id_fkey"        
-alter table "public"."guts_grades" drop constraint "guts_grades_test_id_fkey"        
-alter table "public"."guts_grades" drop constraint "guts_grades_test_problem_id_fkey"
-alter table "public"."guts_grades" drop constraint "single_grade_per_team_problem"   
-alter table "public"."guts_grades" drop constraint "guts_grades_pkey"                
-drop index if exists "public"."guts_grades_pkey"                                     
-drop index if exists "public"."single_grade_per_team_problem"                        
-drop table "public"."guts_grades"  
+-- Found drop statements in schema diff. Please double check if these are expected:
+-- alter table "public"."guts_grades" drop constraint "guts_grades_grader_id_fkey"      
+-- alter table "public"."guts_grades" drop constraint "guts_grades_team_id_fkey"        
+-- alter table "public"."guts_grades" drop constraint "guts_grades_test_id_fkey"        
+-- alter table "public"."guts_grades" drop constraint "guts_grades_test_problem_id_fkey"
+-- alter table "public"."guts_grades" drop constraint "single_grade_per_team_problem"   
+-- alter table "public"."guts_grades" drop constraint "guts_grades_pkey"                
+-- drop index if exists "public"."guts_grades_pkey"                                     
+-- drop index if exists "public"."single_grade_per_team_problem"                        
+-- drop table "public"."guts_grades"  
