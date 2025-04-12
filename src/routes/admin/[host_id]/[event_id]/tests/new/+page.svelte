@@ -223,10 +223,13 @@
     }
   }
 
-  // Handle basic LaTeX commands like \emph, \item, and \begin{enumerate}
+  // Handle latex conversion
   function convertLaTeXtoHTML(input) {
     // Replace \emph{...} with <em>...</em>
     input = input.replace(/\\emph\{(.*?)\}/g, "<em>$1</em>");
+
+    const hostId = $page.params.host_id;
+    input = input.replace(/\\image\{/g, `\\image{host_${hostId}/`);
 
     // Replace \item ... with <li>...</li> — line-based
     // input = input.replace(/^\\item\s*(.*)$/gm, "<li>$1</li>");
@@ -252,6 +255,7 @@
     console.log("Handling submit...");
 
     let event_id = $page.params.event_id;
+    let host_id = $page.params.host_id;
 
     try {
       // Reformat test data
@@ -305,11 +309,16 @@
       console.log("Problems data upserted successfully:", problemsData);
 
       // Format test_problems data
+      console.log("Formatting test problems data");
       testData.test_problems = await Promise.all(
         testData.test_problems.map(async (test_problem) => {
-          const test = await getTestFromComposeId(test_problem.test_id);
+          const test = await getTestFromComposeId(
+            test_problem.test_id,
+            event_id
+          );
           const problem = await getProblemFromComposeID(
-            test_problem.problem_id
+            test_problem.problem_id,
+            host_id
           );
           return {
             test_id: test.test_id,
@@ -333,6 +342,11 @@
           "Error uploading test problems data: " + testProblemsError.message
         );
       }
+      // log success
+      console.log(
+        "Test problems data upserted successfully:",
+        testProblemsData
+      );
 
       // Upsert problem_images
       console.log("Upserting problem images data");

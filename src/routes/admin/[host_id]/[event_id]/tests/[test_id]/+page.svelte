@@ -83,7 +83,7 @@
   (async () => {
     user = await getThisUser();
     test = await getTest(test_id);
-    problems = await getTestProblems(test_id, null, "*, problems(*)") || [];
+    problems = (await getTestProblems(test_id, null, "*, problems(*)")) || [];
     allProblems = await getAllProblems(host_id);
     allProblems.forEach((problem) => {
       problem.id = problem.problem_id;
@@ -118,7 +118,7 @@
       // Resort problems after the swap
       problems.sort(
         (a: TestProblem, b: TestProblem) =>
-          a.page_number - b.page_number || a.problem_number - b.problem_number,
+          a.page_number - b.page_number || a.problem_number - b.problem_number
       );
     }
   }
@@ -149,12 +149,16 @@
       // Resort problems after the swap
       problems.sort(
         (a: TestProblem, b: TestProblem) =>
-          a.page_number - b.page_number || a.problem_number - b.problem_number,
+          a.page_number - b.page_number || a.problem_number - b.problem_number
       );
     }
   }
 
-  async function updateTestWithKey(event: { target: { value: any } }, key: string, autoUpdate = false) {
+  async function updateTestWithKey(
+    event: { target: { value: any } },
+    key: string,
+    autoUpdate = false
+  ) {
     if (test) {
       test[key] = event.target.value;
       if (autoUpdate) {
@@ -185,7 +189,10 @@
 
   // Group problems by page_number
   const groupByPageNumber = (problems: TestProblem[], totalPages: number) => {
-    const grouped: TestProblem[][] = Array.from({ length: totalPages }, () => []);
+    const grouped: TestProblem[][] = Array.from(
+      { length: totalPages },
+      () => []
+    );
 
     problems.forEach((problem: TestProblem) => {
       const pageNumber = problem.page_number - 1;
@@ -196,17 +203,17 @@
         grouped[0].push(problem);
       }
     });
-
+    console.log(grouped);
     return grouped;
   };
 
   async function addNewProblemToTest(row: { problem_id: number }) {
     try {
       if (!test) return;
-      
+
       const groupedProblems = groupByPageNumber(
         problems,
-        test.settings.pages.length,
+        test.settings.pages.length
       );
       let prob_number = 0;
       const idx = curPage !== null ? curPage : test.settings.pages.length - 1;
@@ -233,7 +240,7 @@
           points: 1,
           problem_number: prob_number + 1,
         },
-        "*, problems(*)",
+        "*, problems(*)"
       );
 
       problems.push(newProblem);
@@ -450,7 +457,7 @@
                           delete problem.edits;
                           await updateTestProblem(
                             test.test_id,
-                            problems[problems.indexOf(problem)],
+                            problems[problems.indexOf(problem)]
                           );
                           clarifications[problem.test_problem_id] =
                             await updateClarification({
@@ -499,7 +506,7 @@
         action={async () => {
           loading = true;
           await addNewProblemPage(
-            problems[problems.length - 1].page_number + 1,
+            problems[problems.length - 1].page_number + 1
           );
           loading = false;
         }}
@@ -514,14 +521,14 @@
       modalProblem = null;
       newProblemModal = true;
     }}
-    host_id={host_id}
+    {host_id}
     closeModal={() => (modalProblem = null)}
     onSelect={async (row) => {
       try {
         const newProblem = await replaceTestProblem(
           problems[modalProblem].test_problem_id,
           row.problem_id,
-          "*, problems(*)",
+          "*, problems(*)"
         );
         problems[modalProblem] = newProblem;
         problems = [...problems];
@@ -542,7 +549,7 @@
     closeModal={() => {
       openAddProblemModal = false;
     }}
-    host_id={host_id}
+    {host_id}
     onSelect={async (row) => {
       console.log("ROW", row);
       await addNewProblemToTest(row);
@@ -551,7 +558,7 @@
 
   <CreateProblemModal
     open={newProblemModal}
-    host_id={host_id}
+    {host_id}
     changeNewProblem={() => {
       newProblemModal = true;
     }}
