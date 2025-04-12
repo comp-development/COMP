@@ -1,3 +1,4 @@
+import toast from "$lib/toast.svelte";
 import type { Tables } from "../../../db/database.types";
 import { supabase } from "../supabaseClient";
 
@@ -58,7 +59,12 @@ export async function uploadScan(
 }
 
 export async function fetchNewProblem(grader_id: string, test_id: number) {
-  console.log("fetching new problem with grader_id", grader_id, "and test_id", test_id);
+  console.log(
+    "fetching new problem with grader_id",
+    grader_id,
+    "and test_id",
+    test_id,
+  );
   const { data: problems, error: listError } = await supabase
     .rpc("get_next_problem", { in_test_id: test_id, target_grader: grader_id })
     .order("available_scans", { ascending: false })
@@ -102,20 +108,24 @@ export async function fetchNewScans(
   test_id: number,
   test_problem_id: number,
   filter_scan_ids: number[],
+  only_conflicted: boolean,
 ) {
-  // TODO: handle conflicted
   // TODO: handle the fact that this may return problems that have been claimed by this grader but not graded
   // TODO: delete test_problem association for tiebreakers
-
-  console.log("fetching more scans")
-  const { data: scans, error: listError } = await supabase
+  console.log("fetching more scans");
+  let query = supabase
     .rpc("get_test_problem_scans_state", {
       in_test_id: test_id,
       target_grader: grader_id,
     })
-    .eq("test_problem_id", test_problem_id)
-    .eq("grader_graded", false)
-    .lt("total_grades", 2)
+    .eq("test_problem_id", test_problem_id);
+  if (only_conflicted) {
+    query = query.filter("overriden", "is", false)
+    query = query.or("unsure_grades.gt.0, distinct_grades.gt.1");
+  } else {
+    query = query.eq("grader_graded", false).lt("total_grades", 2);
+  }
+  const { data: scans, error: listError } = await query
     .order("total_claims", { ascending: true })
     .not("scan_id", "in", `(${filter_scan_ids.join(",")})`)
     .limit(batch_size);
@@ -142,26 +152,29 @@ export async function fetchNewScans(
 export async function submitGrade(
   grader_id: string,
   fields: Partial<Tables<"scan_grades">>,
+  is_override: boolean,
 ): Promise<{ grade_id: number }> {
-  // if (data.is_override ?? false) {
-  // 	const { data: existingRow, error } = await supabase
-  // 		.from("grades")
-  // 		.select("*")
-  // 		.eq("scan_id", data.scan_id)
-  // 		.eq("test_problem_id", data.test_problem_id)
-  // 		.eq("is_override", true)
-  // 		.single();
-  // 	if (error) {
-  // 		throw error;
-  // 	}
-  // 	if (existingRow) {
-  // 		return;
-  // 	}
-  // }
+  if (is_override) {
+    const { data: existingRow, error } = await supabase
+      .from("scan_grades")
+      .select("*")
+      .eq("scan_id", fields.scan_id!)
+      .eq("test_problem_id", fields.test_problem_id!)
+      .eq("is_override", true)
+      .maybeSingle();
+    if (error) {
+      throw error;
+    }
+    if (existingRow) {
+      toast.warning(
+        `overriding an existing override with value ${existingRow.grade}`,
+      );
+    }
+  }
   const { data, error } = await supabase
     .from("scan_grades")
     .upsert(
-      { ...fields, grader_id },
+      { ...fields, grader_id, is_override },
       { onConflict: "grader_id,scan_id,test_problem_id" },
     )
     .select("grade_id")

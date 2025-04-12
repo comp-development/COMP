@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import { displayLatex } from "$lib/latexStuff";
 	import Button from "$lib/components/Button.svelte";
 	import ImageZoomer from "$lib/components/ImageZoomer.svelte";
@@ -20,7 +19,6 @@
 		type Unpacked,
 	} from "$lib/supabaseClient";
 	import type { Tables } from "../../../db/database.types";
-	import type { FabricImage as Image } from "fabric";
 	import { FabricImage } from "fabric";
 
 	export let showGrades = false;
@@ -47,13 +45,44 @@
 	let gradeQueue: (Unpacked<AsyncReturnType<typeof fetchNewScans>> & {
 		image: FabricImage;
 		grade_id: number | null;
+		grades: (string | null)[] | null;
 	})[] = [];
 	let loaded_scans = new Set();
 	let currentIndex = 0;
 	let no_remaining_problems = false;
 
 	async function fetchNextProblem(): Promise<number | null> {
-		const new_problem = await fetchNewProblem($user!.id, testId);
+		const load_conflicted = async () => {
+			const { data: scan_data, error: scan_error } = await supabase
+				.rpc("get_test_problem_scans_state", {
+					in_test_id: testId,
+					target_grader: $user!.id,
+				})
+		    .filter("overriden", "is", false)
+				.or("unsure_grades.gt.0, distinct_grades.gt.1")
+				.limit(1);
+			if (scan_error) throw scan_error;
+			if (scan_data.length == 0) {
+				return null;
+			}
+			const { data: problem_data, error } = await supabase
+				.from("test_problems")
+				.select(
+					"problems(problem_latex, answer_latex, solution_latex), problem_number",
+				)
+				.eq("test_problem_id", scan_data[0].test_problem_id)
+				.single();
+			if (error) throw error;
+			return {
+				test_problem_id: scan_data[0].test_problem_id,
+				problem_number: problem_data.problem_number,
+				...problem_data.problems,
+			};
+		};
+
+		const new_problem = onlyConflicted
+			? await load_conflicted()
+			: await fetchNewProblem($user!.id, testId);
 		if (!new_problem) {
 			return null;
 		}
@@ -94,6 +123,7 @@
 			testId,
 			currentProblemID,
 			gradeQueue.slice(currentIndex).map((p) => p.scan_id),
+			onlyConflicted,
 		);
 
 		// If we run out of scans, fetch another problem.
@@ -115,6 +145,15 @@
 								.publicUrl,
 						),
 						grade_id: null,
+						grades: showGrades
+							? ((
+									await supabase
+										.from("scan_grades")
+										.select("grade")
+										.eq("test_problem_id", s.test_problem_id)
+										.eq("scan_id", s.scan_id)
+								).data?.map((g) => g.grade) ?? [])
+							: [],
 					})),
 				),
 			);
@@ -191,12 +230,15 @@
 				(a) => a == action,
 			) != null
 		) {
-			const data = await submitGrade($user!.id, {
-				scan_id: gradeQueue[currentIndex].scan_id,
-				test_problem_id: gradeQueue[currentIndex].test_problem_id,
-				grade: action as "Correct" | "Incorrect" | "Unsure",
-				is_override: onlyConflicted,
-			});
+			const data = await submitGrade(
+				$user!.id,
+				{
+					scan_id: gradeQueue[currentIndex].scan_id,
+					test_problem_id: gradeQueue[currentIndex].test_problem_id,
+					grade: action as "Correct" | "Incorrect" | "Unsure",
+				},
+				onlyConflicted,
+			);
 			gradeQueue[currentIndex].grade_id = data.grade_id;
 		}
 
@@ -248,10 +290,8 @@
 		}
 	}
 
-	function count_occurences(array: { grade: string }[], grade: string) {
-		return array
-			.map((g) => g.grade == grade)
-			.reduce((a, e) => a + (e ? 1 : 0), 0);
+	function count_occurences(array: (string | null)[], grade: string) {
+		return array.reduce((a, e) => a + (e == grade ? 1 : 0), 0);
 	}
 </script>
 
@@ -316,30 +356,28 @@
 						on:click={async () => handleAction("Correct")}>✔ (V)</button
 					>
 				</div>
-				<!-- TODO: add back show grades
 				{#if showGrades}
 					<div class="flex">
 						<button disabled style="background-color: #FFFB99; color: #7C7215;">
 							{count_occurences(
-								gradeQueue[currentIndex].grades,
-								Grade.UNSURE.name,
+								gradeQueue[currentIndex].grades ?? [],
+								"Unsure",
 							)}
 						</button>
 						<button disabled style="background-color: #ff9999; color: #AD2828;">
 							{count_occurences(
-								gradeQueue[currentIndex].grades,
-								Grade.INCORRECT.name,
+								gradeQueue[currentIndex].grades ?? [],
+								"Incorrect",
 							)}
 						</button>
 						<button disabled style="background-color: #9BFF99; color: #157C20;">
 							{count_occurences(
-								gradeQueue[currentIndex].grades,
-								Grade.CORRECT.name,
+								gradeQueue[currentIndex].grades ?? [],
+								"Correct",
 							)}
 						</button>
 					</div>
 				{/if}
-				-->
 				<br />
 			{:else}
 				<p>No more problems - check back later!</p>
