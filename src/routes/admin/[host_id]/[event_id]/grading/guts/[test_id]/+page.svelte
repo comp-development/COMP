@@ -528,8 +528,8 @@
   .answer-hover-zone {
     position: relative;
     background-color: #cce0ff;
-    width: 7rem;
-    height: 2.5rem;
+    width: 7.5rem;
+    height: 3.5rem;
     border-radius: 8px;
     overflow: hidden;
     display: flex;
