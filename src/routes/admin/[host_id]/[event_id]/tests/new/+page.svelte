@@ -267,6 +267,7 @@
         compose_test_id: test.id,
         visible: false,
         compose_tournament_id: test.tournament_id,
+        bounding_boxes: JSON.parse(test.bounding_boxes),
       }));
 
       // Upsert test data into Supabase
@@ -323,7 +324,7 @@
           return {
             test_id: test.test_id,
             problem_id: problem.problem_id,
-            problem_number: test_problem.problem_number + 1,
+            problem_number: test_problem.problem_number,
             points: test_problem.problem_weights || 0,
           };
         })
