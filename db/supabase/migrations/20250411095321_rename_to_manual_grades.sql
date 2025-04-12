@@ -136,3 +136,4 @@ grant trigger on table "public"."manual_grades" to "service_role";
 grant truncate on table "public"."manual_grades" to "service_role";
 
 grant update on table "public"."manual_grades" to "service_role";
+

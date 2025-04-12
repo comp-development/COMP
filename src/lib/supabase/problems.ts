@@ -13,7 +13,10 @@ export async function addProblem(problem) {
   return data;
 }
 
-export async function getProblem(problem_id: number, customSelect: string = "*") {
+export async function getProblem(
+  problem_id: number,
+  customSelect: string = "*"
+) {
   const { data, error } = await supabase
     .from("problems")
     .select(customSelect)
@@ -25,19 +28,27 @@ export async function getProblem(problem_id: number, customSelect: string = "*")
 
 export async function getProblemFromComposeID(
   compose_id: string,
-  customSelect: string = "*",
+  host_id: number,
+  customSelect: string = "*"
 ) {
   const { data, error } = await supabase
     .from("problems")
     .select(customSelect)
     .eq("compose_problem_id", compose_id)
+    .eq("host_id", host_id)
     .single();
   if (error) throw error;
   return data;
-}    
+}
 
-export async function getAllProblems(host_id: number, customSelect: string = "*") {
-  const { data, error } = await supabase.from("problems").select("*").eq("host_id", host_id);
+export async function getAllProblems(
+  host_id: number,
+  customSelect: string = "*"
+) {
+  const { data, error } = await supabase
+    .from("problems")
+    .select("*")
+    .eq("host_id", host_id);
 
   if (error) throw error;
   return data;
@@ -59,7 +70,7 @@ export async function getAllProblemClarifications(problems) {
   for (const problem of problems) {
     try {
       const clarification = await getProblemClarification(
-        problem.test_problem_id,
+        problem.test_problem_id
       );
       if (!clarification || clarification.length <= 0) {
         throw new Error("no clarification found");
@@ -136,7 +147,7 @@ export async function updateTestProblem(test_id: number, oldProblem) {
 
 export async function addNewTestProblem(
   problem_info,
-  customSelect: string = "*",
+  customSelect: string = "*"
 ) {
   const { data, error } = await supabase
     .from("test_problems")
@@ -159,7 +170,7 @@ export async function deleteTestProblem(test_problem_id: number) {
 export async function replaceTestProblem(
   test_problem_id: number,
   new_problem_id: number,
-  customSelect: string = "*",
+  customSelect: string = "*"
 ) {
   const { data, error } = await supabase
     .from("test_problems")
@@ -198,7 +209,7 @@ export async function updateGradedAnswer(gradedAnswer) {
         problem_id: gradedAnswer.problem_id,
         answer_latex: gradedAnswer.answer_latex,
       },
-      { onConflict: "problem_id, answer_latex" },
+      { onConflict: "problem_id, answer_latex" }
     )
     .select("*")
     .single();
@@ -216,7 +227,7 @@ export async function insertGradedAnswers(gradedAnswer) {
         problem_id: gradedAnswer.problem_id,
         answer_latex: gradedAnswer.answer_latex,
       },
-      { onConflict: "problem_id, answer_latex" },
+      { onConflict: "problem_id, answer_latex" }
     );
 
     if (error2) throw error2;
