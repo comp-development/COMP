@@ -267,6 +267,7 @@
         compose_test_id: test.id,
         visible: false,
         compose_tournament_id: test.tournament_id,
+        bounding_boxes: JSON.parse(test.bounding_boxes),
       }));
 
       // Upsert test data into Supabase
