@@ -89,17 +89,17 @@ export async function updateHost(host_id: number, hostData: any) {
   if (error) throw error;
 }
 
-export async function userJoinAsHostAdmin(user_id: string, host_id: number) {
+export async function userJoinAsHostAdmin(user_id: string, host_id: number, grader: boolean, owner: boolean) {
   const isAdmin = await isType("admin", user_id);
   if (!isAdmin) {
     const isCoach = await isType("coach", user_id);
     await transferUser(user_id, isCoach ? "coach" : "student", "admin");
   }
 
-  await addAdminToHost(user_id, host_id);
+  await addAdminToHost(user_id, host_id, grader, owner);
 }
 
-export async function inviteUserToHost(host_id: number, emails: string[]) {
+export async function inviteUserToHost(host_id: number, emails: string[], role: number = -1) {
   const { data, error } = await supabase
     .from("hosts")
     .select("invites")
@@ -109,21 +109,21 @@ export async function inviteUserToHost(host_id: number, emails: string[]) {
   if (error) throw error;
 
   let invites = data.invites;
-  let newInvites = [];
+  let newInvites: {email: string, role: number}[] = [];
 
   let allValid = true;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!invites) {
-    invites = emails;
+    invites = emails.map((email) => ({'email': email.trim(), 'role': role}));
   } else {
     emails.forEach((email) => {
       const trimmed = email.trim();
 
       if (emailRegex.test(trimmed)) {
         if (!invites.includes(trimmed)) {
-          invites.push(trimmed);
-          newInvites.push(trimmed);
+          invites.push({email: trimmed, role: role});
+          newInvites.push({email: trimmed, role: role});
         }
       } else {
         allValid = false;
@@ -157,7 +157,7 @@ export async function removeUserInvitationFromHost(host_id: number, email: strin
   let invites = data.invites;
 
   if (invites) {
-    invites = invites.filter((invite: string) => invite !== email);
+    invites = invites.filter((invite: {email: string, role: number}) => invite.email !== email);
   }
 
   const { error: updateError } = await supabase
@@ -176,13 +176,36 @@ export async function checkUserInvitedToHost(host_id: number, email: string) {
     .single();
   if (error) throw error;
   
-  return data.invites.includes(email);
+  return data.invites.some((invite: {email: string, role: number}) => invite.email === email);
 }
 
-export async function addAdminToHost(admin_id: string, host_id: number) {
-  const { error } = await supabase.from("host_admins").insert({
+export async function getInviteRole(host_id: number, email: string) {
+  const { data, error } = await supabase
+    .from("hosts")
+    .select("invites")
+    .eq("host_id", host_id)
+    .single();
+  if (error) throw error;
+
+  const invite = data.invites.find((invite: {email: string, role: number}) => invite.email === email);
+
+  if (invite) {
+    return {
+      grader: invite.role >= 0,
+      owner: invite.role >= 1,
+    };
+  }
+  return { grader: false, owner: false };
+}
+
+export async function addAdminToHost(admin_id: string, host_id: number, grader: boolean, owner: boolean) {
+  const { error } = await supabase.from("host_admins").upsert({
     admin_id: admin_id,
     host_id: host_id,
+    grader: grader,
+    owner: owner
+  }, {
+    onConflict: 'admin_id,host_id'
   });
 
   if (error) throw error;

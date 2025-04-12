@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import Loading from "$lib/components/Loading.svelte";
-  import { getHostInformation, userJoinAsHostAdmin, getThisUser, checkUserInvitedToHost, removeUserInvitationFromHost } from "$lib/supabase";
+  import { getHostInformation, userJoinAsHostAdmin, getThisUser, checkUserInvitedToHost, removeUserInvitationFromHost, getInviteRole } from "$lib/supabase";
   import { Button } from "flowbite-svelte";
   import { handleError } from "$lib/handleError";
   import toast from "$lib/toast.svelte";
@@ -10,18 +10,24 @@
   let host = $state(null);
   let user = $state(null);
   let user_id = $state(null);
-
+  let role: {grader: boolean, owner: boolean} | null = $state(null);
+  
  (async () => {
     try {
       let host_id = $page.url.searchParams.get('host_id');
       user = await getThisUser();
+      user_id = user.id;
 
       let isInvited = await checkUserInvitedToHost(host_id, user.email);
+
       if (!isInvited) {
         throw new Error("User is not invited to this host.");
       }
 
-      user_id = user.id;
+      role = await getInviteRole(host_id, user.email);
+
+      console.log("Role", role);
+
       host = await getHostInformation(host_id);
       loading = false;
     } catch (err) {
@@ -32,7 +38,8 @@
 
   async function acceptInvitation() {
     try {
-      await userJoinAsHostAdmin(user_id, host.host_id);
+
+      await userJoinAsHostAdmin(user_id, host?.host_id, role?.grader, role?.owner);
       await removeUserInvitationFromHost(host.host_id, user.email);
 
       toast.success("You have successfully joined the host!");
