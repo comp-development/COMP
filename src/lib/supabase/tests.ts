@@ -108,7 +108,7 @@ export async function getTest(test_id, detailed = false, customSelect = "*") {
  * @returns Array of scan grade statistics
  */
 export async function getScanGradeStats(test_id: number) {
-
+  console.log("GET SCAN GRADE STATS", test_id);
   const { data, error } = await supabase
     .rpc("get_test_problem_scans_state", {
       in_test_id: test_id,

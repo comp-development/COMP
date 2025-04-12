@@ -16,11 +16,16 @@
 		try {
 			tests = await getEventTests(
 				event_id,
-				false
+				true
 			);
 			await Promise.all(
 				tests.map(async (test) => {
-					const [num_scan_problems, graded_scan_problems, conflict_scan_problems] = await getScanGradeStats(test.id);
+					console.log("TEST", test);
+					const [num_scan_problems, graded_scan_problems, conflict_scan_problems] = await getScanGradeStats(test.test_id);
+
+					console.log("NUM SCAN PROBLEMS", num_scan_problems);
+					console.log("GRADED SCAN PROBLEMS", graded_scan_problems);
+					console.log("CONFLICT SCAN PROBLEMS", conflict_scan_problems);
 					test.num_scan_problems = num_scan_problems;
 					test.graded_scan_problems = graded_scan_problems;
 					test.conflict_scan_problems = conflict_scan_problems;
@@ -86,11 +91,11 @@
 
 	<p style="font-style: italic;">Pick a test to grade</p>
 	<div class="buttonContainer">
-		{#each tests as test, index (test.id)}
+		{#each tests as test, index (test.test_id)}
 			<div>
 				<a
 					class="problemContainer"
-					href="/admin/{host_id}/{event_id}/tests/scangrade/{test.id}/"
+					href="/admin/{host_id}/{event_id}/grading/{test.test_id}/"
 					style="background: linear-gradient(to right, 
 					{calculateGradientBars(
 						test.conflict_scan_problems,
