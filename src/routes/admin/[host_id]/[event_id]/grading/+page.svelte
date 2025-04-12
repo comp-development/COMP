@@ -77,7 +77,7 @@
 	}
 
 	function calculateProgress(graded, total) {
-		return (graded / total) * 100;
+		return Math.ceil((graded / total) * 100);
 	}
 </script>
 
@@ -107,8 +107,7 @@
 					"
 				>
 					<h4>
-						{test.test_name} [{test.graded_scan_problems -
-							test.conflict_scan_problems} done + {test.conflict_scan_problems} conflict
+						{test.test_name} [{test.graded_scan_problems} done + {test.conflict_scan_problems} conflict
 						/ {test.num_scan_problems} scans = {calculateProgress(
 							test.graded_scan_problems,
 							test.num_scan_problems
