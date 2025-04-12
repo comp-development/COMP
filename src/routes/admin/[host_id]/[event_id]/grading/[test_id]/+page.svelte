@@ -33,6 +33,6 @@
 <Grading
 	event_id={parseInt($page.params.event_id)}
 	testId={parseInt($page.params.test_id)}
-	onlyConflicted={ && hostAdmin?.owner}
-	showGrades={(searchParams.get("override") != null) && hostAdmin?.owner}
+	onlyConflicted={is_override && hostAdmin?.owner}
+	showGrades={is_override  && hostAdmin?.owner}
 />
