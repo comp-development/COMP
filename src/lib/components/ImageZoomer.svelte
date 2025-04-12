@@ -1,30 +1,34 @@
-<script>
+<script lang="ts">
+	import { Canvas, FabricImage, Group, Point, Rect } from "fabric";
+
 	import { onMount, afterUpdate } from "svelte";
 
-	export let imageUrl;
-	export let inputCoordinates; // { x, y, width, height }
+	export let imageUrl: string;
+	export let inputCoordinates: {
+		left: number;
+		top: number;
+		width: number;
+		height: number;
+	};
 
-	let canvas;
+	let canvas: Canvas | null = null;
 	let focusRect;
-	let group;
-	let rectCoordinates;
-	let ogPosition;
-	let fabric;
+	let group: Group | null = null;
+	let rectCoordinates: typeof inputCoordinates;
+	let ogPosition: { left: number; top: number };
 
 	async function initializeCanvas() {
-		({ fabric } = await import("fabric"));
-		console.log(fabric);
 		if (canvas) {
 			canvas.clear(); // Clear canvas if it already exists
 		}
 		const aspectRatio = inputCoordinates.width / inputCoordinates.height;
-		const canvasContainer = document.getElementById("canvas-container");
+		const canvasContainer = document.getElementById("canvas-container")!;
 		canvasContainer.style.width = `${
 			canvasContainer.offsetHeight * aspectRatio
 		}px`;
 
 		// Initialize Fabric canvas
-		canvas = new fabric.Canvas("canvas", {
+		canvas = new Canvas("canvas", {
 			width: canvasContainer.offsetWidth,
 			height: canvasContainer.offsetHeight,
 			selectable: false,
@@ -34,46 +38,43 @@
 
 	onMount(initializeCanvas); // Initialize canvas on mount
 
-	function update() {
-		if (!fabric) {
-			return;
-		}
+	async function update() {
 		// Load image onto canvas
-		fabric.Image.fromURL(imageUrl, function (image) {
-			rectCoordinates = {
-				left: (inputCoordinates.left / 612) * image.width,
-				top: (inputCoordinates.top / 792) * image.height,
-				width: (inputCoordinates.width / 612) * image.width,
-				height: (inputCoordinates.height / 792) * image.height,
-			};
-			image.set({ selectable: false });
+		const image = await FabricImage.fromURL(imageUrl);
 
-			// Set initial crop rectangle
-			focusRect = new fabric.Rect({
-				left: rectCoordinates.left,
-				top: rectCoordinates.top,
-				width: rectCoordinates.width,
-				height: rectCoordinates.height,
-				fill: "transparent",
-				stroke: "red",
-				strokeWidth: 2,
-				selectable: true, // Prevent selection of the rectangle
-			});
+		rectCoordinates = {
+			left: (inputCoordinates.left / 612) * image.width,
+			top: (inputCoordinates.top / 792) * image.height,
+			width: (inputCoordinates.width / 612) * image.width,
+			height: (inputCoordinates.height / 792) * image.height,
+		};
+		image.set({ selectable: false });
 
-			if (group) {
-				canvas.remove(group);
-			}
-
-			group = new fabric.Group([image, focusRect], {
-				selectable: true, // Allow selection
-				hasControls: false, // Hide controls
-				lockMovementX: false, // Allow horizontal movement
-				lockMovementY: false, // Allow vertical movement
-			});
-			canvas.add(group);
-			ogPosition = { left: group.left, top: group.top };
-			reZoom();
+		// Set initial crop rectangle
+		focusRect = new Rect({
+			left: rectCoordinates.left,
+			top: rectCoordinates.top,
+			width: rectCoordinates.width,
+			height: rectCoordinates.height,
+			fill: "transparent",
+			stroke: "red",
+			strokeWidth: 2,
+			selectable: true, // Prevent selection of the rectangle
 		});
+
+		if (group) {
+			canvas!.remove(group);
+		}
+
+		group = new Group([image, focusRect], {
+			selectable: true, // Allow selection
+			hasControls: false, // Hide controls
+			lockMovementX: false, // Allow horizontal movement
+			lockMovementY: false, // Allow vertical movement
+		});
+		canvas!.add(group);
+		ogPosition = { left: group.left, top: group.top };
+		reZoom();
 	}
 
 	afterUpdate(update);
@@ -83,46 +84,46 @@
 		recenterCanvas();
 	}
 
-	function reZoom(e) {
+	function reZoom() {
 		if (group) {
-			canvas.setViewportTransform([
+			canvas!.setViewportTransform([
 				1,
 				0,
 				0,
 				1,
-				-rectCoordinates.left + canvas.width / 2 - rectCoordinates.width / 2,
-				-rectCoordinates.top + canvas.height / 2 - rectCoordinates.height / 2,
+				-rectCoordinates.left + canvas!.width / 2 - rectCoordinates.width / 2,
+				-rectCoordinates.top + canvas!.height / 2 - rectCoordinates.height / 2,
 			]);
-			zoomOut(e, 1.25);
-			canvas.renderAll();
+			zoomOut();
+			canvas!.renderAll();
 		}
 	}
 
-	function zoomIn(e, amt = 1.2) {
+	function zoomIn() {
 		if (group) {
-			canvas.zoomToPoint(
-				new fabric.Point(canvas.width / 2, canvas.height / 2),
-				canvas.getZoom() * amt
+			canvas!.zoomToPoint(
+				new Point(canvas!.width / 2, canvas!.height / 2),
+				canvas!.getZoom() * 1.2,
 			);
 		}
 	}
 
-	function zoomOut(e, amt = 1.2) {
+	function zoomOut() {
 		if (group) {
-			canvas.zoomToPoint(
-				new fabric.Point(canvas.width / 2, canvas.height / 2),
-				canvas.getZoom() / amt
+			canvas!.zoomToPoint(
+				new Point(canvas!.width / 2, canvas!.height / 2),
+				canvas!.getZoom() / 1.2,
 			);
 		}
 	}
 
-	function recenterCanvas(e) {
+	function recenterCanvas() {
 		if (group) {
 			group.set({
 				left: ogPosition.left,
 				top: ogPosition.top,
 			});
-			canvas.renderAll();
+			canvas!.renderAll();
 		}
 	}
 </script>
