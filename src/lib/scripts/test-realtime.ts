@@ -8,7 +8,7 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 // all user inputs right here!!!
-const numUsers = 1000; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
+const numUsers = 100; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
 const event_id = 14;  // USER INPUT
 const test_id = 78;  // USER INPUT
 

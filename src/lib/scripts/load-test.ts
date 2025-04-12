@@ -12,7 +12,7 @@ const numUsers = 10; // USER INPUT, should not go above 10 unless accounts for m
 const event_id = 14;  // USER INPUT
 const test_id = 78;  // USER INPUT
 const problem_ids = [531, 529, 530, 509, 520, 511, 532, 513, 518, 508, 523, 527, 525, 516]; // Example problem IDs, USER INPUT
-const max_iters = 10; // USER INPUT
+const max_iters = 1000; // USER INPUT
 
 // all user inputs right here!!!
 // const numUsers = 100; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
@@ -136,7 +136,7 @@ async function runLoadTest() {
     userData.push({ supabase, test_taker_id });
     numSuccess += 1;
     console.log(`num success {${numSuccess}}`);
-    await delay(2000);
+    // await delay(2000);
   }
 //   console.log(userData);
 
