@@ -3,7 +3,7 @@
 
 	import { onMount, afterUpdate } from "svelte";
 
-	export let imageUrl: string;
+	export let image: FabricImage;
 	export let inputCoordinates: {
 		left: number;
 		top: number;
@@ -40,8 +40,6 @@
 
 	async function update() {
 		// Load image onto canvas
-		const image = await FabricImage.fromURL(imageUrl);
-
 		rectCoordinates = {
 			left: (inputCoordinates.left / 612) * image.width,
 			top: (inputCoordinates.top / 792) * image.height,
