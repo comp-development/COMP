@@ -12,6 +12,7 @@ export async function uploadScan(
   compose_test_id: string,
   page_number: number,
   front_id: string,
+  event_id: string,
 ) {
   if (compose_test_id.startsWith("ERROR")) {
     throw new Error(
@@ -38,6 +39,7 @@ export async function uploadScan(
     .from("tests")
     .select("test_id")
     .eq("compose_test_id", Number(compose_test_id))
+    .eq("event_id", Number(event_id))
     .single();
   if (error) throw error;
 
@@ -56,6 +58,7 @@ export async function uploadScan(
 }
 
 export async function fetchNewProblem(grader_id: string, test_id: number) {
+  console.log("fetching new problem with grader_id", grader_id, "and test_id", test_id);
   const { data: problems, error: listError } = await supabase
     .rpc("get_next_problem", { in_test_id: test_id, target_grader: grader_id })
     .order("available_scans", { ascending: false })

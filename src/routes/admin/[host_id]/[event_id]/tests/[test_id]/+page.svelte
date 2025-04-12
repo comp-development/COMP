@@ -281,7 +281,7 @@
     <h2>{test.division}</h2>
   {/if}
   <br />
-  <Button title="Grade Test" href={$page.url.pathname + "/grade"} />
+  <Button title="Grade Test" href={$page.url.pathname + ($page.params.event_id === "12" ? "/grade_scan" : "/grade_scan")} />
   <br /><br />
   <Button
     title="Save Test"

@@ -143,7 +143,8 @@
 	function calculateDimensions(problem_number: number) {
 		const bounding_boxes = test_data!.bounding_boxes as any;
 		console.log(bounding_boxes, problem_number, gradeQueue, problem_data);
-		const bounding_box = bounding_boxes.box_positions[problem_number];
+		// let boxIndex = Math.min(problem_number, bounding_boxes.box_positions.length - 1);
+		const bounding_box = bounding_boxes.box_positions[problem_number - 1];
 
 		// Parse input object
 		const topLeftX = parseFloat(bounding_box.top_left[0]);
@@ -266,7 +267,7 @@
 						<p style="margin-left: 20px">
 							Problem #{problem_data.get(
 								gradeQueue[currentIndex].test_problem_id,
-							)!.problem_number + 1}
+							)!.problem_number}
 						</p>
 					</div>
 				</div>
@@ -275,6 +276,7 @@
 					{@html problem_data.get(gradeQueue[currentIndex].test_problem_id)!
 						.answer_display}
 				</h2>
+				{console.log('Debug - gradeQueue:', gradeQueue, 'currentIndex:', currentIndex)}
 				<ImageZoomer
 					imageUrl={gradeQueue[currentIndex].image_url}
 					inputCoordinates={calculateDimensions(
@@ -354,12 +356,9 @@
 	-->
 	<Modal
 		bind:open={switchingProblems}
-		title={`Switching to Problem ${
-			gradeQueue.at(currentIndex)
-				? problem_data.get(gradeQueue.at(currentIndex)!.test_problem_id)!
-						.problem_number + 1
-				: 0
-		}`}
+		title={gradeQueue.at(currentIndex) 
+			? `Switching to Problem ${problem_data.get(gradeQueue.at(currentIndex)!.test_problem_id)!.problem_number}`
+			: "Searching for new problem"}
 	>
 		New Answer: {@html gradeQueue[currentIndex]
 			? problem_data.get(gradeQueue[currentIndex].test_problem_id)!
