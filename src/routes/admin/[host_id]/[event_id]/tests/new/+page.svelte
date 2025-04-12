@@ -223,10 +223,13 @@
     }
   }
 
-  // Handle basic LaTeX commands like \emph, \item, and \begin{enumerate}
+  // Handle latex conversion
   function convertLaTeXtoHTML(input) {
     // Replace \emph{...} with <em>...</em>
     input = input.replace(/\\emph\{(.*?)\}/g, "<em>$1</em>");
+
+    const hostId = $page.params.host_id;
+    input = input.replace(/\\image\{/g, `\\image{host_${hostId}/`);
 
     // Replace \item ... with <li>...</li> — line-based
     // input = input.replace(/^\\item\s*(.*)$/gm, "<li>$1</li>");
