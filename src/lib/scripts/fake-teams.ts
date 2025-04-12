@@ -24,7 +24,7 @@ async function createFakeUsers() {
   let perm_team_id : string | null = 1;
 
   const email = `student1@gmail.com`;
-  const password = "super_secure_password_821";
+  const password = "test_smthing";
 
   const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
     email,

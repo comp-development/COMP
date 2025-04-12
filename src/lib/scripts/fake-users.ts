@@ -22,7 +22,7 @@ async function createFakeUsers() {
   let perm_team_id : string | null = 1;
   for (let i = 1; i <= student_nums; i++) {
     const email = `student${i}@gmail.com`;
-    const password = "super_secure_password_821";
+    const password = "secureS-mthign";
     let userId: string | undefined;
 
     // Create user

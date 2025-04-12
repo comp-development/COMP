@@ -79,8 +79,8 @@ export async function GET() {
   const test_id = 1;
   const problem_ids = [4];
 
-  const testUserEmail = "student@gmail.com";
-  const testUserPassword = "student123";
+  const testUserEmail = "default student";
+  const testUserPassword = "defuat password";
 
 
 

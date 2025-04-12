@@ -97,8 +97,8 @@ async function runLoadTest() {
     if(numSuccess + 8 < i) {
         break;
     }
-    const email = `student${i}@gmail.com`;
-    const password = "super_secure_password_821";
+    const email = `random`;
+    const password = "secue";
 
     const supabase = supabaseClients[i];
 

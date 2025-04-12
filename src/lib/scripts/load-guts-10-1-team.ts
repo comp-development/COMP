@@ -185,8 +185,8 @@ async function runLoadTest() {
     if(numSuccess + 20 < i) {
         break;
     }
-    const email = `teststudent001A@comp.mt`;
-    const password = "teststudentpw832650";
+    const email = `teststudent0admin`;
+    const password = "teststudentadminpassowrd";
 
     const supabase = supabaseClients[i];
 
