@@ -14,7 +14,7 @@ const groupScores: Record<number, number> = {
 export async function getGutsScores(test_id: number) {
   const { data, error } = await supabase
     .from("manual_grades")
-    .select("team_id, status, test_problem_id, teams(team_name)")
+    .select("team_id, status, test_problem_id, test_problems(problem_number), teams(team_name)")
     .eq("test_id", test_id);
 
   if (error) {
@@ -30,7 +30,7 @@ export async function getGutsScores(test_id: number) {
   for (const row of data) {
     const teamId = row.team_id;
     const teamName = row.teams?.team_name ?? "Unknown";
-    const problemId = row.test_problem_id;
+    const problemId = row.test_problems.problem_number;
     const status = row.status;
 
     const page = [1, 5, 9, 13, 17, 21, 25, 29].find(

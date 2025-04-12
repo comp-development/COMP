@@ -15,6 +15,7 @@
   let loading = true;
   let problems: {
     problem_id: number;
+    test_problem_id: number,
     problem_number: number;
     problem_latex: string;
     answer_latex?: string;
@@ -100,7 +101,7 @@
       const { data: problemData, error: problemError } = await supabase
         .from("test_problems")
         .select(
-          "problem_number, problems(problem_id, problem_latex, answer_latex)",
+          "problem_number, test_problem_id, problems(problem_id, problem_latex, answer_latex)",
         )
         .eq("test_id", testId)
         .order("problem_number", { ascending: true });
@@ -113,6 +114,7 @@
         problems = problemData.map((p) => ({
           ...p.problems,
           problem_number: p.problem_number,
+          test_problem_id: p.test_problem_id,
           status: "", // neutral default
         }));
       }
@@ -218,9 +220,9 @@
     const teamId = selectedTeam.team_id;
 
     // Get the highest problem_id across all problems to identify the last set
-    const maxProblemId = Math.max(...problems.map((p) => p.problem_id));
+    const maxProblemId = Math.max(...problems.map((p) => p.problem_number));
     console.log(maxProblemId);
-    const isLastSet = group.some((p) => p.problem_id === maxProblemId);
+    const isLastSet = group.some((p) => p.problem_number === maxProblemId);
     let payload;
     if (isLastSet) {
       // Handle last set (manual answers)
@@ -258,14 +260,15 @@
       }
 
       payload = group.map((problem) => ({
-        test_problem_id: problem.problem_id,
+        test_problem_id: problem.test_problem_id,
         team_id: teamId,
         status: problem.status,
         test_id: testId,
       }));
     }
+    console.log("PAYLOAD", payload);
     const { error } = await supabase.from("manual_grades").upsert(payload, {
-      onConflict: ["test_problem_id", "team_id", "test_id"],
+      onConflict: ["test_problem_id", "team_id"],
     });
 
     if (error) {
@@ -290,7 +293,7 @@
     }
 
     problems = problems.map((p) => {
-      const match = data.find((d) => d.test_problem_id === p.problem_id);
+      const match = data.find((d) => d.test_problem_id === p.test_problem_id);
       return {
         ...p,
         status: match ? match.status : null,
