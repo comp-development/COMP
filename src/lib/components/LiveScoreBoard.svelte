@@ -7,7 +7,7 @@
     max_per_side?: number;
   }
 
-  let { test, max_per_side = 10 }: Props = $props();
+  let { test, max_per_side = 15 }: Props = $props();
 //  let num_rounds = test.settings.pages.length;
   let num_rounds = 8;
   let screen_width = screen.width;
@@ -109,7 +109,7 @@
         </tr>
       </thead>
       <tbody id="leftbody">
-        {#each Array.from({ length: Math.min(10, scores.length) }, (_, i) => i) as i}
+        {#each Array.from({ length: Math.min(max_per_side, scores.length) }, (_, i) => i) as i}
           <tr class="gutsTr">
             <td class="gutsResult">{scores[i].rank}</td>
             <td class="gutsResult teamName">{scores[i].name}</td>
@@ -239,7 +239,7 @@
     border: 1px solid var(--primary);
     text-align: left;
     font-family: var(--font-family);
-    font-size: 20px;
+    font-size: 12px;
     font-weight: bold;
   }
 
@@ -249,7 +249,7 @@
     border: 1px solid var(--primary);
     text-align: left;
     font-family: var(--font-family);
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .gutsTr {
