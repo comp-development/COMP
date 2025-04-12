@@ -9,10 +9,12 @@ const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 
 // all user inputs right here!!!
 const numUsers = 1000; // USER INPUT, should not go above 10 unless accounts for more students are created and registered for test below.
-const event_id = 11;  // USER INPUT
-const test_id = 30;  // USER INPUT
-const problem_ids = [97]; // Example problem IDs, USER INPUT
-const max_iters = 150; // USER INPUT
+const event_id = 14;  // USER INPUT
+const test_id = 78;  // USER INPUT
+const problem_ids = [531, 529, 530, 509, 520, 511, 532, 513, 518, 508, 523, 527, 525, 516]; // Example problem IDs, USER INPUT
+const max_iters = 100; // USER INPUT
+
+let numSuccess: number = 0;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -97,8 +99,12 @@ async function runLoadTest() {
 
   // log in to numUsers supabase obejcts
   for (let i = 1; i <= numUsers; i++) {
+
+    if(numSuccess + 20 < i) {
+        break;
+    }
     const email = `student${i}@gmail.com`;
-    const password = "student123";
+    const password = "super_secure_password_821";
 
     const supabase = supabaseClients[i];
 
@@ -121,6 +127,9 @@ async function runLoadTest() {
         await extendTestTakerEndTime(supabase, test_taker_id);
     }
     userData.push({ supabase, test_taker_id });
+    numSuccess += 1;
+    console.log(`num success {${numSuccess}}`);
+    await delay(2000);
   }
 //   console.log(userData);
 
@@ -128,17 +137,19 @@ async function runLoadTest() {
 
 
   for (let i = 0; i < max_iters; i++) {
-    for (let userIndex = 0; userIndex < numUsers; userIndex++) {
+    for (let userIndex = 0; userIndex < numSuccess; userIndex++) {
       const { supabase, test_taker_id } = userData[userIndex];
   
       const test_problem_id = problem_ids[Math.floor(Math.random() * problem_ids.length)];
       const answer = (i + (userIndex*max_iters)) .toString();
   
       await upsertTestAnswer(supabase, test_taker_id, test_problem_id, answer);
+      if(userIndex % 50 == 0) {
+          console.log(numSuccess, userIndex, i);
+      }
     //   lastUpdates.set(test_taker_id, { problem_id: test_problem_id, answer });
     }
-    await delay(10);
-
+    await delay(1);
   }
 
   await delay(1000);

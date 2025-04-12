@@ -1,6 +1,6 @@
 <script lang="ts">
   import MathJax from "$lib/components/MathJax.svelte";
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
 
   import type { Database } from "../../../db/database.types";
   interface Props {
@@ -13,25 +13,38 @@
     ) => Promise<void>
   }
 
+  let enterTime: number | null = null;
+
   let container: HTMLDivElement;
 
   let { clarification = null, problem, log }: Props = $props();
 
   onMount(() => {
-    container.addEventListener("keydown", (e) => {
-      if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
-        return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        enterTime = performance.now();
+      } else {
+        if(!enterTime) return;
+        const duration = performance.now() - enterTime;
+        if(duration > 20000) {
+          log("problem_view", Math.round(duration).toString(), problem.problem_number);
+        }
       }
-      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + e.key);
+    }, {
+      threshold: 0.5
     });
-    container.addEventListener("paste", (e) => {
-      log("paste", e.clipboardData?.getData("text") ?? "unknown");
+
+    observer.observe(container);
+
+    onDestroy(() => {
+      observer.disconnect();
     });
   });
 
+
 </script>
 
-<p bind:this={container} style="margin-bottom: 5px;">
+<div bind:this={container} style="margin-bottom: 5px;">
   <span style="font-size: 20px; font-weight: bold;">
     {problem.name && problem.name != ""
       ? problem.name
@@ -40,7 +53,7 @@
   {#if problem.points}
     ({problem.points} {problem.points == 1 ? "pt" : "pts"})
   {/if}
-</p>
+</div>
 <br />
 <MathJax math={problem.problems.problem_latex} />
 {#if clarification}

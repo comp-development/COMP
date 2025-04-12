@@ -31,7 +31,6 @@
   let { test_taker = $bindable(), settings, is_team = false, timeRemaining = 0, timeElapsed = 0 }: Props = $props();
   let pages = settings.pages;
   let meltTime = settings.meltTime;
-  //console.log("TESTAKER", test_taker);
   let answers = [];
   let problems = $state([]);
   let answersMap = $state({});
@@ -41,28 +40,60 @@
   let startTime = test_taker.start_time;
   let endTime = test_taker.end_time;
   let curPage = $state(test_taker.page_number);
+  let activeProblemNumber: number | null = null;
+  let prevProblemNumber: number | null = null;
+
   async function log(
       event_type: Database["public"]["Enums"]["test_event"],
       data: string,
       problem_id?: number
     ) {
-      data = problem_id && event_type == 'keypress' ? `${problem_id}: ${data}` : data;
-      // Ignore errors
+      data = activeProblemNumber && event_type == 'keypress'  ? `Problem ${activeProblemNumber}: ${data}` : data;
+
+      if(event_type == 'answer_save') {
+        data = `Problem ${problem_id}: ${data}`
+      }
+
+      if(event_type == 'problem_view') {
+        if(problem_id && activeProblemNumber != problem_id && prevProblemNumber != problem_id) {
+            return;
+        }
+        data = `Problem ${problem_id}: ${data}`
+      }
+
       await supabase
         .from("test_logs")
         .insert({ test_taker_id: test_taker.test_taker_id, event_type, data });
-
-      console.log("LOGGED", data);
+      console.log("LOGGED", data, event_type);
     }
 
   onMount(() => {
 
     window.addEventListener("keydown", (e) => {
-      if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
-        return;
+      // just check if at least two distinct keys are pressed!
+      const isModifierKey = ["Meta", "Alt", "Shift", "Control"].includes(e.key);
+      if(isModifierKey) {
+        // if this is is a modifier key, just make sure that there are at least two
+        const modifiers = [
+            e.shiftKey ? "Shift" : null,
+            e.metaKey ? "Meta" : null,
+            e.ctrlKey ? "Ctrl" : null,
+            e.altKey ? "Alt" : null,
+          ].filter(Boolean);
+        if(modifiers.length < 2) {
+          return;
+        }
       }
-      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + e.key);
-    });
+      else {
+        // if this is not a modifier key
+        if(!(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) {
+          return;
+        }
+      }
+      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + (isModifierKey ? "" : e.key));
+    }); 
+
+    
     window.addEventListener("paste", (e) => {
       log("paste", e.clipboardData?.getData("text") ?? "unknown");
     });
@@ -208,10 +239,11 @@
       .subscribe();
   }
 
-  function handleFocus(event) {
+  function handleFocus(event, problemNumber) {
     //console.log("EVENT", event)
     prevAnswer = event.target.value;
     currentField = event.target;
+    activeProblemNumber = problemNumber;
   }
 
   // Create a function to handle inserts
@@ -306,7 +338,7 @@
     return input.trim();
   }
 
-  async function changeAnswer(e, id) {
+  async function changeAnswer(e, id, problemNumber, clean) {
     try {
       //console.log("ANSWER CHANGE")
       const upsertSuccess = await upsertTestAnswer(
@@ -317,12 +349,18 @@
       //console.log("SUCCESSFUL UPSERT", upsertSuccess)
       if (upsertSuccess == "Upsert succeeded") {
         saved[id] = answersMap[id];
+        log("answer_save", saved[id], problemNumber);
+        prevProblemNumber = problemNumber;
+        if(clean) {
+          activeProblemNumber = null;
+        }
       } else {
         answersMap[id] = prevAnswer;
       }
     } catch (e) {
       handleError(e);
     }
+
   }
 
   // Function to check if the answer contains 3+ alphabetic characters not in quotes
@@ -508,11 +546,11 @@
                           timeElapsed / 1000 <
                         0
                       : false}
-                    on:focus={handleFocus}
+                    on:focus={(e) => handleFocus(e, problem.problem_number)}
                     on:keydown={(e) =>
                       e.key === "Enter" &&
-                      changeAnswer(e, problem.test_problem_id)}
-                    on:blur={(e) => changeAnswer(e, problem.test_problem_id)}
+                      changeAnswer(e, problem.test_problem_id, problem.problem_number)}
+                    on:blur={(e) => changeAnswer(e, problem.test_problem_id, problem.problem_number, true)}
                     maxlength={127}
                   />
                 </div>

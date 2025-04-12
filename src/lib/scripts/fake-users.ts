@@ -8,8 +8,8 @@ const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-const event_id = 11; // USER INPUT;
-const test_id = 30; // USER INPUT;
+const event_id = 14; // USER INPUT;
+const test_id = 78; // USER INPUT;
 const student_nums= 1000; // USER INPUT;
 const same_team = true; // USER INPUT;
 
@@ -17,7 +17,7 @@ async function createFakeUsers() {
   let perm_team_id : string | null = 1;
   for (let i = 1; i <= student_nums; i++) {
     const email = `student${i}@gmail.com`;
-    const password = "student123";
+    const password = "super_secure_password_821";
     let userId: string | undefined;
 
     // Create user
