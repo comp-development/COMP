@@ -25,11 +25,27 @@
   let deleteUserId = $state(null);
   let updateTrigger = $state(0);
   let isModalOpen = $state(false);
-  let newResponses = $state({});
+  let newResponses = $state<{email?: string; role?: string}>({});
   let validationErrors = $state({});
-  let invites = $state([]);
+  let invites: {email: string, role: number}[] = $state([]);
+
 
   const fields = [
+    {
+      name: "role",
+      label: "Role",
+      required: true,
+      editable: true,
+      custom_field_type: "dropdown",
+      placeholder: "Select a role",
+      value: newResponses.role || "",
+      choices: [
+        "Grader - Can grade submissions and view results",
+        "Admin - Full access to host settings and management"
+        // { choice: "grader", name: "Grader - Can grade submissions and view results" },
+        // { choice: "admin", name: "Admin - Full access to host settings and management" }
+      ]
+    },
     {
       name: "email",
       label: "Admin Emails",
@@ -38,7 +54,7 @@
       custom_field_type: "text",
       placeholder: "",
       value: newResponses.email || "",
-    },
+    }
   ];
 
   async function roleManager() {
@@ -47,7 +63,7 @@
       let users = await getHostAdmins(host_id);
 
       let host = await getHostInformation(host_id);
-      invites = host.invites;
+      invites = host.invites || [];
 
       users.sort((a, b) => {
         return a.person.first_name
@@ -73,26 +89,33 @@
 
   async function handleSubmit() {
     try {
+      if (!newResponses.email) {
+        throw new Error("Email is required");
+      }
       let emails = newResponses.email.split(";");
       const host = await getHostInformation(host_id);
-      const data = await inviteUserToHost(host_id, emails);
-      emails = data.newInvites;
+      const roleValue = fields.find((field) => field.name === "role")?.choices?.indexOf(newResponses.role || "");
+      const data = await inviteUserToHost(host_id, emails, roleValue);
       invites = data.invites;
 
-      for (let email of emails) {
-        email = email.trim();
+      for (let invite of data.newInvites) {
+        const { email, role } = invite;
 
         const response = await fetch("/api/sendmail", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: email,
-            subject: `Become an Admin for '${host.host_name}' on COMP`,
+            subject: `Become an ${fields.find((field) => field.name === "role")?.choices?.[role].split(" - ")[0]} for '${host.host_name}' on COMP`,
             message: generateEmail('admin_invite', { host, host_id, admin }),
           }),
         });
 
         const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(`Failed to send email: ${data.error || response.statusText}`);
+        }
         if (data.error) {
           throw data.error;
         }
@@ -104,7 +127,6 @@
       isModalOpen = false;
     }
   }
-
   roleManager();
 </script>
 
@@ -123,7 +145,7 @@
     <div style="padding: 20px">
       <h3>Invited</h3>
       {#each invites as invitation}
-        <InvitedUser email={invitation} type="admin" id={host_id} onDeleteAction={() => { invites = invites.filter((invite: string) => invite !== invitation); }} />
+        <InvitedUser email={invitation.email} type="admin" id={host_id} />
       {/each}
       {#if invites.length == 0}
         <p>No outgoing invitations</p>
@@ -160,7 +182,7 @@
       <h3 class="text-xl font-medium text-gray-900 dark:text-white">
         Add User
       </h3>
-      <p class="text-sm text-gray-600 dark:text-gray-400">Multiple emails should be separated by a semi-colon</p>
+      <p class="text-sm text-gray-600 dark:text-gray-400">Multiple emails should be separated by semi-colons</p>
       <CustomForm
         {fields}
         bind:newResponses
