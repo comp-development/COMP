@@ -84,8 +84,8 @@
       // Fetch problems
       const { data: testProblems, error: testProblemsError } = await supabase
         .from("test_problems")
-        .select("problem_id");
-      // .eq("test_id", testId);
+        .select("problem_id")
+        .eq("test_id", testId);
       if (testProblemsError) {
         console.error("Error loading problems:", testProblemsError.message);
         return;
