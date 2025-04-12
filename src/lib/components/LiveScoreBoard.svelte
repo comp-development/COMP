@@ -185,7 +185,6 @@
     justify-content: center;
     border-collapse: collapse;
     padding: 10px;
-    white-space: nowrap;
     float: left;
     border-right: 3px dotted var(--secondary);
   }
@@ -195,7 +194,6 @@
     justify-content: center;
     border-collapse: collapse;
     padding: 10px;
-    white-space: nowrap;
     float: right;
   }
 
@@ -203,27 +201,29 @@
     float: left;
     margin: 10px;
     border: 2px solid var(--primary);
+    width: 100%;
+    table-layout: fixed; 
   }
 
   #rightTable {
     float: right;
     margin: 10px;
     border: 2px solid var(--primary);
+    width: 100%;
+    table-layout: fixed; 
   }
 
   .gutsDisplay {
-    justify-content: center;
     border-collapse: collapse;
     padding: 10px;
-    white-space: nowrap;
+    width: 100%;
   }
 
-  .progress {
-    width: 60px;
-  }
 
   .teamName {
-    width: 1000px;
+    width: auto;
+    overflow-wrap: break-word; /* Forces wrapping of long words */
+    word-break: break-word; /* For older browsers */
   }
 
   .round {
