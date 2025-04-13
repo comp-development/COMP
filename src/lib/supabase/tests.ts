@@ -36,7 +36,7 @@ export async function editTest(test_id: number, testData: {}) {
 export async function getTestProblems(
   test_id: number,
   page_num: number | null = null,
-  customSelect: string = "*"
+  customSelect: string = "*",
 ) {
   if (page_num) {
     let { data, error } = await supabase
@@ -77,7 +77,7 @@ export async function fetchTestProblems(test_taker_id: number) {
  */
 export async function getTestAnswers(
   test_taker_id: number,
-  customSelect: string = "*"
+  customSelect: string = "*",
 ) {
   console.log("GET TEST ANSWERS");
   console.log(test_taker_id);
@@ -103,39 +103,43 @@ export async function getTest(test_id, detailed = false, customSelect = "*") {
 
 /**
  * Get statistics about scan grades for a specific test
- * 
+ *
  * @param test_id The ID of the test to get statistics for
  * @returns Array of scan grade statistics
  */
 export async function getScanGradeStats(test_id: number) {
   console.log("GET SCAN GRADE STATS", test_id);
-  const { data, error } = await supabase
-    .rpc("get_test_problem_scans_state", {
-      in_test_id: test_id,
-      target_grader: null,
-    })
+  const { data, error } = await supabase.rpc("get_test_problem_scans_state", {
+    in_test_id: test_id,
+    target_grader: null,
+  });
 
   if (error) throw error;
 
   const num_scan_problems = data.length;
 
-  const filteredData = data.filter((row: any) => row.distinct_grades === 1 && row.unsure_grades === 0);
+  const filteredData = data.filter(
+    (row) =>
+      (row.distinct_grades === 1 && row.unsure_grades === 0) ||
+      // We technically still serve to graders if there is an override but less than 2 grades.
+      (row.overriden && row.total_grades >= 2),
+  );
   const graded_scan_problems = filteredData.length;
 
-  const conflictData = data.filter((row: any) => row.distinct_grades > 1 || row.unsure_grades > 0);
+  const conflictData = data.filter(
+    (row) =>
+      (row.distinct_grades > 1 || row.unsure_grades > 0) && !row.overriden,
+  );
   const conflict_scan_problems = conflictData.length;
 
-  return [
-    num_scan_problems,
-    graded_scan_problems,
-    conflict_scan_problems,
-  ]
+  return [num_scan_problems, graded_scan_problems, conflict_scan_problems];
 }
 
 export async function getScanTestStats(test_id: number) {
   const { data, error } = await supabase
-    .from('tests')
-    .select(`
+    .from("tests")
+    .select(
+      `
       test_id,
       scans (
         scan_id,
@@ -145,22 +149,20 @@ export async function getScanTestStats(test_id: number) {
         test_problem_id,
         test_id
       )
-    `)
-    .eq('tests_problems.test_id', test_id)
+    `,
+    )
+    .eq("tests_problems.test_id", test_id)
     .single();
-
 
   if (error) throw error;
   return data;
 }
 
-
-
 export async function getTestFromComposeId(
   compose_test_id,
   event_id,
   detailed = false,
-  customSelect = "*"
+  customSelect = "*",
 ) {
   const { data, error } = await supabase
     .from(detailed ? "tests_detailed" : "tests")
@@ -201,7 +203,7 @@ export async function addTestTaker(test_id) {
 export async function upsertTestAnswer(
   test_taker_id: number,
   test_problem_id: number,
-  answer: string
+  answer: string,
 ) {
   // console.log("adding", answer);
   // console.log("TAKERID", test_taker_id);
@@ -251,7 +253,7 @@ export async function getTestTaker(
   test_id,
   taker_id,
   is_team = false,
-  customSelect = "*"
+  customSelect = "*",
 ) {
   console.log(test_id, taker_id, is_team, customSelect);
   try {
@@ -291,7 +293,7 @@ export async function getTestTaker(
 export async function getTestTakers(
   test_id,
   detailed = false,
-  customSelect = "*"
+  customSelect = "*",
 ) {
   const { data, error } = await supabase
     .from(detailed ? "test_takers_detailed" : "test_takers")
@@ -367,7 +369,7 @@ export async function upsertTestProblems(testData) {
 export async function upsertIntoBucket(
   host_id: number,
   problemImages: Array<{ path: string; base64: string }>,
-  bucketName = "problem-images"
+  bucketName = "problem-images",
 ) {
   for (const imageData of problemImages) {
     // Convert base64 to Uint8Array
