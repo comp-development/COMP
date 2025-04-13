@@ -41,5 +41,6 @@
 		testId={parseInt($page.params.test_id)}
 		onlyConflicted={is_override && hostAdmin?.owner}
 		showGrades={is_override && hostAdmin?.owner}
+		disableUnsure={is_override && hostAdmin?.owner}
 	/>
 {/if}

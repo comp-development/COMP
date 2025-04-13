@@ -283,7 +283,7 @@
 			await handleAction("Incorrect");
 		} else if (e.key === "z" || e.key === "Z") {
 			await handleAction("Undo");
-		} else if (e.key === "c" || e.key === "C") {
+		} else if ((e.key === "c" || e.key === "C") && !disableUnsure) {
 			await handleAction("Unsure");
 		} else if (e.key === "v" || e.key === "V") {
 			await handleAction("Correct");
