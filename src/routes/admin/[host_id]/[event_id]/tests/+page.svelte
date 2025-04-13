@@ -2,9 +2,8 @@
   import { run } from "svelte/legacy";
   import Papa from "papaparse";
   import { page } from "$app/stores";
-  import {Button as ScanButton} from "$lib/components/Button.svelte";
+  import Button from "$lib/components/Button.svelte";
   import {
-    Button,
     Badge,
     Modal,
     Input,
@@ -469,13 +468,13 @@
             Import Tests
           </button>
         </a>
-        <ScanButton 
+        <button 
           class="text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 focus:outline-none mx-2 flex items-center"
-          href={`${$page.url.pathname}/upload`}
+          onclick={() => document.location.href= (`${$page.url.pathname}/upload`)}
         >
           <UploadOutline class="w-4 h-4 mr-2" />
           Upload Scans
-        </ScanButton>
+        </button>
       </div>
       <div class="test-grid">
         {#each Object.values(testStatusMap).sort((a, b) => {
