@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { DataTable, Modal, TextInput } from "carbon-components-svelte";
 	import JSZip from "jszip";
 	import { writable } from "svelte/store";
@@ -8,8 +8,11 @@
 	import toast from "$lib/toast.svelte";
 	import { handleError } from "$lib/handleError";
 	import Button from "$lib/components/Button.svelte";
-    import { page } from "$app/stores";
-    export let host_id;
+	import { page } from "$app/stores";
+	import type { AsyncReturnType, Unpacked } from "$lib/supabaseClient";
+  import { Input } from "flowbite-svelte";
+	export let host_id;
+	let test_id_override = "";
 
 	// When rendering to canvas, the scaling we use.
 	const PDF_SCALE = 2.0;
@@ -85,7 +88,7 @@
 			filesToProcess.map(async (file) => [
 				file.name,
 				await convertToPngs(await file.arrayBuffer()),
-			])
+			]),
 		);
 		const expand_box = (bounding_box) => {
 			const b = bounding_box;
@@ -97,21 +100,20 @@
 			};
 		};
 
-		const scan_box = (png, bounding_box) => {
-			return new Promise((resolve, reject) =>
-				QrScanner.scanImage(png, {
+		const try_scan_box = async (png, bounding_box) => {
+			try {
+				return await QrScanner.scanImage(png, {
 					scanRegion: expand_box(bounding_box),
 					returnDetailedScanResult: true,
-				})
-					.then(resolve)
-					.catch((e) => reject(e || "ERROR: QR not found"))
-			);
+				});
+			} catch (e) {
+				return null;
+			}
 		};
 		const scan_test_id = async (png, test_id_page_box) => {
-			const { data: test_id_page, cornerPoints } = await scan_box(
-				png,
-				test_id_page_box
-			);
+			const scan_box = await try_scan_box(png, test_id_page_box);
+			if (!scan_box) return null;
+			const { data: test_id_page, cornerPoints } = scan_box;
 			// Assert that the test id matches a certain pattern.
 			if (!test_id_page.match(/T\d+P\d+/)) {
 				throw "Expected test and page id in T\\d+P\\d+ format.";
@@ -124,7 +126,9 @@
 			return { test_id, page, cornerPoints };
 		};
 		const scan_front_id = async (png, front_id_box) => {
-			let { data: front_id } = await scan_box(png, front_id_box);
+			const scan_box = await try_scan_box(png, front_id_box);
+			if (!scan_box) return null;
+			let { data: front_id } = scan_box;
 			if (!front_id.match(/\d{3}(([ABCDEF] Individual)|( Team))/)) {
 				throw `Expected front id in \\d{3}(([ABCDEF] Individual)|( Team)) format. Instead got ${front_id}`;
 			}
@@ -136,43 +140,46 @@
 			png,
 			test_id_page_box,
 			front_id_box,
-			alignment_dot_box
+			alignment_dot_box,
 		) => {
+			const scanned_test_id = await scan_test_id(png, test_id_page_box);
+			const scanned_front_id = await scan_front_id(png, front_id_box);
+			if (!scanned_test_id && !scanned_front_id) {
+				return null;
+			}
+			let test_id = null,
+				page = null;
 			// We absolutely demand that the test and page qr code be visible.
 			// Otherwise, we consider this scan unreadable.
-			const { test_id, page, cornerPoints } = await scan_test_id(
-				png,
-				test_id_page_box
-			);
-			let front_id;
-			try {
-				let dot_location;
-				dot_location = await detect_alignment_dot(
-					png,
-					expand_box(alignment_dot_box)
-				);
-				console.log(dot_location);
-				({ front_id } = await scan_front_id(png, front_id_box));
-				png = await apply_transform(
-					png,
-					test_id_page_box,
-					alignment_dot_box,
+			if (scanned_test_id) {
+				const {
+					test_id: in_test_id,
+					page: in_page,
 					cornerPoints,
-					dot_location
-				);
-			} catch (e) {
-				console.log("Warning: error scanning" +  e.message);
-			}
-
-			if (!front_id) {
-				unnamed_discriminators.front += 1;
-				front_id = "ERROR: QR not found (" + unnamed_discriminators.front + ")";
+				} = scanned_test_id;
+				test_id = in_test_id;
+				page = in_page;
+				try {
+					let dot_location = await detect_alignment_dot(
+						png,
+						expand_box(alignment_dot_box),
+					);
+					png = await apply_transform(
+						png,
+						test_id_page_box,
+						alignment_dot_box,
+						cornerPoints,
+						dot_location,
+					);
+				} catch (e: any) {
+					console.log("Warning: error scanning" + e.message);
+				}
 			}
 
 			return {
 				test_id,
-				page: page ?? "0",
-				front_id: front_id,
+				page: page ?? 0,
+				front_id: scanned_front_id?.front_id ?? null,
 				png,
 			};
 		};
@@ -180,12 +187,7 @@
 		for (const [file_name, pngs] of file_pngs) {
 			for (const png of pngs) {
 				// Try to get either the top right or the bottom left qr boxes.
-				const {
-					test_id,
-					page,
-					front_id,
-					png: matched_png,
-				} = await Promise.any([
+				const input: AsyncReturnType<typeof scan_boxes>[] = await Promise.all([
 					scan_boxes(png[0], TEST_ID_PAGE_BOX, FRONT_ID_BOX, ALIGNMENT_DOT_BOX),
 					scan_boxes(png[1], TEST_ID_PAGE_BOX, FRONT_ID_BOX, ALIGNMENT_DOT_BOX),
 				]).catch((e) => {
@@ -193,14 +195,43 @@
 					console.log("Error scanning:", e);
 					unnamed_discriminators.test += 1;
 					unnamed_discriminators.front += 1;
-					return {
-						test_id: "ERROR: QR not found (" + unnamed_discriminators.test + ")",
-						page: "0",
-						front_id: "ERROR: QR not found (" + unnamed_discriminators.front + ")",
-						png: png[0],
-					};
+					return [
+						{
+							test_id:
+								"ERROR: QR not found (" + unnamed_discriminators.test + ")",
+							page: 0,
+							front_id:
+								"ERROR: QR not found (" + unnamed_discriminators.front + ")",
+							png: png[0],
+						} as AsyncReturnType<typeof scan_boxes>,
+					];
 				});
-				const identifier = test_id + page + front_id;
+				const found_something = (scan: Unpacked<typeof input>) =>
+					scan?.front_id || scan?.test_id;
+				const fill_fields = (in_scan: Unpacked<typeof input>) => {
+					let scan = in_scan!;
+					if (!scan.front_id) {
+						unnamed_discriminators.front += 1;
+						scan.front_id = "ERROR: QR not found (" + unnamed_discriminators.front + ")";
+					}
+					if (!scan.test_id) {
+						unnamed_discriminators.test += 1;
+						scan.test_id =  "ERROR: QR not found (" + unnamed_discriminators.test + ")";
+					}
+					return scan;
+				};
+
+				let success;
+				if (found_something(input[0])) {
+					success = fill_fields(input[0]);
+				} else if (found_something(input[1])) {
+					success = fill_fields(input[1]);
+				} else {
+					success = fill_fields({test_id: null, page: 0, front_id: null, png: png[0]})
+				}
+				let {test_id, page, front_id, png: matched_png} = success;
+
+				const identifier = test_id! + page + front_id;
 
 				// Handle already loaded conflicts.
 				if (pngs_to_upload.has(identifier)) {
@@ -229,7 +260,7 @@
 
 		const fileList = [];
 		zipData.forEach(async (relativePath, zipEntry) =>
-			fileList.push([relativePath, zipEntry])
+			fileList.push([relativePath, zipEntry]),
 		);
 
 		// Mac Finder-generated zip files contain extra __MACOSX files that are redundant.
@@ -238,7 +269,7 @@
 				([_, zipEntry]) =>
 					!zipEntry.dir &&
 					!zipEntry.name.startsWith("__MACOSX") &&
-					zipEntry.name.endsWith(".pdf")
+					zipEntry.name.endsWith(".pdf"),
 			)
 			.map(([_relativePath, zipEntry]) => {
 				return new Promise(async (resolve, _reject) => {
@@ -286,7 +317,7 @@
 					-canvas.width / 2,
 					-canvas.height / 2,
 					canvas.width,
-					canvas.height
+					canvas.height,
 				);
 
 				const rotated = await new Promise((resolve) => {
@@ -315,29 +346,41 @@
 			function (reason) {
 				// PDF loading error
 				console.error(reason);
-			}
+			},
 		);
 	}
 
 	async function upload_scans() {
 		try {
-
 			await Promise.all(
 				pngs_to_upload
 					.entries()
 					.map(([_, png]) =>
-						uploadScan(png.matched_png, host_id, png.test_id, png.page, png.front_id, $page.params.event_id)
-					)
+						uploadScan(
+							png.matched_png,
+							host_id,
+							png.test_id,
+							png.page,
+							png.front_id,
+							$page.params.event_id,
+						),
+					),
 			);
 			const message = `Successfully uploaded ${pngs_to_upload.size} scan(s)`;
 			toast.success(message);
 			pngs_to_upload.clear();
 			pngs_to_upload = pngs_to_upload;
-			
 		} catch (error) {
 			handleError(error);
 			toast.error(error.message);
 		}
+	}
+
+	function override_test_ids() {
+		for (let png of pngs_to_upload) {
+			png[1].test_id = test_id_override;
+		}
+		pngs_to_upload = pngs_to_upload;
 	}
 
 	function openModal(row) {
@@ -350,9 +393,9 @@
 	}
 
 	function deleteRow(row) {
-			const identifier = row.test_id + row.page + row.front_id;
-			pngs_to_upload.delete(identifier);
-			pngs_to_upload = pngs_to_upload;
+		const identifier = row.test_id + row.page + row.front_id;
+		pngs_to_upload.delete(identifier);
+		pngs_to_upload = pngs_to_upload;
 	}
 
 	async function saveChanges() {
@@ -380,7 +423,7 @@
 			box.x,
 			box.y,
 			box.width,
-			box.height
+			box.height,
 		);
 		const image_data = image_data_o.data;
 		const take_while = (start, end, step, predicate) => {
@@ -425,7 +468,7 @@
 				row * box.width,
 				(row + 1) * box.width,
 				1,
-				predicates
+				predicates,
 			);
 			const dot = calculate_dot(lengths, ratios);
 			if (dot > 0.9) {
@@ -437,7 +480,7 @@
 				col,
 				col + (box.height - 1) * box.width,
 				box.width,
-				predicates
+				predicates,
 			);
 			const dot = calculate_dot(lengths, ratios);
 			if (dot > 0.9) {
@@ -461,7 +504,7 @@
 		test_id_page_box,
 		alignment_dot_box,
 		corner_points,
-		dot_location
+		dot_location,
 	) {
 		const canvasdiv = document.getElementById("canvas");
 		const canvas = document.createElement("canvas");
@@ -508,7 +551,7 @@
 				((Math.atan2(expected_vec.y, expected_vec.x) -
 					Math.atan2(scanned_vec.y, scanned_vec.x)) *
 					180) /
-					Math.PI
+					Math.PI,
 			)
 			.scale(scale, scale)
 			.translate(-scanned.dot_x, -scanned.dot_y);
@@ -543,6 +586,8 @@
 <br />
 
 <Button title="Upload Scans" action={upload_scans} />
+<Input placeholder="Test ID Override" bind:value={test_id_override} />
+<Button title="Override Test IDs" action={override_test_ids} />
 
 <br />
 <br />
@@ -572,7 +617,7 @@
 			</button>
 		{:else if cell.key === "delete"}
 			<button class="edit-icon" on:click={() => deleteRow(row)}>
-				<i class="fa-solid fa-trash"/>
+				<i class="fa-solid fa-trash" />
 			</button>
 		{:else}
 			<div>
