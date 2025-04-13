@@ -108,7 +108,7 @@
 				  p_test_id: test.test_id,
 		});
 
-    if (!test_taker || !has_access) {
+    if (!test_taker) {
       disallowed = true;
       loading = false;
       throw new Error(

@@ -238,7 +238,7 @@
                 class="answerbox"
                 style="background-color: {answer.correct != null
                   ? answer.correct == true
-                    ? 'var(--primary-tint)'
+                    ? 'rgb(10, 200, 10)'
                     : 'var(--error-tint)'
                   : 'rgb(220, 220, 220)'}"
               >
