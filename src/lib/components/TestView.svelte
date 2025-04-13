@@ -28,6 +28,7 @@
     timeElapsed?: number; // New prop to receive timeElapsed from parent
   }
 
+
   let { test_taker = $bindable(), settings, is_team = false, timeRemaining = 0, timeElapsed = 0 }: Props = $props();
   let pages = settings.pages;
   let meltTime = settings.meltTime;
@@ -42,35 +43,29 @@
   let endTime = test_taker.end_time;
   let curPage = $state(test_taker.page_number);
 
-  onMount(() => {
-    async function log(
+  let activeProblemNumber = $state(null);
+
+
+  async function log(
       event_type: Database["public"]["Enums"]["test_event"],
       data: string,
     ) {
+      data =`Problem ${activeProblemNumber}: ${data}`;
       // Ignore errors
       await supabase
         .from("test_logs")
         .insert({ test_taker_id: test_taker.test_taker_id, event_type, data });
     }
-    window.addEventListener("keydown", (e) => {
-      if (["Meta", "Alt", "Shift", "Control"].find((k) => k == e.key)) {
-        return;
-      }
-      log("keypress", (e.shiftKey ? "Shift+" : "") + (e.metaKey ? "Meta+" : "") + (e.ctrlKey ? "Ctrl+" : "") + (e.altKey ? "Alt+" : "") + e.key);
-    });
+
+  onMount(() => {
+
     window.addEventListener("paste", (e) => {
       log("paste", e.clipboardData?.getData("text") ?? "unknown");
-    });
-    window.addEventListener("focus", () => {
-      log("focus", document.hasFocus().toString());
-    });
-    window.addEventListener("blur", () => {
-      log("blur", document.hasFocus().toString());
     });
     window.addEventListener("visibilitychange", () => {
       log("visibility_change", document.hidden.toString());
     });
-    
+
     // Prevent math elements from being focusable with tab
     disableMathTabIndexes();
     
@@ -203,10 +198,11 @@
       .subscribe();
   }
 
-  function handleFocus(event) {
+  function handleFocus(event, problemNumber) {
     //console.log("EVENT", event)
     prevAnswer = event.target.value;
     currentField = event.target;
+    activeProblemNumber = problemNumber;
   }
 
   // Create a function to handle inserts
@@ -502,7 +498,7 @@
                           timeElapsed / 1000 <
                         0
                       : false}
-                    on:focus={handleFocus}
+                    on:focus={(e) => handleFocus(e, problem.problem_number)}
                     on:keydown={(e) =>
                       e.key === "Enter" &&
                       changeAnswer(e, problem.test_problem_id)}
