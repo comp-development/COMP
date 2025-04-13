@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getGutsScores } from "$lib/supabase/";
+  import { getGutsScores, getOnlineGutsScores } from "$lib/supabase/";
 
   interface Props {
     test: any;
@@ -25,12 +25,41 @@
     screen.height * 0.65 + "px",
   );
 
+  // async function updateTable() {
+  //   const data = await getGradedTestAnswers(test.test_id);
+  //   const { data: test_taker_data, error: test_taker_error } = await supabase
+  //     .from("test_takers")
+  //     .select("test_taker_id, page_number, test_taker_id")
+  //     .eq("test_id", test.test_id);
+  //   if (test_taker_error) throw test_taker_error;
+  //   const page_map = new Map(test_taker_data.map(tt => [tt.test_taker_id, tt.page_number]));
+
+  //   data.forEach((obj) => {
+  //     if (page_map.get(obj.test_taker_id) > obj.test_problem_page) {
+  //       testTakersMap[obj.test_taker_id][obj.test_problem_number] = { ...obj };
+  //     }
+  //   });
+    
+  //   Object.values(testTakersMap).forEach((testTaker) => {
+  //     const totalPoints = Object.keys(testTaker).reduce((sum, key) => {
+  //       return sum + (testTaker[key]?.points || 0);
+  //     }, 0);
+  //     testTaker.points = totalPoints;
+  //   });
+  //   updateChartData();
+  //   updateHistogramData();
+  // }
+
+
+
+
   onMount(async () => {
     scores = rankParticipants(
-      (await getGutsScores(test.test_id)).flatMap((item) =>
+      (await getOnlineGutsScores(test.test_id)).flatMap((item) =>
         Array(num_copies).fill(item),
       ),
     );
+
     console.log("SCORES", scores);
     num_teams = scores.length;
     num_screens = Math.ceil(num_teams / max_per_side);
@@ -73,8 +102,10 @@
   }
 
   async function updateTable() {
+
+    
     scores = rankParticipants(
-      (await getGutsScores(test.test_id)).flatMap((item) =>
+      (await getOnlineGutsScores(test.test_id)).flatMap((item) =>
         Array(num_copies).fill(item),
       ),
     );
