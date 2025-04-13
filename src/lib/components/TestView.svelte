@@ -556,10 +556,15 @@
 </div>
 
 <Modal title="Submit Current Set?" bind:open={open} autoclose>
-  <p>
-    Are you sure you want to submit the current set{#if is_team}
-      for your team{/if}? This action cannot be undone.
-  </p>
+  {#if is_team}
+    <p>
+      Are you sure you want to submit the current set for your team? This action cannot be undone.
+    </p>
+  {:else}
+    <p>
+      Are you sure you want to submit the current set? This action cannot be undone.
+    </p>
+  {/if}
   <svelte:fragment slot="footer">
     <Button title="Cancel" outline action={() => (open = false)} />
     <Button title="Submit" action={async () => {
