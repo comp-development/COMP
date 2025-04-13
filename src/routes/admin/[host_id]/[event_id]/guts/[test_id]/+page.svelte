@@ -150,7 +150,7 @@
           goToGrading();
         }}
       >
-        Yes, override
+        Yes, override 
       </button>
       <button on:click={() => (showOverridePrompt = false)}>Cancel</button>
     </div>
