@@ -45,6 +45,8 @@
 
   let activeProblemNumber = $state(null);
 
+  let pollingInterval: ReturnType<typeof setInterval> | null = null;
+
 
   async function log(
       event_type: Database["public"]["Enums"]["test_event"],
@@ -129,6 +131,9 @@
       saved[obj.test_problem_id] = obj.answer_latex;
     });
   }
+
+
+
 
   async function fetchProblems() {
     try {
@@ -235,26 +240,26 @@
         "-page-" +
         test_taker.page_number,
     )
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "test_answers",
-        filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
-      },
-      handleAnswersUpsert,
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "test_answers",
-        filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
-      },
-      handleAnswersUpsert,
-    )
+    // .on(
+    //   "postgres_changes",
+    //   {
+    //     event: "UPDATE",
+    //     schema: "public",
+    //     table: "test_answers",
+    //     filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+    //   },
+    //   handleAnswersUpsert,
+    // )
+    // .on(
+    //   "postgres_changes",
+    //   {
+    //     event: "INSERT",
+    //     schema: "public",
+    //     table: "test_answers",
+    //     filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+    //   },
+    //   handleAnswersUpsert,
+    // )
     .subscribe();
 
   function saveFinalAnswer() {
@@ -315,6 +320,22 @@
       handleError(e);
     }
   }
+
+  onMount(() => {
+  // Existing logic...
+  
+  // Start polling every 2 minutes (120,000 ms)
+  pollingInterval = setInterval(async () => {
+    console.log("Polling answers...");
+    await fetchAnswers();
+  }, 300000); // 5 minutes in milliseconds
+
+  return () => {
+    // Cleanup
+    if (pollingInterval) clearInterval(pollingInterval);
+  };
+});
+
 
   // Function to check if the answer contains 3+ alphabetic characters not in quotes
   function hasUnquotedText(text: string): boolean {
