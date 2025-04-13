@@ -447,7 +447,7 @@
           open = true;
           curPage = test_taker.page_number;
         }}
-        title={"Continue"}
+        title={"Submit Current Set"}
       />
     </div>
   {/if}
@@ -547,7 +547,7 @@
               open = true;
               curPage = test_taker.page_number;
             }}
-            title={"Continue"}
+            title={"Submit Current Set"}
           />
         </div>
       {/if}
