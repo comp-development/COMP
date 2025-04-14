@@ -48,8 +48,7 @@
   async function updateTable() {
     const data = await getGradedTestAnswers(test.test_id);
 
-    console.log(data);
-  
+
 
     data.forEach((obj) => {
       testTakersMap[obj.test_taker_id][obj.test_problem_number] = { ...obj };
