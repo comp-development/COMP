@@ -189,7 +189,7 @@
 		const bounding_boxes = test_data!.bounding_boxes as any;
 		console.log(bounding_boxes, problem_number, gradeQueue, problem_data);
 		// let boxIndex = Math.min(problem_number, bounding_boxes.box_positions.length - 1);
-		const bounding_box = bounding_boxes.box_positions[problem_number - 1];
+		const bounding_box = bounding_boxes[problem_number - 1];
 
 		// Parse input object
 		const topLeftX = parseFloat(bounding_box.top_left[0]);
