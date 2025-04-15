@@ -10,7 +10,7 @@
 	import Button from "$lib/components/Button.svelte";
 	import { page } from "$app/stores";
 	import type { AsyncReturnType, Unpacked } from "$lib/supabaseClient";
-  import { Input } from "flowbite-svelte";
+	import { Input } from "flowbite-svelte";
 	export let host_id;
 	let test_id_override = "";
 
@@ -22,6 +22,13 @@
 	const FRONT_ID_BOX = { left: 335, top: 130, width: 57.6, height: 57.6 };
 	// Location in pts of bottom left alignment dot.
 	const ALIGNMENT_DOT_BOX = { left: 59, top: 748, width: 28, height: 28 };
+	// Location in pts of the top right qr code's bottom left alignment box
+	const TEST_ID_BOTTOM_LEFT_ALIGNMENT_BOX = {
+		left: 465,
+		top: 60,
+		width: 22,
+		height: 22,
+	};
 	// How many pts to expand the bounding boxes when looking to recognize the qr codes.
 	const QR_SEARCH_PADDING = 50;
 
@@ -70,6 +77,19 @@
 
 	onMount(initializePDFJS);
 
+	function expand_box(
+		bounding_box: typeof ALIGNMENT_DOT_BOX,
+		padding = QR_SEARCH_PADDING,
+	) {
+		const b = bounding_box;
+		return {
+			x: (b.left - padding) * PDF_SCALE,
+			y: (b.top - padding) * PDF_SCALE,
+			width: (b.width + 2 * padding) * PDF_SCALE,
+			height: (b.height + 2 * padding) * PDF_SCALE,
+		};
+	}
+
 	async function handleFileUpload() {
 		const filesToProcess = [];
 		for (const file of files) {
@@ -90,16 +110,6 @@
 				await convertToPngs(await file.arrayBuffer()),
 			]),
 		);
-		const expand_box = (bounding_box) => {
-			const b = bounding_box;
-			return {
-				x: (b.left - QR_SEARCH_PADDING) * PDF_SCALE,
-				y: (b.top - QR_SEARCH_PADDING) * PDF_SCALE,
-				width: (b.width + 2 * QR_SEARCH_PADDING) * PDF_SCALE,
-				height: (b.height + 2 * QR_SEARCH_PADDING) * PDF_SCALE,
-			};
-		};
-
 		const try_scan_box = async (png, bounding_box) => {
 			try {
 				return await QrScanner.scanImage(png, {
@@ -160,9 +170,16 @@
 				test_id = in_test_id;
 				page = in_page;
 				try {
+					const canvas = await drawImage(png);
 					let dot_location = await detect_alignment_dot(
-						png,
+						canvas,
 						expand_box(alignment_dot_box),
+						false,
+					);
+					let qr_bottom_left_dot_location = await detect_alignment_dot(
+						canvas,
+						expand_box(TEST_ID_BOTTOM_LEFT_ALIGNMENT_BOX, 20),
+						true,
 					);
 					png = await apply_transform(
 						png,
@@ -172,7 +189,7 @@
 						dot_location,
 					);
 				} catch (e: any) {
-					console.log("Warning: error scanning" + e.message);
+					console.log("Warning: error scanning " + e.message);
 				}
 			}
 
@@ -212,11 +229,13 @@
 					let scan = in_scan!;
 					if (!scan.front_id) {
 						unnamed_discriminators.front += 1;
-						scan.front_id = "ERROR: QR not found (" + unnamed_discriminators.front + ")";
+						scan.front_id =
+							"ERROR: QR not found (" + unnamed_discriminators.front + ")";
 					}
 					if (!scan.test_id) {
 						unnamed_discriminators.test += 1;
-						scan.test_id =  "ERROR: QR not found (" + unnamed_discriminators.test + ")";
+						scan.test_id =
+							"ERROR: QR not found (" + unnamed_discriminators.test + ")";
 					}
 					return scan;
 				};
@@ -227,9 +246,14 @@
 				} else if (found_something(input[1])) {
 					success = fill_fields(input[1]);
 				} else {
-					success = fill_fields({test_id: null, page: 0, front_id: null, png: png[0]})
+					success = fill_fields({
+						test_id: null,
+						page: 0,
+						front_id: null,
+						png: png[0],
+					});
 				}
-				let {test_id, page, front_id, png: matched_png} = success;
+				let { test_id, page, front_id, png: matched_png } = success;
 
 				const identifier = test_id! + page + front_id;
 
@@ -294,7 +318,7 @@
 			canvasdiv.appendChild(canvas);
 
 			// Prepare canvas using PDF page dimensions
-			const context = canvas.getContext("2d");
+			const context = canvas.getContext("2d")!;
 			canvas.height = viewport.height;
 			canvas.width = viewport.width;
 
@@ -407,15 +431,26 @@
 
 	const sum = (values) => values.reduce((a, b) => a + b, 0);
 
-	async function detect_alignment_dot(png, box) {
-		const canvasdiv = document.getElementById("canvas");
+	async function drawImage(png) {
+		const canvasdiv = document.getElementById("canvas")!;
 		const canvas = document.createElement("canvas");
-		const context = canvas.getContext("2d");
+		const context = canvas.getContext("2d")!;
 		canvasdiv.appendChild(canvas);
 		const image_bitmap = await createImageBitmap(png);
 		canvas.width = image_bitmap.width;
 		canvas.height = image_bitmap.height;
 		context.drawImage(image_bitmap, 0, 0);
+		return { canvas, context };
+	}
+
+	async function detect_alignment_dot(
+		{
+			canvas,
+			context,
+		}: { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D },
+		box: ReturnType<typeof expand_box>,
+		is_for_qr: boolean,
+	) {
 		// console.log(canvas.width, canvas.height, box);
 		box.width = Math.min(canvas.width - box.x, box.width);
 		box.height = Math.min(canvas.height - box.y, box.height);
@@ -426,18 +461,35 @@
 			box.height,
 		);
 		const image_data = image_data_o.data;
-		const take_while = (start, end, step, predicate) => {
+		const take_while = (
+			start: number,
+			end: number,
+			step: number,
+			predicate: (buf: Uint8ClampedArray<ArrayBuffer>) => boolean,
+		) => {
 			// uint8 array. RGBA => 4 entries per color.
 			let index = start * 4;
-			while (index < end * 4 && predicate(image_data.slice(index, index + 4))) {
+			const contains = (range: [number, number], value: number) =>
+				(range[0] <= value && value < range[1]) ||
+				(range[1] < value && value <= range[0]);
+
+			while (
+				contains([start * 4, end * 4], index) &&
+				predicate(image_data.slice(index, index + 4))
+			) {
 				index += step * 4;
 			}
 			return [index / 4, (index / 4 - start) / step];
 		};
-		const black = ([r, g, b, _a]) => r + g + b < 3 * 80;
-		const white = (colors) => !black(colors);
-		const get_lengths = (start, end, step, predicates) => {
-			let [index, output] = [start, []];
+		const black = ([r, g, b, _a]: Uint8ClampedArray) => r + g + b < 3 * 80;
+		const white = (colors: Uint8ClampedArray) => !black(colors);
+		const get_lengths = (
+			start: number,
+			end: number,
+			step: number,
+			predicates: ((buf: Uint8ClampedArray) => boolean)[],
+		) => {
+			let [index, output]: [number, number[]] = [start, []];
 			for (const p of predicates) {
 				const [new_index, steps] = take_while(index, end, step, p);
 				output.push(steps);
@@ -445,8 +497,8 @@
 			}
 			return output;
 		};
-		const norm = (values) => Math.sqrt(sum(values.map((v) => Math.pow(v, 2))));
-		const normalize = (values) => values.map((v) => v / norm(values));
+		const norm = (values: number[]) => Math.hypot(...values);
+		const normalize = (values: number[]) => values.map((v) => v / norm(values));
 
 		// Calculate dot product against expected ratio.
 		const calculate_dot = (lengths, ratios) => {
@@ -462,40 +514,79 @@
 		// black, then lots of white. Explicitly, WW...WWBWBBBWBWW..WW.
 		const predicates = [white, black, white, black, white, black, white];
 		const ratios = normalize([1, 1, 3, 1, 1]);
-		let [best_rows, best_cols] = [[], []];
+		let [best_rows, best_cols]: number[][] = [[], []];
 		for (let row = 0; row < box.height; row++) {
 			const lengths = get_lengths(
 				row * box.width,
 				(row + 1) * box.width,
 				1,
-				predicates,
+				// we happen to have a black border that's next to the test qr code
+				// of width approx 1 unit.
+				is_for_qr
+					? [white, black, white, black, white, black, white, black, white]
+					: predicates,
 			);
-			const dot = calculate_dot(lengths, ratios);
-			if (dot > 0.9) {
+
+			const dot = calculate_dot(
+				lengths,
+				normalize(is_for_qr ? [1, 1, 1, 1, 3, 1, 1] : ratios),
+			);
+			if (dot > 0.95) {
 				best_rows.push(row);
 			}
 		}
 		for (let col = 0; col < box.width; col++) {
-			const lengths = get_lengths(
-				col,
+			// We start from the bottom up
+			// (avoid hitting the answer box above the dot or other qr codes)
+			let [start, end, step] = [
 				col + (box.height - 1) * box.width,
-				box.width,
-				predicates,
-			);
+				col,
+				-box.width,
+			];
+			const lengths = get_lengths(start, end, step, predicates);
 			const dot = calculate_dot(lengths, ratios);
-			if (dot > 0.9) {
+			if (dot > 0.95) {
 				best_cols.push(col);
+			} else if (is_for_qr) {
+				// Sometimes the bottom line of the box around the QR code interferes.
+				let lengths = get_lengths(start, end, step, [
+					white,
+					black,
+					...predicates,
+				]);
+				lengths = lengths.slice(2);
+				const dot = calculate_dot(lengths, ratios);
+				if (dot > 0.95) {
+					best_cols.push(col);
+				}
 			}
 		}
 
+		context.strokeRect(box.x, box.y, box.width, box.height);
 		if (best_cols.length == 0 || best_rows.length == 0) {
-			throw "Alignment dot not detected.";
+			throw new Error("Alignment dot not detected.");
 		}
 
-		const best_col = sum(best_cols) / best_cols.length;
-		const best_row = sum(best_rows) / best_rows.length;
+		// Use median to avoid outliers' strong effects.
+		const best_col = best_cols[Math.floor(best_cols.length / 2)];
+		const best_row = best_rows[Math.floor(best_rows.length / 2)];
+		context.fillStyle = "red";
+		const mark_point = (x: number, y: number, radius: number) => {
+			context.beginPath();
+			context.arc(x, y, radius, 0, Math.PI * 2);
+			context.closePath();
+			context.fill();
+		};
+		for (const row of best_rows) {
+			mark_point(best_col + box.x, row + box.y, 1);
+		}
+		for (const col of best_cols) {
+			mark_point(col + box.x, best_row + box.y, 1);
+		}
+		mark_point(best_col + box.x, best_row + box.y, 3);
 
-		canvas.remove();
+		// TODO: maybe actually remove the canvas. or use as the rendered image.
+		// canvas.remove();
 		return [best_col + box.x, best_row + box.y];
 	}
 
