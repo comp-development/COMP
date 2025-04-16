@@ -47,17 +47,11 @@
 
   async function updateTable() {
     const data = await getGradedTestAnswers(test.test_id);
-    const { data: test_taker_data, error: test_taker_error } = await supabase
-      .from("test_takers")
-      .select("test_taker_id, page_number, test_taker_id")
-      .eq("test_id", test.test_id);
-    if (test_taker_error) throw test_taker_error;
-    const page_map = new Map(test_taker_data.map(tt => [tt.test_taker_id, tt.page_number]));
+
+
 
     data.forEach((obj) => {
-      if (page_map.get(obj.test_taker_id) > obj.test_problem_page) {
-        testTakersMap[obj.test_taker_id][obj.test_problem_number] = { ...obj };
-      }
+      testTakersMap[obj.test_taker_id][obj.test_problem_number] = { ...obj };
     });
     Object.values(testTakersMap).forEach((testTaker) => {
       const totalPoints = Object.keys(testTaker).reduce((sum, key) => {
@@ -80,6 +74,7 @@
       ...Array.from({ length: test.num_problems }, (_, i) => `C${i + 1}`),
       ...Array.from({ length: test.num_problems }, (_, i) => `P${i + 1}`),
       ...Array.from({ length: test.num_problems }, (_, i) => `T${i + 1}`),
+      ...Array.from({ length: test.num_problems }, (_, i) => `ST${i + 1}`),
     ];
     rows.push(headers.join(","));
 
@@ -111,6 +106,11 @@
         ...Array.from(
           { length: test.num_problems },
           (_, i) => testTaker[i + 1]?.last_updated || "",
+        ),
+        ...Array.from(
+          { length: test.num_problems },
+          (_, i) =>
+          testTaker[i + 1]?.last_edited_time || "",
         ),
       ];
       if (testTaker.front_id == "MM12") {
