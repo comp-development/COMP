@@ -11,6 +11,9 @@
 		height: number;
 	};
 
+	export let mod: number = 0;
+
+
 	let canvas: Canvas | null = null;
 	let focusRect;
 	let group: Group | null = null;
@@ -22,18 +25,22 @@
 			canvas.clear(); // Clear canvas if it already exists
 		}
 		const aspectRatio = inputCoordinates.width / inputCoordinates.height;
-		const canvasContainer = document.getElementById("canvas-container")!;
+		const canvasContainer = document.getElementById(mod > 0 ? "canvas-container-2" : "canvas-container")!;
 		canvasContainer.style.width = `${
 			canvasContainer.offsetHeight * aspectRatio
 		}px`;
 
 		// Initialize Fabric canvas
-		canvas = new Canvas("canvas", {
+		canvas = new Canvas((mod > 0 ? "canvas-2" : "canvas"), {
 			width: canvasContainer.offsetWidth,
 			height: canvasContainer.offsetHeight,
 			selectable: false,
 		});
-		update();
+		await update();
+		zoomOut();
+		zoomOut();
+		zoomOut();
+
 	}
 
 	onMount(initializeCanvas); // Initialize canvas on mount
@@ -41,9 +48,9 @@
 	async function update() {
 		// Load image onto canvas
 		rectCoordinates = {
-			left: (inputCoordinates.left / 612) * image.width,
+			left: ((inputCoordinates.left / 612) * image.width) - (mod == 2 ? 450 :(mod == 1? 150  : 0)),
 			top: (inputCoordinates.top / 792) * image.height,
-			width: (inputCoordinates.width / 612) * image.width,
+			width: (inputCoordinates.width / 612 * (mod > 0 ? 0.5 : 1)) * image.width,
 			height: (inputCoordinates.height / 792) * image.height,
 		};
 		image.set({ selectable: false });
@@ -127,6 +134,22 @@
 </script>
 
 <div class="picture">
+	{#if mod > 0}
+	<div id="canvas-container-2" class="centered">
+		<canvas id="canvas-2" />
+		<div class="zoom-controls">
+			<button on:click={zoomIn} class="icon-button">
+				<i class="ri-zoom-in-fill" style="font-size: 30px;" />
+			</button>
+			<button on:click={zoomOut} class="icon-button">
+				<i class="ri-zoom-out-fill ri-lg" style="font-size: 30px;" />
+			</button>
+			<button on:click={reset} class="icon-button">
+				<i class="ri-find-replace-fill ri-lg" style="font-size: 30px;" />
+			</button>
+		</div>
+	</div>
+	{:else}
 	<div id="canvas-container" class="centered">
 		<canvas id="canvas" />
 		<div class="zoom-controls">
@@ -141,6 +164,7 @@
 			</button>
 		</div>
 	</div>
+	{/if}
 </div>
 
 <style>
@@ -149,8 +173,18 @@
 		width: 100%;
 		text-align: center;
 	}
+	#canvas-container-2 {
+		position: relative;
+		width: 100%;
+		text-align: center;
+	}
 
 	#canvas {
+		border: 1px solid #ccc;
+		position: relative;
+	}
+
+	#canvas-2 {
 		border: 1px solid #ccc;
 		position: relative;
 	}
