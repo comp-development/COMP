@@ -37,10 +37,6 @@
 			selectable: false,
 		});
 		await update();
-		zoomOut();
-		zoomOut();
-		zoomOut();
-
 	}
 
 	onMount(initializeCanvas); // Initialize canvas on mount
@@ -80,6 +76,8 @@
 		canvas!.add(group);
 		ogPosition = { left: group.left, top: group.top };
 		reZoom();
+		await zoomOut();
+		await zoomOut();
 	}
 
 	afterUpdate(update);
