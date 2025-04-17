@@ -116,7 +116,7 @@
 
   setInterval(function () {
     updateTable();
-  }, 5000);
+  }, 10000);
 </script>
 
 <div>
