@@ -11,6 +11,8 @@ export * from "./hosts";
 export * from "./orgs";
 export * from "./transfers";
 export * from "./uploadScan";
+export * from "./cheating";
+
 
 export function getUserTypeDatabase(type: "student" | "coach" | "admin") {
   return type === "coach" ? "coaches" : type + "s";

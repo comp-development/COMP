@@ -6,7 +6,8 @@
     ClipboardCheckOutline, 
     TableRowOutline,
     FileLinesSolid,
-    CogOutline
+    CogOutline,
+    ChartMixedOutline
   } from "flowbite-svelte-icons";
   import { formatDurationHumanReadable } from "$lib/dateUtils";
 
@@ -138,6 +139,15 @@
                 <TableRowOutline class="w-5 h-5 icon" />
               </button>
               <span class="tooltip">Results</span>
+            </a>
+          </div>
+
+          <div class="tooltip-container">
+            <a href="./tests/{test.test_id}/analyze">
+              <button class="test-button empty">
+                <ChartMixedOutline class="w-5 h-5 icon" />
+              </button>
+              <span class="tooltip">Analyze</span>
             </a>
           </div>
 
@@ -286,6 +296,7 @@
   
   .action-buttons {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: flex-end;
     gap: 0.75rem;
