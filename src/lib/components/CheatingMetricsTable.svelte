@@ -66,14 +66,25 @@
         key: 'p_globalMIA',
         label: 'Global MIA',
         visible: true,
+        dataType: 'boolean',
+        format: (v: boolean) => ({
+          text: v ? 'YES' : 'no',
+          isBadge: true,
+          color: v ? 'red' : 'none'
+        })
+      },
+    //   {
+    //     key: 'testDuration',
+    //     label: 'Duration (s)',
+    //     visible: false,
+    //     dataType: 'number'
+    //   },
+      {
+        key: 'cheating_probability',
+        label: 'Cheating Probability',
+        visible: true,
         dataType: 'number',
         format: (v: number) => ({ text: `${(v * 100).toFixed(1)}%`, isBadge: false })
-      },
-      {
-        key: 'testDuration',
-        label: 'Duration (s)',
-        visible: true,
-        dataType: 'number'
       },
       {
         key: 'pasteCount',
