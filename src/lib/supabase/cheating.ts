@@ -529,7 +529,7 @@ export function calculateAllCheatMetrics(
 /**
  *  Fetch all the problems in a test, ordered by problem_number.
  */
-export async function fetchTestProblems(test_id: number) {
+export async function fetchTestProblemss(test_id: number) {
   const { data, error } = await supabase
     .from("test_problems")
     .select("test_problem_id, problem_number")
@@ -608,7 +608,7 @@ export async function fetchStudentProblemTable(
   test_id: number,
   student_event_id: number
 ) {
-  const problems = await fetchTestProblems(test_id);
+  const problems = await fetchTestProblemss(test_id);
   const { registration, student, testTaker, answers } =
     await fetchStudentProblemAnswers(test_id, student_event_id);
 
@@ -662,7 +662,7 @@ export async function fetchTeamProblemTable(
   rows: any[];
 }> {
   // 1) fetch the test’s problem list once
-  const problems = await fetchTestProblems(test_id);
+  const problems = await fetchTestProblemss(test_id);
 
   // 2) grab every student_event_id on this team for our event
   const { data: regs, error: regsErr } = await supabase
