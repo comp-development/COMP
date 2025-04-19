@@ -7,15 +7,15 @@
     export let event_id: number;
     export let event_name: string;
     import { goto } from '$app/navigation';
+    import { EyeOutline } from "flowbite-svelte-icons";
 
     const base = $page.url.pathname;
 
     const rowActions = [
     {
-      icon: '',            // no visible icon
+      icon: EyeOutline,            // no visible icon
       tooltip: 'View details',
       callback: (row) => {
-        console.log(row);
         goto(`${base}/team/${row.team_id}`);
       }
     }
@@ -23,9 +23,9 @@
 
   
     const columns = [
-      { key: 'test_taker_id',   label: 'ID',             visible: false },
-      { key: 'fullName',        label: 'Student',        visible: true,  frozen: true },
-      { key: 'teamFrontId',     label: 'Team #',         visible: true },
+      { key: 'test_taker_id',   label: 'ID',             visible: false, dataType: 'number' },
+      { key: 'fullName',        label: 'Student',        visible: true, dataType: 'string' },
+      { key: 'teamFrontId',     label: 'Team #',         visible: true, dataType: 'string' },
       {
         key: 'p_speed',
         label: 'Speed Score',
@@ -34,15 +34,8 @@
         format: (v: number) => ({ text: `${(v * 100).toFixed(1)}%`, isBadge: false })
       },
       {
-        key: 'p_globalTiming',
-        label: 'Global Timing',
-        visible: true,
-        dataType: 'number',
-        format: (v: number) => ({ text: `${(v * 100).toFixed(1)}%`, isBadge: false })
-      },
-      {
         key: 'teamRapidFlag',
-        label: 'Team Rapid?',
+        label: 'Team Rapid',
         visible: true,
         dataType: 'boolean',
         format: (v: boolean) => ({
@@ -53,7 +46,7 @@
       },
       {
         key: 'teamMIAflag',
-        label: 'Team MIA?',
+        label: 'Team MIA',
         visible: true,
         dataType: 'boolean',
         format: (v: boolean) => ({
@@ -105,7 +98,6 @@
     tableId={`cheat_${event_id}`}
     idField="test_taker_id"
     rowActions={rowActions}
-    selectable={false}
     debounceSearch={300}
     lazyLoad={true}
     forceLoadVisibility={true}
