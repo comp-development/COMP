@@ -57,12 +57,18 @@
   let subscription: any;
   let statusUpdateInterval: any;
 
-  const handleTestUpdate = (payload: any) => {
+  const handleTestUpdate = async (payload: any) => {
     console.log("TEST PAYLOAD", payload.new);
-    testStatusMap[payload.new.test_id] = {
-      ...testStatusMap[payload.new.test_id],
-      ...payload.new,
-    };
+    const { data : has_access, error} = await supabase.rpc('check_test_access', {
+				  p_test_id: payload.new.test_id,
+			  });
+    if (error) {toast.error(error)};
+    if (has_access){
+      testStatusMap[payload.new.test_id] = {
+        ...testStatusMap[payload.new.test_id],
+        ...payload.new,
+      };
+    }
     return;
   };
 
