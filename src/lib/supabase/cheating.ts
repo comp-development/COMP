@@ -121,6 +121,7 @@ export async function fetchTeamsByIds(team_ids: number[]) {
     .select('team_id, team_name')
     .in('team_id', team_ids)
 
+
   if (error) throw error
   return data as {
     team_id:   number
@@ -146,8 +147,10 @@ export async function fetchAllTakerInfo(
   const events   = await fetchStudentEventsByIds(studentIds, event_id)
 
   // d) teams
-  const teamIds  = Array.from(new Set(events.map(e => e.team_id)))
-  const teams    = await fetchTeamsByIds(teamIds)
+  const teamIds = [...new Set(events.map(e => e.team_id).filter((id): id is number => id != null))];
+
+  const teams  = await fetchTeamsByIds(teamIds)
+
 
   // e) merge into Taker[]
   return takersRaw.map(t => {
@@ -165,7 +168,7 @@ export async function fetchAllTakerInfo(
         {
           team_id: ev.team_id,
           front_id: ev.front_id,
-          teams: { team_name: tm.team_name, front_id: tm.team_id.toString() }
+          teams: { team_name: tm?.team_name, front_id: tm?.team_id.toString() }
         }
       ]
     }
@@ -210,10 +213,6 @@ export async function fetchPasteEvents(
     `)
     .in('test_taker_id', test_taker_ids)
     .eq('event_type', 'paste');
-    console.log("tests", test_taker_ids);
-
-    console.log("Paste",data);
-
   if (error) throw error
   return data as PasteEvent[]
 }
@@ -448,7 +447,6 @@ export async function fetchStudentProblemAnswers(
     .single()
   if (seErr) throw seErr
 
-  console.log("stue", se.student_id, se.front_id, se.student_event_id);
 
   // b) name
   const { data: stu, error: stuErr } = await supabase
@@ -458,11 +456,8 @@ export async function fetchStudentProblemAnswers(
     .single()
   if (stuErr) throw stuErr
 
-  console.log("STU", stu);
 
   // c) test_taker
-  console.log("test_id", test_id);
-  console.log("student_id", se.student_id); 
 
   const { data: tt, error: ttErr } = await supabase
     .from('test_takers')
@@ -531,9 +526,6 @@ export async function fetchStudentProblemTable(
         row[`p${p.problem_number}_rt`]  = ''
       }
     }
-
-    console.log("ROWS", row);
-
   
     return { problems, row }
   }
