@@ -55,46 +55,25 @@ export interface CheatMetrics {
 export async function fetchTestTakers(event_id: number, test_id: number) {
   const { data, error } = await supabase
     .from("test_takers")
-    .select("test_taker_id, student_id, start_time, end_time")
+    .select("test_taker_id, student_id, start_time, end_time, students(first_name, last_name)")
     .eq("test_id", test_id);
 
   if (error) throw error;
+  console.log(data);
   return data as {
     test_taker_id: number;
-    student_id: number;
+    student_id: string;
+    students: {
+      first_name: string;
+      last_name: string;
+    }
+    last_name: string;
     start_time: string;
     end_time: string;
   }[];
 }
 
 const CHUNK_SIZE = 100;
-
-
-/**
- * 2) Fetch those students’ names in one go.
- */
-export async function fetchStudentsByIds(student_ids: string[]) {
-    const validIds = student_ids.filter((id): id is string => id != null)
-    if (validIds.length === 0) return []
-  
-    const chunks: string[][] = []
-    for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
-      chunks.push(validIds.slice(i, i + CHUNK_SIZE))
-    }
-  
-    const allStudents: { student_id: string; first_name: string; last_name: string }[] = []
-  
-    for (const chunk of chunks) {
-      const { data, error } = await supabase
-        .from('students')
-        .select('student_id, first_name, last_name')
-        .in('student_id', chunk)
-  
-      if (error) throw error
-      allStudents.push(...(data ?? []))
-    }
-    return allStudents
-  }
 
 /**
  * 3) Fetch each student’s registration (team) for our event.
@@ -111,13 +90,17 @@ export async function fetchStudentEventsByIds(
       student_id: string;
       team_id: number;
       front_id: string;
+      teams: {
+        team_name: string;
+        front_id: string;
+      }
     }[] = [];
   
     for (let i = 0; i < validIds.length; i += CHUNK_SIZE) {
       const chunk = validIds.slice(i, i + CHUNK_SIZE);
       const { data, error } = await supabase
         .from('student_events')
-        .select('student_event_id, student_id, team_id, front_id')
+        .select('student_event_id, student_id, team_id, front_id, teams(team_name, front_id)')
         .in('student_id', chunk)
         .eq('event_id', event_id);
   
@@ -154,29 +137,20 @@ export async function fetchAllTakerInfo(event_id: number, test_id: number) {
   const studentIds = takersRaw.map((t) => t.student_id);
 
   // b) students
-  const students = await fetchStudentsByIds(studentIds);
+//   const students = await fetchStudentsByIds(studentIds);
 
   // c) student_events
   const events = await fetchStudentEventsByIds(studentIds, event_id);
 
-  // d) teams
-  const teamIds = [
-    ...new Set(
-      events.map((e) => e.team_id).filter((id): id is number => id != null)
-    ),
-  ];
-
-  const teams = await fetchTeamsByIds(teamIds);
-
   // e) merge into Taker[]
   return takersRaw.map((t) => {
-    const stu = students.find((s) => s.student_id === t.student_id)!;
+    // const stu = students.find((s) => s.student_id === t.student_id)!;
     const ev = events.find((e) => e.student_id === t.student_id)!;
-    const tm = teams.find((x) => x.team_id === ev?.team_id)!;
+    // const tm = teams.find((x) => x.team_id === ev?.team_id)!;
     return {
       test_taker_id: t.test_taker_id,
       student_id: t.student_id,
-      student: { first_name: stu.first_name, last_name: stu.last_name },
+      student: { first_name: t.students.first_name, last_name: t.students.last_name },
       student_event_id: ev?.student_event_id,
       start_time: t.start_time,
       end_time: t.end_time,
@@ -184,7 +158,7 @@ export async function fetchAllTakerInfo(event_id: number, test_id: number) {
         {
           team_id: ev?.team_id,
           front_id: ev?.front_id,
-          teams: { team_name: tm?.team_name, front_id: tm?.team_id.toString() },
+          teams: { team_name: ev?.teams?.team_name, front_id: ev?.teams?.team_id },
         },
       ],
     };
@@ -572,18 +546,18 @@ export async function fetchStudentProblemAnswers(
     // a) registration record
     const { data: se, error: seErr } = await supabase
       .from("student_events")
-      .select("student_id, front_id")
+      .select("student_id, front_id, students(first_name, last_name)")
       .eq("student_event_id", student_event_id)
       .single();
     if (seErr) throw seErr;
 
-    // b) name
-    const { data: stu, error: stuErr } = await supabase
-      .from("students")
-      .select("first_name, last_name")
-      .eq("student_id", se.student_id)
-      .single();
-    if (stuErr) throw stuErr;
+    // // b) name
+    // const { data: stu, error: stuErr } = await supabase
+    //   .from("students")
+    //   .select("first_name, last_name")
+    //   .eq("student_id", se.student_id)
+    //   .single();
+    // if (stuErr) throw stuErr;
 
     // c) test_taker
 
@@ -604,7 +578,6 @@ export async function fetchStudentProblemAnswers(
 
     return {
       registration: se,
-      student: stu,
       testTaker: tt,
       answers: ans,
     };
@@ -626,7 +599,7 @@ export async function fetchStudentProblemTable(
   student_event_id: number
 ) {
   const problems = await fetchTestProblemss(test_id);
-  const { registration, student, testTaker, answers } =
+  const { registration, testTaker, answers } =
     await fetchStudentProblemAnswers(test_id, student_event_id);
 
   const startTs = new Date(testTaker.start_time).getTime();
@@ -655,7 +628,7 @@ export async function fetchStudentProblemTable(
   const row: any = {
     student_event_id,
     front_id: registration.front_id,
-    fullName: `${student.first_name} ${student.last_name}`,
+    fullName: `${registration.students.first_name} ${registration.students.last_name}`,
     totalPoints: totalPoints,
     startTime: new Date(testTaker.start_time).toLocaleTimeString([], {
       hour: "2-digit",
@@ -712,6 +685,7 @@ export async function fetchTeamProblemTable(
   if (!regs) return { problems, rows: [] };
 
   // 3) for each registration, attempt to fetch that student’s row
+  // TODO: BATCH THIS, not just for oen student
   const rows: any[] = [];
   for (const { student_event_id } of regs) {
     try {
