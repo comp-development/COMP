@@ -3,7 +3,7 @@
     import { onMount }     from 'svelte'
     import CustomTable     from '$lib/components/CustomTable.svelte'
     import {
-      fetchTestProblems,
+      fetchTestProblemss,
       fetchStudentProblemTable
     } from '$lib/supabase/cheating'
   

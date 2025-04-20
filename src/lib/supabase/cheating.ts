@@ -234,6 +234,24 @@ export async function fetchPasteEvents(test_taker_ids: number[]) {
   return data as PasteEvent[];
 }
 
+
+export async function getGradedTestAnswerss(
+    test_id,
+    test_taker_ids: number[],
+    customSelect: string = "*",
+  ) {
+    const real_test_taker_ids = test_taker_ids.filter((id) => id != null);
+    if (test_taker_ids.length === 0) return [];
+    const { data, error } = await supabase
+      .from("graded_test_answers")
+      .select(customSelect)
+      .in("test_taker_id", real_test_taker_ids)
+      .eq("test_id", test_id);
+  
+    if (error) throw error;
+    return data;
+  }
+
 /**
  * 8) Compute all cheating metrics for every taker.
  */
@@ -619,15 +637,35 @@ export async function fetchStudentProblemTable(
   >();
   for (const a of answers) ansMap.set(a.test_problem_id, a);
 
+  const graded = await getGradedTestAnswerss(
+    test_id,
+    [testTaker.test_taker_id],
+    'test_problem_id, points'
+  );
+
+    const gradedMap = new Map<
+        number,
+        { points: number }
+    >();
+    let totalPoints = 0;
+    for (const g of graded) {
+        totalPoints += g.points ?? 0;
+    }
+
+
   const row: any = {
     student_event_id,
     front_id: registration.front_id,
     fullName: `${student.first_name} ${student.last_name}`,
+    totalPoints: totalPoints,
     startTime: new Date(testTaker.start_time).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     }),
   };
+
+
+
 
   for (const p of problems) {
     const a = ansMap.get(p.test_problem_id);

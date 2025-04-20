@@ -21,11 +21,11 @@
     }
   ];
 
-  
     const columns = [
       { key: 'test_taker_id',   label: 'ID',             visible: false, dataType: 'number' },
       { key: 'fullName',        label: 'Student',        visible: true, dataType: 'string' },
       { key: 'teamFrontId',     label: 'Team #',         visible: true, dataType: 'string' },
+      { key: 'totalPoints',     label: 'Score',         visible: true, dataType: 'number' },
       {
         key: 'p_speed',
         label: 'Speed Score',

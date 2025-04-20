@@ -3,7 +3,7 @@
     import { onMount }     from 'svelte'
     import CustomTable     from '$lib/components/CustomTable.svelte'
     import {
-      fetchTestProblems,
+      fetchTestProblemss,
       fetchTeamProblemTable
     } from '$lib/supabase/cheating'
   
@@ -28,15 +28,14 @@
       columns = [
         { key: 'front_id',  label: 'Front ID',   visible: true },
         { key: 'fullName',  label: 'Name',       visible: true },
+        { key: 'totalPoints',  label: 'Score',       visible: true, dataType: 'number' },
         { key: 'startTime', label: 'Start Time', visible: true },
         ...problems.flatMap(p => [
-          { key: `p${p.problem_number}_latex`, label: `#${p.problem_number} Ans`, visible: p.problem_number < 5 ? true : false },
-          { key: `p${p.problem_number}_min`,   label: `#${p.problem_number} (min)`,   visible: p.problem_number < 5 ? true : false },
+          { key: `p${p.problem_number}_latex`, label: `#${p.problem_number} Ans`, visible:  true },
+          { key: `p${p.problem_number}_min`,   label: `#${p.problem_number} (min)`,   visible:  true },
           { key: `p${p.problem_number}_rt`,    label: `#${p.problem_number} Real Time`, visible: false },
         ]),
-
       ]
-  
       data = rows
     })
   </script>

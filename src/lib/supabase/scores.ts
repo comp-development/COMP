@@ -9,6 +9,8 @@ export async function getGradedTestAnswers(
     .select(customSelect)
     .eq("test_id", test_id);
 
+  console.log("GRADED_TEST", data)
+
   if (error) throw error;
   return data;
 }
