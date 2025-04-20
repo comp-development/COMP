@@ -85,7 +85,6 @@ export async function fetchStudentsByIds(student_ids: string[]) {
     const allStudents: { student_id: string; first_name: string; last_name: string }[] = []
   
     for (const chunk of chunks) {
-         console.log(chunk)
       const { data, error } = await supabase
         .from('students')
         .select('student_id, first_name, last_name')
