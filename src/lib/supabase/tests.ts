@@ -295,12 +295,56 @@ export async function getTestTakers(
   detailed = false,
   customSelect = "*",
 ) {
-  const { data, error } = await supabase
+  // check if test is team or not:
+  const { data: test_info, error } = await supabase
+    .from("tests")
+    .select("is_team, event_id")
+    .eq("test_id", test_id)
+    .single();
+
+  if (error) throw error;
+
+  if (test_info.is_team) {
+    const { data, error } = await supabase
     .from(detailed ? "test_takers_detailed" : "test_takers")
     .select(customSelect)
     .eq("test_id", test_id);
-  if (error) throw error;
-  return data;
+    if (error) throw error;
+    return data;
+  }
+  else {
+    const { data, error } = await supabase
+    .from(detailed ? "test_takers_detailed" : "test_takers")
+    .select(customSelect)
+    .eq("test_id", test_id);
+
+    if (error) throw error;
+
+    const studentIds = data.map((t) => t.student_id).filter((id): id is number => id != null);
+
+    const { data:student_data, error: studentError } = await supabase
+        .from('student_events')
+        .select('front_id, student_id')
+        .in('student_id', studentIds)
+        .eq('event_id', test_info.event_id);
+
+    if (error) throw studentError;
+
+
+    // add the student data to the test takers data
+    if (student_data) {
+      data.forEach((t) => {
+        const student = student_data.find((s) => s.student_id === t.student_id);
+        if (student) {
+          t.front_id = student.front_id;
+        }
+      });
+    }
+    if (error) throw error;
+    return data;
+  }
+
+
 }
 
 export async function updateTest(test_id, testData) {
