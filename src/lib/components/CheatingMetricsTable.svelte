@@ -12,20 +12,20 @@
     const base = $page.url.pathname;
 
     const rowActions = [
-    {
-      icon: EyeOutline,            // no visible icon
-      tooltip: 'View details',
-      callback: (row) => {
-        goto(`${base}/team/${row.team_id}`);
-      }
+  {
+    icon: EyeOutline,
+    tooltip: 'View details',
+    callback: (row: any) => {
+      window.open(`${base}/team/${row.team_id}`, '_blank', 'noopener');
     }
-  ];
+  }
+];
 
-  
     const columns = [
       { key: 'test_taker_id',   label: 'ID',             visible: false, dataType: 'number' },
       { key: 'fullName',        label: 'Student',        visible: true, dataType: 'string' },
       { key: 'teamFrontId',     label: 'Team #',         visible: true, dataType: 'string' },
+      { key: 'totalPoints',     label: 'Score',         visible: true, dataType: 'number' },
       {
         key: 'p_speed',
         label: 'Speed Score',
