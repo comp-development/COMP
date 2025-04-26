@@ -68,7 +68,26 @@
 				  p_test_id: payload.new.test_id,
 			  });
     if (error) {toast.error(error)};
-    if (has_access){
+    
+    let canAccess = has_access;
+    
+    // Also check for Foal/Colt/Stallion if event_id is 9
+    if (canAccess && eventId === 9 && teamDetails) {
+      const frontId = teamDetails.front_id;
+      const testName = payload.new.test_name;
+      
+      if (testName?.includes('Foal') && !frontId?.endsWith('F')) {
+        canAccess = false;
+      }
+      if (testName?.includes('Colt') && !frontId?.endsWith('C')) {
+        canAccess = false;
+      }
+      if (testName?.includes('Stallion') && !frontId?.endsWith('S')) {
+        canAccess = false;
+      }
+    }
+    
+    if (canAccess){
       testStatusMap[payload.new.test_id] = {
         ...testStatusMap[payload.new.test_id],
         ...payload.new,
