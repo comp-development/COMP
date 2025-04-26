@@ -16,6 +16,7 @@
     getTeamId,
     addTestTaker,
     getTestTaker,
+    getTeam,
   } from "$lib/supabase";
   import MathJax from "$lib/components/MathJax.svelte";
   import Loading from "$lib/components/Loading.svelte";
@@ -52,6 +53,7 @@
   let testStatusMap: Record<string, TestData> = $state({});
   let tests = $derived(Object.values(testStatusMap));
   let teamId: number | null = null;
+  let teamDetails: any | null = null;
   let eventId = Number($page.params.event_id);
 
   let subscription: any;
@@ -77,6 +79,14 @@
   (async () => {
     teamId = await getTeamId($user!.id, eventId);
     console.log("teamId", teamId);
+    if (teamId) {
+      try {
+        teamDetails = await getTeam(teamId);
+        console.log("Team Details:", teamDetails);
+      } catch (error) {
+        handleError(error as Error);
+      }
+    }
     await getTests();
     loading = false;
 
@@ -238,10 +248,32 @@
             test.is_team,
           )) ?? {};
         console.log("TAKER", testTaker, test);
-        const { data : has_access, error} = await supabase.rpc('check_test_access', {
+        let { data : has_access, error} = await supabase.rpc('check_test_access', {
 				  p_test_id: test.test_id,
 			  });
-        if (error) {toast.error(error)};
+        
+        if (error) {toast.error(error.message)};
+        
+        if (has_access && eventId === 9) {
+          if (!teamDetails) {
+            teamDetails = await getTeam(teamId);
+          }
+
+          if (!teamDetails) {
+            has_access = false;
+          }
+
+          if (test.test_name?.includes('Foal') && !teamDetails.front_id?.endsWith('F')) {
+             has_access = false;
+          }
+          if (test.test_name?.includes('Colt') && !teamDetails.front_id?.endsWith('C')) {
+             has_access = false;
+          }
+          if (test.test_name?.includes('Stallion') && !teamDetails.front_id?.endsWith('S')) {
+             has_access = false;
+          }
+        }
+
         if (has_access){
           testStatusMap[test.test_id] = { ...test, ...testTaker };
           updateStatus(test);
