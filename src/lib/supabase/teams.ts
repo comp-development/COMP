@@ -90,8 +90,8 @@ export async function inviteUserToTeam(team_id: number, emails: string[], teamSi
 
   if (error) throw error;
 
-  let invites = data.invites || [];
-  let newInvites = [];
+  let invites: string[] = data.invites || [];
+  let newInvites: string[] = [];
   let allValid = true;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -165,7 +165,7 @@ export async function removeUserInvitationFromTeam(team_id: number, email: strin
 
   if (fetchError) throw fetchError;
 
-  let invites = data.invites;
+  let invites = data.invites as string[] | null;
 
   if (invites) {
     invites = invites.filter((invite: string) => invite !== email);
@@ -187,7 +187,7 @@ export async function checkUserInvitedToTeam(team_id: number, email: string) {
     .single();
   if (error) throw error;
   
-  return data.invites.includes(email);
+  return (data.invites as string[] | null)?.includes(email);
 }
 
 export async function upsertTeam(
@@ -253,4 +253,34 @@ export async function deleteTeam(team_id: number) {
     .update({ team_id: null })
     .eq("team_id", team_id);
   if (updateError) throw updateError;
+}
+
+export async function getTeamCustomFieldValue(
+  teamId: number,
+  eventCustomFieldId: number,
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from("custom_field_values")
+      .select("value")
+      .eq("team_id", teamId)
+      .eq("event_custom_field_id", eventCustomFieldId)
+      .single();
+
+    if (error) {
+      // Handle cases where no row is found, which might not be an error
+      if (error.code === 'PGRST116') {
+        console.log(`No custom field value found for team ${teamId} and field ${eventCustomFieldId}`);
+        return null;
+      }
+      throw error;
+    }
+
+    return data?.value ?? null;
+  } catch (error) {
+    // Assuming handleError exists and is imported, or handle appropriately
+    // handleError(error as Error, `Failed to get custom field value for team ${teamId}, field ${eventCustomFieldId}`);
+    console.error(`Failed to get custom field value for team ${teamId}, field ${eventCustomFieldId}`, error);
+    return null; // Or rethrow, depending on desired error handling
+  }
 }
