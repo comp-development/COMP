@@ -16,12 +16,15 @@
     getTeamId,
     addTestTaker,
     getTestTaker,
+    getTeam,
   } from "$lib/supabase";
   import MathJax from "$lib/components/MathJax.svelte";
   import Loading from "$lib/components/Loading.svelte";
   import { supabase } from "$lib/supabaseClient";
   import { user } from "$lib/sessionStore";
   import TestCard from "$lib/components/TestCard.svelte";
+  import SimpleLinkCard from "$lib/components/SimpleLinkCard.svelte";
+  import { getTeamCustomFieldValue } from "$lib/supabase/teams";
 
   // Define test interface
   interface TestData {
@@ -38,6 +41,7 @@
     instructions?: string;
     start_time?: string;
     end_time?: string;
+    link?: string | null;
   }
 
   let loading = $state(true);
@@ -52,6 +56,7 @@
   let testStatusMap: Record<string, TestData> = $state({});
   let tests = $derived(Object.values(testStatusMap));
   let teamId: number | null = null;
+  let teamDetails: any | null = null;
   let eventId = Number($page.params.event_id);
 
   let subscription: any;
@@ -77,6 +82,14 @@
   (async () => {
     teamId = await getTeamId($user!.id, eventId);
     console.log("teamId", teamId);
+    if (teamId) {
+      try {
+        teamDetails = await getTeam(teamId);
+        console.log("Team Details:", teamDetails);
+      } catch (error) {
+        handleError(error as Error);
+      }
+    }
     await getTests();
     loading = false;
 
@@ -230,24 +243,114 @@
   async function getTests() {
     try {
       const testList = (await getEventTests(Number($page.params.event_id), false)) ?? [];
-      for (const test of testList) {
-        const testTaker =
-          (await getTestTaker(
-            test.test_id,
-            test.is_team ? teamId : $user!.id,
-            test.is_team,
-          )) ?? {};
-        console.log("TAKER", testTaker, test);
-        const { data : has_access, error} = await supabase.rpc('check_test_access', {
-				  p_test_id: test.test_id,
-			  });
-        if (error) {toast.error(error)};
-        if (has_access){
-          testStatusMap[test.test_id] = { ...test, ...testTaker };
-          updateStatus(test);
+      
+      // Fetch team details once if needed for event 9 checks
+      if (eventId === 9 && teamId !== null && !teamDetails) {
+        try {
+          teamDetails = await getTeam(teamId);
+          console.log("Fetched Team Details for Event 9 checks:", teamDetails);
+        } catch (error) {
+          console.error("Error fetching team details for event 9 checks:", error);
+          handleError(error as Error);
+          // Decide how to proceed - maybe prevent tests from loading?
+          // For now, we'll allow it to continue, but access checks might fail later.
         }
+      } else if (eventId === 9 && teamId === null) {
+         console.error("Team ID is null, cannot fetch team details for event 9 checks.");
+         // Handle this case - perhaps show an error or prevent loading event 9 tests.
       }
+
+      const testProcessingPromises = testList.map(async (test) => {
+        try {
+          const testTaker =
+            (await getTestTaker(
+              test.test_id,
+              test.is_team ? teamId : $user!.id,
+              test.is_team,
+            )) ?? {};
+          
+          let { data: has_access, error: accessError } = await supabase.rpc('check_test_access', {
+            p_test_id: test.test_id,
+          });
+
+          if (accessError) {
+            console.error(`Error checking access for test ${test.test_id}:`, accessError);
+            toast.error(`Error checking access for test ${test.test_name}: ${accessError.message}`);
+            return null; // Skip this test on access check error
+          }
+
+          // Perform event 9 specific checks if user initially has access
+          if (has_access && eventId === 9) {
+             if (!teamDetails && teamId !== null) {
+               // This case should ideally be handled by the pre-fetch, but as a fallback:
+               console.warn("Fetching teamDetails inside map, should have been prefetched.");
+               try {
+                 teamDetails = await getTeam(teamId);
+               } catch (error) {
+                 console.error("Fallback fetch failed:", error);
+                 has_access = false; // Deny access if fallback fetch fails
+               }
+             }
+            
+             if (!teamDetails) {
+               console.error(`Cannot perform event 9 checks for test ${test.test_name} because teamDetails are missing.`);
+               has_access = false;
+             } else {
+               // Apply Foal/Colt/Stallion checks
+               const frontId = teamDetails.front_id;
+               if (test.test_name?.includes('Foal') && !frontId?.endsWith('F')) {
+                 has_access = false;
+               }
+               if (test.test_name?.includes('Colt') && !frontId?.endsWith('C')) {
+                 has_access = false;
+               }
+               if (test.test_name?.includes('Stallion') && !frontId?.endsWith('S')) {
+                 has_access = false;
+               }
+             }
+          }
+
+          if (has_access) {
+            let linkValue: string | null = null;
+            // Check for the specific test ID (ensure types match - test_id seems to be string from interface)
+            if (test.test_id === 322 && teamId !== null) { 
+              try {
+                linkValue = await getTeamCustomFieldValue(teamId, 979);
+                console.log(`Link for test ${test.test_id}:`, linkValue);
+              } catch(linkError) {
+                 console.error(`Error fetching custom field for test ${test.test_id}:`, linkError);
+                 // Decide if this error should prevent the test from showing or just show without the link
+              }
+            }
+            
+            // Return the combined data for this test
+            return { ...test, ...testTaker, link: linkValue };
+          } else {
+            return null; // User doesn't have access
+          }
+        } catch (error) {
+           console.error(`Error processing test ${test.test_id} (${test.test_name}):`, error);
+           handleError(error as Error); // Log the error
+           return null; // Indicate failure for this specific test
+        }
+      });
+
+      // Wait for all test processing promises to resolve
+      const processedTests = (await Promise.all(testProcessingPromises))
+                              .filter(test => test !== null) as TestData[]; // Filter out nulls (errors/no access)
+
+      // Update the state with the processed tests
+      const newTestStatusMap: Record<string, TestData> = {};
+      for (const testData of processedTests) {
+         if (testData) { // Ensure testData is not null before proceeding
+           newTestStatusMap[testData.test_id] = testData;
+           updateStatus(testData); // Initial status calculation
+         }
+      }
+      testStatusMap = newTestStatusMap; // Update the state variable reactively
+
     } catch (error) {
+      // Handle errors from getEventTests or Promise.all itself
       handleError(error as Error);
     }
   }
@@ -282,15 +385,19 @@
           return timeA - timeB;
         }) as test}
           <div class="test-card-container">
-            <TestCard 
-              test={test}
-              isHostView={false}
-              onOpenClick={(e) => {
-                if (e) e.preventDefault();
-                handleTestStart(test);
-              }}
-              onInstructionsClick={() => handleInstructionsClick(test)}
-            />
+            {#if test.test_id === 322}
+              <SimpleLinkCard test={test} />
+            {:else if test.test_id !== 322}
+              <TestCard 
+                test={test}
+                isHostView={false}
+                onOpenClick={(e) => {
+                  if (e) e.preventDefault();
+                  handleTestStart(test);
+                }}
+                onInstructionsClick={() => handleInstructionsClick(test)}
+              />
+            {/if}
           </div>
         {/each}
       </div>

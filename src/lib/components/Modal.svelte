@@ -5,7 +5,7 @@
     open = $bindable(),
     size = "md",
     autoclose = true,
-    outsideclose = false,
+    outsideclose = true,
     classBody = "overflow-y-auto max-h-[80vh] text-center",
   } = $props();
 </script>
