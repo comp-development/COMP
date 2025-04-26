@@ -240,26 +240,26 @@
         "-page-" +
         test_taker.page_number,
     )
-    // .on(
-    //   "postgres_changes",
-    //   {
-    //     event: "UPDATE",
-    //     schema: "public",
-    //     table: "test_answers",
-    //     filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
-    //   },
-    //   handleAnswersUpsert,
-    // )
-    // .on(
-    //   "postgres_changes",
-    //   {
-    //     event: "INSERT",
-    //     schema: "public",
-    //     table: "test_answers",
-    //     filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
-    //   },
-    //   handleAnswersUpsert,
-    // )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "test_answers",
+        filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+      },
+      handleAnswersUpsert,
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "test_answers",
+        filter: `test_taker_id=eq.${test_taker.test_taker_id}`,
+      },
+      handleAnswersUpsert,
+    )
     .subscribe();
 
   function saveFinalAnswer() {
