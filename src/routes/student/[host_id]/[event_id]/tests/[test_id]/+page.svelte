@@ -115,6 +115,13 @@
         "Test with id " + $page.params.test_id + " doesn't exist!",
       );
     }
+    if (!has_access){
+      disallowed = true;
+      loading = false;
+      throw new Error(
+        "This user/team does not have access to this test",
+      );
+    }
   }
 </script>
 
