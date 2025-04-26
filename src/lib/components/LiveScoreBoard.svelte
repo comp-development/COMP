@@ -9,7 +9,7 @@
 
   let { test, max_per_side = 15 }: Props = $props();
 //  let num_rounds = test.settings.pages.length;
-  let num_rounds = 8;
+  let num_rounds = test?.settings?.pages?.length || 8;
   let screen_width = screen.width;
   let curr_screen = 0;
   let num_screens = 0;
