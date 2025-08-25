@@ -19,6 +19,7 @@
     updateStudentOrgEvent,
     type Student,
     getStudentTotalTickets,
+    getScoreReportInfo,
   } from "$lib/supabase";
   import type { Json, Tables } from "../../../../../db/database.types";
   import {
@@ -34,6 +35,8 @@
   let student_event: StudentEvent = $state(null);
   let event_details: AsyncReturnType<typeof getEventInformation> | null =
     $state(null);
+  let score_report: AsyncReturnType<typeof getScoreReportInfo> | null = $state(null)
+
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
   import StudentTeam from "$lib/components/StudentTeam.svelte";
@@ -41,7 +44,6 @@
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   // let ticket_order: Tables<"ticket_orders"> | null = null;
-
   let ticket_order:
     | (Tables<"ticket_orders"> & { refund_requests: Tables<"refund_requests">[] })
     | null;
@@ -160,6 +162,7 @@
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     available_tickets = await getStudentAvailableTickets($user!.id, event_id);
     total_tickets = await getStudentTotalTickets( $user!.id, event_id);
+    score_report = await getScoreReportInfo(student_event.student_event_id)
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
@@ -267,6 +270,12 @@
                 href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`}
                 pill>Take Tests</Button
               >
+              {#if score_report?.visible && !score_report?.disqualified}
+                <Button
+                  href={"https://google.com"}
+                  pill>Download Score Report</Button
+                >
+              {/if}
               <div class="ml-2">
                 <AddOnButton 
                   event_id={event_id} 

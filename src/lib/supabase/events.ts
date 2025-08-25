@@ -839,3 +839,20 @@ export async function insertCoordinates(
     .eq("org_id", org_id);
   if (error) throw error;
 }
+
+export async function getScoreReportInfo(
+  student_event_id: number,
+){
+
+  const { data, error } = await supabase
+    .from("score_report_links")
+    .select("*")
+    .eq("student_event_id", student_event_id)
+    .maybeSingle();
+  console.log("HI");
+  console.log("Student Event Id", student_event_id);
+  console.log("Score Report", data);
+  console.log("HI");
+  if (error) throw error;
+  return data;
+}
