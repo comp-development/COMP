@@ -849,10 +849,7 @@ export async function getScoreReportInfo(
     .select("*")
     .eq("student_event_id", student_event_id)
     .maybeSingle();
-  console.log("HI");
-  console.log("Student Event Id", student_event_id);
   console.log("Score Report", data);
-  console.log("HI");
   if (error) throw error;
   return data;
 }

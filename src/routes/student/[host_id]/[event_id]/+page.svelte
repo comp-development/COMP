@@ -152,6 +152,19 @@
     }
   }
 
+  function toGoogleDriveDownloadLink(
+    googleDriveLink: string
+  ){
+    //Basically turns a google drive view file link to an automatic download link
+    let pattern = /\/file\/d\/(.+)\//;
+    let googleDriveIdMatches = googleDriveLink.match(pattern);
+    console.log("googleDriveIdMatches", googleDriveIdMatches);
+    if (googleDriveIdMatches === null) return googleDriveLink;
+    let googleDriveId = googleDriveIdMatches[1]
+    return `https://drive.google.com/uc?export=download&id=${googleDriveId}`
+
+  }
+
   (async () => {
     // Check if this student is registered in this event.
     // NOTE: only student accounts can view this page (because of the student/layout.svelte)
@@ -162,7 +175,7 @@
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     available_tickets = await getStudentAvailableTickets($user!.id, event_id);
     total_tickets = await getStudentTotalTickets( $user!.id, event_id);
-    score_report = await getScoreReportInfo(student_event.student_event_id)
+    score_report = await getScoreReportInfo(student_event.student_event_id);
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
@@ -272,7 +285,7 @@
               >
               {#if score_report?.visible && !score_report?.disqualified}
                 <Button
-                  href={"https://google.com"}
+                  href = {toGoogleDriveDownloadLink(score_report.report_link)}
                   pill>Download Score Report</Button
                 >
               {/if}
