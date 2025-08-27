@@ -840,16 +840,22 @@ export async function insertCoordinates(
   if (error) throw error;
 }
 
-export async function getScoreReportInfo(
+export async function getUploadedResults(
   student_event_id: number,
 ){
+//Purpose is to get links to uploaded data, such as certificates and score reports.  
 
   const { data, error } = await supabase
-    .from("score_report_links")
-    .select("*")
+    .from("uploaded_results")
+    .select("student_event_id, report_link, report_type, visible, disqualified")
     .eq("student_event_id", student_event_id)
-    .maybeSingle();
-  console.log("Score Report", data);
+  console.log("result_links", data);
   if (error) throw error;
   return data;
+}
+
+export async function uploadLinks(
+  student_event_id: number
+){
+
 }

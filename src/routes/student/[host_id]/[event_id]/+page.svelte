@@ -19,7 +19,7 @@
     updateStudentOrgEvent,
     type Student,
     getStudentTotalTickets,
-    getScoreReportInfo,
+    getUploadedResults,
   } from "$lib/supabase";
   import type { Json, Tables } from "../../../../../db/database.types";
   import {
@@ -33,9 +33,8 @@
   const host_id = parseInt($page.params.host_id);
   const event_id = parseInt($page.params.event_id);
   let student_event: StudentEvent = $state(null);
-  let event_details: AsyncReturnType<typeof getEventInformation> | null =
-    $state(null);
-  let score_report: AsyncReturnType<typeof getScoreReportInfo> | null = $state(null)
+  let event_details: AsyncReturnType<typeof getEventInformation> | null = $state(null);
+  let uploaded_results: AsyncReturnType<typeof getUploadedResults> | null = $state(null)
 
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";
@@ -175,7 +174,7 @@
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     available_tickets = await getStudentAvailableTickets($user!.id, event_id);
     total_tickets = await getStudentTotalTickets( $user!.id, event_id);
-    score_report = await getScoreReportInfo(student_event.student_event_id);
+    uploaded_results = await getUploadedResults(student_event.student_event_id); 
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;
@@ -195,6 +194,7 @@
 
     console.log("student_event", student_event);
     event_details = await getEventInformation(event_id);
+
 
     // if (event_details?.eventbrite_event_id) {
     //   // Load the Eventbrite widget
@@ -283,10 +283,10 @@
                 href={`/student/${$page.params.host_id}/${$page.params.event_id}/tests`}
                 pill>Take Tests</Button
               >
-              {#if score_report?.visible && !score_report?.disqualified}
+              {#if event_details?.results_visible && !uploaded_results?.disqualified}
                 <Button
-                  href = {toGoogleDriveDownloadLink(score_report.report_link)}
-                  pill>Download Score Report</Button
+                  href = {`/student/${$page.params.host_id}/${$page.params.event_id}/results`}
+                  pill>Go to Your Results</Button
                 >
               {/if}
               <div class="ml-2">
