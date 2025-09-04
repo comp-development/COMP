@@ -34,7 +34,7 @@
   const event_id = parseInt($page.params.event_id);
   let student_event: StudentEvent = $state(null);
   let event_details: AsyncReturnType<typeof getEventInformation> | null = $state(null);
-  let uploaded_results: AsyncReturnType<typeof getUploadedResults> | null = $state(null)
+  let uploaded_results: AsyncReturnType<typeof getUploadedResults> | null = $state(null);
 
   import CustomForm from "$lib/components/CustomForm.svelte";
   import EventDisplay from "$lib/components/EventDisplay.svelte";

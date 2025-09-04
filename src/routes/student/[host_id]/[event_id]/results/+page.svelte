@@ -30,33 +30,21 @@
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let student: Student = $state(null);
   let student_event: StudentEvent = $state(null);
-  let uploaded_results: AsyncReturnType<typeof getUploadedResults> | null = $state(null)
-  let event_details: AsyncReturnType<typeof getEventInformation> | null = $state(null) 
+  let uploaded_results: AsyncReturnType<typeof getUploadedResults> | null = $state(null);
+  let event_details: AsyncReturnType<typeof getEventInformation> | null = $state(null);
 
-
-  function toGoogleDriveDownloadLink(
-      googleDriveLink: string
-      ){
-    //Basically turns a google drive view file link to an automatic download link
-    let pattern = /\/file\/d\/(.+)\//;
-    let googleDriveIdMatches = googleDriveLink.match(pattern);
-    console.log("googleDriveIdMatches", googleDriveIdMatches);
-    if (googleDriveIdMatches === null) return googleDriveLink;
-    let googleDriveId = googleDriveIdMatches[1]
-      return `https://drive.google.com/uc?export=download&id=${googleDriveId}`
-
-  }
   (async () => {
     // Check if this student is registered in this event.
     // NOTE: only student accounts can view this page (because of the student/layout.svelte)
     // Therefore, getStudent always returns non-null.
     student = await getStudent($user!.id)!;
     student_event = await getStudentEvent($user!.id, event_id);
-    uploaded_results = await getUploadedResults(student_event.student_event_id);
+    uploaded_results = await getUploadedResults([student_event.student_event_id]);
     team = student_event?.team;
     org_event = student_event?.org_event;
     event_details = await getEventInformation(event_id);
-    console.log("Results Visible", event_details.results_visible);
+    console.log("Results Visible", event_details?.results_visible);
+    console.log("Uploaded Results", uploaded_results);
 
   })();
 
@@ -69,7 +57,7 @@
 </script>
 
 
-{#if !event_details?.results_visible}
+{#if !event_details?.results_visible || uploaded_results === null}
   <div class="container mx-auto px-4 py-8">
       <div class="bg-white rounded-lg shadow-md p-6">
           <h1 class="text-2xl font-bold text-gray-800 mb-4">Results Unavailable</h1>

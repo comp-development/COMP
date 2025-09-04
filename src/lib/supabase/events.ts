@@ -841,14 +841,15 @@ export async function insertCoordinates(
 }
 
 export async function getUploadedResults(
-  student_event_id: number,
+  student_event_ids: number[],
 ){
+//NOTE: the input is an array of student_ids.  This is for a coach that has multiple students, but even a single id will need to be in an array. 
 //Purpose is to get links to uploaded data, such as certificates and score reports.  
 
   const { data, error } = await supabase
     .from("uploaded_results")
-    .select("student_event_id, report_link, report_type, visible, disqualified")
-    .eq("student_event_id", student_event_id)
+    .select("student_events(students(first_name, last_name), teams(team_name)), report_link, report_type, visible, disqualified")
+    .in("student_event_id", student_event_ids)
   console.log("result_links", data);
   if (error) throw error;
   return data;
