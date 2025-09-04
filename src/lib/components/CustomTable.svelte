@@ -26,6 +26,12 @@
   />
   ```
 
+  Format of basic input data into table: Array of Records 
+  [
+  {col1key: cell1, col2key: cell2, col3key: cell3},
+  {col1key: cell4, col2key: cell5, col3key: cell6}
+  ]
+
   Column Properties:
   - key: Unique identifier for the column (required)
   - label: Display label for the column (required)
