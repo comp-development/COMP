@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/stores';
   import { user } from "$lib/sessionStore";
+  import UploadedResultsTable from '$lib/components/UploadedResultsTable.svelte';
   import {
     supabase,
     type AsyncReturnType,
@@ -55,6 +56,8 @@
     team = student_event?.team;
     org_event = student_event?.org_event;
     event_details = await getEventInformation(event_id);
+    console.log("Results Visible", event_details.results_visible);
+
   })();
 
 
@@ -66,16 +69,20 @@
 </script>
 
 
-{#if !event_details?.results_visible && uploaded_results?.disqualified}
+{#if !event_details?.results_visible}
   <div class="container mx-auto px-4 py-8">
       <div class="bg-white rounded-lg shadow-md p-6">
           <h1 class="text-2xl font-bold text-gray-800 mb-4">Results Unavailable</h1>
           <p class="text-gray-600">
-              Results Are Not Available Yet
+              Results are not available yet
           </p>
       </div>
   </div>
 {:else}
+  <UploadedResultsTable
+    student_event_ids = { [student_event.student_event_id] }
+  />
+
 {/if}
 
   <!-->

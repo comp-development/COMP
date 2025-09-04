@@ -132,6 +132,8 @@
     actions?: Snippet;
     rowActions?: RowAction[]; // New prop for row actions
     forceLoadVisibility?: boolean; // New prop to force load visibility from localStorage on initial render
+    minimal?: boolean; // New optional Prop that when set to True, disables all header buttons(i.e., no filtering, searching, exporting) 
+                       //Why not just make a regular good old table?  Because I'm lazy! 
   } = $props();
 
   console.log("PROPS", props)
@@ -1255,191 +1257,193 @@
     </div>
   </div>
 {:else}
-  <div class="mb-4 flex flex-row justify-between w-full">
-    <!-- Left-aligned buttons -->
-    <div class="flex items-center gap-2">
-      <Button color="primary" class="btn-primary flex items-center gap-1" on:click={openFilterEditor}>
-        <FilterSolid class="w-4 h-4" />
-        Filters
-        {#if filters.length > 0}
-          <Badge color="none" class="ml-1 bg-[color:var(--primary-light)] text-white">{filters.length}</Badge>
+  {#if !props.minimal}
+    <div class="mb-4 flex flex-row justify-between w-full">
+      <!-- Left-aligned buttons -->
+      <div class="flex items-center gap-2">
+        <Button color="primary" class="btn-primary flex items-center gap-1" on:click={openFilterEditor}>
+          <FilterSolid class="w-4 h-4" />
+          Filters
+          {#if filters.length > 0}
+            <Badge color="none" class="ml-1 bg-[color:var(--primary-light)] text-white">{filters.length}</Badge>
+          {/if}
+        </Button>
+        
+        <div class="relative">
+          <Button id="columnToggleButton" color="primary" class="btn-primary flex items-center gap-1">
+            <TableColumnOutline class="w-4 h-4" />
+            Show/Hide Columns
+          </Button>
+          <Dropdown triggeredBy="#columnToggleButton" class="w-64">
+            <div class="column-dropdown-content max-h-64 overflow-y-auto bg-white rounded shadow-lg py-2">
+              {#each allColumns.filter(column => !column.frozen && !column.linkedToColumn) as column}
+                <DropdownItem class="px-2 py-1">
+                  <div class="flex items-center">
+                    <Checkbox 
+                      checked={internalVisibleColumns[column.displayKey]} 
+                      on:change={() => toggleColumn(column.displayKey)} 
+                      class="text-left w-full"
+                    >
+                      <span class="text-sm break-words whitespace-normal">
+                        {column.displayLabel}
+                      </span>
+                    </Checkbox>
+                  </div>
+                </DropdownItem>
+              {/each}
+            </div>
+          </Dropdown>
+        </div>
+        
+        <!-- Slot for custom action buttons -->
+        {#if props.actions}
+          {@render props.actions()}
         {/if}
-      </Button>
-      
-      <div class="relative">
-        <Button id="columnToggleButton" color="primary" class="btn-primary flex items-center gap-1">
-          <TableColumnOutline class="w-4 h-4" />
-          Show/Hide Columns
-        </Button>
-        <Dropdown triggeredBy="#columnToggleButton" class="w-64">
-          <div class="column-dropdown-content max-h-64 overflow-y-auto bg-white rounded shadow-lg py-2">
-            {#each allColumns.filter(column => !column.frozen && !column.linkedToColumn) as column}
-              <DropdownItem class="px-2 py-1">
-                <div class="flex items-center">
-                  <Checkbox 
-                    checked={internalVisibleColumns[column.displayKey]} 
-                    on:change={() => toggleColumn(column.displayKey)} 
-                    class="text-left w-full"
-                  >
-                    <span class="text-sm break-words whitespace-normal">
-                      {column.displayLabel}
-                    </span>
-                  </Checkbox>
-                </div>
-              </DropdownItem>
-            {/each}
-          </div>
-        </Dropdown>
       </div>
       
-      <!-- Slot for custom action buttons -->
-      {#if props.actions}
-        {@render props.actions()}
-      {/if}
-    </div>
-    
-    <!-- Right-aligned buttons -->
-    <div class="flex items-center ml-auto">
-      <div class="relative">
-        <Button id="exportButton" color="primary" class="flex items-center gap-1">
-          <TableRowOutline class="w-4 h-4" />
-          Export
-        </Button>
-        <Dropdown triggeredBy="#exportButton" class="w-64 p-3">
-          <div class="space-y-3">
-            <div class="flex items-center gap-2">
-              <Toggle checked={exportVisibleColumnsOnly} on:change={() => {
-                exportVisibleColumnsOnly = !exportVisibleColumnsOnly;
-                saveTableState();
-              }} />
-              <span class="text-sm">Include shown columns only</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <Toggle checked={exportFilteredRowsOnly} on:change={() => {
-                exportFilteredRowsOnly = !exportFilteredRowsOnly;
-                saveTableState();
-              }} />
-              <span class="text-sm">Include filtered rows only</span>
-            </div>
-            <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
-              <Button size="sm" color="primary" class="w-full" on:click={exportToCSV}>Export to CSV</Button>
-            </div>
-          </div>
-        </Dropdown>
-      </div>
-    </div>
-  </div>
-  
-  {#if !props.isLoading}
-    <!-- Search bar row - new addition -->
-    <div class="mb-4 mt-2 w-full relative">
-      <Search size="md" placeholder="Search across all visible columns..." bind:value={searchTerm} class="w-full" />
-      {#if isDebouncing}
-        <div class="absolute right-8 top-0 h-full flex items-center">
-          <div class="animate-pulse">
-            <ClockSolid class="w-4 h-4 text-gray-400" />
-          </div>
-        </div>
-      {/if}
-    </div>
-  {/if}
-  
-  <!-- Filter Editor Modal using Flowbite Modal component -->
-  <Modal title="Edit Filters" bind:open={showFilterEditor} autoclose={false} size="lg">
-    <!-- Filter edit form -->
-    <div class="space-y-4">
-      <!-- Add Filter Button -->
-      <div class="mb-4">
-        <Button color="light" class="flex items-center gap-1" on:click={addFilter}>
-          <PlusOutline class="w-4 h-4" />
-          Add Filter
-        </Button>
-      </div>
-      
-      <!-- Filter list -->
-      {#if pendingFilters.length === 0}
-        <div class="text-center p-4 text-gray-500 dark:text-gray-400">
-          No filters added. Click "Add Filter" to create one.
-        </div>
-      {:else}
-        <div class="w-full space-y-4">
-          {#each pendingFilters as filter}
-            <div class="w-full bg-gray-50 dark:bg-gray-700 rounded-md p-3">
-              <div class="flex flex-row flex-nowrap items-center gap-2 w-full">
-                <!-- Column selector - approx 30% -->
-                <div class="w-[40%]">
-                  <Select 
-                    value={filter.column}
-                    on:change={(e) => {
-                      const target = e.target as HTMLSelectElement;
-                      updatePendingFilter(filter.id, { column: target.value });
-                    }}
-                    class="text-sm w-full"
-                  >
-                    {#each allColumns as column}
-                      <option value={column.displayKey}>{column.displayLabel}</option>
-                    {/each}
-                  </Select>
-                </div>
-                
-                <!-- Operator selector - approx 30% -->
-                <div class="w-[10%]">
-                  <Select 
-                    value={filter.operator}
-                    on:change={(e) => {
-                      const target = e.target as HTMLSelectElement;
-                      updatePendingFilter(filter.id, { operator: target.value });
-                    }}
-                    class="text-sm w-full"
-                  >
-                    {#each getOperatorsForDataType(getColumnDataType(filter.column)) as op}
-                      <option value={op.value}>{op.label}</option>
-                    {/each}
-                  </Select>
-                </div>
-                
-                <!-- Value input - approx 30% -->
-                <div class="w-[40%]">
-                  <Input 
-                    type={getColumnDataType(filter.column) === 'date' ? 'date' : 'text'}
-                    value={filter.value}
-                    on:input={(e) => {
-                      const target = e.target as HTMLInputElement;
-                      updatePendingFilter(filter.id, { value: target.value });
-                    }}
-                    class="text-sm w-full"
-                    placeholder="Enter value"
-                  />
-                </div>
-                
-                <!-- Remove button - approx 10% -->
-                <div class="flex-shrink-0 flex justify-center">
-                  <button 
-                    class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 p-2"
-                    on:click={() => removePendingFilter(filter.id)}
-                    aria-label="Remove filter"
-                  >
-                    <CloseOutline class="w-4 h-4" />
-                  </button>
-                </div>
+      <!-- Right-aligned buttons -->
+      <div class="flex items-center ml-auto">
+        <div class="relative">
+          <Button id="exportButton" color="primary" class="flex items-center gap-1">
+            <TableRowOutline class="w-4 h-4" />
+            Export
+          </Button>
+          <Dropdown triggeredBy="#exportButton" class="w-64 p-3">
+            <div class="space-y-3">
+              <div class="flex items-center gap-2">
+                <Toggle checked={exportVisibleColumnsOnly} on:change={() => {
+                  exportVisibleColumnsOnly = !exportVisibleColumnsOnly;
+                  saveTableState();
+                }} />
+                <span class="text-sm">Include shown columns only</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <Toggle checked={exportFilteredRowsOnly} on:change={() => {
+                  exportFilteredRowsOnly = !exportFilteredRowsOnly;
+                  saveTableState();
+                }} />
+                <span class="text-sm">Include filtered rows only</span>
+              </div>
+              <div class="pt-2 border-t border-gray-200 dark:border-gray-600">
+                <Button size="sm" color="primary" class="w-full" on:click={exportToCSV}>Export to CSV</Button>
               </div>
             </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
-    
-    <!-- Modal actions -->
-    <svelte:fragment slot="footer">
-      <div class="flex w-full justify-between items-center">
-        <div class="flex gap-3">
-          <Button color="red" on:click={clearAllFilters} disabled={pendingFilters.length === 0 && filters.length === 0}>Clear All Filters</Button>
-          <Button color="alternative" on:click={cancelFilterEditing}>Cancel</Button>
-          <Button color="primary" on:click={saveFilters}>Apply Filters</Button>
+          </Dropdown>
         </div>
       </div>
-    </svelte:fragment>
-  </Modal>
+    </div>
+    
+    {#if !props.isLoading}
+      <!-- Search bar row - new addition -->
+      <div class="mb-4 mt-2 w-full relative">
+        <Search size="md" placeholder="Search across all visible columns..." bind:value={searchTerm} class="w-full" />
+        {#if isDebouncing}
+          <div class="absolute right-8 top-0 h-full flex items-center">
+            <div class="animate-pulse">
+              <ClockSolid class="w-4 h-4 text-gray-400" />
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+    
+    <!-- Filter Editor Modal using Flowbite Modal component -->
+    <Modal title="Edit Filters" bind:open={showFilterEditor} autoclose={false} size="lg">
+      <!-- Filter edit form -->
+      <div class="space-y-4">
+        <!-- Add Filter Button -->
+        <div class="mb-4">
+          <Button color="light" class="flex items-center gap-1" on:click={addFilter}>
+            <PlusOutline class="w-4 h-4" />
+            Add Filter
+          </Button>
+        </div>
+        
+        <!-- Filter list -->
+        {#if pendingFilters.length === 0}
+          <div class="text-center p-4 text-gray-500 dark:text-gray-400">
+            No filters added. Click "Add Filter" to create one.
+          </div>
+        {:else}
+          <div class="w-full space-y-4">
+            {#each pendingFilters as filter}
+              <div class="w-full bg-gray-50 dark:bg-gray-700 rounded-md p-3">
+                <div class="flex flex-row flex-nowrap items-center gap-2 w-full">
+                  <!-- Column selector - approx 30% -->
+                  <div class="w-[40%]">
+                    <Select 
+                      value={filter.column}
+                      on:change={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        updatePendingFilter(filter.id, { column: target.value });
+                      }}
+                      class="text-sm w-full"
+                    >
+                      {#each allColumns as column}
+                        <option value={column.displayKey}>{column.displayLabel}</option>
+                      {/each}
+                    </Select>
+                  </div>
+                  
+                  <!-- Operator selector - approx 30% -->
+                  <div class="w-[10%]">
+                    <Select 
+                      value={filter.operator}
+                      on:change={(e) => {
+                        const target = e.target as HTMLSelectElement;
+                        updatePendingFilter(filter.id, { operator: target.value });
+                      }}
+                      class="text-sm w-full"
+                    >
+                      {#each getOperatorsForDataType(getColumnDataType(filter.column)) as op}
+                        <option value={op.value}>{op.label}</option>
+                      {/each}
+                    </Select>
+                  </div>
+                  
+                  <!-- Value input - approx 30% -->
+                  <div class="w-[40%]">
+                    <Input 
+                      type={getColumnDataType(filter.column) === 'date' ? 'date' : 'text'}
+                      value={filter.value}
+                      on:input={(e) => {
+                        const target = e.target as HTMLInputElement;
+                        updatePendingFilter(filter.id, { value: target.value });
+                      }}
+                      class="text-sm w-full"
+                      placeholder="Enter value"
+                    />
+                  </div>
+                  
+                  <!-- Remove button - approx 10% -->
+                  <div class="flex-shrink-0 flex justify-center">
+                    <button 
+                      class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 p-2"
+                      on:click={() => removePendingFilter(filter.id)}
+                      aria-label="Remove filter"
+                    >
+                      <CloseOutline class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    
+      <!-- Modal actions -->
+      <svelte:fragment slot="footer">
+        <div class="flex w-full justify-between items-center">
+          <div class="flex gap-3">
+            <Button color="red" on:click={clearAllFilters} disabled={pendingFilters.length === 0 && filters.length === 0}>Clear All Filters</Button>
+            <Button color="alternative" on:click={cancelFilterEditing}>Cancel</Button>
+            <Button color="primary" on:click={saveFilters}>Apply Filters</Button>
+          </div>
+        </div>
+      </svelte:fragment>
+    </Modal>
+  {/if}
   
   <!-- Improved table container with better overflow handling -->
   <div class="relative rounded-md border border-gray-200 shadow-lg">
