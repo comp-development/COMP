@@ -174,7 +174,7 @@
     ticket_order = await getStudentTicketOrder($user!.id, event_id);
     available_tickets = await getStudentAvailableTickets($user!.id, event_id);
     total_tickets = await getStudentTotalTickets( $user!.id, event_id);
-    uploaded_results = await getUploadedResults(student_event.student_event_id); 
+    uploaded_results = await getUploadedResults([student_event.student_event_id]); 
     transaction_stored = ticket_order != null;
     team = student_event?.team;
     org_event = student_event?.org_event;

@@ -11,6 +11,7 @@ This table is for displaying links to Score Reports and Certificates on the stud
   import {getUploadedResults} from "$lib/supabase/events";
   import type { AsyncReturnType } from "$lib/supabaseClient";
 
+  let columns: any[] = $state([]);
 
   let {student_event_ids, user_type}: {student_event_ids : number[], user_type : "student" | "coach" | "admin"} = $props();
   let loading = $state(false);
@@ -57,20 +58,28 @@ This table is for displaying links to Score Reports and Certificates on the stud
   
 
   onMount(async () => {
+    custom_table_props = { nameVisible: true, minimal: false, selectable: false };
     table_data = await loadResultsData(student_event_ids); 
     switch (user_type) {
       case "student":
         custom_table_props = { nameVisible: false, minimal: true, selectable: false };
         break;
       case "coach":
-        custom_table_props = { nameVisible: true, minimal: false, selectable: false };
+        custom_table_props = { nameVisible: true, minimal: true, selectable: false };
         break;
       case "admin":
         custom_table_props = { nameVisible: true, minimal: false, selectable: true };
         break;
     }
-    console.log("custom_table_props", custom_table_props);
+    columns = [
+      { key: 'student_name', label: 'Name', visible: custom_table_props.nameVisible},
+      { key: 'team_name', label: 'Team', visible: custom_table_props.nameVisible},
+      { key: 'report_type', label: 'Item', visible: true },
+      { key: 'report_link', label: 'Download Link', visible: true, format : "column-snippet"},  
+    ];
+
     console.log("Table Data", table_data);
+    console.log("custom_table_props", custom_table_props);
   });
 </script>
 
@@ -88,12 +97,7 @@ This table is for displaying links to Score Reports and Certificates on the stud
 
 <CustomTable 
   data={table_data}
-  columns={[
-    { key: 'student_name', label: 'Name', visible: custom_table_props.nameVisible},
-    { key: 'team_name', label: 'Team', visible: custom_table_props.nameVisible},
-    { key: 'report_type', label: 'Item', visible: true },
-    { key: 'report_link', label: 'Download Link', visible: true, format : "column-snippet"},  
-  ]}
+  columns={columns}
   entityType="user"
   idField="id"
   tableId="users_table"
@@ -109,3 +113,4 @@ This table is for displaying links to Score Reports and Certificates on the stud
 <style>
 
 </style>
+

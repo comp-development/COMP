@@ -72,6 +72,7 @@
 {:else}
   <UploadedResultsTable
     student_event_ids = { [student_event.student_event_id] }
+    user_type = "student"
   />
 
 {/if}
