@@ -12,11 +12,10 @@ This table is for displaying links to Score Reports and Certificates on the stud
   import type { AsyncReturnType } from "$lib/supabaseClient";
 
 
-  let {student_event_ids} = $props();
+  let {student_event_ids, user_type}: {student_event_ids : number[], user_type : "student" | "coach" | "admin"} = $props();
   let loading = $state(false);
-  let is_coach = $state(false) //Placeholder for now
   let table_data: AsyncReturnType<typeof loadResultsData> | [] = $state([]);
-
+  let custom_table_props = $state({ nameVisible: false, minimal: true, selectable: false });
   async function loadResultsData(
     student_event_ids: number[]
   ){
@@ -59,10 +58,21 @@ This table is for displaying links to Score Reports and Certificates on the stud
 
   onMount(async () => {
     table_data = await loadResultsData(student_event_ids); 
+    switch (user_type) {
+      case "student":
+        custom_table_props = { nameVisible: false, minimal: true, selectable: false };
+        break;
+      case "coach":
+        custom_table_props = { nameVisible: true, minimal: false, selectable: false };
+        break;
+      case "admin":
+        custom_table_props = { nameVisible: true, minimal: false, selectable: true };
+        break;
+    }
+    console.log("custom_table_props", custom_table_props);
     console.log("Table Data", table_data);
   });
 </script>
-
 
 {#snippet hyperlink(col: UnifiedColumn, row : any)}
 {#if col["key"] == "report_link"}
@@ -76,25 +86,22 @@ This table is for displaying links to Score Reports and Certificates on the stud
 {/if}
 {/snippet}
 
-
 <CustomTable 
   data={table_data}
   columns={[
-
-    { key: 'student_name', label: 'Name', visible: is_coach },
-    { key: 'team_name', label: 'Team', visible: is_coach },
+    { key: 'student_name', label: 'Name', visible: custom_table_props.nameVisible},
+    { key: 'team_name', label: 'Team', visible: custom_table_props.nameVisible},
     { key: 'report_type', label: 'Item', visible: true },
-    { key: 'report_link', label: 'Download Link', visible: true, format : "column-snippet"},  // This column will be frozen
+    { key: 'report_link', label: 'Download Link', visible: true, format : "column-snippet"},  
   ]}
   entityType="user"
   idField="id"
   tableId="users_table"
   isLoading = {loading}
-  selectable = {false} 
-  minimal = {true}
+  selectable = {custom_table_props.selectable} 
+  minimal = {custom_table_props.minimal}
   component_renderer = {hyperlink}
-
-  
+  forceLoadVisibility = {true}
 />
   
 

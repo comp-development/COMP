@@ -580,6 +580,14 @@
   <hr />
 
   {#if organizationDetails.event}
+    {#if event_details.results_visible} 
+    <br>
+      <Button
+        href = {`/coach/${$page.params.org_id}/${$page.params.host_id}/${$page.params.event_id}/results`}
+        pill>Competition Results Are Available!</Button
+      >
+    {/if}
+    <br /><br />
     <div class="organization">
       <div class="flex">
         <InfoToolTip

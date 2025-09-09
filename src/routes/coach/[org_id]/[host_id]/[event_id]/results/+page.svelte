@@ -16,34 +16,49 @@
     updateStudentTeam,
     getOrgEventByJoinCode,
     getHostInformation,
-    type StudentEvent,
+    getCoachOrganization,
     getStudent,
     updateStudentOrgEvent,
-    type Student,
     getStudentTotalTickets,
+    getCoach,
     getUploadedResults,
+    type Student,
+    type StudentEvent,
   } from "$lib/supabase";
 
   const event_id = parseInt($page.params.event_id);
+  const org_id = parseInt($page.params.org_id);
   
   let team: Get<StudentEvent, "team"> | undefined = $state(null);
   let org_event: Get<StudentEvent, "org_event"> | undefined = $state(null);
   let student: Student = $state(null);
   let student_event: StudentEvent = $state(null);
+  let coach: any = $state();
   let uploaded_results: AsyncReturnType<typeof getUploadedResults> | null = $state(null);
   let event_details: AsyncReturnType<typeof getEventInformation> | null = $state(null);
+  let organizationDetails: any = $state(null);
+  let studentEventIds: number[] = $state([]);
 
   (async () => {
-    // Check if this student is registered in this event.
-    // NOTE: only student accounts can view this page (because of the student/layout.svelte)
-    // Therefore, getStudent always returns non-null.
-    student = await getStudent($user!.id)!;
-    student_event = await getStudentEvent($user!.id, event_id);
-    uploaded_results = await getUploadedResults([student_event.student_event_id]);
-    team = student_event?.team;
-    org_event = student_event?.org_event;
     event_details = await getEventInformation(event_id);
 
+    coach = await getCoach($user!.id);
+    organizationDetails = await getCoachOrganization(
+      coach.coach_id,
+      event_id,
+      org_id,
+    );
+
+    const teams : any[] = organizationDetails?.teams ?? [];  
+    
+    for (const team of teams){
+      for (const team_member of team.teamMembers){
+        studentEventIds.push(team_member.student_event_id);
+      }
+
+    }
+    uploaded_results = await getUploadedResults(studentEventIds);
+    console.log("Student Event Ids", studentEventIds);
     
 
     console.log("Results Visible", event_details?.results_visible);
@@ -71,14 +86,8 @@
   </div>
 {:else}
   <UploadedResultsTable
-    student_event_ids = { [student_event.student_event_id] }
+    student_event_ids = { studentEventIds }
+    user_type = "coach"
   />
 
 {/if}
-
-  <!-->
-                <Button
-                  href = {toGoogleDriveDownloadLink(uploaded_results.report_link)}
-                  pill>Download Score Report</Button
-                >
-  </!-->
