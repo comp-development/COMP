@@ -241,7 +241,7 @@
         );
       }
 
-      deletedFields = originalCustomFields.filter(
+      const deletedFields = originalCustomFields.filter(
         (field) => !custom_fields.some((cf) => cf.key === field.key),
       );
 
