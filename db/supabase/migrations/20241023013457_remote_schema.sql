@@ -11,8 +11,8 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
--- New version of supabase removed pgsodium
---CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
+
+CREATE EXTENSION IF NOT EXISTS "pgsodium" WITH SCHEMA "pgsodium";
 
 
 
