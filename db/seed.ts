@@ -346,6 +346,8 @@ async function reset_db(params: { eventbrite_sample_event_id?: string }) {
     "!pgsodium.*",
     "!realtime.*",
     "!storage.*",
+    "!auth.schema_migrations",
+    "!auth.refresh_tokens",
   ]);
 
   await create_user(
