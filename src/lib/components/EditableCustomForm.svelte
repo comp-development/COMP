@@ -241,12 +241,12 @@
         );
       }
 
-      let deletedFields = originalCustomFields.filter(
+      deletedFields = originalCustomFields.filter(
         (field) => !custom_fields.some((cf) => cf.key === field.key),
       );
 
       if (deletedFields.length > 0) {
-        let showConfirmDeleteModal = true;
+        showConfirmDeleteModal = true;
       } else {
         await action();
         originalCustomFields = await JSON.parse(
@@ -255,7 +255,7 @@
         toast.success("Custom fields saved successfully");
       }
     } catch (error) {
-      handleError(error as Error);
+      handleError(error);
     }
   }
 
@@ -264,7 +264,7 @@
       await action();
       toast.success("Custom fields saved successfully");
     } catch (error) {
-      handleError(error as Error);
+      handleError(error);
     }
   }
 </script>

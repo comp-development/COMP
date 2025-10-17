@@ -23,5 +23,3 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 db/database.types.ts
-
-.vscode/
