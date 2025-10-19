@@ -45,7 +45,7 @@ Next, you'll need to seed the database.
 0. cd into the `db` directory (`cd db`)
 1. setup seed with `npx @snaplet/seed init`
 2. run `npx tsx seed.ts`
-3. your good to go! launch comp and login with any of the [dev db credentials](COMP Dev DB)
+3. your good to go! launch comp and login with any of the [dev db credentials](#comp-dev-db)
 
 
 
