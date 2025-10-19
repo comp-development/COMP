@@ -47,7 +47,7 @@ Next, you'll need to seed the database.
 2. run `npx tsx seed.ts`
 3. your good to go! launch comp and login with any of the [dev db credentials](#comp-dev-db)
 
-
+# Good to knows
 
 For eventbrite seeding, you need to create an event to which the
 `EVENTBRITE_TOKEN` in the root `.env` has access. On the publish page, choose
