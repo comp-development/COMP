@@ -3,24 +3,21 @@
 For general instructions / notes, go up to [README.md](../README.md).
 
 # Prereqs
+- Install [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
+- Install Docker Desktop (or Orbstack/colima)
 
-requires Orbstack/colima/docker, supabase CLI.
-see https://supabase.com/docs/guides/local-development/cli/getting-started for info on starting supabase.
 
 tested one-time admin setup with colima on arm mac, all workflows with Orbstack
 on arm mac with few issues. works (with occasional Docker issues) on Windows.
 
-# Workflows
+# Quick Start
+Note: All of the below require Orbstack/Docker/Colima and Supabase to be running.
 
-All of the below require Orbstack/Docker/Colima and Supabase to be running.
 
 ```
 cd COMP/db
 npm ci install
 npx patch-package # applies our patch to the seed package
-```
-
-```
 supabase start
 touch ../.env
 ```
@@ -30,12 +27,27 @@ Fill in the below variables in the `COMP/.env` file using the output of `supabas
 between the `=` and the value.
 
 ```
-VITE_SUPABASE_URL=API_URL
-VITE_SUPABASE_ANON_KEY=anon_key
-SUPABASE_SERVICE_KEY=service_role_key
+VITE_SUPABASE_URL=API URL
+VITE_SUPABASE_ANON_KEY=Publishable key
+SUPABASE_SERVICE_KEY=Secret key
 ```
 
-See [Supabase docs](https://supabase.com/docs/guides/local-development/cli/getting-started) for more info.
+Example `.env` file:
+```
+VITE_SUPABASE_URL=http://127.0.0.1:30033
+VITE_SUPABASE_ANON_KEY=sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+SUPABASE_SERVICE_KEY=sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz
+```
+
+Next, you'll need to seed the database.
+
+
+0. cd into the `db` directory (`cd db`)
+1. setup seed with `npx @snaplet/seed init`
+2. run `npx tsx seed.ts`
+3. your good to go! launch comp and login with any of the [dev db credentials](#comp-dev-db)
+
+# Good to knows
 
 For eventbrite seeding, you need to create an event to which the
 `EVENTBRITE_TOKEN` in the root `.env` has access. On the publish page, choose
